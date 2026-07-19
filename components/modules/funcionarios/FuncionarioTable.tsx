@@ -1,0 +1,65 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import type { Funcionario } from "@prisma/client";
+import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
+import { Avatar } from "@/components/ui/Avatar";
+import { Badge } from "@/components/ui/Badge";
+import { formatarData, formatarTelefone } from "@/lib/utils";
+
+export function FuncionarioTable({ funcionarios }: { funcionarios: Funcionario[] }) {
+  const router = useRouter();
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  async function alternarAtivo(f: Funcionario) {
+    setLoadingId(f.id);
+    await fetch(`/api/funcionarios/${f.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ativo: !f.ativo }),
+    });
+    setLoadingId(null);
+    router.refresh();
+  }
+
+  return (
+    <Table>
+      <TableHead>
+        <Th>Nome</Th>
+        <Th>Cargo</Th>
+        <Th>Setor</Th>
+        <Th>Telefone</Th>
+        <Th>Admissão</Th>
+        <Th>Situação</Th>
+      </TableHead>
+      <TableBody>
+        {funcionarios.length === 0 && <TableEmpty colSpan={6}>Nenhum funcionário encontrado.</TableEmpty>}
+        {funcionarios.map((f) => (
+          <Tr key={f.id}>
+            <Td>
+              <Link href={`/funcionarios/${f.id}`} className="flex items-center gap-2.5 hover:text-cda-blue">
+                <Avatar nome={f.nome} size="sm" />
+                {f.nome}
+              </Link>
+            </Td>
+            <Td>{f.cargo}</Td>
+            <Td>{f.setor}</Td>
+            <Td>{f.telefone ? formatarTelefone(f.telefone) : "—"}</Td>
+            <Td>{formatarData(f.admissao)}</Td>
+            <Td>
+              <button
+                onClick={() => alternarAtivo(f)}
+                disabled={loadingId === f.id}
+                className="disabled:opacity-50"
+              >
+                <Badge variant={f.ativo ? "green" : "gray"}>{f.ativo ? "Ativo" : "Inativo"}</Badge>
+              </button>
+            </Td>
+          </Tr>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}

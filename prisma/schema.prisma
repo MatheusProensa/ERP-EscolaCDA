@@ -1,0 +1,312 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(SECRETARIA)
+  createdAt DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  DIRECAO
+  SECRETARIA
+}
+
+model AnoLetivo {
+  id         String      @id @default(cuid())
+  ano        Int         @unique
+  ativo      Boolean     @default(false)
+  turmas     Turma[]
+  matriculas Matricula[]
+}
+
+model Turma {
+  id          String      @id @default(cuid())
+  nome        String
+  turno       Turno
+  capacidade  Int         @default(25)
+  anoLetivo   AnoLetivo   @relation(fields: [anoLetivoId], references: [id])
+  anoLetivoId String
+  matriculas  Matricula[]
+  createdAt   DateTime    @default(now())
+
+  @@unique([nome, anoLetivoId])
+}
+
+enum Turno {
+  MANHA
+  TARDE
+}
+
+model Aluno {
+  id                  String        @id @default(cuid())
+  nome                String
+  nomeSocial          String?
+  dataNascimento      DateTime
+  naturalidade        String?
+  cpf                 String?       @unique
+  rg                  String?
+  certidaoNascimento  String?
+  foto                String?
+  endereco            String?
+  bairro              String?
+  cidade              String?
+  cep                 String?
+  tipoSanguineo       String?
+  convenioMedico      String?
+  medicacaoContinua   String?
+  alergias            String?
+  restricoes          String?
+  necessidadesEsp     String?
+  autorizacaoImagem   Boolean       @default(false)
+
+  // Dados do Censo Escolar (Educacenso)
+  sexo                Sexo?
+  racaCor             RacaCor?
+  povoIndigena        String?
+  nacionalidade       Nacionalidade @default(BRASILEIRA)
+  municipioNasc       String?
+  ufNasc              String?
+  filiacao1           String?
+  filiacao2           String?
+  bolsaFamilia        Boolean       @default(false)
+  deficiencia         Boolean       @default(false)
+  tipoDeficiencia     String?
+  recursosAcessib     String?
+  nis                 String?
+
+  matriculas          Matricula[]
+  responsaveis        Responsavel[]
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+}
+
+enum Sexo {
+  M
+  F
+}
+
+enum RacaCor {
+  BRANCA
+  PRETA
+  PARDA
+  AMARELA
+  INDIGENA
+  NAO_DECLARADA
+}
+
+enum Nacionalidade {
+  BRASILEIRA
+  ESTRANGEIRA
+}
+
+model Responsavel {
+  id         String  @id @default(cuid())
+  nome       String
+  parentesco String
+  cpf        String?
+  telefone   String
+  email      String?
+  autorizado Boolean @default(true)
+  aluno      Aluno   @relation(fields: [alunoId], references: [id])
+  alunoId    String
+}
+
+model Matricula {
+  id            String            @id @default(cuid())
+  aluno         Aluno             @relation(fields: [alunoId], references: [id])
+  alunoId       String
+  turma         Turma             @relation(fields: [turmaId], references: [id])
+  turmaId       String
+  anoLetivo     AnoLetivo         @relation(fields: [anoLetivoId], references: [id])
+  anoLetivoId   String
+  situacao      SituacaoMatricula @default(ATIVA)
+  dataMatricula DateTime          @default(now())
+  mensalidades  Mensalidade[]
+  contrato      Contrato?
+  notas         Nota[]
+  updatedAt     DateTime          @updatedAt
+}
+
+enum SituacaoMatricula {
+  ATIVA
+  TRANCADA
+  CANCELADA
+  TRANSFERIDA
+  CONCLUIDA
+}
+
+model Mensalidade {
+  id          String              @id @default(cuid())
+  matricula   Matricula           @relation(fields: [matriculaId], references: [id])
+  matriculaId String
+  mes         Int
+  ano         Int
+  valor       Float
+  vencimento  DateTime
+  situacao    SituacaoMensalidade @default(PENDENTE)
+  pagamentos  Pagamento[]
+  createdAt   DateTime            @default(now())
+}
+
+enum SituacaoMensalidade {
+  PENDENTE
+  PAGA
+  ATRASADA
+  CANCELADA
+}
+
+model Pagamento {
+  id             String         @id @default(cuid())
+  mensalidade    Mensalidade    @relation(fields: [mensalidadeId], references: [id])
+  mensalidadeId  String
+  valor          Float
+  dataPagamento  DateTime
+  formaPagamento FormaPagamento
+  observacao     String?
+  createdAt      DateTime       @default(now())
+}
+
+enum FormaPagamento {
+  PIX
+  DINHEIRO
+  CARTAO_DEBITO
+  CARTAO_CREDITO
+  BOLETO
+  TRANSFERENCIA
+}
+
+model Contrato {
+  id          String    @id @default(cuid())
+  matricula   Matricula @relation(fields: [matriculaId], references: [id])
+  matriculaId String    @unique
+  arquivo     String?
+  assinado    Boolean   @default(false)
+  dataEnvio   DateTime?
+  createdAt   DateTime  @default(now())
+}
+
+model Funcionario {
+  id        String   @id @default(cuid())
+  nome      String
+  cpf       String   @unique
+  cargo     String
+  setor     String
+  telefone  String?
+  email     String?
+  admissao  DateTime
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model ItemEstoque {
+  id            String                 @id @default(cuid())
+  nome          String
+  categoria     String
+  unidade       String
+  quantidade    Int                    @default(0)
+  minimo        Int                    @default(5)
+  movimentacoes MovimentacaoEstoque[]
+  updatedAt     DateTime               @updatedAt
+}
+
+model MovimentacaoEstoque {
+  id         String      @id @default(cuid())
+  item       ItemEstoque @relation(fields: [itemId], references: [id])
+  itemId     String
+  tipo       TipoMov
+  quantidade Int
+  motivo     String?
+  createdAt  DateTime    @default(now())
+}
+
+enum TipoMov {
+  ENTRADA
+  SAIDA
+}
+
+model Cardapio {
+  id        String   @id @default(cuid())
+  data      DateTime @unique
+  almoco    String
+  lanche    String?
+  createdAt DateTime @default(now())
+}
+
+model Chave {
+  id          String            @id @default(cuid())
+  sala        String
+  ativa       Boolean           @default(true)
+  emprestimos EmprestimoChave[]
+}
+
+model EmprestimoChave {
+  id          String    @id @default(cuid())
+  chave       Chave     @relation(fields: [chaveId], references: [id])
+  chaveId     String
+  responsavel String
+  retirada    DateTime  @default(now())
+  devolucao   DateTime?
+}
+
+model Reuniao {
+  id        String   @id @default(cuid())
+  titulo    String
+  data      DateTime
+  local     String?
+  pauta     String?
+  ata       String?
+  createdAt DateTime @default(now())
+}
+
+model MuralAviso {
+  id        String   @id @default(cuid())
+  titulo    String
+  conteudo  String
+  autor     String
+  fixado    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model LogAtividade {
+  id         String   @id @default(cuid())
+  acao       String
+  entidade   String
+  entidadeId String
+  usuario    String
+  createdAt  DateTime @default(now())
+}
+
+model Disciplina {
+  id    String @id @default(cuid())
+  nome  String @unique
+  notas Nota[]
+}
+
+model Nota {
+  id           String     @id @default(cuid())
+  matricula    Matricula  @relation(fields: [matriculaId], references: [id])
+  matriculaId  String
+  disciplina   Disciplina @relation(fields: [disciplinaId], references: [id])
+  disciplinaId String
+  periodo      Int
+  valor        Float
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([matriculaId, disciplinaId, periodo])
+}
