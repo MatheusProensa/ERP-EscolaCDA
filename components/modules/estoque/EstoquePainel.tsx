@@ -1,19 +1,22 @@
 "use client";
 
 import { useState } from "react";
-import type { ItemEstoque, MovimentacaoEstoque } from "@prisma/client";
+import type { Aluno, ControleMaterial, ItemEstoque, Matricula, MovimentacaoEstoque } from "@prisma/client";
 import { cn } from "@/lib/utils";
 import { VisaoGeralTab } from "./VisaoGeralTab";
 import { MateriaisTab } from "./MateriaisTab";
 import { MovimentacoesTab } from "./MovimentacoesTab";
+import { ControleMaterialTab } from "./ControleMaterialTab";
 
 type MovimentacaoComItem = MovimentacaoEstoque & { item: ItemEstoque };
-type Aba = "visao-geral" | "materiais" | "movimentacoes";
+type TurmaComAlunos = { id: string; nome: string; matriculas: (Matricula & { aluno: Aluno; controleMaterial: ControleMaterial | null })[] };
+type Aba = "visao-geral" | "materiais" | "movimentacoes" | "controle-material";
 
 const ABAS: { valor: Aba; label: string }[] = [
   { valor: "visao-geral", label: "Visão geral" },
   { valor: "materiais", label: "Materiais" },
   { valor: "movimentacoes", label: "Movimentações" },
+  { valor: "controle-material", label: "Materiais por turma" },
 ];
 
 export function EstoquePainel({
@@ -21,11 +24,13 @@ export function EstoquePainel({
   movimentacoes,
   entradasMes,
   saidasMes,
+  turmas,
 }: {
   itens: ItemEstoque[];
   movimentacoes: MovimentacaoComItem[];
   entradasMes: number;
   saidasMes: number;
+  turmas: TurmaComAlunos[];
 }) {
   const [aba, setAba] = useState<Aba>("visao-geral");
 
@@ -60,6 +65,7 @@ export function EstoquePainel({
       )}
       {aba === "materiais" && <MateriaisTab itens={itens} />}
       {aba === "movimentacoes" && <MovimentacoesTab movimentacoes={movimentacoes} />}
+      {aba === "controle-material" && <ControleMaterialTab turmas={turmas} />}
     </div>
   );
 }

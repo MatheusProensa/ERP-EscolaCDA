@@ -250,6 +250,33 @@ function setorPorCargo(cargo: string): string {
 // CDA" e "Escola CDA" no Google Drive. Ficam como referência (link), sem
 // re-hospedar os binários.
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// CONTROLE DE MATERIAIS REAL — extraído do "Controle_de_Materiais_CDA_2026.pdf"
+// enviado pela escola. `turma` casa com o grupo de TURMAS_ALUNOS e
+// `nomeContem` identifica o aluno pelo primeiro nome usado no PDF.
+// ---------------------------------------------------------------------------
+type ControleMaterialSeed = { turma: string; nomeContem: string; itensFaltantes?: string; trouxe?: boolean; prazoReenvio?: string };
+
+const CONTROLE_MATERIAL_SEED: ControleMaterialSeed[] = [
+  { turma: "Berçário I", nomeContem: "Bernardo Uhlmann", itensFaltantes: "Material completo", trouxe: true },
+  { turma: "Berçário I", nomeContem: "Mateus Hister", itensFaltantes: "Material completo", trouxe: true },
+  { turma: "Berçário I", nomeContem: "Olívia Avelar", itensFaltantes: "Trouxe 3 pacotes de bolinhas em gel, 2 metros de algodão cru, 1 ursinho de pelúcia, 1 lanterna pequena e recarregável, 1 bola" },
+  { turma: "Berçário II", nomeContem: "Marina Sabino", itensFaltantes: "Falta camiseta", prazoReenvio: "2026-02-05" },
+  { turma: "Berçário II", nomeContem: "Joaquim Della Flora", itensFaltantes: "Tudo ok", trouxe: true },
+  { turma: "Berçário II", nomeContem: "Matteo Puchale", itensFaltantes: "Papel pardo, algodão" },
+  { turma: "Maternal I", nomeContem: "Ísis Plentz", itensFaltantes: "1 lupa, 1 apontador jumbo com depósito e 5 sacos plásticos", prazoReenvio: "2026-02-05" },
+  { turma: "Maternal I", nomeContem: "Melissa Trindade", itensFaltantes: "1 pacote de folhas A4 kraft, 1 marcador duplo, apontador com depósito e 1 bandeja branca" },
+  { turma: "Maternal II", nomeContem: "Rafael do Carmo", itensFaltantes: "Revistas, jogo pedagógico, bandeja, camiseta, Kit Brinquedo, livro, materiais" },
+  { turma: "Maternal II", nomeContem: "Luísa Puchale", itensFaltantes: "Papel Pardo" },
+  { turma: "Maternal II", nomeContem: "Matteo Tolotti", itensFaltantes: "Apontador" },
+  { turma: "1º Ano", nomeContem: "Mariah Ramos", itensFaltantes: "Estojo com os materiais dentro e a tela de artesanato 20x30" },
+  { turma: "1º Ano", nomeContem: "Camillo Tolotti", itensFaltantes: "1 pacote de folha kraft 280g (50 unid), 1 caixa de tinta tons de pele 8 cores, 2 revistas para recorte e estojo com os materiais solicitados dentro", prazoReenvio: "2026-02-11" },
+  { turma: "1º Ano", nomeContem: "Maria Luísa Schmidt", itensFaltantes: "1 estojo com os materiais solicitados dentro" },
+  { turma: "1º Ano", nomeContem: "Arthur da Silveira", itensFaltantes: "3 materiais provocadores, corda sintética de 8mm, caneta giz de cor sortida e 1 revista para recorte (veio 1 tinta guache 6 cores e 1 caderno 96 folhas a mais)" },
+  { turma: "2º Ano", nomeContem: "Bernardo Mascarenhas", itensFaltantes: "Material completo", trouxe: true },
+  { turma: "2º Ano", nomeContem: "Giovanna Zambon", itensFaltantes: "1 pacote de papel A4 kraft 180g (50 unid)" },
+];
+
 const DOCUMENTOS_SEED: { titulo: string; categoria: DocumentoCategoria; subcategoria: string; arquivoUrl: string }[] = [
   { titulo: "Alvará de Funcionamento", categoria: "LEGALIZACAO", subcategoria: "Credenciamento", arquivoUrl: "https://drive.google.com/file/d/1dp9P9l4BLYMeGYt9oMyCHmkjRekBS-5f/view" },
   { titulo: "PPCI - Plano de Prevenção Contra Incêndio", categoria: "LEGALIZACAO", subcategoria: "Credenciamento", arquivoUrl: "https://drive.google.com/file/d/1H63Yr7JXV7gsJRLIzKWkvqV7Ksrt_ylr/view" },
@@ -355,6 +382,7 @@ async function main() {
   await prisma.pagamento.deleteMany();
   await prisma.mensalidade.deleteMany();
   await prisma.contrato.deleteMany();
+  await prisma.controleMaterial.deleteMany();
   await prisma.matricula.deleteMany();
   await prisma.responsavel.deleteMany();
   await prisma.aluno.deleteMany();
@@ -454,6 +482,20 @@ async function main() {
             data: { mensalidadeId: mensalidade.id, valor: alunoReal.mensalidade, dataPagamento: dataVencimento, formaPagamento: FormaPagamento.BOLETO },
           });
         }
+      }
+
+      const controle = CONTROLE_MATERIAL_SEED.find(
+        (c) => c.turma === grupo.turma && alunoReal.nome.toLowerCase().includes(c.nomeContem.toLowerCase())
+      );
+      if (controle) {
+        await prisma.controleMaterial.create({
+          data: {
+            matriculaId: matricula.id,
+            itensFaltantes: controle.itensFaltantes ?? null,
+            trouxe: controle.trouxe ?? false,
+            prazoReenvio: controle.prazoReenvio ? new Date(controle.prazoReenvio) : null,
+          },
+        });
       }
     }
 
