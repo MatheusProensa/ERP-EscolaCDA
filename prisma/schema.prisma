@@ -349,11 +349,6 @@ model Documento {
   updatedAt    DateTime           @updatedAt
 }
 
-enum PontoTipo {
-  MANUAL
-  ELETRONICO
-}
-
 enum PontoOcorrencia {
   NORMAL
   FALTA
@@ -378,11 +373,10 @@ model RegistroPonto {
   minutosPrevistos   Int             @default(0)
   minutosTrabalhados Int             @default(0)
   ocorrencia         PontoOcorrencia @default(NORMAL)
-  tipo               PontoTipo       @default(MANUAL)
   observacao         String?
   createdAt          DateTime        @default(now())
 
-  @@unique([funcionarioId, data, tipo])
+  @@unique([funcionarioId, data])
 }
 
 model ControleMaterial {

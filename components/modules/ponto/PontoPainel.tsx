@@ -6,7 +6,6 @@ import { FileDown, Plus, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { formatarMinutos, type RegistroComSaldo } from "@/lib/ponto";
 import { NovoRegistroPontoModal } from "./NovoRegistroPontoModal";
@@ -119,14 +118,13 @@ export function PontoPainel({
             <Th>Entrada</Th>
             <Th>Saída</Th>
             <Th>Ocorrência</Th>
-            <Th>Tipo</Th>
             <Th>Horas</Th>
             <Th>Saldo dia</Th>
             <Th>Saldo acum.</Th>
             <Th>{null}</Th>
           </TableHead>
           <TableBody>
-            {doMes.length === 0 && <TableEmpty colSpan={11}>Nenhum registro de ponto neste período.</TableEmpty>}
+            {doMes.length === 0 && <TableEmpty colSpan={10}>Nenhum registro de ponto neste período.</TableEmpty>}
             {doMes.map((r) => (
               <Tr key={r.id}>
                 <Td>{formatarDataCurta(r.data)}</Td>
@@ -135,11 +133,6 @@ export function PontoPainel({
                 <Td>{r.entrada2 ?? "—"}</Td>
                 <Td>{r.saida2 ?? "—"}</Td>
                 <Td>{OCORRENCIA_LABEL[r.ocorrencia]}</Td>
-                <Td>
-                  <Badge variant={r.tipo === "MANUAL" ? "amber" : "blue"}>
-                    {r.tipo === "MANUAL" ? "Manual" : "Eletrônico"}
-                  </Badge>
-                </Td>
                 <Td>{formatarMinutos(r.minutosTrabalhados)}</Td>
                 <Td className={r.saldoDiario < 0 ? "text-cda-red" : "text-cda-green"}>
                   {formatarMinutos(r.saldoDiario)}
@@ -148,15 +141,13 @@ export function PontoPainel({
                   {formatarMinutos(r.saldoAcumulado)}
                 </Td>
                 <Td>
-                  {r.tipo === "MANUAL" && (
-                    <button
-                      onClick={() => handleRemover(r.id)}
-                      disabled={removendoId === r.id}
-                      className="flex h-7 w-7 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => handleRemover(r.id)}
+                    disabled={removendoId === r.id}
+                    className="flex h-7 w-7 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
                 </Td>
               </Tr>
             ))}

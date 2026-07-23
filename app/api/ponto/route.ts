@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   const minutosTrabalhados = calcularMinutosTrabalhados(entrada1, saida1, entrada2, saida2, entrada3, saida3);
 
   const registro = await prisma.registroPonto.upsert({
-    where: { funcionarioId_data_tipo: { funcionarioId, data: new Date(data), tipo: "MANUAL" } },
+    where: { funcionarioId_data: { funcionarioId, data: new Date(data) } },
     update: {
       entrada1: entrada1 || null,
       saida1: saida1 || null,
@@ -57,7 +57,6 @@ export async function POST(req: NextRequest) {
       minutosTrabalhados,
       ocorrencia: ocorrencia || "NORMAL",
       observacao: observacao || null,
-      tipo: "MANUAL",
     },
   });
 

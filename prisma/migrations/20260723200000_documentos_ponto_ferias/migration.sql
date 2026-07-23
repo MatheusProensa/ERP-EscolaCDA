@@ -5,9 +5,6 @@ ALTER TYPE "Turno" ADD VALUE 'INTEGRAL';
 CREATE TYPE "DocumentoCategoria" AS ENUM ('LEGALIZACAO', 'FINANCEIRO', 'RH', 'CONTRATOS', 'INSTITUCIONAL');
 
 -- CreateEnum
-CREATE TYPE "PontoTipo" AS ENUM ('MANUAL', 'ELETRONICO');
-
--- CreateEnum
 CREATE TYPE "PontoOcorrencia" AS ENUM ('NORMAL', 'FALTA', 'FERIADO', 'FERIAS', 'ATESTADO', 'FOLGA', 'DSR');
 
 -- AlterTable
@@ -44,7 +41,6 @@ CREATE TABLE "RegistroPonto" (
     "minutosPrevistos" INTEGER NOT NULL DEFAULT 0,
     "minutosTrabalhados" INTEGER NOT NULL DEFAULT 0,
     "ocorrencia" "PontoOcorrencia" NOT NULL DEFAULT 'NORMAL',
-    "tipo" "PontoTipo" NOT NULL DEFAULT 'MANUAL',
     "observacao" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -66,7 +62,7 @@ CREATE TABLE "Ferias" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "RegistroPonto_funcionarioId_data_tipo_key" ON "RegistroPonto"("funcionarioId", "data", "tipo");
+CREATE UNIQUE INDEX "RegistroPonto_funcionarioId_data_key" ON "RegistroPonto"("funcionarioId", "data");
 
 -- AddForeignKey
 ALTER TABLE "RegistroPonto" ADD CONSTRAINT "RegistroPonto_funcionarioId_fkey" FOREIGN KEY ("funcionarioId") REFERENCES "Funcionario"("id") ON DELETE CASCADE ON UPDATE CASCADE;
