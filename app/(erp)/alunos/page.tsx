@@ -1,8 +1,10 @@
 import { UserPlus } from "lucide-react";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { AlunoTable } from "@/components/modules/alunos/AlunoTable";
@@ -12,9 +14,10 @@ import type { SituacaoMatricula } from "@prisma/client";
 export default async function AlunosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ turma?: string; situacao?: string; busca?: string }>;
+  searchParams: Promise<{ turma?: string; situacao?: string; busca?: string; censo?: string }>;
 }) {
-  const { turma, situacao, busca } = await searchParams;
+  const { turma, situacao, busca, censo } = await searchParams;
+  const censoIncompleto = censo === "incompleto";
 
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
   const turmas = ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }));
@@ -24,7 +27,10 @@ export default async function AlunosPage({
       anoLetivoId: anoLetivo?.id,
       turmaId: turma || undefined,
       situacao: (situacao as SituacaoMatricula) || undefined,
-      aluno: busca ? { nome: { contains: busca } } : undefined,
+      aluno: {
+        nome: busca ? { contains: busca } : undefined,
+        OR: censoIncompleto ? [{ racaCor: null }, { filiacao1: null }, { sexo: null }] : undefined,
+      },
     },
     include: { aluno: true, turma: true },
     orderBy: { aluno: { nome: "asc" } },
@@ -42,6 +48,15 @@ export default async function AlunosPage({
           </Button>
         }
       />
+
+      {censoIncompleto && (
+        <div className="mb-5 flex items-center gap-2">
+          <Badge variant="amber">Filtro: dados incompletos para o censo</Badge>
+          <Link href="/alunos" className="text-sm font-medium text-cda-blue hover:underline">
+            Limpar filtro
+          </Link>
+        </div>
+      )}
 
       <Card className="mb-5 p-4">
         <form className="grid grid-cols-1 gap-3 sm:grid-cols-4">

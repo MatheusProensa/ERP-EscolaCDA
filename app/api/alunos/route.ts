@@ -2,11 +2,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
+  const filtro = req.nextUrl.searchParams.get("filtro");
+  const where =
+    filtro === "incompleto-censo"
+      ? {
+          matriculas: { some: { situacao: "ATIVA" as const } },
+          OR: [{ racaCor: null }, { filiacao1: null }, { sexo: null }],
+        }
+      : {};
+
   const alunos = await prisma.aluno.findMany({
+    where,
     include: { matriculas: { include: { turma: true } } },
     orderBy: { nome: "asc" },
   });
@@ -37,6 +47,20 @@ export async function POST(req: NextRequest) {
     restricoes,
     necessidadesEsp,
     autorizacaoImagem,
+    nomeSocial,
+    sexo,
+    racaCor,
+    povoIndigena,
+    nacionalidade,
+    municipioNasc,
+    ufNasc,
+    filiacao1,
+    filiacao2,
+    bolsaFamilia,
+    deficiencia,
+    tipoDeficiencia,
+    recursosAcessib,
+    nis,
     turmaId,
     valorMensalidade,
     responsavel,
@@ -72,6 +96,20 @@ export async function POST(req: NextRequest) {
         restricoes: restricoes || null,
         necessidadesEsp: necessidadesEsp || null,
         autorizacaoImagem: !!autorizacaoImagem,
+        nomeSocial: nomeSocial || null,
+        sexo: sexo || null,
+        racaCor: racaCor || null,
+        povoIndigena: povoIndigena || null,
+        nacionalidade: nacionalidade || "BRASILEIRA",
+        municipioNasc: municipioNasc || null,
+        ufNasc: ufNasc || null,
+        filiacao1: filiacao1 || null,
+        filiacao2: filiacao2 || null,
+        bolsaFamilia: !!bolsaFamilia,
+        deficiencia: !!deficiencia,
+        tipoDeficiencia: tipoDeficiencia || null,
+        recursosAcessib: recursosAcessib || null,
+        nis: nis || null,
         responsaveis: {
           create: {
             nome: responsavel.nome,

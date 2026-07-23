@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PhotoUpload } from "@/components/ui/PhotoUpload";
+import { CensoCampos } from "./CensoCampos";
 
 export function AlunoForm({ turmas }: { turmas: Turma[] }) {
   const router = useRouter();
@@ -41,6 +42,20 @@ export function AlunoForm({ turmas }: { turmas: Turma[] }) {
       restricoes: fd.get("restricoes"),
       necessidadesEsp: fd.get("necessidadesEsp"),
       autorizacaoImagem: fd.get("autorizacaoImagem") === "on",
+      nomeSocial: fd.get("nomeSocial"),
+      sexo: fd.get("sexo"),
+      racaCor: fd.get("racaCor"),
+      povoIndigena: fd.get("povoIndigena"),
+      nacionalidade: fd.get("nacionalidade"),
+      municipioNasc: fd.get("municipioNasc"),
+      ufNasc: fd.get("ufNasc"),
+      filiacao1: fd.get("filiacao1"),
+      filiacao2: fd.get("filiacao2"),
+      bolsaFamilia: fd.get("bolsaFamilia") === "on",
+      deficiencia: fd.get("deficiencia") === "on",
+      tipoDeficiencia: fd.get("tipoDeficiencia"),
+      recursosAcessib: fd.get("recursosAcessib"),
+      nis: fd.get("nis"),
       turmaId: fd.get("turmaId"),
       valorMensalidade: fd.get("valorMensalidade"),
       responsavel: {
@@ -87,11 +102,14 @@ export function AlunoForm({ turmas }: { turmas: Turma[] }) {
             onChange={(e) => setNome(e.target.value)}
           />
           <Input label="Data de nascimento" name="dataNascimento" type="date" required />
-          <Input label="Naturalidade" name="naturalidade" placeholder="Santa Maria/RS" />
           <Input label="CPF (opcional)" name="cpf" placeholder="000.000.000-00" />
           <Input label="RG (opcional)" name="rg" />
           <Input label="Certidão de nascimento" name="certidaoNascimento" className="sm:col-span-2" />
         </div>
+      </Card>
+
+      <Card title="Dados do Censo Escolar" className="p-5">
+        <CensoCampos />
       </Card>
 
       <Card title="Endereço" className="p-5">

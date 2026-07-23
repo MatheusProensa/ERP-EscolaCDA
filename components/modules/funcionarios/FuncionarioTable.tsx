@@ -9,7 +9,13 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { formatarData, formatarTelefone } from "@/lib/utils";
 
-export function FuncionarioTable({ funcionarios }: { funcionarios: Funcionario[] }) {
+export function FuncionarioTable({
+  funcionarios,
+  mostrarSetor = true,
+}: {
+  funcionarios: Funcionario[];
+  mostrarSetor?: boolean;
+}) {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
@@ -29,13 +35,15 @@ export function FuncionarioTable({ funcionarios }: { funcionarios: Funcionario[]
       <TableHead>
         <Th>Nome</Th>
         <Th>Cargo</Th>
-        <Th>Setor</Th>
+        {mostrarSetor && <Th>Setor</Th>}
         <Th>Telefone</Th>
         <Th>Admissão</Th>
         <Th>Situação</Th>
       </TableHead>
       <TableBody>
-        {funcionarios.length === 0 && <TableEmpty colSpan={6}>Nenhum funcionário encontrado.</TableEmpty>}
+        {funcionarios.length === 0 && (
+          <TableEmpty colSpan={mostrarSetor ? 6 : 5}>Nenhum funcionário encontrado.</TableEmpty>
+        )}
         {funcionarios.map((f) => (
           <Tr key={f.id}>
             <Td>
@@ -45,7 +53,7 @@ export function FuncionarioTable({ funcionarios }: { funcionarios: Funcionario[]
               </Link>
             </Td>
             <Td>{f.cargo}</Td>
-            <Td>{f.setor}</Td>
+            {mostrarSetor && <Td>{f.setor}</Td>}
             <Td>{f.telefone ? formatarTelefone(f.telefone) : "—"}</Td>
             <Td>{formatarData(f.admissao)}</Td>
             <Td>

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PhotoUpload } from "@/components/ui/PhotoUpload";
+import { CensoCampos } from "./CensoCampos";
 
 function paraInputDate(data: Date): string {
   return new Date(data).toISOString().slice(0, 10);
@@ -44,6 +45,20 @@ export function EditarAlunoForm({ aluno }: { aluno: Aluno }) {
       restricoes: fd.get("restricoes"),
       necessidadesEsp: fd.get("necessidadesEsp"),
       autorizacaoImagem: fd.get("autorizacaoImagem") === "on",
+      nomeSocial: fd.get("nomeSocial"),
+      sexo: fd.get("sexo"),
+      racaCor: fd.get("racaCor"),
+      povoIndigena: fd.get("povoIndigena"),
+      nacionalidade: fd.get("nacionalidade"),
+      municipioNasc: fd.get("municipioNasc"),
+      ufNasc: fd.get("ufNasc"),
+      filiacao1: fd.get("filiacao1"),
+      filiacao2: fd.get("filiacao2"),
+      bolsaFamilia: fd.get("bolsaFamilia") === "on",
+      deficiencia: fd.get("deficiencia") === "on",
+      tipoDeficiencia: fd.get("tipoDeficiencia"),
+      recursosAcessib: fd.get("recursosAcessib"),
+      nis: fd.get("nis"),
     };
 
     const res = await fetch(`/api/alunos/${aluno.id}`, {
@@ -87,7 +102,6 @@ export function EditarAlunoForm({ aluno }: { aluno: Aluno }) {
             required
             defaultValue={paraInputDate(aluno.dataNascimento)}
           />
-          <Input label="Naturalidade" name="naturalidade" defaultValue={aluno.naturalidade ?? ""} placeholder="Santa Maria/RS" />
           <Input label="CPF (opcional)" name="cpf" defaultValue={aluno.cpf ?? ""} placeholder="000.000.000-00" />
           <Input label="RG (opcional)" name="rg" defaultValue={aluno.rg ?? ""} />
           <Input
@@ -97,6 +111,10 @@ export function EditarAlunoForm({ aluno }: { aluno: Aluno }) {
             className="sm:col-span-2"
           />
         </div>
+      </Card>
+
+      <Card title="Dados do Censo Escolar" className="p-5">
+        <CensoCampos aluno={aluno} />
       </Card>
 
       <Card title="Endereço" className="p-5">

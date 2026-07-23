@@ -5,6 +5,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { AlunoCard } from "@/components/modules/alunos/AlunoCard";
+import { CensoSecao } from "@/components/modules/alunos/CensoSecao";
+import { ContratoSecao } from "@/components/modules/alunos/ContratoSecao";
 import { MensalidadeTable } from "@/components/modules/financeiro/MensalidadeTable";
 import { formatarTelefone } from "@/lib/utils";
 
@@ -18,6 +20,7 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
       matriculas: {
         include: {
           turma: true,
+          contrato: true,
           mensalidades: { include: { pagamentos: true }, orderBy: { mes: "asc" } },
         },
         orderBy: { dataMatricula: "desc" },
@@ -45,10 +48,15 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
             situacao={matriculaPrincipal?.situacao ?? "ATIVA"}
           />
 
+          <CensoSecao aluno={aluno} />
+
           {aluno.matriculas.map((m) => (
-            <Card key={m.id} title={`Mensalidades — ${m.turma.nome}`}>
-              <MensalidadeTable mensalidades={m.mensalidades} />
-            </Card>
+            <div key={m.id} className="flex flex-col gap-5">
+              <ContratoSecao matriculaId={m.id} turmaNome={m.turma.nome} contrato={m.contrato} />
+              <Card title={`Mensalidades — ${m.turma.nome}`}>
+                <MensalidadeTable mensalidades={m.mensalidades} />
+              </Card>
+            </div>
           ))}
         </div>
 

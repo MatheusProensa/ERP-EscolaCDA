@@ -229,6 +229,34 @@ function gerarTelefone(seed: number): string {
   return `559${numero}`;
 }
 
+// Sexo inferido pelo primeiro nome (dado não coletado no PDF de aniversariantes).
+const SEXO_POR_PRIMEIRO_NOME: Record<string, "M" | "F"> = {
+  Alice: "F", Rafaela: "F", Antonia: "F", Luísa: "F", Benício: "M", Allan: "M", Maythê: "F",
+  Camillo: "M", Marina: "F", Theodoro: "M", Mathias: "M", Isabela: "F", Matteo: "M", Arthur: "M",
+  Veronica: "F", Aurora: "F", Laís: "F", Théo: "M", Laura: "F", Luara: "F", Valentina: "F",
+  Luana: "F", Luca: "M", Antonella: "F", Elisa: "F", Miguel: "M", Júlia: "F", Vicente: "M",
+  Joaquim: "M", Gabriel: "M", Lucas: "M", Mercedita: "F", Marco: "M", Matheus: "M", Otto: "M",
+  Pedro: "M", Estela: "F", Luiza: "F", Bento: "M", Olívia: "F", Martín: "M", Maria: "F",
+  Davi: "M", Ana: "F", Eduardo: "M", Melissa: "F", Milena: "F", Enrico: "M", Bernardo: "M",
+  Rafael: "M", Mateus: "M", Martin: "M", Alisson: "M", Luisa: "F", Fernando: "M", Helena: "F",
+  Murilo: "M", Ornella: "F", Mariah: "F", Giovanna: "F", Livia: "F", Isis: "F", Gonçalo: "M",
+  Kauã: "M", Samuel: "M", Augusto: "M",
+};
+
+function inferirSexo(nomeCompleto: string): "M" | "F" {
+  return SEXO_POR_PRIMEIRO_NOME[nomeCompleto.split(" ")[0]] ?? "F";
+}
+
+function sortearRacaCor(): "BRANCA" | "PRETA" | "PARDA" | "AMARELA" | "INDIGENA" | "NAO_DECLARADA" {
+  const r = Math.random();
+  if (r < 0.68) return "BRANCA";
+  if (r < 0.86) return "PARDA";
+  if (r < 0.94) return "PRETA";
+  if (r < 0.97) return "AMARELA";
+  if (r < 0.99) return "INDIGENA";
+  return "NAO_DECLARADA";
+}
+
 async function main() {
   console.log("Limpando dados existentes...");
   await prisma.logAtividade.deleteMany();
@@ -246,6 +274,9 @@ async function main() {
   await prisma.movimentacaoEstoque.deleteMany();
   await prisma.itemEstoque.deleteMany();
   await prisma.muralAviso.deleteMany();
+  await prisma.emprestimoChave.deleteMany();
+  await prisma.chave.deleteMany();
+  await prisma.cardapio.deleteMany();
   await prisma.user.deleteMany();
 
   console.log("Criando usuários...");
@@ -283,6 +314,15 @@ async function main() {
   for (let i = 0; i < ALUNOS_REAIS.length; i++) {
     const { nome, nascimento, turmas: codigosTurma } = ALUNOS_REAIS[i];
 
+    const sobrenome = nome.split(" ").slice(-1)[0];
+    const nomeMae = `${aleatorio(["Maria", "Ana", "Rosa", "Fernanda", "Cristina", "Patrícia", "Simone", "Adriana"])} ${sobrenome}`;
+    const nomePai = `${aleatorio(["José", "Antônio", "Carlos", "Roberto", "Marcelo", "Fabiano", "Rodrigo", "Luiz"])} ${sobrenome}`;
+    const parentescoResponsavel = aleatorio(["Mãe", "Pai"] as const);
+
+    const racaCor = sortearRacaCor();
+    const bolsaFamilia = Math.random() < 0.15;
+    const deficiencia = Math.random() < 0.05;
+
     const aluno = await prisma.aluno.create({
       data: {
         nome,
@@ -294,16 +334,26 @@ async function main() {
         bairro: "Centro",
         cidade: "Santa Maria",
         cep: "97010-000",
+        sexo: inferirSexo(nome),
+        racaCor,
+        povoIndigena: racaCor === "INDIGENA" ? aleatorio(["Kaingang", "Guarani"]) : null,
+        nacionalidade: "BRASILEIRA",
+        municipioNasc: "Santa Maria",
+        ufNasc: "RS",
+        filiacao1: nomeMae,
+        filiacao2: nomePai,
+        bolsaFamilia,
+        nis: bolsaFamilia ? gerarCPF(5000 + i) : null,
+        deficiencia,
+        tipoDeficiencia: deficiencia ? "Transtorno do Espectro Autista (TEA)" : null,
+        recursosAcessib: deficiencia ? "Apoio de profissional auxiliar em sala e tempo adicional em avaliações." : null,
         responsaveis: {
           create: [
             (() => {
-              const parentesco = aleatorio(["Mãe", "Pai"]);
-              const primeiroNome = aleatorio(
-                parentesco === "Mãe" ? ["Maria", "Ana", "Rosa", "Fernanda"] : ["José", "Antônio", "Carlos", "Roberto"]
-              );
+              const nomeResponsavel = parentescoResponsavel === "Mãe" ? nomeMae : nomePai;
               return {
-                nome: `${primeiroNome} ${nome.split(" ").slice(-1)[0]}`,
-                parentesco,
+                nome: nomeResponsavel,
+                parentesco: parentescoResponsavel,
                 telefone: gerarTelefone(i),
                 email: `responsavel${i + 1}@exemplo.com`,
                 autorizado: true,
@@ -424,6 +474,42 @@ async function main() {
     await prisma.movimentacaoEstoque.create({
       data: { itemId: criado.id, tipo: "ENTRADA", quantidade: item.quantidade, motivo: "Estoque inicial" },
     });
+  }
+
+  console.log("Criando chaves...");
+  await prisma.chave.createMany({
+    data: [
+      { sala: "Sala 1 - Berçário" },
+      { sala: "Sala 2 - Maternal" },
+      { sala: "Sala 3 - Pré-escola" },
+      { sala: "Laboratório de Informática" },
+      { sala: "Sala de Vídeo" },
+      { sala: "Pátio Coberto" },
+    ],
+  });
+  const salaVideo = await prisma.chave.findFirst({ where: { sala: "Sala de Vídeo" } });
+  if (salaVideo) {
+    await prisma.emprestimoChave.create({
+      data: { chaveId: salaVideo.id, responsavel: "Rodrigo (Prof. Capoeira)" },
+    });
+  }
+
+  console.log("Criando cardápio da semana...");
+  const hoje = new Date();
+  const inicioSemana = new Date(Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()));
+  const diaSemanaAtual = inicioSemana.getUTCDay();
+  inicioSemana.setUTCDate(inicioSemana.getUTCDate() + (diaSemanaAtual === 0 ? -6 : 1 - diaSemanaAtual));
+  const cardapioSemana = [
+    { almoco: "Arroz, feijão, frango grelhado e salada", lanche: "Fruta e biscoito" },
+    { almoco: "Macarrão à bolonhesa e legumes no vapor", lanche: "Iogurte e granola" },
+    { almoco: "Arroz, feijão, carne moída e purê de batata", lanche: "Suco natural e bolo" },
+    { almoco: "Risoto de frango e salada verde", lanche: "Fruta picada" },
+    { almoco: "Arroz, feijão, peixe assado e legumes", lanche: "Sanduíche natural" },
+  ];
+  for (let i = 0; i < cardapioSemana.length; i++) {
+    const dia = new Date(inicioSemana);
+    dia.setUTCDate(dia.getUTCDate() + i);
+    await prisma.cardapio.create({ data: { data: dia, ...cardapioSemana[i] } });
   }
 
   console.log("Criando avisos do mural...");

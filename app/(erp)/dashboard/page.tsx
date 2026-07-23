@@ -3,6 +3,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricasGerais } from "@/components/modules/dashboard/MetricasGerais";
 import { TabelaInadimplentes, type Inadimplente } from "@/components/modules/dashboard/TabelaInadimplentes";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
+import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
 import { diasEmAtraso } from "@/lib/utils";
 
 export default async function DashboardPage() {
@@ -11,7 +12,7 @@ export default async function DashboardPage() {
   const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const fimMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
 
-  const [totalAlunos, turmasAtivas, mensalidadesAtrasadas, pagamentosDoMes, logs] = await Promise.all([
+  const [totalAlunos, turmasAtivas, mensalidadesAtrasadas, pagamentosDoMes, logs, censoIncompleto] = await Promise.all([
     prisma.matricula.count({
       where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
     }),
@@ -26,6 +27,12 @@ export default async function DashboardPage() {
       where: { dataPagamento: { gte: inicioMes, lt: fimMes } },
     }),
     prisma.logAtividade.findMany({ orderBy: { createdAt: "desc" }, take: 8 }),
+    prisma.aluno.count({
+      where: {
+        matriculas: { some: { situacao: "ATIVA" } },
+        OR: [{ racaCor: null }, { filiacao1: null }, { sexo: null }],
+      },
+    }),
   ]);
 
   const porAluno = new Map<string, Inadimplente>();
@@ -59,6 +66,10 @@ export default async function DashboardPage() {
           receitaMes={pagamentosDoMes._sum.valor ?? 0}
           turmasAtivas={turmasAtivas}
         />
+      </div>
+
+      <div className="mb-5">
+        <CensoAlerta quantidade={censoIncompleto} />
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">

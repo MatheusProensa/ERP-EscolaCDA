@@ -2,10 +2,12 @@ import { UserPlus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { FuncionarioTable } from "@/components/modules/funcionarios/FuncionarioTable";
+import { SETORES, agruparPorSetor } from "@/lib/utils";
 
 export default async function FuncionariosPage({
   searchParams,
@@ -13,12 +15,6 @@ export default async function FuncionariosPage({
   searchParams: Promise<{ setor?: string; busca?: string }>;
 }) {
   const { setor, busca } = await searchParams;
-
-  const setores = await prisma.funcionario.findMany({
-    select: { setor: true },
-    distinct: ["setor"],
-    orderBy: { setor: "asc" },
-  });
 
   const funcionarios = await prisma.funcionario.findMany({
     where: {
@@ -28,11 +24,13 @@ export default async function FuncionariosPage({
     orderBy: { nome: "asc" },
   });
 
+  const grupos = agruparPorSetor(funcionarios);
+
   return (
     <div>
       <PageHeader
         title="Funcionários"
-        subtitle={`${funcionarios.length} funcionário(s) encontrado(s)`}
+        subtitle={`${funcionarios.length} funcionário(s) encontrado(s), organizados por setor`}
         action={
           <Button href="/funcionarios/novo">
             <UserPlus className="h-4 w-4" />
@@ -46,9 +44,9 @@ export default async function FuncionariosPage({
           <Input name="busca" placeholder="Buscar por nome..." defaultValue={busca} />
           <Select name="setor" defaultValue={setor ?? ""}>
             <option value="">Todos os setores</option>
-            {setores.map((s) => (
-              <option key={s.setor} value={s.setor}>
-                {s.setor}
+            {SETORES.map((s) => (
+              <option key={s} value={s}>
+                {s}
               </option>
             ))}
           </Select>
@@ -58,9 +56,23 @@ export default async function FuncionariosPage({
         </form>
       </Card>
 
-      <Card>
-        <FuncionarioTable funcionarios={funcionarios} />
-      </Card>
+      {grupos.length === 0 && (
+        <Card>
+          <FuncionarioTable funcionarios={[]} />
+        </Card>
+      )}
+
+      <div className="flex flex-col gap-5">
+        {grupos.map((grupo) => (
+          <Card
+            key={grupo.setor}
+            title={grupo.setor}
+            action={<Badge variant="blue">{grupo.itens.length}</Badge>}
+          >
+            <FuncionarioTable funcionarios={grupo.itens} mostrarSetor={false} />
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }

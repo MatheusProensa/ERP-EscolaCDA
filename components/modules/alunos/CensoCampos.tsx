@@ -11,8 +11,8 @@ function Obrigatorio() {
 }
 
 export function CensoCampos({ aluno }: { aluno?: Aluno }) {
-  const [nacionalidade, setNacionalidade] = useState(aluno?.nacionalidade ?? "BRASILEIRA");
-  const [racaCor, setRacaCor] = useState(aluno?.racaCor ?? "");
+  const [nacionalidade, setNacionalidade] = useState<string>(aluno?.nacionalidade ?? "BRASILEIRA");
+  const [racaCor, setRacaCor] = useState<string>(aluno?.racaCor ?? "");
   const [deficiencia, setDeficiencia] = useState(aluno?.deficiencia ?? false);
 
   return (

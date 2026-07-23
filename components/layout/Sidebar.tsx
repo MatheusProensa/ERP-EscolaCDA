@@ -8,6 +8,11 @@ import {
   Wallet,
   GraduationCap,
   UserCog,
+  Megaphone,
+  Package,
+  FileBarChart,
+  UtensilsCrossed,
+  KeyRound,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -27,7 +32,18 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Financeiro", href: "/financeiro", icon: Wallet },
       { label: "Acadêmico", href: "/academico", icon: GraduationCap },
       { label: "Funcionários", href: "/funcionarios", icon: UserCog },
+      { label: "Estoque", href: "/estoque", icon: Package },
+      { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
+      { label: "Chaves", href: "/chaves", icon: KeyRound },
     ],
+  },
+  {
+    label: "Comunicação",
+    items: [{ label: "Mural", href: "/mural", icon: Megaphone }],
+  },
+  {
+    label: "Análise",
+    items: [{ label: "Relatórios", href: "/relatorios", icon: FileBarChart }],
   },
 ];
 

@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "cross-env NEXT_TELEMETRY_DISABLED=1 next dev",
+    "dev": "cross-env NEXT_TELEMETRY_DISABLED=1 next dev -p 3100",
     "build": "cross-env NEXT_TELEMETRY_DISABLED=1 next build",
-    "start": "cross-env NEXT_TELEMETRY_DISABLED=1 next start",
+    "start": "cross-env NEXT_TELEMETRY_DISABLED=1 next start -p 3100",
     "lint": "eslint"
   },
   "prisma": {
@@ -16,8 +16,9 @@
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^3.0.3",
     "lucide-react": "^1.25.0",
-    "next": "16.2.10",
+    "next": "^16.2.11",
     "next-auth": "^5.0.0-beta.31",
+    "pdf-lib": "^1.17.1",
     "prisma": "^6.19.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -32,7 +33,7 @@
     "cross-env": "^10.1.0",
     "dotenv": "^17.4.2",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "^16.2.11",
     "tailwindcss": "^4",
     "tsx": "^4.23.1",
     "typescript": "^5"

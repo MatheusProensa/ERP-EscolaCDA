@@ -6,16 +6,20 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
+import { DocumentosFuncionario } from "@/components/modules/funcionarios/DocumentosFuncionario";
 import { formatarCPF, formatarData, formatarTelefone } from "@/lib/utils";
 
 export default async function FuncionarioPerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const funcionario = await prisma.funcionario.findUnique({ where: { id } });
+  const funcionario = await prisma.funcionario.findUnique({
+    where: { id },
+    include: { documentos: { orderBy: { createdAt: "desc" } } },
+  });
 
   if (!funcionario) notFound();
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto flex max-w-2xl flex-col gap-5">
       <PageHeader
         title={funcionario.nome}
         breadcrumb={[{ label: "Funcionários", href: "/funcionarios" }, { label: funcionario.nome }]}
@@ -57,6 +61,8 @@ export default async function FuncionarioPerfilPage({ params }: { params: Promis
           </div>
         </div>
       </Card>
+
+      <DocumentosFuncionario funcionarioId={funcionario.id} documentos={funcionario.documentos} />
     </div>
   );
 }

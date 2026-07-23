@@ -8,8 +8,9 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -202,16 +203,27 @@ model Contrato {
 }
 
 model Funcionario {
-  id        String   @id @default(cuid())
+  id        String                 @id @default(cuid())
   nome      String
-  cpf       String   @unique
+  cpf       String                 @unique
   cargo     String
   setor     String
   telefone  String?
   email     String?
   admissao  DateTime
-  ativo     Boolean  @default(true)
-  createdAt DateTime @default(now())
+  ativo     Boolean                @default(true)
+  documentos DocumentoFuncionario[]
+  createdAt DateTime               @default(now())
+}
+
+model DocumentoFuncionario {
+  id            String      @id @default(cuid())
+  funcionario   Funcionario @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  funcionarioId String
+  tipo          String
+  nomeArquivo   String
+  arquivo       String
+  createdAt     DateTime    @default(now())
 }
 
 model ItemEstoque {

@@ -15,6 +15,37 @@ export function ordenarTurmas<T extends { nome: string }>(turmas: T[]): T[] {
   });
 }
 
+export const SETORES = [
+  "Direção",
+  "Coordenação",
+  "Secretaria",
+  "Financeiro",
+  "Pedagógico",
+  "Nutrição",
+  "Cozinha",
+  "Serviços Gerais",
+  "Marketing",
+  "Administrativo",
+];
+
+export function agruparPorSetor<T extends { setor: string }>(funcionarios: T[]): { setor: string; itens: T[] }[] {
+  const porSetor = new Map<string, T[]>();
+  for (const f of funcionarios) {
+    if (!porSetor.has(f.setor)) porSetor.set(f.setor, []);
+    porSetor.get(f.setor)!.push(f);
+  }
+  return Array.from(porSetor.entries())
+    .map(([setor, itens]) => ({ setor, itens }))
+    .sort((a, b) => {
+      const ia = SETORES.indexOf(a.setor);
+      const ib = SETORES.indexOf(b.setor);
+      if (ia === -1 && ib === -1) return a.setor.localeCompare(b.setor, "pt-BR");
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+}
+
 export function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }

@@ -6,19 +6,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-
-const SETORES = [
-  "Direção",
-  "Coordenação",
-  "Secretaria",
-  "Financeiro",
-  "Pedagógico",
-  "Nutrição",
-  "Cozinha",
-  "Serviços Gerais",
-  "Marketing",
-  "Administrativo",
-];
+import { SETORES } from "@/lib/utils";
 
 export function FuncionarioForm() {
   const router = useRouter();
