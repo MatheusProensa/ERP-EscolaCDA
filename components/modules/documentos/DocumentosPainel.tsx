@@ -2,18 +2,20 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, FileText, Search, Trash2 } from "lucide-react";
+import { ExternalLink, FileText, Pencil, Search, Trash2 } from "lucide-react";
 import type { Documento, DocumentoCategoria } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Segmented } from "@/components/ui/Segmented";
 import { Input } from "@/components/ui/Input";
 import { CATEGORIAS_DOCUMENTO, labelCategoria } from "./categorias";
+import { EditarDocumentoModal } from "./EditarDocumentoModal";
 
 export function DocumentosPainel({ documentos }: { documentos: Documento[] }) {
   const router = useRouter();
   const [categoria, setCategoria] = useState<DocumentoCategoria | "TODOS">("TODOS");
   const [busca, setBusca] = useState("");
   const [removendoId, setRemovendoId] = useState<string | null>(null);
+  const [editando, setEditando] = useState<Documento | null>(null);
 
   const filtrados = useMemo(() => {
     return documentos.filter((d) => {
@@ -94,6 +96,13 @@ export function DocumentosPainel({ documentos }: { documentos: Documento[] }) {
                     <ExternalLink className="h-4 w-4" />
                   </a>
                   <button
+                    onClick={() => setEditando(doc)}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg"
+                    title="Editar"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
                     onClick={() => handleRemover(doc.id)}
                     disabled={removendoId === doc.id}
                     className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
@@ -107,6 +116,8 @@ export function DocumentosPainel({ documentos }: { documentos: Documento[] }) {
           </div>
         </Card>
       ))}
+
+      <EditarDocumentoModal documento={editando} onClose={() => setEditando(null)} />
     </div>
   );
 }

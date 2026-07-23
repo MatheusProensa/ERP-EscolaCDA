@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileDown, Plus, Trash2 } from "lucide-react";
+import { FileDown, Pencil, Plus, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -42,6 +42,7 @@ export function PontoPainel({
 }) {
   const router = useRouter();
   const [modalAberto, setModalAberto] = useState(false);
+  const [editando, setEditando] = useState<RegistroComSaldo | null>(null);
   const [removendoId, setRemovendoId] = useState<string | null>(null);
 
   const anosDisponiveis = useMemo(() => {
@@ -141,13 +142,21 @@ export function PontoPainel({
                   {formatarMinutos(r.saldoAcumulado)}
                 </Td>
                 <Td>
-                  <button
-                    onClick={() => handleRemover(r.id)}
-                    disabled={removendoId === r.id}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setEditando(r)}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      onClick={() => handleRemover(r.id)}
+                      disabled={removendoId === r.id}
+                      className="flex h-7 w-7 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </Td>
               </Tr>
             ))}
@@ -173,6 +182,12 @@ export function PontoPainel({
       </Card>
 
       <NovoRegistroPontoModal funcionarioId={funcionarioId} open={modalAberto} onClose={() => setModalAberto(false)} />
+      <NovoRegistroPontoModal
+        funcionarioId={funcionarioId}
+        open={!!editando}
+        onClose={() => setEditando(null)}
+        registro={editando}
+      />
     </>
   );
 }

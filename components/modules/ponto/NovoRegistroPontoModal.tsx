@@ -2,11 +2,12 @@
 
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import type { RegistroPonto } from "@prisma/client";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { paraMinutos } from "@/lib/ponto";
+import { formatarMinutos, paraMinutos } from "@/lib/ponto";
 
 const OCORRENCIAS = [
   { value: "NORMAL", label: "Normal" },
@@ -22,14 +23,17 @@ export function NovoRegistroPontoModal({
   funcionarioId,
   open,
   onClose,
+  registro,
 }: {
   funcionarioId: string;
   open: boolean;
   onClose: () => void;
+  registro?: RegistroPonto | null;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const editando = !!registro;
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -38,13 +42,16 @@ export function NovoRegistroPontoModal({
 
     const fd = new FormData(e.currentTarget);
     const previstoStr = String(fd.get("previsto") || "").trim();
+    // Em edição a data fica travada (disabled), então inputs desabilitados não
+    // entram no FormData — usa a data original do registro nesse caso.
+    const data = registro ? dataDefault : fd.get("data");
 
     const res = await fetch("/api/ponto", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         funcionarioId,
-        data: fd.get("data"),
+        data,
         entrada1: fd.get("entrada1"),
         saida1: fd.get("saida1"),
         entrada2: fd.get("entrada2"),
@@ -64,36 +71,41 @@ export function NovoRegistroPontoModal({
     }
 
     onClose();
-    (e.target as HTMLFormElement).reset();
     router.refresh();
   }
 
   const hoje = new Date().toISOString().slice(0, 10);
+  const dataDefault = registro ? new Date(registro.data).toISOString().slice(0, 10) : hoje;
 
   return (
-    <Modal open={open} onClose={onClose} title="Lançar ponto manual">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <Input label="Data" name="data" type="date" defaultValue={hoje} required />
+    <Modal open={open} onClose={onClose} title={editando ? "Editar ponto manual" : "Lançar ponto manual"}>
+      <form key={registro?.id ?? "novo"} onSubmit={handleSubmit} className="flex flex-col gap-4">
+        <Input label="Data" name="data" type="date" defaultValue={dataDefault} disabled={editando} required />
 
         <div className="grid grid-cols-2 gap-3">
-          <Input label="Entrada (manhã)" name="entrada1" type="time" />
-          <Input label="Saída (almoço)" name="saida1" type="time" />
-          <Input label="Retorno (tarde)" name="entrada2" type="time" />
-          <Input label="Saída" name="saida2" type="time" />
+          <Input label="Entrada (manhã)" name="entrada1" type="time" defaultValue={registro?.entrada1 ?? ""} />
+          <Input label="Saída (almoço)" name="saida1" type="time" defaultValue={registro?.saida1 ?? ""} />
+          <Input label="Retorno (tarde)" name="entrada2" type="time" defaultValue={registro?.entrada2 ?? ""} />
+          <Input label="Saída" name="saida2" type="time" defaultValue={registro?.saida2 ?? ""} />
         </div>
 
         <div className="grid grid-cols-2 gap-3">
-          <Select label="Ocorrência" name="ocorrencia" defaultValue="NORMAL">
+          <Select label="Ocorrência" name="ocorrencia" defaultValue={registro?.ocorrencia ?? "NORMAL"}>
             {OCORRENCIAS.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>
             ))}
           </Select>
-          <Input label="Horas previstas (opcional)" name="previsto" placeholder="4:30" />
+          <Input
+            label="Horas previstas (opcional)"
+            name="previsto"
+            placeholder="4:30"
+            defaultValue={registro && registro.minutosPrevistos > 0 ? formatarMinutos(registro.minutosPrevistos) : ""}
+          />
         </div>
 
-        <Input label="Observação (opcional)" name="observacao" />
+        <Input label="Observação (opcional)" name="observacao" defaultValue={registro?.observacao ?? ""} />
 
         {error && <p className="text-sm text-cda-red">{error}</p>}
         <div className="flex justify-end gap-3">
@@ -101,7 +113,7 @@ export function NovoRegistroPontoModal({
             Cancelar
           </Button>
           <Button type="submit" loading={loading}>
-            Salvar registro
+            {editando ? "Salvar alterações" : "Salvar registro"}
           </Button>
         </div>
       </form>
