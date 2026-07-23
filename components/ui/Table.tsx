@@ -45,8 +45,20 @@ export function Tr({
   );
 }
 
-export function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={cn("px-4 py-3 text-cda-text", className)}>{children}</td>;
+export function Td({
+  children,
+  className,
+  title,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  title?: string;
+}) {
+  return (
+    <td className={cn("px-4 py-3 text-cda-text", className)} title={title}>
+      {children}
+    </td>
+  );
 }
 
 export function TableEmpty({ colSpan, children }: { colSpan: number; children: React.ReactNode }) {

@@ -21,14 +21,22 @@ export function formatarMinutos(minutos: number): string {
   return `${sinal}${h}:${String(m).padStart(2, "0")}`;
 }
 
-export type RegistroComSaldo = RegistroPonto & { saldoDiario: number; saldoAcumulado: number };
+// Tolerância diária da CLT (art. 58 §1º): variação de até 10 minutos entre
+// horas trabalhadas e previstas não gera desconto nem crédito no banco de
+// horas. Só afeta o saldo (banco de horas) — as horas trabalhadas em si
+// continuam exibindo o valor batido no ponto, sem arredondar.
+const TOLERANCIA_MINUTOS = 10;
+
+export type RegistroComSaldo = RegistroPonto & { saldoDiario: number; saldoAcumulado: number; dentroTolerancia: boolean };
 
 export function comSaldos(registros: RegistroPonto[]): RegistroComSaldo[] {
   const ordenados = [...registros].sort((a, b) => a.data.getTime() - b.data.getTime());
   let acumulado = 0;
   return ordenados.map((r) => {
-    const saldoDiario = r.minutosTrabalhados - r.minutosPrevistos;
+    const diferenca = r.minutosTrabalhados - r.minutosPrevistos;
+    const dentroTolerancia = diferenca !== 0 && Math.abs(diferenca) <= TOLERANCIA_MINUTOS;
+    const saldoDiario = dentroTolerancia ? 0 : diferenca;
     acumulado += saldoDiario;
-    return { ...r, saldoDiario, saldoAcumulado: acumulado };
+    return { ...r, saldoDiario, saldoAcumulado: acumulado, dentroTolerancia };
   });
 }

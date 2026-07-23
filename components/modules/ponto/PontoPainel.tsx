@@ -61,6 +61,7 @@ export function PontoPainel({
 
   const totalTrabalhado = doMes.reduce((s, r) => s + r.minutosTrabalhados, 0);
   const totalPrevisto = doMes.reduce((s, r) => s + r.minutosPrevistos, 0);
+  const totalSaldo = doMes.reduce((s, r) => s + r.saldoDiario, 0);
 
   function mudarPeriodo(mes: number, ano: number) {
     router.push(`/ponto/${funcionarioId}?mes=${mes}&ano=${ano}`);
@@ -135,8 +136,12 @@ export function PontoPainel({
                 <Td>{r.saida2 ?? "—"}</Td>
                 <Td>{OCORRENCIA_LABEL[r.ocorrencia]}</Td>
                 <Td>{formatarMinutos(r.minutosTrabalhados)}</Td>
-                <Td className={r.saldoDiario < 0 ? "text-cda-red" : "text-cda-green"}>
+                <Td
+                  className={r.saldoDiario < 0 ? "text-cda-red" : "text-cda-green"}
+                  title={r.dentroTolerancia ? "Dentro da tolerância de 10 min (CLT) — não gera débito nem crédito" : undefined}
+                >
                   {formatarMinutos(r.saldoDiario)}
+                  {r.dentroTolerancia && <span className="ml-1 text-cda-text3">(tolerância)</span>}
                 </Td>
                 <Td className={r.saldoAcumulado < 0 ? "text-cda-red" : "text-cda-green"}>
                   {formatarMinutos(r.saldoAcumulado)}
@@ -173,8 +178,8 @@ export function PontoPainel({
             </span>
             <span className="text-cda-text2">
               Saldo do mês:{" "}
-              <strong className={totalTrabalhado - totalPrevisto < 0 ? "text-cda-red" : "text-cda-green"}>
-                {formatarMinutos(totalTrabalhado - totalPrevisto)}
+              <strong className={totalSaldo < 0 ? "text-cda-red" : "text-cda-green"}>
+                {formatarMinutos(totalSaldo)}
               </strong>
             </span>
           </div>

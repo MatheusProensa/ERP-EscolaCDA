@@ -119,6 +119,7 @@ export async function GET(req: NextRequest) {
 
   let totalTrabalhado = 0;
   let totalPrevisto = 0;
+  let totalSaldo = 0;
   let index = 0;
 
   for (const r of filtrados) {
@@ -158,6 +159,7 @@ export async function GET(req: NextRequest) {
 
     totalTrabalhado += r.minutosTrabalhados;
     totalPrevisto += r.minutosPrevistos;
+    totalSaldo += r.saldoDiario;
     y -= rowH;
     index++;
   }
@@ -169,8 +171,7 @@ export async function GET(req: NextRequest) {
 
   y -= 16;
   page.drawRectangle({ x: tableX, y: y - 24, width: tableWidth, height: 24, color: NAVY });
-  const saldoFinal = totalTrabalhado - totalPrevisto;
-  const resumo = `Total trabalhado: ${formatarMinutos(totalTrabalhado)}   ·   Previsto: ${formatarMinutos(totalPrevisto)}   ·   Saldo do período: ${formatarMinutos(saldoFinal)}`;
+  const resumo = `Total trabalhado: ${formatarMinutos(totalTrabalhado)}   ·   Previsto: ${formatarMinutos(totalPrevisto)}   ·   Saldo do período: ${formatarMinutos(totalSaldo)}`;
   page.drawText(resumo, { x: tableX + 8, y: y - 16, size: 9, font: fontBold, color: WHITE });
 
   const bytes = await doc.save();
