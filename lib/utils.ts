@@ -4,14 +4,19 @@ const ORDEM_TURMAS = [
   "Contraturno I", "Contraturno II", "Contraturno III", "Contraturno IV", "Contraturno V",
 ];
 
+function indiceOrdemTurma(nome: string): number {
+  return ORDEM_TURMAS.findIndex((base) => nome === base || nome.startsWith(`${base} - `));
+}
+
 export function ordenarTurmas<T extends { nome: string }>(turmas: T[]): T[] {
   return [...turmas].sort((a, b) => {
-    const ia = ORDEM_TURMAS.indexOf(a.nome);
-    const ib = ORDEM_TURMAS.indexOf(b.nome);
+    const ia = indiceOrdemTurma(a.nome);
+    const ib = indiceOrdemTurma(b.nome);
     if (ia === -1 && ib === -1) return a.nome.localeCompare(b.nome, "pt-BR");
     if (ia === -1) return 1;
     if (ib === -1) return -1;
-    return ia - ib;
+    if (ia !== ib) return ia - ib;
+    return a.nome.localeCompare(b.nome, "pt-BR");
   });
 }
 

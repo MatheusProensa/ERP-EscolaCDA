@@ -51,7 +51,7 @@ export function FuncionarioForm() {
       <Card title="Dados do funcionário" className="p-5">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input label="Nome completo" name="nome" required className="sm:col-span-2" />
-          <Input label="CPF" name="cpf" required placeholder="000.000.000-00" />
+          <Input label="CPF (opcional)" name="cpf" placeholder="000.000.000-00" />
           <Input label="Data de admissão" name="admissao" type="date" required />
           <Input label="Cargo" name="cargo" required placeholder="Professora" />
           <Select label="Setor" name="setor" required defaultValue="">

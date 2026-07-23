@@ -12,6 +12,7 @@ export default async function TurmasPage() {
   });
 
   const regulares = ordenarTurmas(turmas.filter((t) => t.turno === "TARDE"));
+  const integral = ordenarTurmas(turmas.filter((t) => t.turno === "INTEGRAL"));
   const contraturno = ordenarTurmas(turmas.filter((t) => t.turno === "MANHA"));
 
   return (
@@ -29,6 +30,22 @@ export default async function TurmasPage() {
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {regulares.map((t) => (
+            <TurmaCard
+              key={t.id}
+              id={t.id}
+              nome={t.nome}
+              turno={t.turno}
+              capacidade={t.capacidade}
+              matriculados={t._count.matriculas}
+            />
+          ))}
+        </div>
+      </section>
+
+      <section className="mb-8">
+        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-cda-text2">Integral</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {integral.map((t) => (
             <TurmaCard
               key={t.id}
               id={t.id}

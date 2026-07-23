@@ -6,8 +6,8 @@ export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const funcionarios = await prisma.funcionario.findMany({ orderBy: { nome: "asc" } });
-  return NextResponse.json(funcionarios);
+  const documentos = await prisma.documento.findMany({ orderBy: [{ categoria: "asc" }, { titulo: "asc" }] });
+  return NextResponse.json(documentos);
 }
 
 export async function POST(req: NextRequest) {
@@ -15,23 +15,21 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const body = await req.json();
-  const { nome, cpf, cargo, setor, telefone, email, admissao } = body;
+  const { titulo, categoria, subcategoria, arquivoUrl, descricao } = body;
 
-  if (!nome || !cargo || !setor || !admissao) {
+  if (!titulo || !categoria || !arquivoUrl) {
     return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
   }
 
-  const funcionario = await prisma.funcionario.create({
+  const documento = await prisma.documento.create({
     data: {
-      nome,
-      cpf: cpf || null,
-      cargo,
-      setor,
-      telefone: telefone || null,
-      email: email || null,
-      admissao: new Date(admissao),
+      titulo,
+      categoria,
+      subcategoria: subcategoria || null,
+      arquivoUrl,
+      descricao: descricao || null,
     },
   });
 
-  return NextResponse.json(funcionario, { status: 201 });
+  return NextResponse.json(documento, { status: 201 });
 }

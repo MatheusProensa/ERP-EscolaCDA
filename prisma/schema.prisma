@@ -52,49 +52,50 @@ model Turma {
 enum Turno {
   MANHA
   TARDE
+  INTEGRAL
 }
 
 model Aluno {
-  id                  String        @id @default(cuid())
-  nome                String
-  nomeSocial          String?
-  dataNascimento      DateTime
-  naturalidade        String?
-  cpf                 String?       @unique
-  rg                  String?
-  certidaoNascimento  String?
-  foto                String?
-  endereco            String?
-  bairro              String?
-  cidade              String?
-  cep                 String?
-  tipoSanguineo       String?
-  convenioMedico      String?
-  medicacaoContinua   String?
-  alergias            String?
-  restricoes          String?
-  necessidadesEsp     String?
-  autorizacaoImagem   Boolean       @default(false)
+  id                 String   @id @default(cuid())
+  nome               String
+  nomeSocial         String?
+  dataNascimento     DateTime
+  naturalidade       String?
+  cpf                String?  @unique
+  rg                 String?
+  certidaoNascimento String?
+  foto               String?
+  endereco           String?
+  bairro             String?
+  cidade             String?
+  cep                String?
+  tipoSanguineo      String?
+  convenioMedico     String?
+  medicacaoContinua  String?
+  alergias           String?
+  restricoes         String?
+  necessidadesEsp    String?
+  autorizacaoImagem  Boolean  @default(false)
 
   // Dados do Censo Escolar (Educacenso)
-  sexo                Sexo?
-  racaCor             RacaCor?
-  povoIndigena        String?
-  nacionalidade       Nacionalidade @default(BRASILEIRA)
-  municipioNasc       String?
-  ufNasc              String?
-  filiacao1           String?
-  filiacao2           String?
-  bolsaFamilia        Boolean       @default(false)
-  deficiencia         Boolean       @default(false)
-  tipoDeficiencia     String?
-  recursosAcessib     String?
-  nis                 String?
+  sexo            Sexo?
+  racaCor         RacaCor?
+  povoIndigena    String?
+  nacionalidade   Nacionalidade @default(BRASILEIRA)
+  municipioNasc   String?
+  ufNasc          String?
+  filiacao1       String?
+  filiacao2       String?
+  bolsaFamilia    Boolean       @default(false)
+  deficiencia     Boolean       @default(false)
+  tipoDeficiencia String?
+  recursosAcessib String?
+  nis             String?
 
-  matriculas          Matricula[]
-  responsaveis        Responsavel[]
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  matriculas   Matricula[]
+  responsaveis Responsavel[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 }
 
 enum Sexo {
@@ -203,17 +204,21 @@ model Contrato {
 }
 
 model Funcionario {
-  id        String                 @id @default(cuid())
-  nome      String
-  cpf       String                 @unique
-  cargo     String
-  setor     String
-  telefone  String?
-  email     String?
-  admissao  DateTime
-  ativo     Boolean                @default(true)
-  documentos DocumentoFuncionario[]
-  createdAt DateTime               @default(now())
+  id             String                 @id @default(cuid())
+  nome           String
+  cpf            String?                @unique
+  cargo          String
+  setor          String
+  empresa        String?
+  telefone       String?
+  email          String?
+  admissao       DateTime
+  ativo          Boolean                @default(true)
+  valeTransporte Boolean                @default(false)
+  documentos     DocumentoFuncionario[]
+  registrosPonto RegistroPonto[]
+  ferias         Ferias[]
+  createdAt      DateTime               @default(now())
 }
 
 model DocumentoFuncionario {
@@ -227,14 +232,14 @@ model DocumentoFuncionario {
 }
 
 model ItemEstoque {
-  id            String                 @id @default(cuid())
+  id            String                @id @default(cuid())
   nome          String
   categoria     String
   unidade       String
-  quantidade    Int                    @default(0)
-  minimo        Int                    @default(5)
+  quantidade    Int                   @default(0)
+  minimo        Int                   @default(5)
   movimentacoes MovimentacaoEstoque[]
-  updatedAt     DateTime               @updatedAt
+  updatedAt     DateTime              @updatedAt
 }
 
 model MovimentacaoEstoque {
@@ -321,4 +326,72 @@ model Nota {
   updatedAt    DateTime   @updatedAt
 
   @@unique([matriculaId, disciplinaId, periodo])
+}
+
+enum DocumentoCategoria {
+  LEGALIZACAO
+  FINANCEIRO
+  RH
+  CONTRATOS
+  INSTITUCIONAL
+}
+
+model Documento {
+  id           String             @id @default(cuid())
+  titulo       String
+  categoria    DocumentoCategoria
+  subcategoria String?
+  arquivoUrl   String
+  origem       String             @default("Google Drive")
+  descricao    String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+}
+
+enum PontoTipo {
+  MANUAL
+  ELETRONICO
+}
+
+enum PontoOcorrencia {
+  NORMAL
+  FALTA
+  FERIADO
+  FERIAS
+  ATESTADO
+  FOLGA
+  DSR
+}
+
+model RegistroPonto {
+  id                 String          @id @default(cuid())
+  funcionario        Funcionario     @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  funcionarioId      String
+  data               DateTime
+  entrada1           String?
+  saida1             String?
+  entrada2           String?
+  saida2             String?
+  entrada3           String?
+  saida3             String?
+  minutosPrevistos   Int             @default(0)
+  minutosTrabalhados Int             @default(0)
+  ocorrencia         PontoOcorrencia @default(NORMAL)
+  tipo               PontoTipo       @default(MANUAL)
+  observacao         String?
+  createdAt          DateTime        @default(now())
+
+  @@unique([funcionarioId, data, tipo])
+}
+
+model Ferias {
+  id            String      @id @default(cuid())
+  funcionario   Funcionario @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  funcionarioId String
+  ano           Int
+  dataInicio    DateTime
+  dataFim       DateTime
+  dias          Int
+  tipo          String?
+  createdAt     DateTime    @default(now())
 }

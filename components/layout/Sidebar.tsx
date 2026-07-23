@@ -13,6 +13,8 @@ import {
   FileBarChart,
   UtensilsCrossed,
   KeyRound,
+  FileText,
+  Clock,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -32,9 +34,11 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Financeiro", href: "/financeiro", icon: Wallet },
       { label: "Acadêmico", href: "/academico", icon: GraduationCap },
       { label: "Funcionários", href: "/funcionarios", icon: UserCog },
+      { label: "Ponto", href: "/ponto", icon: Clock },
       { label: "Estoque", href: "/estoque", icon: Package },
       { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
       { label: "Chaves", href: "/chaves", icon: KeyRound },
+      { label: "Documentos", href: "/documentos", icon: FileText },
     ],
   },
   {

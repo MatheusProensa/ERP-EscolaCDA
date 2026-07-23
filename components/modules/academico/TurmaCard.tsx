@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 export interface TurmaCardProps {
   id: string;
   nome: string;
-  turno: "MANHA" | "TARDE";
+  turno: "MANHA" | "TARDE" | "INTEGRAL";
   capacidade: number;
   matriculados: number;
 }
@@ -14,6 +14,7 @@ export interface TurmaCardProps {
 const TURNO_STYLE = {
   TARDE: { label: "Tarde", bg: "#EBF4FF", text: "#1A6FD8" },
   MANHA: { label: "Manhã", bg: "#EEEDFE", text: "#3C3489" },
+  INTEGRAL: { label: "Integral", bg: "#FEF3E2", text: "#D97706" },
 };
 
 export function TurmaCard({ id, nome, turno, capacidade, matriculados }: TurmaCardProps) {
