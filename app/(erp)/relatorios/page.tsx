@@ -1,4 +1,4 @@
-import { Download, AlertCircle, TrendingUp, Users } from "lucide-react";
+import { Download, FileText, AlertCircle, TrendingUp, Users, Boxes } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 
@@ -24,12 +24,19 @@ const RELATORIOS = [
     icon: Users,
     cor: "#1A6FD8",
   },
+  {
+    titulo: "Estoque",
+    descricao: "Itens cadastrados, quantidade, mínimo e situação de reposição.",
+    href: "/api/relatorios/estoque",
+    icon: Boxes,
+    cor: "#D97706",
+  },
 ];
 
 export default function RelatoriosPage() {
   return (
     <div>
-      <PageHeader title="Relatórios" subtitle="Exportações em CSV para planilhas" />
+      <PageHeader title="Relatórios" subtitle="Exportações em CSV ou PDF" />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {RELATORIOS.map((r) => {
@@ -44,13 +51,22 @@ export default function RelatoriosPage() {
               </div>
               <h3 className="text-sm font-semibold text-cda-text">{r.titulo}</h3>
               <p className="mt-1 flex-1 text-sm text-cda-text2">{r.descricao}</p>
-              <a
-                href={r.href}
-                className="mt-4 flex items-center justify-center gap-2 rounded-lg bg-cda-blue px-4 py-2 text-sm font-medium text-white hover:bg-cda-blue/90"
-              >
-                <Download className="h-4 w-4" />
-                Exportar CSV
-              </a>
+              <div className="mt-4 flex gap-2">
+                <a
+                  href={r.href}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-cda-blue px-3 py-2 text-sm font-medium text-white hover:bg-cda-blue/90"
+                >
+                  <Download className="h-4 w-4" />
+                  CSV
+                </a>
+                <a
+                  href={`${r.href}?formato=pdf`}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-cda-navy px-3 py-2 text-sm font-medium text-white hover:bg-cda-navy/90"
+                >
+                  <FileText className="h-4 w-4" />
+                  PDF
+                </a>
+              </div>
             </Card>
           );
         })}

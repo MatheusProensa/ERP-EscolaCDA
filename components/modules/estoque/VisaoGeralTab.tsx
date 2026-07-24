@@ -22,20 +22,16 @@ function KpiCard({
   sub: string;
 }) {
   return (
-    <Card className="p-4">
-      <div className="mb-2 flex items-center gap-3">
-        <span
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-          style={{ backgroundColor: `${cor}1A`, color: cor }}
-        >
-          <Icon className="h-5 w-5" />
-        </span>
-        <div>
-          <p className="text-xs text-cda-text3">{label}</p>
-          <p className="text-xl font-bold text-cda-text">{valor}</p>
-        </div>
-      </div>
-      <p className="text-xs text-cda-text3">{sub}</p>
+    <Card className="flex flex-col items-center p-4 text-center">
+      <span
+        className="mb-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+        style={{ backgroundColor: `${cor}1A`, color: cor }}
+      >
+        <Icon className="h-5 w-5" />
+      </span>
+      <p className="text-xl font-bold text-cda-text">{valor}</p>
+      <p className="text-xs text-cda-text3">{label}</p>
+      <p className="mt-0.5 text-xs text-cda-text3">{sub}</p>
     </Card>
   );
 }

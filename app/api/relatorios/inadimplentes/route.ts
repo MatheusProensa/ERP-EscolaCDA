@@ -1,10 +1,11 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paraCSV, respostaCSV } from "@/lib/csv";
+import { gerarRelatorioPdf, respostaPDF } from "@/lib/gerarRelatorioPdf";
 import { diasEmAtraso, formatarData, formatarTelefone } from "@/lib/utils";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
@@ -32,6 +33,27 @@ export async function GET() {
     };
   });
 
+  const data = new Date().toISOString().slice(0, 10);
+
+  if (request.nextUrl.searchParams.get("formato") === "pdf") {
+    const pdf = await gerarRelatorioPdf({
+      titulo: "Inadimplentes",
+      subtitulo: `${linhas.length} mensalidade(s) em atraso`,
+      colunas: [
+        { chave: "Aluno", label: "Aluno", largura: 160 },
+        { chave: "Turma", label: "Turma", largura: 110 },
+        { chave: "Responsavel", label: "Responsável", largura: 150 },
+        { chave: "Telefone", label: "Telefone", largura: 100 },
+        { chave: "Referencia", label: "Ref.", largura: 60 },
+        { chave: "Vencimento", label: "Vencimento", largura: 80 },
+        { chave: "Valor", label: "Valor (R$)", largura: 80 },
+        { chave: "DiasAtraso", label: "Dias atraso", largura: 80 },
+      ],
+      linhas: linhas.map((l) => ({ ...l, DiasAtraso: String(l.DiasAtraso) })),
+    });
+    return respostaPDF(pdf, `inadimplentes_${data}.pdf`);
+  }
+
   const csv = paraCSV(linhas, [
     "Aluno",
     "Turma",
@@ -43,5 +65,5 @@ export async function GET() {
     "DiasAtraso",
   ]);
 
-  return respostaCSV(csv, `inadimplentes_${new Date().toISOString().slice(0, 10)}.csv`);
+  return respostaCSV(csv, `inadimplentes_${data}.csv`);
 }

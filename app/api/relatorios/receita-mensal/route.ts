@@ -1,14 +1,15 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paraCSV, respostaCSV } from "@/lib/csv";
+import { gerarRelatorioPdf, respostaPDF } from "@/lib/gerarRelatorioPdf";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
@@ -32,6 +33,22 @@ export async function GET() {
       TaxaRecebimento: previsto > 0 ? `${((recebido / previsto) * 100).toFixed(1)}%` : "0%",
     };
   });
+
+  if (request.nextUrl.searchParams.get("formato") === "pdf") {
+    const pdf = await gerarRelatorioPdf({
+      titulo: "Receita mensal",
+      subtitulo: `Ano letivo ${anoAtual} · previsto vs. recebido`,
+      colunas: [
+        { chave: "Mes", label: "Mês", largura: 130 },
+        { chave: "Ano", label: "Ano", largura: 70 },
+        { chave: "Previsto", label: "Previsto (R$)", largura: 120 },
+        { chave: "Recebido", label: "Recebido (R$)", largura: 120 },
+        { chave: "TaxaRecebimento", label: "Taxa recebimento", largura: 130 },
+      ],
+      linhas: linhas.map((l) => ({ ...l, Ano: String(l.Ano) })),
+    });
+    return respostaPDF(pdf, `receita_mensal_${anoAtual}.pdf`);
+  }
 
   const csv = paraCSV(linhas, ["Mes", "Ano", "Previsto", "Recebido", "TaxaRecebimento"]);
 

@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paraCSV, respostaCSV } from "@/lib/csv";
+import { gerarRelatorioPdf, respostaPDF } from "@/lib/gerarRelatorioPdf";
 import { formatarData, formatarTelefone } from "@/lib/utils";
 
 const SITUACAO_LABEL: Record<string, string> = {
@@ -12,7 +13,7 @@ const SITUACAO_LABEL: Record<string, string> = {
   CONCLUIDA: "Concluída",
 };
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
@@ -42,6 +43,27 @@ export async function GET() {
     };
   });
 
+  const data = new Date().toISOString().slice(0, 10);
+
+  if (request.nextUrl.searchParams.get("formato") === "pdf") {
+    const pdf = await gerarRelatorioPdf({
+      titulo: "Histórico de alunos",
+      subtitulo: `${linhas.length} aluno(s) cadastrado(s)`,
+      colunas: [
+        { chave: "Nome", label: "Nome", largura: 150 },
+        { chave: "DataNascimento", label: "Nascimento", largura: 80 },
+        { chave: "Turma", label: "Turma", largura: 110 },
+        { chave: "Situacao", label: "Situação", largura: 80 },
+        { chave: "Responsavel", label: "Responsável", largura: 130 },
+        { chave: "Telefone", label: "Telefone", largura: 95 },
+        { chave: "Endereco", label: "Endereço", largura: 130 },
+        { chave: "Cidade", label: "Cidade", largura: 90 },
+      ],
+      linhas,
+    });
+    return respostaPDF(pdf, `historico_alunos_${data}.pdf`);
+  }
+
   const csv = paraCSV(linhas, [
     "Nome",
     "DataNascimento",
@@ -53,5 +75,5 @@ export async function GET() {
     "Cidade",
   ]);
 
-  return respostaCSV(csv, `historico_alunos_${new Date().toISOString().slice(0, 10)}.csv`);
+  return respostaCSV(csv, `historico_alunos_${data}.csv`);
 }

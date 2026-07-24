@@ -1,10 +1,9 @@
-import { PrismaClient, Turno, FormaPagamento } from "@prisma/client";
+import { PrismaClient, Turno } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
 const ANO = 2026;
-const MES_ATUAL = 7; // julho/2026
 
 // Tarde = ensino regular, em ordem de progressão. Manhã = contraturno (atividades
 // complementares); alunos do contraturno costumam ter também uma matrícula regular à tarde.
@@ -183,7 +182,7 @@ const NOMES_FUNCIONARIOS = [
   { nome: "Priscila Proensa", cargo: "Coordenadora Pedagógica", setor: "Coordenação" },
   { nome: "Eduarda Rodrigues Sturm", cargo: "Secretária", setor: "Secretaria" },
   { nome: "Maria Eduarda Güntzel de Freitas", cargo: "Secretária", setor: "Secretaria" },
-  { nome: "Eduarda Jaymes", cargo: "Estagiária", setor: "Secretaria" },
+  { nome: "Eduarda Jaymes", cargo: "Estagiária", setor: "Pedagógico" },
   { nome: "Itamar", cargo: "Financeiro", setor: "Financeiro" },
   { nome: "Matheus", cargo: "Filmmaker", setor: "Marketing" },
   { nome: "Camila", cargo: "Professora de Educação Física", setor: "Pedagógico" },
@@ -379,51 +378,19 @@ async function main() {
         },
       });
 
-      // Mensalidades de janeiro a dezembro
+      // Mensalidades de janeiro a dezembro, sem dados financeiros fictícios:
+      // todas ficam PENDENTE até a secretaria registrar pagamentos reais.
       const valor = VALOR_MENSALIDADE[nomeTurma];
-      for (let mes = 1; mes <= 12; mes++) {
-        const vencimento = new Date(ANO, mes - 1, 10);
-        let situacao: "PAGA" | "PENDENTE" | "ATRASADA" = "PENDENTE";
-
-        if (mes < MES_ATUAL) {
-          // mês já passou: a maioria paga, ~6% em atraso
-          situacao = Math.random() < 0.94 ? "PAGA" : "ATRASADA";
-        } else if (mes === MES_ATUAL) {
-          situacao = Math.random() < 0.6 ? "PAGA" : "PENDENTE";
-        }
-
-        const mensalidade = await prisma.mensalidade.create({
-          data: {
-            matriculaId: matricula.id,
-            mes,
-            ano: ANO,
-            valor,
-            vencimento,
-            situacao,
-          },
-        });
-
-        if (situacao === "PAGA") {
-          const dataPagamento = new Date(vencimento);
-          dataPagamento.setDate(dataPagamento.getDate() - Math.floor(Math.random() * 5));
-          await prisma.pagamento.create({
-            data: {
-              mensalidadeId: mensalidade.id,
-              valor,
-              dataPagamento,
-              formaPagamento: aleatorio([
-                FormaPagamento.PIX,
-                FormaPagamento.BOLETO,
-                FormaPagamento.CARTAO_DEBITO,
-                FormaPagamento.TRANSFERENCIA,
-              ]),
-            },
-          });
-          if (mes === MES_ATUAL) {
-            logs.push({ acao: "Pagamento registrado", entidade: "Mensalidade", entidadeId: mensalidade.id, usuario: "Secretaria CDA" });
-          }
-        }
-      }
+      await prisma.mensalidade.createMany({
+        data: Array.from({ length: 12 }, (_, i) => ({
+          matriculaId: matricula.id,
+          mes: i + 1,
+          ano: ANO,
+          valor,
+          vencimento: new Date(ANO, i, 10),
+          situacao: "PENDENTE" as const,
+        })),
+      });
     }
   }
 

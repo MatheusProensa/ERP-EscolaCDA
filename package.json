@@ -6,7 +6,8 @@
     "dev": "cross-env NEXT_TELEMETRY_DISABLED=1 next dev -p 3100",
     "build": "cross-env NEXT_TELEMETRY_DISABLED=1 next build",
     "start": "cross-env NEXT_TELEMETRY_DISABLED=1 next start -p 3100",
-    "lint": "eslint"
+    "lint": "eslint",
+    "postinstall": "prisma generate"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
