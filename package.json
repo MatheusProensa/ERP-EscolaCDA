@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "cross-env NEXT_TELEMETRY_DISABLED=1 next dev -p 3100",
-    "build": "cross-env NEXT_TELEMETRY_DISABLED=1 next build",
+    "build": "cross-env NEXT_TELEMETRY_DISABLED=1 node scripts/vercel-build.mjs",
     "start": "cross-env NEXT_TELEMETRY_DISABLED=1 next start -p 3100",
     "lint": "eslint",
     "postinstall": "prisma generate"
