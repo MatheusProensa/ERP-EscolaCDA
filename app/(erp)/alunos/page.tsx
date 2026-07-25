@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { AlunoTable } from "@/components/modules/alunos/AlunoTable";
+import { ExportButtons } from "@/components/ui/ExportButtons";
 import { ordenarTurmas } from "@/lib/utils";
 import type { SituacaoMatricula } from "@prisma/client";
 
@@ -42,10 +43,13 @@ export default async function AlunosPage({
         title="Alunos"
         subtitle={`${matriculas.length} aluno(s) encontrado(s)`}
         action={
-          <Button href="/alunos/novo">
-            <UserPlus className="h-4 w-4" />
-            Novo aluno
-          </Button>
+          <div className="flex items-center gap-2">
+            <ExportButtons href="/api/relatorios/alunos" label="" />
+            <Button href="/alunos/novo">
+              <UserPlus className="h-4 w-4" />
+              Novo aluno
+            </Button>
+          </div>
         }
       />
 

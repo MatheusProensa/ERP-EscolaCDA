@@ -10,7 +10,6 @@ import {
   UserCog,
   Megaphone,
   Package,
-  FileBarChart,
   UtensilsCrossed,
   KeyRound,
   type LucideIcon,
@@ -40,10 +39,6 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Comunicação",
     items: [{ label: "Mural", href: "/mural", icon: Megaphone }],
-  },
-  {
-    label: "Análise",
-    items: [{ label: "Relatórios", href: "/relatorios", icon: FileBarChart }],
   },
 ];
 

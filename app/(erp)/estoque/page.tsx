@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ExportButtons } from "@/components/ui/ExportButtons";
 import { EstoquePainel } from "@/components/modules/estoque/EstoquePainel";
 import { NovoItemModal } from "@/components/modules/estoque/NovoItemModal";
 
@@ -29,7 +30,12 @@ export default async function EstoquePage() {
       <PageHeader
         title="Estoque"
         subtitle="Materiais e suprimentos da escola"
-        action={<NovoItemModal />}
+        action={
+          <div className="flex items-center gap-2">
+            <ExportButtons href="/api/relatorios/estoque" label="" />
+            <NovoItemModal />
+          </div>
+        }
       />
 
       <EstoquePainel

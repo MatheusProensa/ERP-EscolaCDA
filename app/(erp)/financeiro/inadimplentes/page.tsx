@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { ExportButtons } from "@/components/ui/ExportButtons";
 import { TabelaInadimplentes, type Inadimplente } from "@/components/modules/dashboard/TabelaInadimplentes";
 import { diasEmAtraso } from "@/lib/utils";
 
@@ -36,6 +37,7 @@ export default async function InadimplentesPage() {
         title="Inadimplentes"
         subtitle={`${inadimplentes.length} aluno(s) com mensalidade em atraso`}
         breadcrumb={[{ label: "Financeiro", href: "/financeiro" }, { label: "Inadimplentes" }]}
+        action={<ExportButtons href="/api/relatorios/inadimplentes" />}
       />
       <TabelaInadimplentes dados={inadimplentes} linkVerTodos={false} />
     </div>

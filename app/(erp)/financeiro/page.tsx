@@ -3,6 +3,7 @@ import { Wallet, TrendingUp, AlertCircle, Percent } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
+import { ExportButtons } from "@/components/ui/ExportButtons";
 import { ResumoFinanceiro, type ResumoMensal } from "@/components/modules/financeiro/ResumoFinanceiro";
 import { formatarMoeda } from "@/lib/utils";
 
@@ -39,6 +40,7 @@ export default async function FinanceiroPage() {
         title="Financeiro"
         subtitle="Visão geral de mensalidades e recebimentos"
         breadcrumb={[{ label: "Financeiro" }]}
+        action={<ExportButtons href="/api/relatorios/receita-mensal" label="Receita mensal" />}
       />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
