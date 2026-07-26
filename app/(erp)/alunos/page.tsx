@@ -44,7 +44,7 @@ export default async function AlunosPage({
         subtitle={`${matriculas.length} aluno(s) encontrado(s)`}
         action={
           <div className="flex items-center gap-2">
-            <ExportButtons href="/api/relatorios/alunos" label="" />
+            <ExportButtons href="/api/relatorios/alunos" label="" params={{ turma, situacao, busca, censo }} />
             <Button href="/alunos/novo">
               <UserPlus className="h-4 w-4" />
               Novo aluno

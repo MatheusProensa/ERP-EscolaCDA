@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Download } from "lucide-react";
+import { Search, Download, FileText } from "lucide-react";
 import type { ItemEstoque } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -29,6 +29,13 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
     return true;
   });
 
+  const paramsExport = new URLSearchParams();
+  if (filtroStatus !== "todos") paramsExport.set("status", filtroStatus);
+  if (busca) paramsExport.set("busca", busca);
+  const qs = paramsExport.toString();
+  const hrefBase = qs ? `/api/relatorios/estoque?${qs}` : "/api/relatorios/estoque";
+  const hrefPdf = qs ? `${hrefBase}&formato=pdf` : `${hrefBase}?formato=pdf`;
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -47,11 +54,18 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
         />
         <div className="flex-1" />
         <a
-          href="/api/relatorios/estoque"
+          href={hrefBase}
           className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
         >
           <Download className="h-3.5 w-3.5" />
-          Exportar CSV
+          CSV
+        </a>
+        <a
+          href={hrefPdf}
+          className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
+        >
+          <FileText className="h-3.5 w-3.5" />
+          PDF
         </a>
       </div>
 
