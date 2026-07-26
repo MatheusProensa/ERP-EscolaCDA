@@ -13,6 +13,7 @@ import {
   UtensilsCrossed,
   KeyRound,
   ShieldCheck,
+  Cake,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Alunos", href: "/alunos", icon: Users },
       { label: "Acadêmico", href: "/academico", icon: GraduationCap },
+      { label: "Aniversariantes", href: "/aniversariantes", icon: Cake },
       { label: "Mural", href: "/mural", icon: Megaphone },
       { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
     ],
