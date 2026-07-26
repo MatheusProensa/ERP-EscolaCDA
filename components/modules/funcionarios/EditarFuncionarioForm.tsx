@@ -29,6 +29,7 @@ export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionari
         setor: fd.get("setor"),
         telefone: fd.get("telefone"),
         email: fd.get("email"),
+        dataNascimento: fd.get("dataNascimento") || null,
       }),
     });
 
@@ -50,6 +51,12 @@ export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionari
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input label="Nome completo" name="nome" required defaultValue={funcionario.nome} className="sm:col-span-2" />
           <Input label="Cargo" name="cargo" required defaultValue={funcionario.cargo} />
+          <Input
+            label="Data de nascimento"
+            name="dataNascimento"
+            type="date"
+            defaultValue={funcionario.dataNascimento ? new Date(funcionario.dataNascimento).toISOString().slice(0, 10) : ""}
+          />
           <Select label="Setor" name="setor" required defaultValue={funcionario.setor}>
             {SETORES.map((s) => (
               <option key={s} value={s}>

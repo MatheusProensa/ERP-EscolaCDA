@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const body = await req.json();
-  const { nome, cpf, cargo, setor, telefone, email, admissao } = body;
+  const { nome, cpf, cargo, setor, telefone, email, admissao, dataNascimento } = body;
 
   if (!nome || !cpf || !cargo || !setor || !admissao) {
     return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
       telefone: telefone || null,
       email: email || null,
       admissao: new Date(admissao),
+      dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
     },
   });
 

@@ -13,13 +13,24 @@ const MESES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
-type Aniversariante = {
-  alunoId: string;
+type Pessoa = {
+  id: string;
   nome: string;
   foto: string | null;
   dataNascimento: Date;
-  turmas: string[];
+  detalhe: string;
+  href: string;
 };
+
+function eDoMes(d: Date, mes: number) {
+  return d.getUTCMonth() + 1 === mes;
+}
+function eHoje(d: Date, hoje: Date) {
+  return d.getUTCMonth() === hoje.getUTCMonth() && d.getUTCDate() === hoje.getUTCDate();
+}
+function idadeCompletando(d: Date, ano: number) {
+  return ano - d.getUTCFullYear();
+}
 
 export default async function AniversariantesPage({
   searchParams,
@@ -32,55 +43,73 @@ export default async function AniversariantesPage({
   const anoAtual = hoje.getUTCFullYear();
 
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
-  const matriculas = await prisma.matricula.findMany({
-    where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
-    include: { aluno: true, turma: true },
-  });
+  const [matriculas, funcionarios] = await Promise.all([
+    prisma.matricula.findMany({
+      where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
+      include: { aluno: true, turma: true },
+    }),
+    prisma.funcionario.findMany({ where: { ativo: true, dataNascimento: { not: null } } }),
+  ]);
 
-  const porAluno = new Map<string, Aniversariante>();
+  const porAluno = new Map<string, Pessoa & { turmas: string[] }>();
   for (const m of matriculas) {
     const existente = porAluno.get(m.alunoId);
     if (existente) {
       existente.turmas.push(m.turma.nome);
     } else {
       porAluno.set(m.alunoId, {
-        alunoId: m.alunoId,
+        id: m.alunoId,
         nome: m.aluno.nome,
         foto: m.aluno.foto,
         dataNascimento: m.aluno.dataNascimento,
         turmas: [m.turma.nome],
+        detalhe: "",
+        href: `/alunos/${m.alunoId}`,
       });
     }
   }
 
-  const aniversariantes = Array.from(porAluno.values())
-    .filter((a) => a.dataNascimento.getUTCMonth() + 1 === mesFiltro)
-    .sort((a, b) => a.dataNascimento.getUTCDate() - b.dataNascimento.getUTCDate());
+  const alunosAniversariantes = Array.from(porAluno.values())
+    .filter((a) => eDoMes(a.dataNascimento, mesFiltro))
+    .sort((a, b) => a.dataNascimento.getUTCDate() - b.dataNascimento.getUTCDate())
+    .map((a) => ({ ...a, detalhe: a.turmas.join(" + ") }));
 
-  const aniversariantesHoje = aniversariantes.filter(
-    (a) => a.dataNascimento.getUTCMonth() === hoje.getUTCMonth() && a.dataNascimento.getUTCDate() === hoje.getUTCDate()
+  const funcionariosAniversariantes: Pessoa[] = funcionarios
+    .filter((f) => f.dataNascimento && eDoMes(f.dataNascimento, mesFiltro))
+    .sort((a, b) => a.dataNascimento!.getUTCDate() - b.dataNascimento!.getUTCDate())
+    .map((f) => ({
+      id: f.id,
+      nome: f.nome,
+      foto: null,
+      dataNascimento: f.dataNascimento!,
+      detalhe: `${f.cargo} · ${f.setor}`,
+      href: `/funcionarios/${f.id}`,
+    }));
+
+  const hojeTodos = [...alunosAniversariantes, ...funcionariosAniversariantes].filter((p) =>
+    eHoje(p.dataNascimento, hoje)
   );
 
   return (
     <div>
       <PageHeader
         title="Aniversariantes"
-        subtitle="Alunos ativos que fazem aniversário no mês — pra marketing organizar fotos e stories"
+        subtitle="Alunos e funcionários que fazem aniversário no mês — pra marketing organizar fotos e stories"
         action={<ExportButtons href="/api/relatorios/aniversariantes" params={{ mes: String(mesFiltro) }} />}
       />
 
-      {aniversariantesHoje.length > 0 && (
+      {hojeTodos.length > 0 && (
         <Card className="mb-5 flex items-center gap-4 border-cda-yellow bg-cda-yellow/10 p-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cda-yellow/30">
             <Cake className="h-5 w-5 text-cda-navy" />
           </div>
           <div>
             <p className="text-sm font-semibold text-cda-text">
-              {aniversariantesHoje.length === 1
-                ? `Hoje é aniversário de ${aniversariantesHoje[0].nome}!`
-                : `Hoje é aniversário de ${aniversariantesHoje.length} alunos!`}
+              {hojeTodos.length === 1
+                ? `Hoje é aniversário de ${hojeTodos[0].nome}!`
+                : `Hoje é aniversário de ${hojeTodos.length} pessoas!`}
             </p>
-            <p className="text-xs text-cda-text2">{aniversariantesHoje.map((a) => a.nome).join(", ")}</p>
+            <p className="text-xs text-cda-text2">{hojeTodos.map((a) => a.nome).join(", ")}</p>
           </div>
         </Card>
       )}
@@ -103,40 +132,77 @@ export default async function AniversariantesPage({
         </form>
       </Card>
 
-      <Card>
-        <Table>
-          <TableHead>
-            <Th>Aluno</Th>
-            <Th>Turma</Th>
-            <Th>Data</Th>
-            <Th>Completa</Th>
-          </TableHead>
-          <TableBody>
-            {aniversariantes.length === 0 && (
-              <TableEmpty colSpan={4}>Nenhum aniversariante em {MESES[mesFiltro - 1]}.</TableEmpty>
-            )}
-            {aniversariantes.map((a) => {
-              const ehHoje =
-                a.dataNascimento.getUTCMonth() === hoje.getUTCMonth() && a.dataNascimento.getUTCDate() === hoje.getUTCDate();
-              const idade = anoAtual - a.dataNascimento.getUTCFullYear();
-              return (
-                <Tr key={a.alunoId}>
-                  <Td>
-                    <a href={`/alunos/${a.alunoId}`} className="flex items-center gap-2.5 hover:text-cda-blue">
-                      <Avatar nome={a.nome} foto={a.foto} size="sm" />
-                      {a.nome}
-                      {ehHoje && <Badge variant="amber">Hoje</Badge>}
-                    </a>
-                  </Td>
-                  <Td>{a.turmas.join(" + ")}</Td>
-                  <Td>{String(a.dataNascimento.getUTCDate()).padStart(2, "0")}/{String(a.dataNascimento.getUTCMonth() + 1).padStart(2, "0")}</Td>
-                  <Td>{idade} {idade === 1 ? "ano" : "anos"}</Td>
-                </Tr>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </Card>
+      <div className="flex flex-col gap-5">
+        <ListaAniversariantes
+          titulo="Alunos"
+          colunaDetalhe="Turma"
+          pessoas={alunosAniversariantes}
+          hoje={hoje}
+          anoAtual={anoAtual}
+          mesFiltro={mesFiltro}
+        />
+        <ListaAniversariantes
+          titulo="Funcionários"
+          colunaDetalhe="Cargo"
+          pessoas={funcionariosAniversariantes}
+          hoje={hoje}
+          anoAtual={anoAtual}
+          mesFiltro={mesFiltro}
+        />
+      </div>
     </div>
+  );
+}
+
+function ListaAniversariantes({
+  titulo,
+  colunaDetalhe,
+  pessoas,
+  hoje,
+  anoAtual,
+  mesFiltro,
+}: {
+  titulo: string;
+  colunaDetalhe: string;
+  pessoas: Pessoa[];
+  hoje: Date;
+  anoAtual: number;
+  mesFiltro: number;
+}) {
+  return (
+    <Card title={titulo} action={<Badge variant="blue">{pessoas.length}</Badge>}>
+      <Table>
+        <TableHead>
+          <Th>Nome</Th>
+          <Th>{colunaDetalhe}</Th>
+          <Th>Data</Th>
+          <Th>Completa</Th>
+        </TableHead>
+        <TableBody>
+          {pessoas.length === 0 && (
+            <TableEmpty colSpan={4}>Nenhum aniversariante em {MESES[mesFiltro - 1]}.</TableEmpty>
+          )}
+          {pessoas.map((p) => (
+            <Tr key={p.id}>
+              <Td>
+                <a href={p.href} className="flex items-center gap-2.5 hover:text-cda-blue">
+                  <Avatar nome={p.nome} foto={p.foto} size="sm" />
+                  {p.nome}
+                  {eHoje(p.dataNascimento, hoje) && <Badge variant="amber">Hoje</Badge>}
+                </a>
+              </Td>
+              <Td>{p.detalhe}</Td>
+              <Td>
+                {String(p.dataNascimento.getUTCDate()).padStart(2, "0")}/
+                {String(p.dataNascimento.getUTCMonth() + 1).padStart(2, "0")}
+              </Td>
+              <Td>
+                {idadeCompletando(p.dataNascimento, anoAtual)} {idadeCompletando(p.dataNascimento, anoAtual) === 1 ? "ano" : "anos"}
+              </Td>
+            </Tr>
+          ))}
+        </TableBody>
+      </Table>
+    </Card>
   );
 }

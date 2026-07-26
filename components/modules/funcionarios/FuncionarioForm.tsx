@@ -30,6 +30,7 @@ export function FuncionarioForm() {
         telefone: fd.get("telefone"),
         email: fd.get("email"),
         admissao: fd.get("admissao"),
+        dataNascimento: fd.get("dataNascimento") || null,
       }),
     });
 
@@ -53,6 +54,7 @@ export function FuncionarioForm() {
           <Input label="Nome completo" name="nome" required className="sm:col-span-2" />
           <Input label="CPF" name="cpf" required placeholder="000.000.000-00" />
           <Input label="Data de admissão" name="admissao" type="date" required />
+          <Input label="Data de nascimento" name="dataNascimento" type="date" />
           <Input label="Cargo" name="cargo" required placeholder="Professora" />
           <Select label="Setor" name="setor" required defaultValue="">
             <option value="" disabled>

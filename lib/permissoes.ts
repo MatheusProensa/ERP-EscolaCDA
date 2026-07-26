@@ -14,6 +14,8 @@ const GESTAO: RoleAtiva[] = ["ADMIN", "DIRECAO"];
 const FINANCEIRO: RoleAtiva[] = ["ADMIN", "DIRECAO", "FINANCEIRO"];
 const PEDAGOGICO: RoleAtiva[] = ["ADMIN", "DIRECAO", "PEDAGOGICO"];
 const ADMINISTRATIVO: RoleAtiva[] = ["ADMIN", "DIRECAO", "ADMINISTRATIVO"];
+// Aniversariantes mistura alunos (Pedagógico) e funcionários (Administrativo).
+const ANIVERSARIANTES: RoleAtiva[] = ["ADMIN", "DIRECAO", "PEDAGOGICO", "ADMINISTRATIVO"];
 
 // Regras de acesso por prefixo de rota (páginas e APIs). A rota mais específica
 // (prefixo mais longo) que bater vence — por isso as rotas de /api/relatorios/*
@@ -25,7 +27,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/academico", roles: PEDAGOGICO },
   { prefixo: "/mural", roles: PEDAGOGICO },
   { prefixo: "/cardapio", roles: PEDAGOGICO },
-  { prefixo: "/aniversariantes", roles: PEDAGOGICO },
+  { prefixo: "/aniversariantes", roles: ANIVERSARIANTES },
   { prefixo: "/funcionarios", roles: ADMINISTRATIVO },
   { prefixo: "/estoque", roles: ADMINISTRATIVO },
   { prefixo: "/chaves", roles: ADMINISTRATIVO },
@@ -35,7 +37,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/api/relatorios/inadimplentes", roles: FINANCEIRO },
   { prefixo: "/api/relatorios/receita-mensal", roles: FINANCEIRO },
   { prefixo: "/api/relatorios/alunos", roles: PEDAGOGICO },
-  { prefixo: "/api/relatorios/aniversariantes", roles: PEDAGOGICO },
+  { prefixo: "/api/relatorios/aniversariantes", roles: ANIVERSARIANTES },
   { prefixo: "/api/relatorios/estoque", roles: ADMINISTRATIVO },
   { prefixo: "/api/financeiro", roles: FINANCEIRO },
   { prefixo: "/api/alunos", roles: PEDAGOGICO },

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Phone, Mail, Calendar, Briefcase, Pencil } from "lucide-react";
+import { Phone, Mail, Calendar, Cake, Briefcase, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -51,6 +51,11 @@ export default async function FuncionarioPerfilPage({ params }: { params: Promis
             <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
               <InfoItem icon={Briefcase} label="CPF" value={formatarCPF(funcionario.cpf)} />
               <InfoItem icon={Calendar} label="Admissão" value={formatarData(funcionario.admissao)} />
+              <InfoItem
+                icon={Cake}
+                label="Nascimento"
+                value={funcionario.dataNascimento ? formatarData(funcionario.dataNascimento) : "Não informado"}
+              />
               <InfoItem
                 icon={Phone}
                 label="Telefone"

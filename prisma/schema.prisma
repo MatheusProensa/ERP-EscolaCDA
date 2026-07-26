@@ -206,17 +206,18 @@ model Contrato {
 }
 
 model Funcionario {
-  id        String                 @id @default(cuid())
-  nome      String
-  cpf       String                 @unique
-  cargo     String
-  setor     String
-  telefone  String?
-  email     String?
-  admissao  DateTime
-  ativo     Boolean                @default(true)
-  documentos DocumentoFuncionario[]
-  createdAt DateTime               @default(now())
+  id             String                 @id @default(cuid())
+  nome           String
+  cpf            String                 @unique
+  cargo          String
+  setor          String
+  telefone       String?
+  email          String?
+  dataNascimento DateTime?
+  admissao       DateTime
+  ativo          Boolean                @default(true)
+  documentos     DocumentoFuncionario[]
+  createdAt      DateTime               @default(now())
 }
 
 model DocumentoFuncionario {
