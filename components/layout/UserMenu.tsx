@@ -4,12 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
-
-const ROLE_LABEL: Record<string, string> = {
-  ADMIN: "Administrador",
-  DIRECAO: "Direção",
-  SECRETARIA: "Secretaria",
-};
+import { ROLE_LABEL } from "@/lib/permissoes";
 
 export function UserMenu({ name, role }: { name: string; role: string }) {
   const [open, setOpen] = useState(false);

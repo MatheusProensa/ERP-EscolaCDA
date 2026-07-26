@@ -12,9 +12,11 @@ import {
   Package,
   UtensilsCrossed,
   KeyRound,
+  ShieldCheck,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { rotaPermitida } from "@/lib/permissoes";
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
 type NavGroup = { label: string; items: NavItem[] };
@@ -25,25 +27,38 @@ const NAV_GROUPS: NavGroup[] = [
     items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }],
   },
   {
-    label: "Gestão",
+    label: "Pedagógico",
     items: [
       { label: "Alunos", href: "/alunos", icon: Users },
-      { label: "Financeiro", href: "/financeiro", icon: Wallet },
       { label: "Acadêmico", href: "/academico", icon: GraduationCap },
+      { label: "Mural", href: "/mural", icon: Megaphone },
+      { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
+    ],
+  },
+  {
+    label: "Financeiro",
+    items: [{ label: "Financeiro", href: "/financeiro", icon: Wallet }],
+  },
+  {
+    label: "Administrativo",
+    items: [
       { label: "Funcionários", href: "/funcionarios", icon: UserCog },
       { label: "Estoque", href: "/estoque", icon: Package },
-      { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
       { label: "Chaves", href: "/chaves", icon: KeyRound },
     ],
   },
   {
-    label: "Comunicação",
-    items: [{ label: "Mural", href: "/mural", icon: Megaphone }],
+    label: "Sistema",
+    items: [{ label: "Usuários", href: "/usuarios", icon: ShieldCheck }],
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
+  const grupos = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => rotaPermitida(item.href, role)),
+  })).filter((group) => group.items.length > 0);
 
   return (
     <aside className="flex h-full w-[216px] shrink-0 flex-col bg-cda-navy">
@@ -55,7 +70,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto px-3 pb-4">
-        {NAV_GROUPS.map((group) => (
+        {grupos.map((group) => (
           <div key={group.label} className="mb-5">
             <div className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-wide text-white/35">
               {group.label}

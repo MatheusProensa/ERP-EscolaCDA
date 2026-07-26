@@ -284,7 +284,9 @@ async function main() {
     data: [
       { name: "Administrador CDA", email: "admin@escolacda.com.br", password: senhaHash, role: "ADMIN" },
       { name: "Direção CDA", email: "direcao@escolacda.com.br", password: senhaHash, role: "DIRECAO" },
-      { name: "Secretaria CDA", email: "secretaria@escolacda.com.br", password: senhaHash, role: "SECRETARIA" },
+      { name: "Financeiro CDA", email: "financeiro@escolacda.com.br", password: senhaHash, role: "FINANCEIRO" },
+      { name: "Pedagógico CDA", email: "pedagogico@escolacda.com.br", password: senhaHash, role: "PEDAGOGICO" },
+      { name: "Secretaria CDA", email: "secretaria@escolacda.com.br", password: senhaHash, role: "ADMINISTRATIVO" },
     ],
   });
 

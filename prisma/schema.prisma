@@ -25,7 +25,10 @@ model User {
 enum Role {
   ADMIN
   DIRECAO
-  SECRETARIA
+  SECRETARIA // legado, não usado em novos cadastros — ver ADMINISTRATIVO
+  FINANCEIRO
+  PEDAGOGICO
+  ADMINISTRATIVO
 }
 
 model AnoLetivo {
