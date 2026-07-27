@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { TabelaInadimplentes, type Inadimplente } from "@/components/modules/dashboard/TabelaInadimplentes";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
+import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
 import { diasEmAtraso, formatarMoeda } from "@/lib/utils";
 
 export async function DashboardFinanceiro() {
@@ -74,6 +75,10 @@ export async function DashboardFinanceiro() {
           <TabelaInadimplentes dados={inadimplentes.slice(0, 6)} />
         </div>
         <FeedAtividade logs={logs} />
+      </div>
+
+      <div className="mt-5">
+        <CalendarioWidget />
       </div>
     </div>
   );

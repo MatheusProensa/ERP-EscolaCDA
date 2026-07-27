@@ -5,6 +5,7 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Card } from "@/components/ui/Card";
 import { StatusEstoquePill } from "@/components/modules/estoque/EstoqueVisuais";
+import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
 import { statusEstoque } from "@/lib/estoqueStatus";
 
 export async function DashboardAdministrativo() {
@@ -58,6 +59,10 @@ export async function DashboardAdministrativo() {
           </TableBody>
         </Table>
       </Card>
+
+      <div className="mt-5">
+        <CalendarioWidget />
+      </div>
     </div>
   );
 }

@@ -339,6 +339,15 @@ model LogAtividade {
   createdAt  DateTime @default(now())
 }
 
+model EventoCalendario {
+  id         String   @id @default(cuid())
+  titulo     String
+  data       DateTime
+  categoria  String
+  descricao  String?
+  createdAt  DateTime @default(now())
+}
+
 model DocumentoInstitucional {
   id         String    @id @default(cuid())
   titulo     String

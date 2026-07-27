@@ -92,7 +92,7 @@ export async function gerarRelatorioPdf({
     pagina.drawRectangle({ x: MARGIN, y: y - HEAD_ROW_H, width: larguraTabela * escala, height: HEAD_ROW_H, color: NAVY });
     let x = MARGIN;
     for (const col of colunasEscaladas) {
-      pagina.drawText(col.label.toUpperCase(), {
+      pagina.drawText(truncar(fonteBold, col.label.toUpperCase(), 8, col.largura - 10), {
         x: x + 6,
         y: y - HEAD_ROW_H + 8,
         size: 8,
@@ -248,7 +248,13 @@ export async function gerarRelatorioPdfMultiSecao({
       pagina.drawRectangle({ x: MARGIN, y: y - HEAD_ROW_H, width: larguraTabela * escala, height: HEAD_ROW_H, color: NAVY });
       let x = MARGIN;
       for (const col of colunasEscaladas) {
-        pagina.drawText(col.label.toUpperCase(), { x: x + 6, y: y - HEAD_ROW_H + 8, size: 8, font: fonteBold, color: WHITE });
+        pagina.drawText(truncar(fonteBold, col.label.toUpperCase(), 8, col.largura - 10), {
+          x: x + 6,
+          y: y - HEAD_ROW_H + 8,
+          size: 8,
+          font: fonteBold,
+          color: WHITE,
+        });
         x += col.largura;
       }
     }

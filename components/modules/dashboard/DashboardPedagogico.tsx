@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
+import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
 
 export async function DashboardPedagogico() {
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
@@ -36,6 +37,10 @@ export async function DashboardPedagogico() {
       </div>
 
       <FeedAtividade logs={logs} />
+
+      <div className="mt-5">
+        <CalendarioWidget />
+      </div>
     </div>
   );
 }

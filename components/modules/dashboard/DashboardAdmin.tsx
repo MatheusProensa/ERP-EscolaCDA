@@ -4,6 +4,7 @@ import { MetricasGerais } from "@/components/modules/dashboard/MetricasGerais";
 import { TabelaInadimplentes, type Inadimplente } from "@/components/modules/dashboard/TabelaInadimplentes";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
+import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
 import { diasEmAtraso } from "@/lib/utils";
 
 export async function DashboardAdmin() {
@@ -77,6 +78,10 @@ export async function DashboardAdmin() {
           <TabelaInadimplentes dados={inadimplentes.slice(0, 6)} />
         </div>
         <FeedAtividade logs={logs} />
+      </div>
+
+      <div className="mt-5">
+        <CalendarioWidget />
       </div>
     </div>
   );

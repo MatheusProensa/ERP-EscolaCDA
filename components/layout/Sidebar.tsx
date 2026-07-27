@@ -16,6 +16,7 @@ import {
   Cake,
   Clock,
   FileText,
+  CalendarDays,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -28,7 +29,10 @@ type NavGroup = { label: string; items: NavItem[] };
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Principal",
-    items: [{ label: "Dashboard", href: "/dashboard", icon: LayoutDashboard }],
+    items: [
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Calendário", href: "/calendario", icon: CalendarDays },
+    ],
   },
   {
     label: "Pedagógico",
