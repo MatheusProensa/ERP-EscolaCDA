@@ -448,12 +448,10 @@ async function main() {
   console.log("Criando chaves...");
   await prisma.chave.createMany({
     data: [
-      { sala: "Sala 1 - Berçário" },
-      { sala: "Sala 2 - Maternal" },
-      { sala: "Sala 3 - Pré-escola" },
       { sala: "Laboratório de Informática" },
+      { sala: "Quadra" },
+      { sala: "Terraço" },
       { sala: "Sala de Vídeo" },
-      { sala: "Pátio Coberto" },
     ],
   });
   const salaVideo = await prisma.chave.findFirst({ where: { sala: "Sala de Vídeo" } });
