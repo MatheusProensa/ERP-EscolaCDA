@@ -54,6 +54,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       horasPrevistas: d.horasPrevistas,
       adicionalNoturno: d.adicionalNoturno,
       saldoDiario: d.saldoDiario,
+      atrasoFalta: d.atrasoFalta,
+      horaExtra: d.horaExtra,
       saldoAcumulado: d.saldoAcumulado,
     })),
   });

@@ -80,24 +80,30 @@ export async function GET(request: NextRequest) {
       "Entrada 2": fmtHora(d.pares[1].entrada),
       "Saída 2": fmtHora(d.pares[1].saida),
       Ocorrência: OCORRENCIA_LABEL[d.ocorrencia] ?? d.ocorrencia,
-      "Horas do Dia": minParaHora(d.horasTrabalhadas),
-      "Saldo Dia": minParaHora(d.saldoDiario),
-      "Saldo Acum.": minParaHora(d.saldoAcumulado),
+      "Horas Previstas": minParaHora(d.horasPrevistas),
+      "Horas Trabalhadas": minParaHora(d.horasTrabalhadas),
+      "Atraso/Falta": d.atrasoFalta > 0 ? minParaHora(d.atrasoFalta) : "—",
+      "Hora Extra": d.horaExtra > 0 ? minParaHora(d.horaExtra) : "—",
+      "Adicional Noturno": d.adicionalNoturno > 0 ? minParaHora(d.adicionalNoturno) : "—",
+      "Saldo Banco de Horas": minParaHora(d.saldoAcumulado),
     }));
 
     secoes.push({
       titulo: f.nome,
-      subtitulo: `${f.cargo} · ${nomeMes}/${ano} · Saldo acumulado: ${minParaHora(dias[dias.length - 1]?.saldoAcumulado ?? saldoInicial)}`,
+      subtitulo: `${f.cargo} · ${nomeMes}/${ano} · Saldo Banco de Horas: ${minParaHora(dias[dias.length - 1]?.saldoAcumulado ?? saldoInicial)}`,
       colunas: [
-        { chave: "Data", label: "Data", largura: 48 },
-        { chave: "Entrada 1", label: "Entrada", largura: 55 },
-        { chave: "Saída 1", label: "Saída", largura: 55 },
-        { chave: "Entrada 2", label: "Entrada", largura: 55 },
-        { chave: "Saída 2", label: "Saída", largura: 55 },
-        { chave: "Ocorrência", label: "Ocorrência", largura: 65 },
-        { chave: "Horas do Dia", label: "Horas do Dia", largura: 65 },
-        { chave: "Saldo Dia", label: "Saldo Dia", largura: 60 },
-        { chave: "Saldo Acum.", label: "Saldo Acum.", largura: 78 },
+        { chave: "Data", label: "Data", largura: 40 },
+        { chave: "Entrada 1", label: "Entrada", largura: 46 },
+        { chave: "Saída 1", label: "Saída", largura: 46 },
+        { chave: "Entrada 2", label: "Entrada", largura: 46 },
+        { chave: "Saída 2", label: "Saída", largura: 46 },
+        { chave: "Ocorrência", label: "Ocorrência", largura: 55 },
+        { chave: "Horas Previstas", label: "Horas Previstas", largura: 62 },
+        { chave: "Horas Trabalhadas", label: "Horas Trabalhadas", largura: 65 },
+        { chave: "Atraso/Falta", label: "Atraso/Falta", largura: 58 },
+        { chave: "Hora Extra", label: "Hora Extra", largura: 55 },
+        { chave: "Adicional Noturno", label: "Adicional Noturno", largura: 65 },
+        { chave: "Saldo Banco de Horas", label: "Saldo Banco de Horas", largura: 78 },
       ],
       linhas,
     });
@@ -115,7 +121,8 @@ export async function GET(request: NextRequest) {
   }
 
   const csv = paraCSV(linhasCSV, [
-    "Funcionário", "Data", "Entrada 1", "Saída 1", "Entrada 2", "Saída 2", "Ocorrência", "Horas do Dia", "Saldo Dia", "Saldo Acum.",
+    "Funcionário", "Data", "Entrada 1", "Saída 1", "Entrada 2", "Saída 2", "Ocorrência",
+    "Horas Previstas", "Horas Trabalhadas", "Atraso/Falta", "Hora Extra", "Adicional Noturno", "Saldo Banco de Horas",
   ]);
   return respostaCSV(csv, `ponto_${nomeMes.toLowerCase()}_${ano}_${dataGerado}.csv`);
 }

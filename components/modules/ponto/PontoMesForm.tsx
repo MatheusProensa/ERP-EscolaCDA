@@ -188,7 +188,7 @@ export function PontoMesForm({
             </div>
           </div>
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-medium text-cda-text2">Saldo acumulado</span>
+            <span className="text-xs font-medium text-cda-text2">Saldo Banco de Horas</span>
             <div className="flex h-10 items-center">
               <Badge variant={saldoFinal < 0 ? "red" : saldoFinal > 0 ? "green" : "gray"}>{minParaHora(saldoFinal)}</Badge>
             </div>
@@ -203,7 +203,7 @@ export function PontoMesForm({
             <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
           </div>
         ) : (
-          <table className="w-full min-w-[1100px] text-sm">
+          <table className="w-full min-w-[1500px] text-sm">
             <thead>
               <tr className="border-b border-cda-border bg-cda-bg text-left text-xs font-semibold uppercase text-cda-text2">
                 <th className="px-3 py-2">Data</th>
@@ -215,16 +215,19 @@ export function PontoMesForm({
                 <th className="px-3 py-2">Saída</th>
                 <th className="px-3 py-2">Ocorrência</th>
                 <th className="px-3 py-2">Observação</th>
-                <th className="px-3 py-2">Horas dia</th>
-                <th className="px-3 py-2">Saldo dia</th>
-                <th className="px-3 py-2">Saldo acum.</th>
+                <th className="px-3 py-2">Horas Previstas</th>
+                <th className="px-3 py-2">Horas Trabalhadas</th>
+                <th className="px-3 py-2">Atraso/Falta</th>
+                <th className="px-3 py-2">Hora Extra</th>
+                <th className="px-3 py-2">Adicional Noturno</th>
+                <th className="px-3 py-2">Saldo Banco de Horas</th>
                 <th className="px-3 py-2"></th>
               </tr>
             </thead>
             <tbody>
               {linhas.length === 0 && (
                 <tr>
-                  <td colSpan={13} className="px-3 py-8 text-center text-sm text-cda-text3">
+                  <td colSpan={16} className="px-3 py-8 text-center text-sm text-cda-text3">
                     Nenhum dia lançado neste mês. Clique em &quot;Adicionar dia&quot; para começar.
                   </td>
                 </tr>
@@ -272,14 +275,15 @@ export function PontoMesForm({
                         className="h-8 w-32 rounded-md border border-cda-border px-2 text-sm outline-none focus:border-cda-blue"
                       />
                     </td>
+                    <td className="px-3 py-1.5 text-sm text-cda-text2">{dia ? minParaHora(dia.horasPrevistas) : "—"}</td>
                     <td className="px-3 py-1.5 text-sm text-cda-text2">{dia ? minParaHora(dia.horasTrabalhadas) : "—"}</td>
                     <td className="px-3 py-1.5">
-                      {dia && (
-                        <Badge variant={dia.saldoDiario < 0 ? "red" : dia.saldoDiario > 0 ? "green" : "gray"}>
-                          {minParaHora(dia.saldoDiario)}
-                        </Badge>
-                      )}
+                      {dia && dia.atrasoFalta > 0 && <Badge variant="red">{minParaHora(dia.atrasoFalta)}</Badge>}
                     </td>
+                    <td className="px-3 py-1.5">
+                      {dia && dia.horaExtra > 0 && <Badge variant="green">{minParaHora(dia.horaExtra)}</Badge>}
+                    </td>
+                    <td className="px-3 py-1.5 text-sm text-cda-text2">{dia && dia.adicionalNoturno > 0 ? minParaHora(dia.adicionalNoturno) : "—"}</td>
                     <td className="px-3 py-1.5 text-sm font-medium text-cda-text">{dia ? minParaHora(dia.saldoAcumulado) : "—"}</td>
                     <td className="px-2 py-1.5">
                       <button onClick={() => removerLinha(i)} className="text-cda-text3 hover:text-cda-red">

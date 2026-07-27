@@ -34,6 +34,11 @@ export type DiaCalculado = {
   adicionalNoturno: number;
   saldoBruto: number;
   saldoDiario: number;
+  /** Minutos em atraso/falta no dia (sempre ≥ 0) — mesma coluna "Atraso/Falta" da planilha. */
+  atrasoFalta: number;
+  /** Minutos de hora extra no dia (sempre ≥ 0) — mesma coluna "Hora Extra" da planilha. */
+  horaExtra: number;
+  /** Saldo do banco de horas acumulado até este dia — mesma coluna "Saldo Banco de Horas" da planilha. */
   saldoAcumulado: number;
 };
 
@@ -121,6 +126,8 @@ export function calcularDia(
     adicionalNoturno,
     saldoBruto,
     saldoDiario,
+    atrasoFalta: saldoDiario < 0 ? -saldoDiario : 0,
+    horaExtra: saldoDiario > 0 ? saldoDiario : 0,
     saldoAcumulado: saldoAnterior + saldoDiario,
   };
 }
