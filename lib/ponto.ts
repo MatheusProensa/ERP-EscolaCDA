@@ -1,6 +1,9 @@
-/** Cargos do Ensino Fundamental têm "1º Ano", "2º Ano" etc. — regentes de turma do Fundamental. */
+/**
+ * Cargos do Ensino Fundamental têm "1º Ano", "2º Ano" etc. — regentes de turma do Fundamental.
+ * "Teacher" é a professora de Inglês do Fundamental (não tem "Xº Ano" no cargo, mas atende essas turmas).
+ */
 export function ehEnsinoFundamental(cargo: string): boolean {
-  return /\d+º\s*ano/i.test(cargo);
+  return /\d+º\s*ano/i.test(cargo) || /teacher/i.test(cargo);
 }
 
 export const TOLERANCIA_MIN = 10;
