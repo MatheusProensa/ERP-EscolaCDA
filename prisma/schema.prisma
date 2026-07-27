@@ -206,18 +206,49 @@ model Contrato {
 }
 
 model Funcionario {
-  id             String                 @id @default(cuid())
-  nome           String
-  cpf            String                 @unique
-  cargo          String
-  setor          String
-  telefone       String?
-  email          String?
-  dataNascimento DateTime?
-  admissao       DateTime
-  ativo          Boolean                @default(true)
-  documentos     DocumentoFuncionario[]
-  createdAt      DateTime               @default(now())
+  id                     String                 @id @default(cuid())
+  nome                   String
+  cpf                    String                 @unique
+  cargo                  String
+  setor                  String
+  telefone               String?
+  email                  String?
+  dataNascimento         DateTime?
+  admissao               DateTime
+  ativo                  Boolean                @default(true)
+  jornadaPrevistaMinutos Int?
+  documentos             DocumentoFuncionario[]
+  registrosPonto         RegistroPonto[]
+  createdAt              DateTime               @default(now())
+}
+
+model RegistroPonto {
+  id            String          @id @default(cuid())
+  funcionario   Funcionario     @relation(fields: [funcionarioId], references: [id], onDelete: Cascade)
+  funcionarioId String
+  data          DateTime
+  entrada1      Int?
+  saida1        Int?
+  entrada2      Int?
+  saida2        Int?
+  entrada3      Int?
+  saida3        Int?
+  ocorrencia    OcorrenciaPonto @default(NORMAL)
+  observacao    String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([funcionarioId, data])
+}
+
+enum OcorrenciaPonto {
+  NORMAL
+  FALTA
+  FERIADO
+  FERIAS
+  ATESTADO
+  FOLGA
+  DSR
 }
 
 model DocumentoFuncionario {

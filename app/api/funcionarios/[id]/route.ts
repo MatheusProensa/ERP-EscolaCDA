@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { horaParaMin } from "@/lib/ponto";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -8,7 +9,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
-  const { ativo, nome, cargo, setor, telefone, email, dataNascimento } = body;
+  const { ativo, nome, cargo, setor, telefone, email, dataNascimento, jornadaPrevista } = body;
 
   const funcionario = await prisma.funcionario.update({
     where: { id },
@@ -20,6 +21,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       telefone: telefone !== undefined ? telefone || null : undefined,
       email: email !== undefined ? email || null : undefined,
       dataNascimento: dataNascimento !== undefined ? (dataNascimento ? new Date(dataNascimento) : null) : undefined,
+      jornadaPrevistaMinutos:
+        jornadaPrevista !== undefined ? (jornadaPrevista ? horaParaMin(jornadaPrevista) : null) : undefined,
     },
   });
 

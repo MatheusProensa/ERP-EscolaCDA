@@ -1,0 +1,310 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { Plus, Trash2, Save, Loader2 } from "lucide-react";
+import { Card } from "@/components/ui/Card";
+import { Select } from "@/components/ui/Select";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { ExportButtons } from "@/components/ui/ExportButtons";
+import { calcularMes, minParaHora, OCORRENCIA_LABEL, type RegistroPontoDia } from "@/lib/ponto";
+
+const MESES = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
+const OCORRENCIAS = Object.keys(OCORRENCIA_LABEL);
+
+type Linha = {
+  data: string; // yyyy-mm-dd
+  entrada1: string;
+  saida1: string;
+  entrada2: string;
+  saida2: string;
+  entrada3: string;
+  saida3: string;
+  ocorrencia: string;
+  observacao: string;
+};
+
+function linhaVazia(data: string): Linha {
+  return { data, entrada1: "", saida1: "", entrada2: "", saida2: "", entrada3: "", saida3: "", ocorrencia: "NORMAL", observacao: "" };
+}
+
+function horaValida(v: string): string | null {
+  if (!v.trim()) return null;
+  return /^\d{1,2}:\d{2}$/.test(v.trim()) ? v.trim() : null;
+}
+
+function horaParaMinLocal(v: string): number | null {
+  const h = horaValida(v);
+  if (!h) return null;
+  const [hh, mm] = h.split(":").map(Number);
+  return hh * 60 + mm;
+}
+
+export function PontoMesForm({
+  funcionarioId,
+  jornadaPrevistaMinutos,
+}: {
+  funcionarioId: string;
+  jornadaPrevistaMinutos: number | null;
+}) {
+  const hoje = new Date();
+  const [mes, setMes] = useState(hoje.getUTCMonth() + 1);
+  const [ano, setAno] = useState(hoje.getUTCFullYear());
+  const [linhas, setLinhas] = useState<Linha[]>([]);
+  const [saldoInicial, setSaldoInicial] = useState(0);
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [mensagem, setMensagem] = useState<string | null>(null);
+
+  const jornada = jornadaPrevistaMinutos ?? 0;
+
+  useEffect(() => {
+    let cancelado = false;
+
+    async function carregar() {
+      setCarregando(true);
+      setMensagem(null);
+      const res = await fetch(`/api/ponto/${funcionarioId}?mes=${mes}&ano=${ano}`);
+      const data = await res.json();
+      if (cancelado) return;
+      setSaldoInicial(data.saldoInicial ?? 0);
+      const carregadas: Linha[] = (data.dias ?? []).map((d: {
+        data: string; entrada1: number | null; saida1: number | null; entrada2: number | null;
+        saida2: number | null; entrada3: number | null; saida3: number | null; ocorrencia: string; observacao: string | null;
+      }) => ({
+        data: d.data.slice(0, 10),
+        entrada1: d.entrada1 != null ? minParaHora(d.entrada1) : "",
+        saida1: d.saida1 != null ? minParaHora(d.saida1) : "",
+        entrada2: d.entrada2 != null ? minParaHora(d.entrada2) : "",
+        saida2: d.saida2 != null ? minParaHora(d.saida2) : "",
+        entrada3: d.entrada3 != null ? minParaHora(d.entrada3) : "",
+        saida3: d.saida3 != null ? minParaHora(d.saida3) : "",
+        ocorrencia: d.ocorrencia,
+        observacao: d.observacao ?? "",
+      }));
+      setLinhas(carregadas);
+      setCarregando(false);
+    }
+
+    carregar();
+    return () => {
+      cancelado = true;
+    };
+  }, [funcionarioId, mes, ano]);
+
+  const calculados = useMemo(() => {
+    const registros: RegistroPontoDia[] = linhas
+      .filter((l) => l.data)
+      .map((l) => ({
+        data: new Date(`${l.data}T00:00:00.000Z`),
+        entrada1: horaParaMinLocal(l.entrada1),
+        saida1: horaParaMinLocal(l.saida1),
+        entrada2: horaParaMinLocal(l.entrada2),
+        saida2: horaParaMinLocal(l.saida2),
+        entrada3: horaParaMinLocal(l.entrada3),
+        saida3: horaParaMinLocal(l.saida3),
+        ocorrencia: l.ocorrencia,
+        observacao: l.observacao,
+      }));
+    return calcularMes(registros, jornada, saldoInicial);
+  }, [linhas, jornada, saldoInicial]);
+
+  const saldoFinal = calculados.length > 0 ? calculados[calculados.length - 1].saldoAcumulado : saldoInicial;
+
+  function atualizarLinha(i: number, campo: keyof Linha, valor: string) {
+    setLinhas((prev) => prev.map((l, idx) => (idx === i ? { ...l, [campo]: valor } : l)));
+  }
+
+  function adicionarDia() {
+    const ultimaData = linhas.length > 0 ? linhas[linhas.length - 1].data : null;
+    let proxima: Date;
+    if (ultimaData) {
+      proxima = new Date(`${ultimaData}T00:00:00.000Z`);
+      proxima.setUTCDate(proxima.getUTCDate() + 1);
+    } else {
+      proxima = new Date(Date.UTC(ano, mes - 1, 1));
+    }
+    setLinhas((prev) => [...prev, linhaVazia(proxima.toISOString().slice(0, 10))]);
+  }
+
+  function removerLinha(i: number) {
+    setLinhas((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  async function salvar() {
+    setSalvando(true);
+    setMensagem(null);
+    const linhasValidas = linhas.filter((l) => l.data);
+    for (const l of linhasValidas) {
+      if (l.entrada1 && !horaValida(l.entrada1)) return alertaHora(l.entrada1);
+      if (l.saida1 && !horaValida(l.saida1)) return alertaHora(l.saida1);
+      if (l.entrada2 && !horaValida(l.entrada2)) return alertaHora(l.entrada2);
+      if (l.saida2 && !horaValida(l.saida2)) return alertaHora(l.saida2);
+      if (l.entrada3 && !horaValida(l.entrada3)) return alertaHora(l.entrada3);
+      if (l.saida3 && !horaValida(l.saida3)) return alertaHora(l.saida3);
+    }
+    try {
+      const res = await fetch(`/api/ponto/${funcionarioId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mes, ano, registros: linhasValidas }),
+      });
+      if (!res.ok) throw new Error();
+      setMensagem("Salvo com sucesso.");
+    } catch {
+      setMensagem("Erro ao salvar. Tente novamente.");
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  function alertaHora(valor: string) {
+    setSalvando(false);
+    setMensagem(`Horário inválido: "${valor}". Use o formato HH:MM (ex.: 08:00).`);
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <Card className="flex flex-wrap items-end justify-between gap-3 p-4">
+        <div className="flex items-end gap-3">
+          <Select label="Mês" value={mes} onChange={(e) => setMes(Number(e.target.value))} className="w-40">
+            {MESES.map((m, i) => (
+              <option key={m} value={i + 1}>{m}</option>
+            ))}
+          </Select>
+          <Select label="Ano" value={ano} onChange={(e) => setAno(Number(e.target.value))} className="w-28">
+            {[ano - 1, ano, ano + 1].map((a) => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </Select>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-cda-text2">Jornada prevista</span>
+            <div className="flex h-10 items-center text-sm text-cda-text">
+              {jornada ? minParaHora(jornada) : "não definida"}
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <span className="text-xs font-medium text-cda-text2">Saldo acumulado</span>
+            <div className="flex h-10 items-center">
+              <Badge variant={saldoFinal < 0 ? "red" : saldoFinal > 0 ? "green" : "gray"}>{minParaHora(saldoFinal)}</Badge>
+            </div>
+          </div>
+        </div>
+        <ExportButtons href="/api/relatorios/ponto" params={{ funcionarioId, mes: String(mes), ano: String(ano) }} />
+      </Card>
+
+      <Card className="overflow-x-auto p-0">
+        {carregando ? (
+          <div className="flex items-center justify-center gap-2 p-10 text-sm text-cda-text3">
+            <Loader2 className="h-4 w-4 animate-spin" /> Carregando...
+          </div>
+        ) : (
+          <table className="w-full min-w-[1100px] text-sm">
+            <thead>
+              <tr className="border-b border-cda-border bg-cda-bg text-left text-xs font-semibold uppercase text-cda-text2">
+                <th className="px-3 py-2">Data</th>
+                <th className="px-3 py-2">Entrada</th>
+                <th className="px-3 py-2">Saída</th>
+                <th className="px-3 py-2">Entrada</th>
+                <th className="px-3 py-2">Saída</th>
+                <th className="px-3 py-2">Entrada</th>
+                <th className="px-3 py-2">Saída</th>
+                <th className="px-3 py-2">Ocorrência</th>
+                <th className="px-3 py-2">Observação</th>
+                <th className="px-3 py-2">Horas dia</th>
+                <th className="px-3 py-2">Saldo dia</th>
+                <th className="px-3 py-2">Saldo acum.</th>
+                <th className="px-3 py-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {linhas.length === 0 && (
+                <tr>
+                  <td colSpan={13} className="px-3 py-8 text-center text-sm text-cda-text3">
+                    Nenhum dia lançado neste mês. Clique em &quot;Adicionar dia&quot; para começar.
+                  </td>
+                </tr>
+              )}
+              {linhas.map((l, i) => {
+                const dia = calculados.find((d) => d.data.toISOString().slice(0, 10) === l.data);
+                return (
+                  <tr key={i} className="border-b border-cda-border last:border-0">
+                    <td className="px-2 py-1.5">
+                      <input
+                        type="date"
+                        value={l.data}
+                        onChange={(e) => atualizarLinha(i, "data", e.target.value)}
+                        className="h-8 w-36 rounded-md border border-cda-border px-2 text-sm outline-none focus:border-cda-blue"
+                      />
+                    </td>
+                    {(["entrada1", "saida1", "entrada2", "saida2", "entrada3", "saida3"] as const).map((campo) => (
+                      <td key={campo} className="px-2 py-1.5">
+                        <input
+                          type="text"
+                          placeholder="--:--"
+                          value={l[campo]}
+                          onChange={(e) => atualizarLinha(i, campo, e.target.value)}
+                          className="h-8 w-16 rounded-md border border-cda-border px-2 text-center text-sm outline-none focus:border-cda-blue"
+                        />
+                      </td>
+                    ))}
+                    <td className="px-2 py-1.5">
+                      <select
+                        value={l.ocorrencia}
+                        onChange={(e) => atualizarLinha(i, "ocorrencia", e.target.value)}
+                        className="h-8 rounded-md border border-cda-border px-1.5 text-xs outline-none focus:border-cda-blue"
+                      >
+                        {OCORRENCIAS.map((o) => (
+                          <option key={o} value={o}>{OCORRENCIA_LABEL[o]}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-2 py-1.5">
+                      <input
+                        type="text"
+                        placeholder="reuniões, obs..."
+                        value={l.observacao}
+                        onChange={(e) => atualizarLinha(i, "observacao", e.target.value)}
+                        className="h-8 w-32 rounded-md border border-cda-border px-2 text-sm outline-none focus:border-cda-blue"
+                      />
+                    </td>
+                    <td className="px-3 py-1.5 text-sm text-cda-text2">{dia ? minParaHora(dia.horasTrabalhadas) : "—"}</td>
+                    <td className="px-3 py-1.5">
+                      {dia && (
+                        <Badge variant={dia.saldoDiario < 0 ? "red" : dia.saldoDiario > 0 ? "green" : "gray"}>
+                          {minParaHora(dia.saldoDiario)}
+                        </Badge>
+                      )}
+                    </td>
+                    <td className="px-3 py-1.5 text-sm font-medium text-cda-text">{dia ? minParaHora(dia.saldoAcumulado) : "—"}</td>
+                    <td className="px-2 py-1.5">
+                      <button onClick={() => removerLinha(i)} className="text-cda-text3 hover:text-cda-red">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </Card>
+
+      <div className="flex items-center justify-between">
+        <Button variant="outline" size="sm" onClick={adicionarDia}>
+          <Plus className="h-4 w-4" /> Adicionar dia
+        </Button>
+        <div className="flex items-center gap-3">
+          {mensagem && <span className="text-xs text-cda-text2">{mensagem}</span>}
+          <Button size="sm" onClick={salvar} loading={salvando}>
+            <Save className="h-4 w-4" /> Salvar
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}

@@ -31,6 +31,7 @@ export function FuncionarioForm() {
         email: fd.get("email"),
         admissao: fd.get("admissao"),
         dataNascimento: fd.get("dataNascimento") || null,
+        jornadaPrevista: fd.get("jornadaPrevista") || null,
       }),
     });
 
@@ -68,6 +69,13 @@ export function FuncionarioForm() {
           </Select>
           <Input label="Telefone" name="telefone" placeholder="(55) 99999-9999" />
           <Input label="E-mail" name="email" type="email" />
+          <Input
+            label="Jornada prevista (por dia)"
+            name="jornadaPrevista"
+            placeholder="04:30"
+            pattern="\d{1,2}:\d{2}"
+            title="Formato HH:MM, ex.: 04:30"
+          />
         </div>
       </Card>
 

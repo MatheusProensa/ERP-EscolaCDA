@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { horaParaMin } from "@/lib/ponto";
 
 export async function GET() {
   const session = await auth();
@@ -15,7 +16,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const body = await req.json();
-  const { nome, cpf, cargo, setor, telefone, email, admissao, dataNascimento } = body;
+  const { nome, cpf, cargo, setor, telefone, email, admissao, dataNascimento, jornadaPrevista } = body;
 
   if (!nome || !cpf || !cargo || !setor || !admissao) {
     return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
       email: email || null,
       admissao: new Date(admissao),
       dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
+      jornadaPrevistaMinutos: jornadaPrevista ? horaParaMin(jornadaPrevista) : null,
     },
   });
 

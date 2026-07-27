@@ -14,6 +14,7 @@ import {
   KeyRound,
   ShieldCheck,
   Cake,
+  Clock,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -39,7 +40,10 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Financeiro",
-    items: [{ label: "Financeiro", href: "/financeiro", icon: Wallet }],
+    items: [
+      { label: "Financeiro", href: "/financeiro", icon: Wallet },
+      { label: "Ponto", href: "/ponto", icon: Clock },
+    ],
   },
   {
     label: "Administrativo",

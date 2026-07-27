@@ -31,6 +31,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/funcionarios", roles: ADMINISTRATIVO },
   { prefixo: "/estoque", roles: ADMINISTRATIVO },
   { prefixo: "/chaves", roles: ADMINISTRATIVO },
+  { prefixo: "/ponto", roles: FINANCEIRO },
   { prefixo: "/usuarios", roles: GESTAO },
 
   // APIs
@@ -39,6 +40,8 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/api/relatorios/alunos", roles: PEDAGOGICO },
   { prefixo: "/api/relatorios/aniversariantes", roles: ANIVERSARIANTES },
   { prefixo: "/api/relatorios/estoque", roles: ADMINISTRATIVO },
+  { prefixo: "/api/relatorios/ponto", roles: FINANCEIRO },
+  { prefixo: "/api/ponto", roles: FINANCEIRO },
   { prefixo: "/api/financeiro", roles: FINANCEIRO },
   { prefixo: "/api/alunos", roles: PEDAGOGICO },
   { prefixo: "/api/turmas", roles: PEDAGOGICO },

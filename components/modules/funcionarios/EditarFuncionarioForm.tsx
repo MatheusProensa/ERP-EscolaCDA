@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { SETORES } from "@/lib/utils";
+import { minParaHora } from "@/lib/ponto";
 
 export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionario }) {
   const router = useRouter();
@@ -30,6 +31,7 @@ export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionari
         telefone: fd.get("telefone"),
         email: fd.get("email"),
         dataNascimento: fd.get("dataNascimento") || null,
+        jornadaPrevista: fd.get("jornadaPrevista") || null,
       }),
     });
 
@@ -71,6 +73,14 @@ export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionari
             placeholder="(55) 99999-9999"
           />
           <Input label="E-mail" name="email" type="email" defaultValue={funcionario.email ?? ""} />
+          <Input
+            label="Jornada prevista (por dia)"
+            name="jornadaPrevista"
+            placeholder="04:30"
+            pattern="\d{1,2}:\d{2}"
+            title="Formato HH:MM, ex.: 04:30"
+            defaultValue={funcionario.jornadaPrevistaMinutos != null ? minParaHora(funcionario.jornadaPrevistaMinutos) : ""}
+          />
         </div>
       </Card>
 
