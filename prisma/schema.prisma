@@ -339,6 +339,16 @@ model LogAtividade {
   createdAt  DateTime @default(now())
 }
 
+model DocumentoInstitucional {
+  id         String    @id @default(cuid())
+  titulo     String
+  categoria  String
+  link       String
+  validade   DateTime?
+  observacao String?
+  createdAt  DateTime  @default(now())
+}
+
 model Disciplina {
   id    String @id @default(cuid())
   nome  String @unique

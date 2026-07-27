@@ -67,7 +67,6 @@ export async function GET(request: NextRequest) {
     const todos = registrosPorFuncionario.get(f.id) ?? [];
     const registrosAnteriores = todos.filter((r) => r.data < inicio);
     const registrosMes = todos.filter((r) => r.data >= inicio && r.data < fim);
-    if (registrosMes.length === 0) continue;
 
     const jornada = f.jornadaPrevistaMinutos ?? 0;
     const diasAnteriores = calcularMes(registrosAnteriores as RegistroPontoDia[], jornada);

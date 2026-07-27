@@ -46,6 +46,8 @@ export function agruparPorSetor<T extends { setor: string }>(funcionarios: T[]):
     });
 }
 
+export const CATEGORIAS_DOCUMENTO = ["Legalização", "Contratos", "RH", "Institucional"];
+
 export function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }

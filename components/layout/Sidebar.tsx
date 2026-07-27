@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   Cake,
   Clock,
+  FileText,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -56,6 +57,10 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Escola",
     items: [{ label: "Aniversariantes", href: "/aniversariantes", icon: Cake }],
+  },
+  {
+    label: "Direção",
+    items: [{ label: "Documentos", href: "/documentos", icon: FileText }],
   },
   {
     label: "Sistema",
