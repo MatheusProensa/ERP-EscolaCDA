@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { calcularMes, type RegistroPontoDia } from "@/lib/ponto";
+import { calcularMes, ehEnsinoFundamental, type RegistroPontoDia } from "@/lib/ponto";
 
 export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const funcionarios = await prisma.funcionario.findMany({
-    where: { ativo: true },
-    orderBy: { nome: "asc" },
-  });
+  const funcionarios = (
+    await prisma.funcionario.findMany({
+      where: { ativo: true },
+      orderBy: { nome: "asc" },
+    })
+  ).filter((f) => ehEnsinoFundamental(f.cargo));
 
   const registros = await prisma.registroPonto.findMany({
     where: { funcionarioId: { in: funcionarios.map((f) => f.id) } },

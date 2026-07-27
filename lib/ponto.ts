@@ -1,3 +1,8 @@
+/** Cargos do Ensino Fundamental têm "1º Ano", "2º Ano" etc. — regentes de turma do Fundamental. */
+export function ehEnsinoFundamental(cargo: string): boolean {
+  return /\d+º\s*ano/i.test(cargo);
+}
+
 export const TOLERANCIA_MIN = 10;
 const NOTURNO_INICIO = 22 * 60; // 22:00
 const NOTURNO_FIM = 5 * 60; // 05:00

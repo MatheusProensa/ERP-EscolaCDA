@@ -5,8 +5,9 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { ExportButtons } from "@/components/ui/ExportButtons";
-import { calcularMes, minParaHora, type RegistroPontoDia } from "@/lib/ponto";
+import { calcularMes, ehEnsinoFundamental, minParaHora, type RegistroPontoDia } from "@/lib/ponto";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -23,10 +24,12 @@ export default async function PontoPage({
   const mesFiltro = mes ? Number(mes) : hoje.getUTCMonth() + 1;
   const ano = hoje.getUTCFullYear();
 
-  const funcionarios = await prisma.funcionario.findMany({
-    where: { ativo: true },
-    orderBy: { nome: "asc" },
-  });
+  const funcionarios = (
+    await prisma.funcionario.findMany({
+      where: { ativo: true },
+      orderBy: { nome: "asc" },
+    })
+  ).filter((f) => ehEnsinoFundamental(f.cargo));
 
   const registros = await prisma.registroPonto.findMany({
     where: { funcionarioId: { in: funcionarios.map((f) => f.id) } },
@@ -53,7 +56,7 @@ export default async function PontoPage({
     <div>
       <PageHeader
         title="Ponto"
-        subtitle="Lançamento das folhas de ponto e cálculo automático de horas — tolerância CLT, adicional noturno e banco de horas"
+        subtitle="Ensino Fundamental — lançamento das folhas de ponto e cálculo automático de horas (tolerância CLT, adicional noturno e banco de horas)"
         action={<ExportButtons href="/api/relatorios/ponto" params={{ mes: String(mesFiltro), ano: String(ano) }} />}
       />
 
@@ -61,14 +64,14 @@ export default async function PontoPage({
         <Table>
           <TableHead>
             <Th>Funcionário</Th>
-            <Th>Cargo / Setor</Th>
+            <Th>Cargo</Th>
             <Th>Jornada prevista</Th>
             <Th>Lançamentos em {MESES[mesFiltro - 1]}</Th>
             <Th>Saldo acumulado</Th>
             <Th>{""}</Th>
           </TableHead>
           <TableBody>
-            {linhas.length === 0 && <TableEmpty colSpan={6}>Nenhum funcionário ativo.</TableEmpty>}
+            {linhas.length === 0 && <TableEmpty colSpan={6}>Nenhum funcionário do Ensino Fundamental encontrado.</TableEmpty>}
             {linhas.map(({ funcionario: f, saldoAtual, registrosNoMes }) => (
               <Tr key={f.id}>
                 <Td>
@@ -77,7 +80,7 @@ export default async function PontoPage({
                     {f.nome}
                   </Link>
                 </Td>
-                <Td>{f.cargo} · {f.setor}</Td>
+                <Td>{f.cargo}</Td>
                 <Td>{f.jornadaPrevistaMinutos ? minParaHora(f.jornadaPrevistaMinutos) : "—"}</Td>
                 <Td>{registrosNoMes} dia(s)</Td>
                 <Td>
@@ -86,9 +89,9 @@ export default async function PontoPage({
                   </Badge>
                 </Td>
                 <Td>
-                  <Link href={`/ponto/${f.id}`} className="text-xs font-medium text-cda-blue hover:underline">
+                  <Button href={`/ponto/${f.id}`} size="sm" variant="outline" className="whitespace-nowrap">
                     Lançar ponto
-                  </Link>
+                  </Button>
                 </Td>
               </Tr>
             ))}
