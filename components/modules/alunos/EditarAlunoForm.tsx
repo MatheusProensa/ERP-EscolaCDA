@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PhotoUpload } from "@/components/ui/PhotoUpload";
+import { formatarCPF } from "@/lib/utils";
 import { CensoCampos } from "./CensoCampos";
 
 function paraInputDate(data: Date): string {
@@ -102,7 +103,12 @@ export function EditarAlunoForm({ aluno }: { aluno: Aluno }) {
             required
             defaultValue={paraInputDate(aluno.dataNascimento)}
           />
-          <Input label="CPF (opcional)" name="cpf" defaultValue={aluno.cpf ?? ""} placeholder="000.000.000-00" />
+          <Input
+            label="CPF (opcional)"
+            name="cpf"
+            defaultValue={aluno.cpf ? formatarCPF(aluno.cpf) : ""}
+            placeholder="000.000.000-00"
+          />
           <Input label="RG (opcional)" name="rg" defaultValue={aluno.rg ?? ""} />
           <Input
             label="Certidão de nascimento"

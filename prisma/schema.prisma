@@ -249,6 +249,7 @@ model Funcionario {
   dataNascimento         DateTime?
   admissao               DateTime
   ativo                  Boolean                @default(true)
+  participaPonto         Boolean                @default(false)
   jornadaPrevistaMinutos Int?
   documentos             DocumentoFuncionario[]
   registrosPonto         RegistroPonto[]

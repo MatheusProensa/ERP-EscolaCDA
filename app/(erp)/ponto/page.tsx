@@ -7,7 +7,8 @@ import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/component
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { ExportButtons } from "@/components/ui/ExportButtons";
-import { calcularMes, ehEnsinoFundamental, minParaHora, type RegistroPontoDia } from "@/lib/ponto";
+import { GerenciarParticipantesModal } from "@/components/modules/ponto/GerenciarParticipantesModal";
+import { calcularMes, minParaHora, type RegistroPontoDia } from "@/lib/ponto";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -24,12 +25,12 @@ export default async function PontoPage({
   const mesFiltro = mes ? Number(mes) : hoje.getUTCMonth() + 1;
   const ano = hoje.getUTCFullYear();
 
-  const funcionarios = (
-    await prisma.funcionario.findMany({
-      where: { ativo: true },
-      orderBy: { nome: "asc" },
-    })
-  ).filter((f) => ehEnsinoFundamental(f.cargo));
+  const todosFuncionarios = await prisma.funcionario.findMany({
+    where: { ativo: true },
+    orderBy: { nome: "asc" },
+    select: { id: true, nome: true, cargo: true, setor: true, participaPonto: true, jornadaPrevistaMinutos: true },
+  });
+  const funcionarios = todosFuncionarios.filter((f) => f.participaPonto);
 
   const registros = await prisma.registroPonto.findMany({
     where: { funcionarioId: { in: funcionarios.map((f) => f.id) } },
@@ -56,8 +57,13 @@ export default async function PontoPage({
     <div>
       <PageHeader
         title="Ponto"
-        subtitle="Ensino Fundamental — lançamento das folhas de ponto e cálculo automático de horas (tolerância CLT, adicional noturno e banco de horas)"
-        action={<ExportButtons href="/api/relatorios/ponto" params={{ mes: String(mesFiltro), ano: String(ano) }} />}
+        subtitle="Lançamento das folhas de ponto e cálculo automático de horas (tolerância CLT, adicional noturno e banco de horas)"
+        action={
+          <div className="flex items-center gap-2">
+            <GerenciarParticipantesModal funcionarios={todosFuncionarios} />
+            <ExportButtons href="/api/relatorios/ponto" params={{ mes: String(mesFiltro), ano: String(ano) }} />
+          </div>
+        }
       />
 
       <Card>
@@ -71,7 +77,11 @@ export default async function PontoPage({
             <Th>{""}</Th>
           </TableHead>
           <TableBody>
-            {linhas.length === 0 && <TableEmpty colSpan={6}>Nenhum funcionário do Ensino Fundamental encontrado.</TableEmpty>}
+            {linhas.length === 0 && (
+              <TableEmpty colSpan={6}>
+                Nenhum funcionário participando do Ponto ainda. Use &quot;Gerenciar participantes&quot; pra adicionar.
+              </TableEmpty>
+            )}
             {linhas.map(({ funcionario: f, saldoAtual, registrosNoMes }) => (
               <Tr key={f.id}>
                 <Td>

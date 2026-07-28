@@ -10,14 +10,16 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
-  const { ativo, nome, cargo, setor, telefone, email, dataNascimento, jornadaPrevista } = body;
+  const { ativo, nome, cpf, cargo, setor, telefone, email, dataNascimento, jornadaPrevista, participaPonto } = body;
 
   try {
     const funcionario = await prisma.funcionario.update({
       where: { id },
       data: {
         ativo: typeof ativo === "boolean" ? ativo : undefined,
+        participaPonto: typeof participaPonto === "boolean" ? participaPonto : undefined,
         nome: nome || undefined,
+        cpf: cpf || undefined,
         cargo: cargo || undefined,
         setor: setor || undefined,
         telefone: telefone !== undefined ? telefone || null : undefined,

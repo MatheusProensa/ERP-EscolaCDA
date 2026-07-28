@@ -28,10 +28,19 @@ type Mensagem = {
   createdAt: string;
 };
 
-export function ChatApp({ meId, selecionadoInicial }: { meId: string; selecionadoInicial?: string }) {
+export function ChatApp({
+  meId,
+  selecionadoInicial,
+  conversasIniciais,
+}: {
+  meId: string;
+  selecionadoInicial?: string;
+  conversasIniciais?: Conversa[];
+}) {
   const router = useRouter();
-  const [conversas, setConversas] = useState<Conversa[]>([]);
-  const [carregandoConversas, setCarregandoConversas] = useState(true);
+  const [conversas, setConversas] = useState<Conversa[]>(conversasIniciais ?? []);
+  const [carregandoConversas, setCarregandoConversas] = useState(!conversasIniciais);
+  const [erroConversas, setErroConversas] = useState(false);
   const [selecionado, setSelecionado] = useState<string | null>(selecionadoInicial ?? null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [texto, setTexto] = useState("");
@@ -44,10 +53,18 @@ export function ChatApp({ meId, selecionadoInicial }: { meId: string; selecionad
     let cancelado = false;
     async function carregarConversas() {
       if (document.hidden) return;
-      const res = await fetch("/api/chat");
-      if (!res.ok || cancelado) return;
-      setConversas(await res.json());
-      setCarregandoConversas(false);
+      try {
+        const res = await fetch("/api/chat");
+        if (!res.ok) throw new Error("resposta não-ok");
+        const dados = await res.json();
+        if (cancelado) return;
+        setConversas(dados);
+        setErroConversas(false);
+      } catch {
+        if (!cancelado) setErroConversas(true);
+      } finally {
+        if (!cancelado) setCarregandoConversas(false);
+      }
     }
     carregarConversas();
     const intervalo = setInterval(carregarConversas, 15000);
@@ -131,7 +148,12 @@ export function ChatApp({ meId, selecionadoInicial }: { meId: string; selecionad
               </div>
             </div>
           ))}
-        {!carregandoConversas && conversas.length === 0 && (
+        {!carregandoConversas && erroConversas && conversas.length === 0 && (
+          <p className="px-4 py-6 text-center text-sm text-cda-red">
+            Não foi possível carregar. Tentando de novo em instantes...
+          </p>
+        )}
+        {!carregandoConversas && !erroConversas && conversas.length === 0 && (
           <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhum outro perfil cadastrado.</p>
         )}
         {conversas.map((c) => (

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { SETORES } from "@/lib/utils";
+import { SETORES, formatarCPF, formatarTelefone } from "@/lib/utils";
 import { minParaHora } from "@/lib/ponto";
 
 export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionario }) {
@@ -26,12 +26,14 @@ export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionari
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         nome: fd.get("nome"),
+        cpf: fd.get("cpf"),
         cargo: fd.get("cargo"),
         setor: fd.get("setor"),
         telefone: fd.get("telefone"),
         email: fd.get("email"),
         dataNascimento: fd.get("dataNascimento") || null,
         jornadaPrevista: fd.get("jornadaPrevista") || null,
+        participaPonto: fd.get("participaPonto") === "on",
       }),
     });
 
@@ -52,6 +54,7 @@ export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionari
       <Card title="Dados do funcionário" className="p-5">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Input label="Nome completo" name="nome" required defaultValue={funcionario.nome} className="sm:col-span-2" />
+          <Input label="CPF" name="cpf" required defaultValue={formatarCPF(funcionario.cpf)} placeholder="000.000.000-00" />
           <Input label="Cargo" name="cargo" required defaultValue={funcionario.cargo} />
           <Input
             label="Data de nascimento"
@@ -69,8 +72,8 @@ export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionari
           <Input
             label="Telefone"
             name="telefone"
-            defaultValue={funcionario.telefone ?? ""}
-            placeholder="(55) 99999-9999"
+            defaultValue={funcionario.telefone ? formatarTelefone(funcionario.telefone) : ""}
+            placeholder="(55) 9 9999-9999"
           />
           <Input label="E-mail" name="email" type="email" defaultValue={funcionario.email ?? ""} />
           <Input
@@ -81,6 +84,15 @@ export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionari
             title="Formato HH:MM, ex.: 04:30"
             defaultValue={funcionario.jornadaPrevistaMinutos != null ? minParaHora(funcionario.jornadaPrevistaMinutos) : ""}
           />
+          <label className="flex items-center gap-2 text-sm text-cda-text2 sm:col-span-2">
+            <input
+              type="checkbox"
+              name="participaPonto"
+              defaultChecked={funcionario.participaPonto}
+              className="h-4 w-4 rounded border-cda-border"
+            />
+            Participa do controle de Ponto
+          </label>
         </div>
       </Card>
 
