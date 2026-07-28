@@ -12,6 +12,7 @@ import { StockBar, StatusEstoquePill, CategoriaCell } from "./EstoqueVisuais";
 import { ItemMenu } from "./ItemMenu";
 import { MovimentacaoModal } from "./MovimentacaoModal";
 import { EditarItemModal } from "./EditarItemModal";
+import { AjusteEstoqueModal } from "./AjusteEstoqueModal";
 import { statusEstoque, type StatusEstoque } from "@/lib/estoqueStatus";
 
 export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
@@ -20,6 +21,7 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
   const [filtroStatus, setFiltroStatus] = useState<StatusEstoque | "todos">("todos");
   const [itemMovimentacao, setItemMovimentacao] = useState<{ item: ItemEstoque; tipo: "ENTRADA" | "SAIDA" } | null>(null);
   const [itemEditar, setItemEditar] = useState<ItemEstoque | null>(null);
+  const [itemAjuste, setItemAjuste] = useState<ItemEstoque | null>(null);
 
   async function excluirItem(item: ItemEstoque) {
     if (!confirm(`Excluir "${item.nome}" do estoque? O histórico de movimentações também será removido.`)) return;
@@ -122,6 +124,7 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
                     <ItemMenu
                       onEntrada={() => setItemMovimentacao({ item, tipo: "ENTRADA" })}
                       onSaida={() => setItemMovimentacao({ item, tipo: "SAIDA" })}
+                      onAjuste={() => setItemAjuste(item)}
                       onEditar={() => setItemEditar(item)}
                       onExcluir={() => excluirItem(item)}
                     />
@@ -134,11 +137,13 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
       </Card>
 
       <MovimentacaoModal
+        key={itemMovimentacao ? `${itemMovimentacao.item.id}-${itemMovimentacao.tipo}` : "vazio"}
         item={itemMovimentacao?.item ?? null}
         tipoInicial={itemMovimentacao?.tipo}
         onClose={() => setItemMovimentacao(null)}
       />
       <EditarItemModal item={itemEditar} onClose={() => setItemEditar(null)} />
+      <AjusteEstoqueModal item={itemAjuste} onClose={() => setItemAjuste(null)} />
     </div>
   );
 }

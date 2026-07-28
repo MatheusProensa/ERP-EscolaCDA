@@ -5,22 +5,12 @@ import { useRouter } from "next/navigation";
 import type { ItemEstoque } from "@prisma/client";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 
-export function MovimentacaoModal({
-  item,
-  tipoInicial = "ENTRADA",
-  onClose,
-}: {
-  item: ItemEstoque | null;
-  tipoInicial?: "ENTRADA" | "SAIDA";
-  onClose: () => void;
-}) {
+export function AjusteEstoqueModal({ item, onClose }: { item: ItemEstoque | null; onClose: () => void }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [tipo, setTipo] = useState<"ENTRADA" | "SAIDA">(tipoInicial);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -29,15 +19,13 @@ export function MovimentacaoModal({
     setLoading(true);
 
     const fd = new FormData(e.currentTarget);
-    const res = await fetch(`/api/estoque/${item.id}/movimentacoes`, {
+    const res = await fetch(`/api/estoque/${item.id}/ajuste`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        tipo: fd.get("tipo"),
-        quantidade: fd.get("quantidade"),
+        novaQuantidade: fd.get("novaQuantidade"),
         motivo: fd.get("motivo"),
         responsavel: fd.get("responsavel"),
-        destino: fd.get("destino"),
       }),
     });
 
@@ -45,7 +33,7 @@ export function MovimentacaoModal({
 
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Não foi possível registrar a movimentação.");
+      setError(data.error ?? "Não foi possível ajustar o estoque.");
       return;
     }
 
@@ -54,30 +42,34 @@ export function MovimentacaoModal({
   }
 
   return (
-    <Modal open={!!item} onClose={onClose} title="Registrar movimentação">
+    <Modal open={!!item} onClose={onClose} title="Ajustar estoque (inventário)">
       {item && (
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <p className="text-sm text-cda-text2">
-            <span className="font-medium text-cda-text">{item.nome}</span> · estoque atual: {item.quantidade}{" "}
-            {item.unidade}
+            <span className="font-medium text-cda-text">{item.nome}</span> · estoque atual no sistema:{" "}
+            {item.quantidade} {item.unidade}
           </p>
-          <Select label="Tipo" name="tipo" value={tipo} onChange={(e) => setTipo(e.target.value as "ENTRADA" | "SAIDA")} required>
-            <option value="ENTRADA">Entrada</option>
-            <option value="SAIDA">Saída</option>
-          </Select>
-          <Input label="Quantidade" name="quantidade" type="number" min={1} required />
-          <Input label="Responsável" name="responsavel" required placeholder="Quem está retirando/registrando" />
-          {tipo === "SAIDA" && (
-            <Input label="Destino (opcional)" name="destino" placeholder="Setor/turma que recebeu" />
-          )}
-          <Input label="Motivo (opcional)" name="motivo" placeholder="Compra, uso em sala, etc." />
+          <Input
+            label={`Quantidade real (${item.unidade})`}
+            name="novaQuantidade"
+            type="number"
+            min={0}
+            required
+            defaultValue={item.quantidade}
+          />
+          <Input label="Responsável" name="responsavel" required placeholder="Quem conferiu o estoque" />
+          <Input
+            label="Motivo (opcional)"
+            name="motivo"
+            placeholder="Contagem de inventário, perda, avaria..."
+          />
           {error && <p className="text-sm text-cda-red">{error}</p>}
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={onClose}>
               Cancelar
             </Button>
             <Button type="submit" loading={loading}>
-              Registrar
+              Salvar ajuste
             </Button>
           </div>
         </form>

@@ -2,16 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreHorizontal, ArrowDownToLine, ArrowUpFromLine, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, ArrowDownToLine, ArrowUpFromLine, SlidersHorizontal, Pencil, Trash2 } from "lucide-react";
 
 export function ItemMenu({
   onEntrada,
   onSaida,
+  onAjuste,
   onEditar,
   onExcluir,
 }: {
   onEntrada: () => void;
   onSaida: () => void;
+  onAjuste: () => void;
   onEditar: () => void;
   onExcluir: () => void;
 }) {
@@ -73,6 +75,7 @@ export function ItemMenu({
           >
             {item("Registrar entrada", ArrowDownToLine, onEntrada)}
             {item("Registrar saída", ArrowUpFromLine, onSaida)}
+            {item("Ajustar estoque (inventário)", SlidersHorizontal, onAjuste)}
             {item("Editar item", Pencil, onEditar)}
             {item("Excluir item", Trash2, onExcluir, true)}
           </div>,

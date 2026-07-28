@@ -8,6 +8,13 @@ import { statusEstoque } from "@/lib/estoqueStatus";
 
 type MovimentacaoComItem = MovimentacaoEstoque & { item: ItemEstoque };
 
+const TIPO_LABEL: Record<string, { label: string; bg: string; cor: string }> = {
+  ENTRADA: { label: "Entrada", bg: "#16A34A1A", cor: "#16A34A" },
+  SAIDA: { label: "Saída", bg: "#D977061A", cor: "#D97706" },
+  AJUSTE: { label: "Ajuste", bg: "#1A6FD81A", cor: "#1A6FD8" },
+  ESTORNO: { label: "Estorno", bg: "#6B72801A", cor: "#6B7280" },
+};
+
 function KpiCard({
   icon: Icon,
   cor,
@@ -119,12 +126,9 @@ export function VisaoGeralTab({
                   <Td>
                     <span
                       className="rounded-md px-2 py-0.5 text-xs font-semibold"
-                      style={{
-                        backgroundColor: mov.tipo === "ENTRADA" ? "#16A34A1A" : "#D977061A",
-                        color: mov.tipo === "ENTRADA" ? "#16A34A" : "#D97706",
-                      }}
+                      style={{ backgroundColor: TIPO_LABEL[mov.tipo].bg, color: TIPO_LABEL[mov.tipo].cor }}
                     >
-                      {mov.tipo === "ENTRADA" ? "Entrada" : "Saída"}
+                      {TIPO_LABEL[mov.tipo].label}
                     </span>
                   </Td>
                   <Td>{mov.item.nome}</Td>

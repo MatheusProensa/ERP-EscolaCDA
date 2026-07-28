@@ -315,12 +315,17 @@ model MovimentacaoEstoque {
   quantidade  Int
   motivo      String?
   responsavel String?
+  destino     String?
+  anulada     Boolean     @default(false)
+  refId       String?
   createdAt   DateTime    @default(now())
 }
 
 enum TipoMov {
   ENTRADA
   SAIDA
+  AJUSTE
+  ESTORNO
 }
 
 model Cardapio {
