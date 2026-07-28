@@ -4,6 +4,7 @@ import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/component
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { formatarData, formatarMoeda } from "@/lib/utils";
+import { saldoDevedor } from "@/lib/inadimplencia";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -56,6 +57,10 @@ export function MensalidadeTable({
         )}
         {mensalidades.map((m) => {
           const pagamento = m.pagamentos[0];
+          const restante = saldoDevedor(m);
+          const atrasada = m.situacao === "PENDENTE" && new Date(m.vencimento) < new Date();
+          const situacaoExibida = atrasada ? "ATRASADA" : m.situacao;
+          const parcial = m.situacao === "PENDENTE" && restante > 0 && restante < m.valor;
           return (
             <Tr key={m.id}>
               {mostrarAluno && (
@@ -76,9 +81,14 @@ export function MensalidadeTable({
               )}
               <Td>{MESES[m.mes - 1]}/{m.ano}</Td>
               <Td>{formatarData(m.vencimento)}</Td>
-              <Td>{formatarMoeda(m.valor)}</Td>
               <Td>
-                <Badge variant={SITUACAO_VARIANT[m.situacao]}>{SITUACAO_LABEL[m.situacao]}</Badge>
+                {formatarMoeda(m.valor)}
+                {parcial && (
+                  <span className="block text-xs text-cda-amber">saldo: {formatarMoeda(restante)}</span>
+                )}
+              </Td>
+              <Td>
+                <Badge variant={SITUACAO_VARIANT[situacaoExibida]}>{SITUACAO_LABEL[situacaoExibida]}</Badge>
               </Td>
               <Td>{pagamento ? formatarData(pagamento.dataPagamento) : "—"}</Td>
               {onRegistrarPagamento && (

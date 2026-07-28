@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { CATEGORIAS_EVENTO } from "@/lib/calendario";
 
 const GESTAO = ["ADMIN", "DIRECAO"];
 
@@ -37,6 +38,9 @@ export async function POST(request: NextRequest) {
   const { titulo, data, categoria, descricao } = body;
   if (!titulo || !data || !categoria) {
     return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
+  }
+  if (!CATEGORIAS_EVENTO.includes(categoria)) {
+    return NextResponse.json({ error: "Categoria inválida" }, { status: 400 });
   }
 
   const evento = await prisma.eventoCalendario.create({

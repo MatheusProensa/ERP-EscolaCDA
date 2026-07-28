@@ -14,27 +14,44 @@ export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoC
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const emprestimo = chave.emprestimos[0] ?? null;
 
   async function retirar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError("");
     setLoading(true);
     const fd = new FormData(e.currentTarget);
-    await fetch(`/api/chaves/${chave.id}/emprestimos`, {
+    const res = await fetch(`/api/chaves/${chave.id}/emprestimos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ responsavel: fd.get("responsavel") }),
     });
     setLoading(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Não foi possível registrar a retirada.");
+      return;
+    }
+
     setOpen(false);
     router.refresh();
   }
 
   async function devolver() {
     if (!emprestimo) return;
+    setError("");
     setLoading(true);
-    await fetch(`/api/chaves/${chave.id}/emprestimos/${emprestimo.id}`, { method: "PATCH" });
+    const res = await fetch(`/api/chaves/${chave.id}/emprestimos/${emprestimo.id}`, { method: "PATCH" });
     setLoading(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Não foi possível registrar a devolução.");
+      return;
+    }
+
     router.refresh();
   }
 
@@ -63,10 +80,12 @@ export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoC
           Retirar chave
         </Button>
       )}
+      {error && !open && <p className="mt-2 text-xs text-cda-red">{error}</p>}
 
       <Modal open={open} onClose={() => setOpen(false)} title={`Retirar chave — ${chave.sala}`}>
         <form onSubmit={retirar} className="flex flex-col gap-4">
           <Input label="Responsável pela retirada" name="responsavel" required />
+          {error && <p className="text-sm text-cda-red">{error}</p>}
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar

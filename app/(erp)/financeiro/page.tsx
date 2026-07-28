@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { ResumoFinanceiro, type ResumoMensal } from "@/components/modules/financeiro/ResumoFinanceiro";
+import { saldoDevedor } from "@/lib/inadimplencia";
 import { formatarMoeda } from "@/lib/utils";
 
 const MESES_ABREV = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -31,7 +32,7 @@ export default async function FinanceiroPage() {
   const doMesAtual = porMes[mesAtual - 1];
   const emAberto = mensalidades
     .filter((m) => m.situacao === "PENDENTE" || m.situacao === "ATRASADA")
-    .reduce((acc, m) => acc + m.valor, 0);
+    .reduce((acc, m) => acc + saldoDevedor(m), 0);
   const taxaRecebimento = doMesAtual.previsto > 0 ? (doMesAtual.recebido / doMesAtual.previsto) * 100 : 0;
 
   return (

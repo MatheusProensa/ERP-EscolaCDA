@@ -51,9 +51,16 @@ export function DocumentosFuncionario({
   }
 
   async function handleRemover(docId: string) {
+    if (!confirm("Remover este documento?")) return;
+    setError("");
     setRemovendoId(docId);
-    await fetch(`/api/funcionarios/${funcionarioId}/documentos/${docId}`, { method: "DELETE" });
+    const res = await fetch(`/api/funcionarios/${funcionarioId}/documentos/${docId}`, { method: "DELETE" });
     setRemovendoId(null);
+
+    if (!res.ok) {
+      setError("Não foi possível remover o documento.");
+      return;
+    }
     router.refresh();
   }
 

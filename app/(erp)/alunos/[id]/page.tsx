@@ -21,7 +21,10 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
         include: {
           turma: true,
           contrato: true,
-          mensalidades: { include: { pagamentos: true }, orderBy: { mes: "asc" } },
+          mensalidades: {
+            include: { pagamentos: { orderBy: { dataPagamento: "desc" } } },
+            orderBy: { mes: "asc" },
+          },
         },
         orderBy: { dataMatricula: "desc" },
       },

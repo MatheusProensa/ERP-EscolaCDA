@@ -2,10 +2,11 @@ import { Wallet, TrendingUp, AlertCircle, Percent } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
-import { TabelaInadimplentes, type Inadimplente } from "@/components/modules/dashboard/TabelaInadimplentes";
+import { TabelaInadimplentes } from "@/components/modules/dashboard/TabelaInadimplentes";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
-import { diasEmAtraso, formatarMoeda } from "@/lib/utils";
+import { agruparInadimplentes, saldoDevedor, whereAtrasadas } from "@/lib/inadimplencia";
+import { formatarMoeda } from "@/lib/utils";
 
 export async function DashboardFinanceiro() {
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
@@ -18,13 +19,13 @@ export async function DashboardFinanceiro() {
       include: { pagamentos: true },
     }),
     prisma.mensalidade.findMany({
-      where: { situacao: "ATRASADA" },
-      include: { matricula: { include: { aluno: true, turma: true } } },
+      where: whereAtrasadas(),
+      include: { pagamentos: true, matricula: { include: { aluno: true, turma: true } } },
       orderBy: { vencimento: "asc" },
     }),
-    prisma.mensalidade.aggregate({
-      _sum: { valor: true },
+    prisma.mensalidade.findMany({
       where: { situacao: { in: ["PENDENTE", "ATRASADA"] } },
+      include: { pagamentos: true },
     }),
     prisma.logAtividade.findMany({ where: { entidade: "Mensalidade" }, orderBy: { createdAt: "desc" }, take: 8 }),
   ]);
@@ -32,26 +33,9 @@ export async function DashboardFinanceiro() {
   const previsto = mensalidadesDoMes.reduce((acc, m) => acc + m.valor, 0);
   const recebido = mensalidadesDoMes.reduce((acc, m) => acc + m.pagamentos.reduce((a, p) => a + p.valor, 0), 0);
   const taxaRecebimento = previsto > 0 ? (recebido / previsto) * 100 : 0;
+  const totalEmAberto = mensalidadesEmAberto.reduce((acc, m) => acc + saldoDevedor(m), 0);
 
-  const porAluno = new Map<string, Inadimplente>();
-  for (const m of mensalidadesAtrasadas) {
-    const alunoId = m.matricula.alunoId;
-    const existente = porAluno.get(alunoId);
-    const atraso = diasEmAtraso(m.vencimento);
-    if (existente) {
-      existente.valor += m.valor;
-      existente.diasAtraso = Math.max(existente.diasAtraso, atraso);
-    } else {
-      porAluno.set(alunoId, {
-        alunoId,
-        nome: m.matricula.aluno.nome,
-        turma: m.matricula.turma.nome,
-        valor: m.valor,
-        diasAtraso: atraso,
-      });
-    }
-  }
-  const inadimplentes = Array.from(porAluno.values()).sort((a, b) => b.diasAtraso - a.diasAtraso);
+  const inadimplentes = agruparInadimplentes(mensalidadesAtrasadas);
 
   return (
     <div>
@@ -63,9 +47,9 @@ export async function DashboardFinanceiro() {
         <MetricCard
           icon={AlertCircle}
           iconColor="#DC2626"
-          value={formatarMoeda(mensalidadesEmAberto._sum.valor ?? 0)}
+          value={formatarMoeda(totalEmAberto)}
           label="Total em aberto"
-          subtext="Pendente + atrasado"
+          subtext="Pendente + atrasado, já descontando pagamentos parciais"
         />
         <MetricCard icon={Percent} iconColor="#D97706" value={`${taxaRecebimento.toFixed(0)}%`} label="Taxa de recebimento" subtext="Mês atual" />
       </div>

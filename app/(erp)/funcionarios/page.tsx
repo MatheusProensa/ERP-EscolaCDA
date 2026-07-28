@@ -19,7 +19,7 @@ export default async function FuncionariosPage({
   const funcionarios = await prisma.funcionario.findMany({
     where: {
       setor: setor || undefined,
-      nome: busca ? { contains: busca } : undefined,
+      nome: busca ? { contains: busca, mode: "insensitive" } : undefined,
     },
     orderBy: { nome: "asc" },
   });

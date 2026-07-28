@@ -90,7 +90,10 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
               <TableEmpty colSpan={3}>Nenhum aluno matriculado nesta turma.</TableEmpty>
             )}
             {turma.matriculas.map((m) => {
-              const temAtraso = m.mensalidades.some((men) => men.situacao === "ATRASADA");
+              const hoje = new Date();
+              const temAtraso = m.mensalidades.some(
+                (men) => (men.situacao === "PENDENTE" || men.situacao === "ATRASADA") && men.vencimento < hoje
+              );
               return (
                 <Tr key={m.id}>
                   <Td>

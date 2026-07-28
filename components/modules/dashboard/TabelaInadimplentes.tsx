@@ -4,14 +4,9 @@ import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/component
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { formatarMoeda } from "@/lib/utils";
+import type { Inadimplente } from "@/lib/inadimplencia";
 
-export type Inadimplente = {
-  alunoId: string;
-  nome: string;
-  turma: string;
-  valor: number;
-  diasAtraso: number;
-};
+export type { Inadimplente };
 
 export function TabelaInadimplentes({
   dados,

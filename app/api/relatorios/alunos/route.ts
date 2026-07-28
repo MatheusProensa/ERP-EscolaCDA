@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
       turmaId: turma,
       situacao: (situacao as SituacaoMatricula) || undefined,
       aluno: {
-        nome: busca ? { contains: busca } : undefined,
+        nome: busca ? { contains: busca, mode: "insensitive" } : undefined,
         OR: censoIncompleto ? [{ racaCor: null }, { filiacao1: null }, { sexo: null }] : undefined,
       },
     },

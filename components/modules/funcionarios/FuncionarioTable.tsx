@@ -20,6 +20,7 @@ export function FuncionarioTable({
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
   async function alternarAtivo(f: Funcionario) {
+    if (f.ativo && !confirm(`Desativar ${f.nome}?`)) return;
     setLoadingId(f.id);
     await fetch(`/api/funcionarios/${f.id}`, {
       method: "PATCH",

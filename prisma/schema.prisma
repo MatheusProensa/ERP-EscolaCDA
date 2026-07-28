@@ -143,7 +143,6 @@ model Matricula {
   dataMatricula DateTime          @default(now())
   mensalidades  Mensalidade[]
   contrato      Contrato?
-  notas         Nota[]
   updatedAt     DateTime          @updatedAt
 }
 
@@ -311,16 +310,6 @@ model EmprestimoChave {
   devolucao   DateTime?
 }
 
-model Reuniao {
-  id        String   @id @default(cuid())
-  titulo    String
-  data      DateTime
-  local     String?
-  pauta     String?
-  ata       String?
-  createdAt DateTime @default(now())
-}
-
 model MuralAviso {
   id        String   @id @default(cuid())
   titulo    String
@@ -358,21 +347,3 @@ model DocumentoInstitucional {
   createdAt  DateTime  @default(now())
 }
 
-model Disciplina {
-  id    String @id @default(cuid())
-  nome  String @unique
-  notas Nota[]
-}
-
-model Nota {
-  id           String     @id @default(cuid())
-  matricula    Matricula  @relation(fields: [matriculaId], references: [id])
-  matriculaId  String
-  disciplina   Disciplina @relation(fields: [disciplinaId], references: [id])
-  disciplinaId String
-  periodo      Int
-  valor        Float
-  updatedAt    DateTime   @updatedAt
-
-  @@unique([matriculaId, disciplinaId, periodo])
-}

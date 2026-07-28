@@ -19,21 +19,33 @@ export default async function MensalidadesPage({
   searchParams: Promise<{ mes?: string; situacao?: string; turma?: string; busca?: string }>;
 }) {
   const { mes, situacao, turma, busca } = await searchParams;
+  const hoje = new Date();
 
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
   const turmas = ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }));
 
+  // "Atrasada" é calculado (vencida e ainda não paga), não um valor gravado — nada no sistema
+  // grava ATRASADA em `situacao`, então filtrar literalmente por esse valor nunca traria resultado.
+  let situacaoWhere: { situacao?: SituacaoMensalidade; vencimento?: { lt?: Date; gte?: Date } } = {};
+  if (situacao === "ATRASADA") {
+    situacaoWhere = { situacao: "PENDENTE", vencimento: { lt: hoje } };
+  } else if (situacao === "PENDENTE") {
+    situacaoWhere = { situacao: "PENDENTE", vencimento: { gte: hoje } };
+  } else if (situacao) {
+    situacaoWhere = { situacao: situacao as SituacaoMensalidade };
+  }
+
   const mensalidades = await prisma.mensalidade.findMany({
     where: {
       mes: mes ? Number(mes) : undefined,
-      situacao: (situacao as SituacaoMensalidade) || undefined,
+      ...situacaoWhere,
       matricula: {
         anoLetivoId: anoLetivo?.id,
         turmaId: turma || undefined,
-        aluno: busca ? { nome: { contains: busca } } : undefined,
+        aluno: busca ? { nome: { contains: busca, mode: "insensitive" } } : undefined,
       },
     },
-    include: { pagamentos: true, matricula: { include: { aluno: true, turma: true } } },
+    include: { pagamentos: { orderBy: { dataPagamento: "desc" } }, matricula: { include: { aluno: true, turma: true } } },
     orderBy: [{ vencimento: "asc" }],
     take: 200,
   });

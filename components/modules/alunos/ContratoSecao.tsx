@@ -80,14 +80,16 @@ export function ContratoSecao({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <a
-              href={contrato.arquivo ?? "#"}
-              download={`contrato-${turmaNome}.pdf`}
-              className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
-            >
-              <Download className="h-3.5 w-3.5" />
-              Baixar PDF
-            </a>
+            {contrato.arquivo && (
+              <a
+                href={contrato.arquivo}
+                download={`contrato-${turmaNome}.pdf`}
+                className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
+              >
+                <Download className="h-3.5 w-3.5" />
+                Baixar PDF
+              </a>
+            )}
             <button
               onClick={alternarAssinado}
               disabled={loading}

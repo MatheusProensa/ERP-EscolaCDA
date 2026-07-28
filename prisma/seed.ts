@@ -1,7 +1,17 @@
 import { PrismaClient, Turno } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 
 const prisma = new PrismaClient();
+
+/** Senha legível tipo "trilha-forte-8291" — evita senha fixa hardcoded que ficaria exposta no repositório. */
+function gerarSenhaAleatoria(): string {
+  const palavras = ["trilha", "girassol", "recreio", "estrela", "canela", "bambu", "cometa", "violeta", "sereno", "coral"];
+  const a = palavras[crypto.randomInt(palavras.length)];
+  const b = palavras[crypto.randomInt(palavras.length)];
+  const n = crypto.randomInt(1000, 9999);
+  return `${a}-${b}-${n}`;
+}
 
 const ANO = 2026;
 
@@ -183,10 +193,10 @@ const NOMES_FUNCIONARIOS = [
   { nome: "Eduarda Rodrigues Sturm", cargo: "Secretária", setor: "Secretaria" },
   { nome: "Maria Eduarda Güntzel de Freitas", cargo: "Secretária", setor: "Secretaria" },
   { nome: "Eduarda Jaymes", cargo: "Estagiária", setor: "Pedagógico" },
-  { nome: "Itamar", cargo: "Financeiro", setor: "Financeiro" },
-  { nome: "Matheus", cargo: "Filmmaker", setor: "Marketing" },
+  { nome: "Itamar Alves Ferreira", cargo: "Financeiro", setor: "Financeiro" },
+  { nome: "Matheus Proensa Ferreira", cargo: "Filmmaker", setor: "Marketing" },
   { nome: "Camila", cargo: "Professora de Educação Física", setor: "Pedagógico" },
-  { nome: "Antonio Stona", cargo: "Professor de Inglês (Educação Infantil)", setor: "Pedagógico" },
+  { nome: "Antonio Stona", cargo: "Professor de Inglês (Educação Infantil) / Libras", setor: "Pedagógico" },
   { nome: "Gabriela Vieira Schramm", cargo: "Teacher", setor: "Pedagógico" },
   { nome: "Gabriela Oliveira", cargo: "Professora - 3º Ano", setor: "Pedagógico" },
   { nome: "Rodrigo", cargo: "Professor de Capoeira", setor: "Pedagógico" },
@@ -198,7 +208,7 @@ const NOMES_FUNCIONARIOS = [
   { nome: "Cláudia Jaqueline Machado", cargo: "Professora - 2º Ano", setor: "Pedagógico" },
   { nome: "Taís Canfild Veiga Trindade", cargo: "Professora - Berçário I", setor: "Pedagógico" },
   { nome: "Geovana Jacobsen Vargas", cargo: "Professora - Pré-escola II", setor: "Pedagógico" },
-  { nome: "Melissa Santos", cargo: "Educadora Especial / Professora de Libras", setor: "Pedagógico" },
+  { nome: "Melissa Santos", cargo: "Educadora Especial", setor: "Pedagógico" },
   { nome: "Natália", cargo: "Nutricionista", setor: "Nutrição" },
   { nome: "Natalia Bolson da Silva", cargo: "Monitora", setor: "Pedagógico" },
   { nome: "Sheron Quinto Togni", cargo: "Monitora", setor: "Pedagógico" },
@@ -213,6 +223,39 @@ const NOMES_FUNCIONARIOS = [
   { nome: "Delma Therezinha Rodrigues Bittencourt", cargo: "Serviços Gerais", setor: "Serviços Gerais" },
   { nome: "Vanderleia", cargo: "Serviços Gerais", setor: "Serviços Gerais" },
 ];
+
+// Datas de admissão reais, extraídas da planilha de folha de pagamento
+// "Funcionarios_Ordenados_CDA_Carinha_com_VT" (menor data entre as duas entidades,
+// quando a pessoa aparece nas duas). Quem não está aqui usa a data fictícia de fallback.
+const ADMISSAO_REAL: Record<string, string> = {
+  Amanda: "2026-03-24",
+  "Andressa Naibert": "2026-04-15",
+  "Antonio Stona": "2026-04-15",
+  "Carla Guntzel": "2012-06-01",
+  "Carolina Silveira Rodrigues": "2023-02-16",
+  "Caroline Padilha Santana": "2026-03-04",
+  "Cláudia Jaqueline Machado": "2023-08-22",
+  Débora: "2026-06-10",
+  "Delma Therezinha Rodrigues Bittencourt": "2025-09-29",
+  "Edinéia Oliveira Silva": "2026-06-05",
+  "Eduarda Rodrigues Sturm": "2024-07-29",
+  "Gabriela Oliveira": "2026-06-02",
+  "Gabriela Vieira Schramm": "2023-08-03",
+  "Geovana Jacobsen Vargas": "2026-02-06",
+  "Jéssica Doyle Dias": "2024-10-23",
+  "Jéssica Gelocha": "2024-02-16",
+  "Letícia Proensa": "2015-11-01",
+  "Lidiane Tadiello": "2015-08-17",
+  "Maria Eduarda Güntzel de Freitas": "2022-01-07",
+  "Mariana de Souza Carames": "2025-02-03",
+  "Melissa Santos": "2026-05-22",
+  "Natalia Bolson da Silva": "2024-08-13",
+  "Priscila Proensa": "2021-09-01",
+  "Sheron Quinto Togni": "2024-08-16",
+  "Suelen Guedes": "2025-03-10",
+  "Taís Canfild Veiga Trindade": "2026-01-21",
+  Vanderleia: "2026-04-23",
+};
 
 function aleatorio<T>(lista: T[]): T {
   return lista[Math.floor(Math.random() * lista.length)];
@@ -259,8 +302,6 @@ function sortearRacaCor(): "BRANCA" | "PRETA" | "PARDA" | "AMARELA" | "INDIGENA"
 async function main() {
   console.log("Limpando dados existentes...");
   await prisma.logAtividade.deleteMany();
-  await prisma.nota.deleteMany();
-  await prisma.disciplina.deleteMany();
   await prisma.pagamento.deleteMany();
   await prisma.mensalidade.deleteMany();
   await prisma.contrato.deleteMany();
@@ -279,16 +320,24 @@ async function main() {
   await prisma.user.deleteMany();
 
   console.log("Criando usuários...");
-  const senhaHash = await bcrypt.hash("cda123456", 10);
-  await prisma.user.createMany({
-    data: [
-      { name: "Administrador CDA", email: "admin@escolacda.com.br", password: senhaHash, role: "ADMIN" },
-      { name: "Direção CDA", email: "direcao@escolacda.com.br", password: senhaHash, role: "DIRECAO" },
-      { name: "Financeiro CDA", email: "financeiro@escolacda.com.br", password: senhaHash, role: "FINANCEIRO" },
-      { name: "Pedagógico CDA", email: "pedagogico@escolacda.com.br", password: senhaHash, role: "PEDAGOGICO" },
-      { name: "Secretaria CDA", email: "secretaria@escolacda.com.br", password: senhaHash, role: "ADMINISTRATIVO" },
-    ],
-  });
+  const usuariosBase = [
+    { name: "Administrador CDA", email: "admin@escolacda.com.br", role: "ADMIN" as const },
+    { name: "Direção CDA", email: "direcao@escolacda.com.br", role: "DIRECAO" as const },
+    { name: "Financeiro CDA", email: "financeiro@escolacda.com.br", role: "FINANCEIRO" as const },
+    { name: "Pedagógico CDA", email: "pedagogico@escolacda.com.br", role: "PEDAGOGICO" as const },
+    { name: "Secretaria CDA", email: "secretaria@escolacda.com.br", role: "ADMINISTRATIVO" as const },
+  ];
+  const senhasGeradas: { email: string; senha: string }[] = [];
+  for (const u of usuariosBase) {
+    const senha = gerarSenhaAleatoria();
+    senhasGeradas.push({ email: u.email, senha });
+    await prisma.user.create({
+      data: { ...u, password: await bcrypt.hash(senha, 10) },
+    });
+  }
+  console.log("\nSenhas geradas (anote agora — não ficam salvas em nenhum lugar em texto puro):");
+  for (const { email, senha } of senhasGeradas) console.log(`  ${email} -> ${senha}`);
+  console.log("");
 
   console.log("Criando ano letivo...");
   const anoLetivo = await prisma.anoLetivo.create({
@@ -424,7 +473,7 @@ async function main() {
         setor: f.setor,
         telefone: null,
         email: gerarEmail(f.nome),
-        admissao: new Date(ANO - (1 + (i % 5)), i % 12, 1),
+        admissao: ADMISSAO_REAL[f.nome] ? new Date(ADMISSAO_REAL[f.nome]) : new Date(ANO - (1 + (i % 5)), i % 12, 1),
         ativo: true,
       },
     });

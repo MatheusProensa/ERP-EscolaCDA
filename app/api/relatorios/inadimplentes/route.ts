@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdf, respostaPDF } from "@/lib/gerarRelatorioPdf";
 import { diasEmAtraso, formatarData, formatarTelefone } from "@/lib/utils";
+import { saldoDevedor, whereAtrasadas } from "@/lib/inadimplencia";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -10,8 +11,9 @@ export async function GET(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const mensalidades = await prisma.mensalidade.findMany({
-    where: { situacao: "ATRASADA" },
+    where: whereAtrasadas(),
     include: {
+      pagamentos: true,
       matricula: {
         include: { aluno: { include: { responsaveis: true } }, turma: true },
       },
@@ -19,19 +21,21 @@ export async function GET(request: NextRequest) {
     orderBy: { vencimento: "asc" },
   });
 
-  const linhas = mensalidades.map((m) => {
-    const responsavel = m.matricula.aluno.responsaveis[0];
-    return {
-      Aluno: m.matricula.aluno.nome,
-      Turma: m.matricula.turma.nome,
-      Responsavel: responsavel?.nome ?? "",
-      Telefone: responsavel ? formatarTelefone(responsavel.telefone) : "",
-      Referencia: `${m.mes}/${m.ano}`,
-      Vencimento: formatarData(m.vencimento),
-      Valor: m.valor.toFixed(2).replace(".", ","),
-      DiasAtraso: diasEmAtraso(m.vencimento),
-    };
-  });
+  const linhas = mensalidades
+    .filter((m) => saldoDevedor(m) > 0)
+    .map((m) => {
+      const responsavel = m.matricula.aluno.responsaveis[0];
+      return {
+        Aluno: m.matricula.aluno.nome,
+        Turma: m.matricula.turma.nome,
+        Responsavel: responsavel?.nome ?? "",
+        Telefone: responsavel ? formatarTelefone(responsavel.telefone) : "",
+        Referencia: `${m.mes}/${m.ano}`,
+        Vencimento: formatarData(m.vencimento),
+        Valor: saldoDevedor(m).toFixed(2).replace(".", ","),
+        DiasAtraso: diasEmAtraso(m.vencimento),
+      };
+    });
 
   const data = new Date().toISOString().slice(0, 10);
 

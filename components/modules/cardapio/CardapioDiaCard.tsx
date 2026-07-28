@@ -15,29 +15,47 @@ export function CardapioDiaCard({ data, cardapio }: { data: Date; cardapio: Card
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const dataISO = data.toISOString().slice(0, 10);
   const label = `${DIAS_SEMANA[data.getUTCDay()]}, ${data.toLocaleDateString("pt-BR", { timeZone: "UTC" })}`;
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setError("");
     setLoading(true);
     const fd = new FormData(e.currentTarget);
-    await fetch("/api/cardapio", {
+    const res = await fetch("/api/cardapio", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ data: dataISO, almoco: fd.get("almoco"), lanche: fd.get("lanche") }),
     });
     setLoading(false);
+
+    if (!res.ok) {
+      const resposta = await res.json().catch(() => ({}));
+      setError(resposta.error ?? "Não foi possível salvar o cardápio.");
+      return;
+    }
+
     setOpen(false);
     router.refresh();
   }
 
   async function remover() {
     if (!cardapio) return;
+    if (!confirm("Remover o cardápio deste dia?")) return;
+    setError("");
     setLoading(true);
-    await fetch(`/api/cardapio/${cardapio.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/cardapio/${cardapio.id}`, { method: "DELETE" });
     setLoading(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Não foi possível remover o cardápio.");
+      return;
+    }
+
     router.refresh();
   }
 
@@ -80,11 +98,13 @@ export function CardapioDiaCard({ data, cardapio }: { data: Date; cardapio: Card
           </button>
         )}
       </div>
+      {error && !open && <p className="mt-2 text-xs text-cda-red">{error}</p>}
 
       <Modal open={open} onClose={() => setOpen(false)} title={label}>
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input label="Almoço" name="almoco" required defaultValue={cardapio?.almoco ?? ""} />
           <Input label="Lanche (opcional)" name="lanche" defaultValue={cardapio?.lanche ?? ""} />
+          {error && <p className="text-sm text-cda-red">{error}</p>}
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
