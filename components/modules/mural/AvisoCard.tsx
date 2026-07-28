@@ -9,10 +9,11 @@ import { Badge } from "@/components/ui/Badge";
 import { formatarDataHora } from "@/lib/utils";
 import { EditarAvisoModal } from "./EditarAvisoModal";
 
-export function AvisoCard({ aviso }: { aviso: MuralAviso }) {
+export function AvisoCard({ aviso, podeGerenciar }: { aviso: MuralAviso; podeGerenciar: boolean }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [erro, setErro] = useState("");
 
   async function alternarFixado() {
     setLoading(true);
@@ -28,8 +29,13 @@ export function AvisoCard({ aviso }: { aviso: MuralAviso }) {
   async function excluir() {
     if (!confirm("Excluir este aviso?")) return;
     setLoading(true);
-    await fetch(`/api/mural/${aviso.id}`, { method: "DELETE" });
+    const res = await fetch(`/api/mural/${aviso.id}`, { method: "DELETE" });
     setLoading(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setErro(data.error ?? "Não foi possível excluir.");
+      return;
+    }
     router.refresh();
   }
 
@@ -41,14 +47,16 @@ export function AvisoCard({ aviso }: { aviso: MuralAviso }) {
           {aviso.fixado && <Badge variant="amber">Fixado</Badge>}
         </div>
         <div className="flex shrink-0 items-center gap-1">
-          <button
-            onClick={() => setEditando(true)}
-            disabled={loading}
-            title="Editar"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg disabled:opacity-50"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
+          {podeGerenciar && (
+            <button
+              onClick={() => setEditando(true)}
+              disabled={loading}
+              title="Editar"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg disabled:opacity-50"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
           <button
             onClick={alternarFixado}
             disabled={loading}
@@ -57,20 +65,23 @@ export function AvisoCard({ aviso }: { aviso: MuralAviso }) {
           >
             {aviso.fixado ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
           </button>
-          <button
-            onClick={excluir}
-            disabled={loading}
-            title="Excluir"
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
+          {podeGerenciar && (
+            <button
+              onClick={excluir}
+              disabled={loading}
+              title="Excluir"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
       <p className="whitespace-pre-wrap text-sm text-cda-text2">{aviso.conteudo}</p>
       <p className="mt-3 text-xs text-cda-text3">
         {aviso.autor} · {formatarDataHora(aviso.createdAt)}
       </p>
+      {erro && <p className="mt-2 text-xs text-cda-red">{erro}</p>}
 
       <EditarAvisoModal aviso={editando ? aviso : null} onClose={() => setEditando(false)} />
     </Card>

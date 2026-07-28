@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
       conteudo,
       fixado: !!fixado,
       autor: session.user.name ?? "Usuário",
+      autorId: session.user.id,
     },
   });
 

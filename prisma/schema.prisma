@@ -23,6 +23,7 @@ model User {
   mensagensEnviadas  Mensagem[]    @relation("MensagensEnviadas")
   mensagensRecebidas Mensagem[]    @relation("MensagensRecebidas")
   notificacoes       Notificacao[]
+  avisosMural        MuralAviso[]
 }
 
 model Mensagem {
@@ -358,6 +359,8 @@ model MuralAviso {
   titulo    String
   conteudo  String
   autor     String
+  autorId   String?
+  autorUser User?    @relation(fields: [autorId], references: [id], onDelete: SetNull)
   fixado    Boolean  @default(false)
   createdAt DateTime @default(now())
 }

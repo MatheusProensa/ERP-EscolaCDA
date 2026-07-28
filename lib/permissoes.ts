@@ -10,7 +10,7 @@ export const ROLE_LABEL: Record<string, string> = {
   ADMINISTRATIVO: "Administrativo",
 };
 
-const GESTAO: RoleAtiva[] = ["ADMIN", "DIRECAO"];
+export const GESTAO: RoleAtiva[] = ["ADMIN", "DIRECAO"];
 const FINANCEIRO: RoleAtiva[] = ["ADMIN", "DIRECAO", "FINANCEIRO"];
 const PEDAGOGICO: RoleAtiva[] = ["ADMIN", "DIRECAO", "PEDAGOGICO"];
 const ADMINISTRATIVO: RoleAtiva[] = ["ADMIN", "DIRECAO", "ADMINISTRATIVO"];

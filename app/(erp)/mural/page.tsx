@@ -1,12 +1,16 @@
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { AvisoCard } from "@/components/modules/mural/AvisoCard";
 import { NovoAvisoModal } from "@/components/modules/mural/NovoAvisoModal";
+import { GESTAO } from "@/lib/permissoes";
 
 export default async function MuralPage() {
+  const session = await auth();
   const avisos = await prisma.muralAviso.findMany({
     orderBy: [{ fixado: "desc" }, { createdAt: "desc" }],
   });
+  const ehGestao = GESTAO.includes(session!.user.role as (typeof GESTAO)[number]);
 
   return (
     <div>
@@ -21,7 +25,11 @@ export default async function MuralPage() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {avisos.map((aviso) => (
-            <AvisoCard key={aviso.id} aviso={aviso} />
+            <AvisoCard
+              key={aviso.id}
+              aviso={aviso}
+              podeGerenciar={ehGestao || aviso.autorId === session!.user.id}
+            />
           ))}
         </div>
       )}
