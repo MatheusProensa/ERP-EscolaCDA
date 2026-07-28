@@ -1,5 +1,7 @@
-import { Search, HelpCircle, Mail, Menu } from "lucide-react";
+import Link from "next/link";
+import { Search, HelpCircle, MessageCircle, Menu } from "lucide-react";
 import { UserMenu } from "./UserMenu";
+import { NotificationBell } from "./NotificationBell";
 
 export function Topbar({
   name,
@@ -33,9 +35,13 @@ export function Topbar({
         <button className="hidden h-9 w-9 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg sm:flex">
           <HelpCircle className="h-[18px] w-[18px]" />
         </button>
-        <button className="hidden h-9 w-9 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg sm:flex">
-          <Mail className="h-[18px] w-[18px]" />
-        </button>
+        <Link
+          href="/chat"
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg"
+        >
+          <MessageCircle className="h-[18px] w-[18px]" />
+        </Link>
+        <NotificationBell />
         <div className="mx-1 hidden h-6 w-px bg-cda-border sm:block" />
         <UserMenu name={name} role={role} />
       </div>

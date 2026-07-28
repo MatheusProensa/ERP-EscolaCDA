@@ -3,14 +3,18 @@
 import { useRef, useState } from "react";
 import { Paperclip } from "lucide-react";
 
-const TAMANHO_MAXIMO = 5 * 1024 * 1024; // 5MB
-
 export function FileUpload({
   onSelect,
   disabled,
+  maxSizeMB = 5,
+  accept = ".pdf,.jpg,.jpeg,.png,.doc,.docx",
+  label = "Anexar arquivo",
 }: {
   onSelect: (arquivo: string, nomeArquivo: string) => void;
   disabled?: boolean;
+  maxSizeMB?: number;
+  accept?: string;
+  label?: string;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [erro, setErro] = useState("");
@@ -19,8 +23,8 @@ export function FileUpload({
     setErro("");
     if (!file) return;
 
-    if (file.size > TAMANHO_MAXIMO) {
-      setErro("O arquivo deve ter até 5MB.");
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      setErro(`O arquivo deve ter até ${maxSizeMB}MB.`);
       return;
     }
 
@@ -39,13 +43,13 @@ export function FileUpload({
         className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg disabled:opacity-50"
       >
         <Paperclip className="h-3.5 w-3.5" />
-        Anexar arquivo
+        {label}
       </button>
       {erro && <p className="mt-1 text-xs text-cda-red">{erro}</p>}
       <input
         ref={inputRef}
         type="file"
-        accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+        accept={accept}
         className="hidden"
         onChange={(e) => handleFile(e.target.files?.[0])}
       />

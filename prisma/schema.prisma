@@ -14,12 +14,45 @@ datasource db {
 }
 
 model User {
+  id                 String        @id @default(cuid())
+  name               String
+  email              String        @unique
+  password           String
+  role               Role          @default(SECRETARIA)
+  createdAt          DateTime      @default(now())
+  mensagensEnviadas  Mensagem[]    @relation("MensagensEnviadas")
+  mensagensRecebidas Mensagem[]    @relation("MensagensRecebidas")
+  notificacoes       Notificacao[]
+}
+
+model Mensagem {
+  id             String   @id @default(cuid())
+  remetente      User     @relation("MensagensEnviadas", fields: [remetenteId], references: [id])
+  remetenteId    String
+  destinatario   User     @relation("MensagensRecebidas", fields: [destinatarioId], references: [id])
+  destinatarioId String
+  conteudo       String?
+  anexoNome      String?
+  anexo          String?
+  lida           Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  @@index([remetenteId, destinatarioId])
+  @@index([destinatarioId, lida])
+}
+
+model Notificacao {
   id        String   @id @default(cuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      Role     @default(SECRETARIA)
+  usuario   User     @relation(fields: [usuarioId], references: [id])
+  usuarioId String
+  tipo      String
+  titulo    String
+  corpo     String?
+  link      String?
+  lida      Boolean  @default(false)
   createdAt DateTime @default(now())
+
+  @@index([usuarioId, lida])
 }
 
 enum Role {
