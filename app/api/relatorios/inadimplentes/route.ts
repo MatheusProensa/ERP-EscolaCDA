@@ -15,7 +15,12 @@ export async function GET(request: NextRequest) {
     include: {
       pagamentos: true,
       matricula: {
-        include: { aluno: { include: { responsaveis: true } }, turma: true },
+        include: {
+          aluno: {
+            select: { nome: true, responsaveis: { select: { nome: true, telefone: true }, take: 1 } },
+          },
+          turma: { select: { nome: true } },
+        },
       },
     },
     orderBy: { vencimento: "asc" },

@@ -10,6 +10,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
 
   const { userId } = await params;
   const meId = session.user.id;
+  const desde = _req.nextUrl.searchParams.get("desde");
 
   const mensagens = await prisma.mensagem.findMany({
     where: {
@@ -17,9 +18,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ use
         { remetenteId: meId, destinatarioId: userId },
         { remetenteId: userId, destinatarioId: meId },
       ],
+      createdAt: desde ? { gt: new Date(desde) } : undefined,
     },
     orderBy: { createdAt: "asc" },
-    take: 200,
+    take: desde ? undefined : 200,
   });
 
   await prisma.mensagem.updateMany({

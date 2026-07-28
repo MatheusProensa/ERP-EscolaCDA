@@ -7,7 +7,10 @@ import { agruparInadimplentes, whereAtrasadas } from "@/lib/inadimplencia";
 export default async function InadimplentesPage() {
   const mensalidadesAtrasadas = await prisma.mensalidade.findMany({
     where: whereAtrasadas(),
-    include: { pagamentos: true, matricula: { include: { aluno: true, turma: true } } },
+    include: {
+      pagamentos: true,
+      matricula: { include: { aluno: { select: { id: true, nome: true } }, turma: { select: { nome: true } } } },
+    },
     orderBy: { vencimento: "asc" },
   });
 

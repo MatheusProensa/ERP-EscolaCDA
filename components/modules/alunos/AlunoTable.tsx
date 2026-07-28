@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Aluno, Turma, Matricula, SituacaoMatricula } from "@prisma/client";
+import type { SituacaoMatricula } from "@prisma/client";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
@@ -21,7 +21,12 @@ const SITUACAO_LABEL: Record<SituacaoMatricula, string> = {
   CONCLUIDA: "Concluída",
 };
 
-export type MatriculaLinha = Matricula & { aluno: Aluno; turma: Turma };
+export type MatriculaLinha = {
+  id: string;
+  situacao: SituacaoMatricula;
+  aluno: { id: string; nome: string; foto: string | null; dataNascimento: Date };
+  turma: { nome: string };
+};
 
 export function AlunoTable({ matriculas }: { matriculas: MatriculaLinha[] }) {
   return (

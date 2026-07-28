@@ -33,7 +33,12 @@ export default async function AlunosPage({
         OR: censoIncompleto ? [{ racaCor: null }, { filiacao1: null }, { sexo: null }] : undefined,
       },
     },
-    include: { aluno: true, turma: true },
+    select: {
+      id: true,
+      situacao: true,
+      aluno: { select: { id: true, nome: true, foto: true, dataNascimento: true } },
+      turma: { select: { nome: true } },
+    },
     orderBy: { aluno: { nome: "asc" } },
   });
 

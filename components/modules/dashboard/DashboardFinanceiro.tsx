@@ -24,7 +24,10 @@ export async function DashboardFinanceiro() {
       }),
       prisma.mensalidade.findMany({
         where: whereAtrasadas(),
-        include: { pagamentos: true, matricula: { include: { aluno: true, turma: true } } },
+        include: {
+          pagamentos: true,
+          matricula: { include: { aluno: { select: { id: true, nome: true } }, turma: { select: { nome: true } } } },
+        },
         orderBy: { vencimento: "asc" },
       }),
       prisma.mensalidade.findMany({
@@ -34,7 +37,7 @@ export async function DashboardFinanceiro() {
       prisma.logAtividade.findMany({ where: { entidade: "Mensalidade" }, orderBy: { createdAt: "desc" }, take: 8 }),
       prisma.mensalidade.findMany({
         where: { situacao: "PENDENTE", vencimento: { gte: hoje, lte: em7dias } },
-        include: { matricula: { include: { aluno: true, turma: true } } },
+        include: { matricula: { include: { aluno: { select: { id: true, nome: true } }, turma: { select: { nome: true } } } } },
         orderBy: { vencimento: "asc" },
         take: 8,
       }),

@@ -33,7 +33,10 @@ export async function DashboardAdmin() {
     prisma.turma.count({ where: { anoLetivoId: anoLetivo?.id } }),
     prisma.mensalidade.findMany({
       where: whereAtrasadas(),
-      include: { pagamentos: true, matricula: { include: { aluno: true, turma: true } } },
+      include: {
+        pagamentos: true,
+        matricula: { include: { aluno: { select: { id: true, nome: true } }, turma: { select: { nome: true } } } },
+      },
       orderBy: { vencimento: "asc" },
     }),
     prisma.pagamento.aggregate({
@@ -49,7 +52,7 @@ export async function DashboardAdmin() {
     }),
     prisma.mensalidade.findMany({
       where: { situacao: "PENDENTE", vencimento: { gte: hoje, lte: em7dias } },
-      include: { matricula: { include: { aluno: true, turma: true } } },
+      include: { matricula: { include: { aluno: { select: { id: true, nome: true } }, turma: { select: { nome: true } } } } },
       orderBy: { vencimento: "asc" },
       take: 5,
     }),

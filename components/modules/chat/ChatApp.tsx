@@ -38,10 +38,12 @@ export function ChatApp({ meId, selecionadoInicial }: { meId: string; selecionad
   const [anexo, setAnexo] = useState<{ dados: string; nome: string } | null>(null);
   const [enviando, setEnviando] = useState(false);
   const fimRef = useRef<HTMLDivElement>(null);
+  const ultimaMensagemEmRef = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelado = false;
     async function carregarConversas() {
+      if (document.hidden) return;
       const res = await fetch("/api/chat");
       if (!res.ok || cancelado) return;
       setConversas(await res.json());
@@ -58,13 +60,22 @@ export function ChatApp({ meId, selecionadoInicial }: { meId: string; selecionad
   useEffect(() => {
     if (!selecionado) return;
     let cancelado = false;
-    async function carregarMensagens() {
-      const res = await fetch(`/api/chat/${selecionado}`);
+    ultimaMensagemEmRef.current = null;
+
+    async function carregarMensagens(incremental: boolean) {
+      if (incremental && document.hidden) return;
+      const desde = incremental && ultimaMensagemEmRef.current ? `?desde=${encodeURIComponent(ultimaMensagemEmRef.current)}` : "";
+      const res = await fetch(`/api/chat/${selecionado}${desde}`);
       if (!res.ok || cancelado) return;
-      setMensagens(await res.json());
+      const novas: Mensagem[] = await res.json();
+      if (novas.length === 0) return;
+
+      ultimaMensagemEmRef.current = novas[novas.length - 1].createdAt;
+      setMensagens((atual) => (incremental ? [...atual, ...novas] : novas));
     }
-    carregarMensagens();
-    const intervalo = setInterval(carregarMensagens, 4000);
+
+    carregarMensagens(false);
+    const intervalo = setInterval(() => carregarMensagens(true), 4000);
     return () => {
       cancelado = true;
       clearInterval(intervalo);

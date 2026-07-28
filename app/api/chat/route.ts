@@ -16,7 +16,16 @@ export async function GET() {
     }),
     prisma.mensagem.findMany({
       where: { OR: [{ remetenteId: meId }, { destinatarioId: meId }] },
+      select: {
+        remetenteId: true,
+        destinatarioId: true,
+        conteudo: true,
+        anexoNome: true,
+        createdAt: true,
+        lida: true,
+      },
       orderBy: { createdAt: "desc" },
+      take: 300,
     }),
   ]);
 

@@ -26,6 +26,7 @@ export function NotificationBell() {
     let cancelado = false;
 
     async function carregar() {
+      if (document.hidden) return;
       const res = await fetch("/api/notificacoes");
       if (!res.ok || cancelado) return;
       const data = await res.json();
