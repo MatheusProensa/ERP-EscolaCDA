@@ -9,6 +9,7 @@ import { CensoSecao } from "@/components/modules/alunos/CensoSecao";
 import { ContratoSecao } from "@/components/modules/alunos/ContratoSecao";
 import { MatriculaAcoes } from "@/components/modules/alunos/MatriculaAcoes";
 import { MensalidadeTable } from "@/components/modules/financeiro/MensalidadeTable";
+import { NovaCobrancaModal } from "@/components/modules/financeiro/NovaCobrancaModal";
 import { formatarTelefone } from "@/lib/utils";
 
 export default async function AlunoPerfilPage({ params }: { params: Promise<{ id: string }> }) {
@@ -68,9 +69,14 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
               <ContratoSecao matriculaId={m.id} turmaNome={m.turma.nome} contrato={m.contrato} />
               <Card
                 title={`Mensalidades — ${m.turma.nome}`}
-                action={<MatriculaAcoes matriculaId={m.id} situacaoAtual={m.situacao} />}
+                action={
+                  <div className="flex items-center gap-2">
+                    <NovaCobrancaModal matriculaId={m.id} />
+                    <MatriculaAcoes matriculaId={m.id} situacaoAtual={m.situacao} />
+                  </div>
+                }
               >
-                <MensalidadeTable mensalidades={m.mensalidades} />
+                <MensalidadeTable mensalidades={m.mensalidades} podeEditar />
               </Card>
             </div>
           ))}

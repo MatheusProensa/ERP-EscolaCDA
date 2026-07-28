@@ -28,6 +28,8 @@ export function NovoItemModal() {
         unidade: fd.get("unidade"),
         quantidade: fd.get("quantidade"),
         minimo: fd.get("minimo"),
+        localizacao: fd.get("localizacao"),
+        fornecedor: fd.get("fornecedor"),
       }),
     });
 
@@ -58,6 +60,10 @@ export function NovoItemModal() {
             <Input label="Unidade" name="unidade" required placeholder="un" />
             <Input label="Quantidade inicial" name="quantidade" type="number" defaultValue="0" />
             <Input label="Mínimo" name="minimo" type="number" defaultValue="5" />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Localização (opcional)" name="localizacao" placeholder="Armário 2, Depósito..." />
+            <Input label="Fornecedor (opcional)" name="fornecedor" placeholder="Papelaria Central" />
           </div>
           {error && <p className="text-sm text-cda-red">{error}</p>}
           <div className="flex justify-end gap-3">

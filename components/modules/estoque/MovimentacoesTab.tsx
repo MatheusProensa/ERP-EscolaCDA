@@ -13,11 +13,12 @@ export function MovimentacoesTab({ movimentacoes }: { movimentacoes: Movimentaca
           <Th>Tipo</Th>
           <Th>Item</Th>
           <Th className="text-right">Quantidade</Th>
+          <Th>Responsável</Th>
           <Th>Motivo</Th>
           <Th>Data</Th>
         </TableHead>
         <TableBody>
-          {movimentacoes.length === 0 && <TableEmpty colSpan={5}>Nenhuma movimentação registrada.</TableEmpty>}
+          {movimentacoes.length === 0 && <TableEmpty colSpan={6}>Nenhuma movimentação registrada.</TableEmpty>}
           {movimentacoes.map((mov) => (
             <Tr key={mov.id}>
               <Td>
@@ -36,6 +37,7 @@ export function MovimentacoesTab({ movimentacoes }: { movimentacoes: Movimentaca
                 {mov.tipo === "ENTRADA" ? "+" : "-"}
                 {mov.quantidade} {mov.item.unidade}
               </Td>
+              <Td className="text-cda-text2">{mov.responsavel ?? "—"}</Td>
               <Td className="text-cda-text2">{mov.motivo ?? "—"}</Td>
               <Td className="text-cda-text3">{formatarDataHora(mov.createdAt)}</Td>
             </Tr>

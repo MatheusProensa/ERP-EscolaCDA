@@ -24,6 +24,8 @@ export function EditarItemModal({ item, onClose }: { item: ItemEstoque | null; o
         categoria: fd.get("categoria"),
         unidade: fd.get("unidade"),
         minimo: fd.get("minimo"),
+        localizacao: fd.get("localizacao"),
+        fornecedor: fd.get("fornecedor"),
       }),
     });
     setLoading(false);
@@ -40,6 +42,10 @@ export function EditarItemModal({ item, onClose }: { item: ItemEstoque | null; o
           <div className="grid grid-cols-2 gap-3">
             <Input label="Unidade" name="unidade" required defaultValue={item.unidade} />
             <Input label="Mínimo" name="minimo" type="number" defaultValue={item.minimo} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Input label="Localização (opcional)" name="localizacao" defaultValue={item.localizacao ?? ""} />
+            <Input label="Fornecedor (opcional)" name="fornecedor" defaultValue={item.fornecedor ?? ""} />
           </div>
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={onClose}>

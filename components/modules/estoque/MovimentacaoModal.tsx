@@ -35,6 +35,7 @@ export function MovimentacaoModal({
         tipo: fd.get("tipo"),
         quantidade: fd.get("quantidade"),
         motivo: fd.get("motivo"),
+        responsavel: fd.get("responsavel"),
       }),
     });
 
@@ -63,6 +64,7 @@ export function MovimentacaoModal({
             <option value="SAIDA">Saída</option>
           </Select>
           <Input label="Quantidade" name="quantidade" type="number" min={1} required />
+          <Input label="Responsável" name="responsavel" required placeholder="Quem está retirando/registrando" />
           <Input label="Motivo (opcional)" name="motivo" placeholder="Compra, uso em sala, etc." />
           {error && <p className="text-sm text-cda-red">{error}</p>}
           <div className="flex justify-end gap-3">

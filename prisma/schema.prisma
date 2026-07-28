@@ -301,18 +301,21 @@ model ItemEstoque {
   unidade       String
   quantidade    Int                    @default(0)
   minimo        Int                    @default(5)
+  localizacao   String?
+  fornecedor    String?
   movimentacoes MovimentacaoEstoque[]
   updatedAt     DateTime               @updatedAt
 }
 
 model MovimentacaoEstoque {
-  id         String      @id @default(cuid())
-  item       ItemEstoque @relation(fields: [itemId], references: [id])
-  itemId     String
-  tipo       TipoMov
-  quantidade Int
-  motivo     String?
-  createdAt  DateTime    @default(now())
+  id          String      @id @default(cuid())
+  item        ItemEstoque @relation(fields: [itemId], references: [id])
+  itemId      String
+  tipo        TipoMov
+  quantidade  Int
+  motivo      String?
+  responsavel String?
+  createdAt   DateTime    @default(now())
 }
 
 enum TipoMov {

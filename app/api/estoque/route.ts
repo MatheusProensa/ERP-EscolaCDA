@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const body = await req.json();
-  const { nome, categoria, unidade, quantidade, minimo } = body;
+  const { nome, categoria, unidade, quantidade, minimo, localizacao, fornecedor } = body;
 
   if (!nome || !categoria || !unidade) {
     return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
@@ -29,6 +29,8 @@ export async function POST(req: NextRequest) {
         unidade,
         quantidade: Number(quantidade) || 0,
         minimo: Number(minimo) || 5,
+        localizacao: localizacao || null,
+        fornecedor: fornecedor || null,
       },
     });
 

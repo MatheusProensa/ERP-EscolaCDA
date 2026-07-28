@@ -8,7 +8,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params;
   const body = await req.json();
-  const { tipo, quantidade, motivo } = body;
+  const { tipo, quantidade, motivo, responsavel } = body;
 
   const qtd = Number(quantidade);
   if (!tipo || (tipo !== "ENTRADA" && tipo !== "SAIDA") || !qtd || qtd <= 0) {
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       }
 
       return tx.movimentacaoEstoque.create({
-        data: { itemId: id, tipo, quantidade: qtd, motivo: motivo || null },
+        data: { itemId: id, tipo, quantidade: qtd, motivo: motivo || null, responsavel: responsavel || null },
       });
     });
 

@@ -9,7 +9,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
-  const { nome, categoria, unidade, minimo } = body;
+  const { nome, categoria, unidade, minimo, localizacao, fornecedor } = body;
 
   try {
     const item = await prisma.itemEstoque.update({
@@ -19,6 +19,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         categoria: categoria || undefined,
         unidade: unidade || undefined,
         minimo: minimo !== undefined ? Number(minimo) : undefined,
+        localizacao: localizacao !== undefined ? localizacao || null : undefined,
+        fornecedor: fornecedor !== undefined ? fornecedor || null : undefined,
       },
     });
 

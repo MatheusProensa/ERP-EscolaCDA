@@ -95,7 +95,12 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
             {filtrados.length === 0 && <TableEmpty colSpan={6}>Nenhum item encontrado.</TableEmpty>}
             {filtrados.map((item) => (
               <Tr key={item.id}>
-                <Td className="font-medium">{item.nome}</Td>
+                <Td className="font-medium">
+                  {item.nome}
+                  {item.localizacao && (
+                    <span className="block text-xs font-normal text-cda-text3">{item.localizacao}</span>
+                  )}
+                </Td>
                 <Td>
                   <CategoriaCell categoria={item.categoria} />
                 </Td>

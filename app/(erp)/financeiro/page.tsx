@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { Wallet, TrendingUp, AlertCircle, Percent } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
+import { Button } from "@/components/ui/Button";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { ResumoFinanceiro, type ResumoMensal } from "@/components/modules/financeiro/ResumoFinanceiro";
 import { saldoDevedor } from "@/lib/inadimplencia";
@@ -41,7 +41,17 @@ export default async function FinanceiroPage() {
         title="Financeiro"
         subtitle="Visão geral de mensalidades e recebimentos"
         breadcrumb={[{ label: "Financeiro" }]}
-        action={<ExportButtons href="/api/relatorios/receita-mensal" label="Receita mensal" />}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Button href="/financeiro/mensalidades" variant="outline" size="sm">
+              Mensalidades
+            </Button>
+            <Button href="/financeiro/inadimplentes" variant="outline" size="sm">
+              Inadimplentes
+            </Button>
+            <ExportButtons href="/api/relatorios/receita-mensal" label="Receita mensal" />
+          </div>
+        }
       />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -52,15 +62,6 @@ export default async function FinanceiroPage() {
       </div>
 
       <ResumoFinanceiro dados={porMes} />
-
-      <div className="mt-5 flex gap-3 text-sm">
-        <Link href="/financeiro/mensalidades" className="font-medium text-cda-blue hover:underline">
-          Ver mensalidades →
-        </Link>
-        <Link href="/financeiro/inadimplentes" className="font-medium text-cda-blue hover:underline">
-          Ver inadimplentes →
-        </Link>
-      </div>
     </div>
   );
 }
