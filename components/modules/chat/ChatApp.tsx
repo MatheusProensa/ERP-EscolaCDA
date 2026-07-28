@@ -121,6 +121,16 @@ export function ChatApp({ meId, selecionadoInicial }: { meId: string; selecionad
   return (
     <div className="mt-2 flex min-h-0 flex-1 overflow-hidden rounded-[10px] border border-cda-border bg-cda-surface">
       <div className={`w-full shrink-0 overflow-y-auto border-r border-cda-border sm:w-72 ${selecionado ? "hidden sm:block" : ""}`}>
+        {carregandoConversas &&
+          [1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-3 border-b border-cda-border px-4 py-3">
+              <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-cda-bg" />
+              <div className="flex-1">
+                <div className="h-3 w-24 animate-pulse rounded bg-cda-bg" />
+                <div className="mt-2 h-2.5 w-32 animate-pulse rounded bg-cda-bg" />
+              </div>
+            </div>
+          ))}
         {!carregandoConversas && conversas.length === 0 && (
           <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhum outro perfil cadastrado.</p>
         )}
@@ -157,11 +167,20 @@ export function ChatApp({ meId, selecionadoInicial }: { meId: string; selecionad
               <button onClick={() => setSelecionado(null)} className="text-cda-text2 hover:text-cda-text sm:hidden">
                 <ArrowLeft className="h-4 w-4" />
               </button>
-              <Avatar nome={conversaAtual?.name ?? "?"} size="sm" />
-              <div>
-                <p className="text-sm font-semibold text-cda-text">{conversaAtual?.name}</p>
-                <p className="text-xs text-cda-text3">{ROLE_LABEL[conversaAtual?.role ?? ""] ?? conversaAtual?.role}</p>
-              </div>
+              {conversaAtual ? (
+                <>
+                  <Avatar nome={conversaAtual.name} size="sm" />
+                  <div>
+                    <p className="text-sm font-semibold text-cda-text">{conversaAtual.name}</p>
+                    <p className="text-xs text-cda-text3">{ROLE_LABEL[conversaAtual.role] ?? conversaAtual.role}</p>
+                  </div>
+                </>
+              ) : (
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 animate-pulse rounded-full bg-cda-bg" />
+                  <div className="h-3 w-28 animate-pulse rounded bg-cda-bg" />
+                </div>
+              )}
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-4">
