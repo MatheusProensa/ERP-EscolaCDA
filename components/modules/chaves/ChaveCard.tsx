@@ -100,16 +100,16 @@ export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoC
           <button
             onClick={() => setEditando(true)}
             title="Editar"
-            className="flex h-6 w-6 items-center justify-center rounded text-cda-text3 hover:bg-cda-bg hover:text-cda-text"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg hover:text-cda-text"
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-[18px] w-[18px]" />
           </button>
           <button
             onClick={excluir}
             title="Excluir"
-            className="flex h-6 w-6 items-center justify-center rounded text-cda-text3 hover:bg-cda-bg hover:text-cda-red"
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg hover:text-cda-red"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Trash2 className="h-[18px] w-[18px]" />
           </button>
         </div>
       </div>

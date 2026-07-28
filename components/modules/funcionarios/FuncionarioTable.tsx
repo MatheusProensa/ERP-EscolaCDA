@@ -52,7 +52,7 @@ export function FuncionarioTable({
               <Link href={`/funcionarios/${f.id}`} className="flex items-center gap-2.5 hover:text-cda-blue">
                 <Avatar nome={f.nome} size="sm" />
                 {f.nome}
-                {f.ativo && f.jornadaPrevistaMinutos == null && (
+                {f.ativo && f.participaPonto && f.jornadaPrevistaMinutos == null && (
                   <span title="Sem jornada prevista definida — o Ponto não vai calcular horas extra/atraso corretamente">
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-cda-amber" />
                   </span>

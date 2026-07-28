@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdfMultiSecao, respostaPDF, type SecaoRelatorio } from "@/lib/gerarRelatorioPdf";
-import { calcularMes, ehEnsinoFundamental, minParaHora, OCORRENCIA_LABEL, type RegistroPontoDia } from "@/lib/ponto";
+import { calcularMes, minParaHora, OCORRENCIA_LABEL, type RegistroPontoDia } from "@/lib/ponto";
 
 function inicioMes(mes: number, ano: number) {
   return new Date(Date.UTC(ano, mes - 1, 1));
@@ -42,12 +42,10 @@ export async function GET(request: NextRequest) {
   const inicio = inicioMes(mes, ano);
   const fim = fimMes(mes, ano);
 
-  const funcionariosBrutos = await prisma.funcionario.findMany({
-    where: { ativo: true, ...(funcionarioId ? { id: funcionarioId } : {}) },
+  const funcionarios = await prisma.funcionario.findMany({
+    where: { ativo: true, ...(funcionarioId ? { id: funcionarioId } : { participaPonto: true }) },
     orderBy: { nome: "asc" },
   });
-  // Sem funcionarioId explícito (export "todos"), restringe ao Ensino Fundamental.
-  const funcionarios = funcionarioId ? funcionariosBrutos : funcionariosBrutos.filter((f) => ehEnsinoFundamental(f.cargo));
 
   const registros = await prisma.registroPonto.findMany({
     where: { funcionarioId: { in: funcionarios.map((f) => f.id) }, data: { lt: fim } },

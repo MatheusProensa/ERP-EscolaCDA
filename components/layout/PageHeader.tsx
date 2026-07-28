@@ -16,12 +16,12 @@ export function PageHeader({
     <div className="mb-6 flex items-start justify-between gap-4">
       <div>
         {breadcrumb && breadcrumb.length > 0 && (
-          <div className="mb-1 flex items-center gap-1 text-xs text-cda-text3">
+          <div className="mb-1.5 flex items-center gap-1.5 text-sm text-cda-text2">
             {breadcrumb.map((item, i) => (
-              <span key={i} className="flex items-center gap-1">
-                {i > 0 && <ChevronRight className="h-3 w-3" />}
+              <span key={i} className="flex items-center gap-1.5">
+                {i > 0 && <ChevronRight className="h-4 w-4 text-cda-text3" />}
                 {item.href ? (
-                  <Link href={item.href} className="hover:text-cda-blue">
+                  <Link href={item.href} className="rounded px-1 py-0.5 -mx-1 font-medium hover:text-cda-blue hover:underline">
                     {item.label}
                   </Link>
                 ) : (
@@ -31,8 +31,8 @@ export function PageHeader({
             ))}
           </div>
         )}
-        <h1 className="text-xl font-bold text-cda-text">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-sm text-cda-text2">{subtitle}</p>}
+        <h1 className="text-2xl font-bold text-cda-text">{title}</h1>
+        {subtitle && <p className="mt-1 text-base text-cda-text2">{subtitle}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>

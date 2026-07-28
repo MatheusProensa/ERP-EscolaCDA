@@ -31,8 +31,6 @@ export function FuncionarioForm() {
         email: fd.get("email"),
         admissao: fd.get("admissao"),
         dataNascimento: fd.get("dataNascimento") || null,
-        jornadaPrevista: fd.get("jornadaPrevista") || null,
-        participaPonto: fd.get("participaPonto") === "on",
       }),
     });
 
@@ -70,18 +68,10 @@ export function FuncionarioForm() {
           </Select>
           <Input label="Telefone" name="telefone" placeholder="(55) 9 9999-9999" />
           <Input label="E-mail" name="email" type="email" />
-          <Input
-            label="Jornada prevista (por dia)"
-            name="jornadaPrevista"
-            placeholder="04:30"
-            pattern="\d{1,2}:\d{2}"
-            title="Formato HH:MM, ex.: 04:30"
-          />
-          <label className="flex items-center gap-2 text-sm text-cda-text2 sm:col-span-2">
-            <input type="checkbox" name="participaPonto" className="h-4 w-4 rounded border-cda-border" />
-            Participa do controle de Ponto
-          </label>
         </div>
+        <p className="mt-3 text-xs text-cda-text3">
+          Participação no controle de Ponto e jornada prevista se configuram na tela de Ponto, depois do cadastro.
+        </p>
       </Card>
 
       {error && <p className="text-sm text-cda-red">{error}</p>}
