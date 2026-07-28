@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 import type { Funcionario } from "@prisma/client";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Avatar } from "@/components/ui/Avatar";
@@ -51,6 +52,11 @@ export function FuncionarioTable({
               <Link href={`/funcionarios/${f.id}`} className="flex items-center gap-2.5 hover:text-cda-blue">
                 <Avatar nome={f.nome} size="sm" />
                 {f.nome}
+                {f.ativo && f.jornadaPrevistaMinutos == null && (
+                  <span title="Sem jornada prevista definida — o Ponto não vai calcular horas extra/atraso corretamente">
+                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-cda-amber" />
+                  </span>
+                )}
               </Link>
             </Td>
             <Td>{f.cargo}</Td>

@@ -5,6 +5,7 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { TabelaInadimplentes } from "@/components/modules/dashboard/TabelaInadimplentes";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
+import { VenceEstaSemana, type ItemVencimento } from "@/components/modules/dashboard/VenceEstaSemana";
 import { agruparInadimplentes, saldoDevedor, whereAtrasadas } from "@/lib/inadimplencia";
 import { formatarMoeda } from "@/lib/utils";
 
@@ -12,23 +13,40 @@ export async function DashboardFinanceiro() {
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
   const anoAtual = new Date().getFullYear();
   const mesAtual = new Date().getMonth() + 1;
+  const hoje = new Date();
+  const em7dias = new Date(hoje.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  const [mensalidadesDoMes, mensalidadesAtrasadas, mensalidadesEmAberto, logs] = await Promise.all([
-    prisma.mensalidade.findMany({
-      where: { ano: anoAtual, mes: mesAtual, matricula: { anoLetivoId: anoLetivo?.id }, situacao: { not: "CANCELADA" } },
-      include: { pagamentos: true },
-    }),
-    prisma.mensalidade.findMany({
-      where: whereAtrasadas(),
-      include: { pagamentos: true, matricula: { include: { aluno: true, turma: true } } },
-      orderBy: { vencimento: "asc" },
-    }),
-    prisma.mensalidade.findMany({
-      where: { situacao: { in: ["PENDENTE", "ATRASADA"] } },
-      include: { pagamentos: true },
-    }),
-    prisma.logAtividade.findMany({ where: { entidade: "Mensalidade" }, orderBy: { createdAt: "desc" }, take: 8 }),
-  ]);
+  const [mensalidadesDoMes, mensalidadesAtrasadas, mensalidadesEmAberto, logs, mensalidadesVencendo] =
+    await Promise.all([
+      prisma.mensalidade.findMany({
+        where: { ano: anoAtual, mes: mesAtual, matricula: { anoLetivoId: anoLetivo?.id }, situacao: { not: "CANCELADA" } },
+        include: { pagamentos: true },
+      }),
+      prisma.mensalidade.findMany({
+        where: whereAtrasadas(),
+        include: { pagamentos: true, matricula: { include: { aluno: true, turma: true } } },
+        orderBy: { vencimento: "asc" },
+      }),
+      prisma.mensalidade.findMany({
+        where: { situacao: { in: ["PENDENTE", "ATRASADA"] } },
+        include: { pagamentos: true },
+      }),
+      prisma.logAtividade.findMany({ where: { entidade: "Mensalidade" }, orderBy: { createdAt: "desc" }, take: 8 }),
+      prisma.mensalidade.findMany({
+        where: { situacao: "PENDENTE", vencimento: { gte: hoje, lte: em7dias } },
+        include: { matricula: { include: { aluno: true, turma: true } } },
+        orderBy: { vencimento: "asc" },
+        take: 8,
+      }),
+    ]);
+
+  const itensVencendo: ItemVencimento[] = mensalidadesVencendo.map((m) => ({
+    id: m.id,
+    titulo: m.matricula.aluno.nome,
+    detalhe: `Mensalidade ${m.matricula.turma.nome} — ${formatarMoeda(m.valor)}`,
+    data: m.vencimento,
+    href: `/alunos/${m.matricula.aluno.id}`,
+  }));
 
   const previsto = mensalidadesDoMes.reduce((acc, m) => acc + m.valor, 0);
   const recebido = mensalidadesDoMes.reduce((acc, m) => acc + m.pagamentos.reduce((a, p) => a + p.valor, 0), 0);
@@ -58,7 +76,10 @@ export async function DashboardFinanceiro() {
         <div className="lg:col-span-2">
           <TabelaInadimplentes dados={inadimplentes.slice(0, 6)} />
         </div>
-        <FeedAtividade logs={logs} />
+        <div className="flex flex-col gap-5">
+          <VenceEstaSemana itens={itensVencendo} />
+          <FeedAtividade logs={logs} />
+        </div>
       </div>
 
       <div className="mt-5">

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Phone, Mail } from "lucide-react";
+import { Phone, Mail, FileDown } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { AlunoCard } from "@/components/modules/alunos/AlunoCard";
 import { CensoSecao } from "@/components/modules/alunos/CensoSecao";
 import { ContratoSecao } from "@/components/modules/alunos/ContratoSecao";
+import { MatriculaAcoes } from "@/components/modules/alunos/MatriculaAcoes";
 import { MensalidadeTable } from "@/components/modules/financeiro/MensalidadeTable";
 import { formatarTelefone } from "@/lib/utils";
 
@@ -41,6 +42,15 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
       <PageHeader
         title={aluno.nome}
         breadcrumb={[{ label: "Alunos", href: "/alunos" }, { label: aluno.nome }]}
+        action={
+          <a
+            href={`/api/alunos/${aluno.id}/ficha`}
+            className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
+          >
+            <FileDown className="h-3.5 w-3.5" />
+            Baixar ficha PDF
+          </a>
+        }
       />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
@@ -56,7 +66,10 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
           {aluno.matriculas.map((m) => (
             <div key={m.id} className="flex flex-col gap-5">
               <ContratoSecao matriculaId={m.id} turmaNome={m.turma.nome} contrato={m.contrato} />
-              <Card title={`Mensalidades — ${m.turma.nome}`}>
+              <Card
+                title={`Mensalidades — ${m.turma.nome}`}
+                action={<MatriculaAcoes matriculaId={m.id} situacaoAtual={m.situacao} />}
+              >
                 <MensalidadeTable mensalidades={m.mensalidades} />
               </Card>
             </div>

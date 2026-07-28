@@ -2,15 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Pin, PinOff, Trash2 } from "lucide-react";
+import { Pin, PinOff, Trash2, Pencil } from "lucide-react";
 import type { MuralAviso } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatarDataHora } from "@/lib/utils";
+import { EditarAvisoModal } from "./EditarAvisoModal";
 
 export function AvisoCard({ aviso }: { aviso: MuralAviso }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [editando, setEditando] = useState(false);
 
   async function alternarFixado() {
     setLoading(true);
@@ -40,6 +42,14 @@ export function AvisoCard({ aviso }: { aviso: MuralAviso }) {
         </div>
         <div className="flex shrink-0 items-center gap-1">
           <button
+            onClick={() => setEditando(true)}
+            disabled={loading}
+            title="Editar"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg disabled:opacity-50"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
             onClick={alternarFixado}
             disabled={loading}
             title={aviso.fixado ? "Desafixar" : "Fixar"}
@@ -61,6 +71,8 @@ export function AvisoCard({ aviso }: { aviso: MuralAviso }) {
       <p className="mt-3 text-xs text-cda-text3">
         {aviso.autor} · {formatarDataHora(aviso.createdAt)}
       </p>
+
+      <EditarAvisoModal aviso={editando ? aviso : null} onClose={() => setEditando(false)} />
     </Card>
   );
 }

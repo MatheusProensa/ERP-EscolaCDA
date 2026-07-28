@@ -2,16 +2,18 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { MoreHorizontal, ArrowDownToLine, ArrowUpFromLine, Pencil } from "lucide-react";
+import { MoreHorizontal, ArrowDownToLine, ArrowUpFromLine, Pencil, Trash2 } from "lucide-react";
 
 export function ItemMenu({
   onEntrada,
   onSaida,
   onEditar,
+  onExcluir,
 }: {
   onEntrada: () => void;
   onSaida: () => void;
   onEditar: () => void;
+  onExcluir: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
@@ -34,14 +36,18 @@ export function ItemMenu({
     setOpen((v) => !v);
   }
 
-  function item(label: string, Icon: typeof ArrowDownToLine, onClick: () => void) {
+  function item(label: string, Icon: typeof ArrowDownToLine, onClick: () => void, danger = false) {
     return (
       <button
         onClick={() => {
           setOpen(false);
           onClick();
         }}
-        className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs font-medium text-cda-text2 hover:bg-cda-bg hover:text-cda-text"
+        className={
+          danger
+            ? "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs font-medium text-cda-red hover:bg-cda-bg"
+            : "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs font-medium text-cda-text2 hover:bg-cda-bg hover:text-cda-text"
+        }
       >
         <Icon className="h-3.5 w-3.5" />
         {label}
@@ -68,6 +74,7 @@ export function ItemMenu({
             {item("Registrar entrada", ArrowDownToLine, onEntrada)}
             {item("Registrar saída", ArrowUpFromLine, onSaida)}
             {item("Editar item", Pencil, onEditar)}
+            {item("Excluir item", Trash2, onExcluir, true)}
           </div>,
           document.body
         )}

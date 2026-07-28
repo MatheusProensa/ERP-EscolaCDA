@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIAS_EVENTO } from "@/lib/calendario";
+import { formatarData } from "@/lib/utils";
+import { erroApi } from "@/lib/apiError";
 
 const GESTAO = ["ADMIN", "DIRECAO"];
 
@@ -35,7 +37,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { titulo, data, categoria, descricao } = body;
+  const { titulo, data, categoria, descricao, publicarMural } = body;
   if (!titulo || !data || !categoria) {
     return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
   }
@@ -43,8 +45,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Categoria inválida" }, { status: 400 });
   }
 
-  const evento = await prisma.eventoCalendario.create({
-    data: { titulo, data: new Date(data), categoria, descricao: descricao || null },
-  });
-  return NextResponse.json(evento, { status: 201 });
+  try {
+    const evento = await prisma.$transaction(async (tx) => {
+      const novoEvento = await tx.eventoCalendario.create({
+        data: { titulo, data: new Date(data), categoria, descricao: descricao || null },
+      });
+
+      if (publicarMural) {
+        await tx.muralAviso.create({
+          data: {
+            titulo: `📅 ${titulo}`,
+            conteudo: `${descricao ? `${descricao}\n\n` : ""}Data: ${formatarData(novoEvento.data)} · ${categoria}`,
+            autor: session.user.name ?? "Usuário",
+          },
+        });
+      }
+
+      return novoEvento;
+    });
+
+    return NextResponse.json(evento, { status: 201 });
+  } catch (err) {
+    return erroApi(err);
+  }
 }

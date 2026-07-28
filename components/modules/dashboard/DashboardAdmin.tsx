@@ -5,15 +5,28 @@ import { TabelaInadimplentes } from "@/components/modules/dashboard/TabelaInadim
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
 import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
+import { VenceEstaSemana, type ItemVencimento } from "@/components/modules/dashboard/VenceEstaSemana";
 import { agruparInadimplentes, whereAtrasadas } from "@/lib/inadimplencia";
+import { formatarMoeda } from "@/lib/utils";
 
 export async function DashboardAdmin() {
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
 
   const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const fimMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);
+  const hoje = new Date();
+  const em7dias = new Date(hoje.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-  const [totalAlunos, turmasAtivas, mensalidadesAtrasadas, pagamentosDoMes, logs, censoIncompleto] = await Promise.all([
+  const [
+    totalAlunos,
+    turmasAtivas,
+    mensalidadesAtrasadas,
+    pagamentosDoMes,
+    logs,
+    censoIncompleto,
+    mensalidadesVencendo,
+    documentosVencendo,
+  ] = await Promise.all([
     prisma.matricula.count({
       where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
     }),
@@ -34,9 +47,37 @@ export async function DashboardAdmin() {
         OR: [{ racaCor: null }, { filiacao1: null }, { sexo: null }],
       },
     }),
+    prisma.mensalidade.findMany({
+      where: { situacao: "PENDENTE", vencimento: { gte: hoje, lte: em7dias } },
+      include: { matricula: { include: { aluno: true, turma: true } } },
+      orderBy: { vencimento: "asc" },
+      take: 5,
+    }),
+    prisma.documentoInstitucional.findMany({
+      where: { validade: { gte: hoje, lte: em7dias } },
+      orderBy: { validade: "asc" },
+      take: 5,
+    }),
   ]);
 
   const inadimplentes = agruparInadimplentes(mensalidadesAtrasadas);
+
+  const itensVencendo: ItemVencimento[] = [
+    ...mensalidadesVencendo.map((m) => ({
+      id: `mensalidade-${m.id}`,
+      titulo: m.matricula.aluno.nome,
+      detalhe: `Mensalidade ${m.matricula.turma.nome} — ${formatarMoeda(m.valor)}`,
+      data: m.vencimento,
+      href: `/alunos/${m.matricula.aluno.id}`,
+    })),
+    ...documentosVencendo.map((d) => ({
+      id: `documento-${d.id}`,
+      titulo: d.titulo,
+      detalhe: `Documento — ${d.categoria}`,
+      data: d.validade!,
+      href: "/documentos",
+    })),
+  ];
 
   return (
     <div>
@@ -59,7 +100,10 @@ export async function DashboardAdmin() {
         <div className="lg:col-span-2">
           <TabelaInadimplentes dados={inadimplentes.slice(0, 6)} />
         </div>
-        <FeedAtividade logs={logs} />
+        <div className="flex flex-col gap-5">
+          <VenceEstaSemana itens={itensVencendo} />
+          <FeedAtividade logs={logs} />
+        </div>
       </div>
 
       <div className="mt-5">

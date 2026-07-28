@@ -102,6 +102,7 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
       data: fd.get("data"),
       categoria: fd.get("categoria"),
       descricao: fd.get("descricao") || null,
+      publicarMural: fd.get("publicarMural") === "on",
     };
 
     const url = modal.evento ? `/api/eventos/${modal.evento.id}` : "/api/eventos";
@@ -266,6 +267,12 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
             ))}
           </Select>
           <Input label="Descrição (opcional)" name="descricao" defaultValue={modal.evento?.descricao ?? ""} />
+          {!modal.evento && (
+            <label className="flex items-center gap-2 text-sm text-cda-text2">
+              <input type="checkbox" name="publicarMural" className="h-4 w-4 rounded border-cda-border" />
+              Publicar no mural também
+            </label>
+          )}
           {erro && <p className="text-sm text-cda-red">{erro}</p>}
           <div className="flex items-center justify-between gap-3">
             {modal.evento ? (

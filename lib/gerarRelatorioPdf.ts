@@ -314,6 +314,115 @@ export async function gerarRelatorioPdfMultiSecao({
   return `data:application/pdf;base64,${base64}`;
 }
 
+export type CampoFicha = { label: string; valor: string };
+export type SecaoFicha = { titulo: string; campos: CampoFicha[] };
+
+function quebrarLinhas(font: PDFFont, texto: string, tamanho: number, larguraMax: number): string[] {
+  const palavras = texto.split(" ");
+  const linhas: string[] = [];
+  let atual = "";
+  for (const palavra of palavras) {
+    const tentativa = atual ? `${atual} ${palavra}` : palavra;
+    if (font.widthOfTextAtSize(tentativa, tamanho) > larguraMax && atual) {
+      linhas.push(atual);
+      atual = palavra;
+    } else {
+      atual = tentativa;
+    }
+  }
+  if (atual) linhas.push(atual);
+  return linhas.length > 0 ? linhas : [""];
+}
+
+/** Ficha em formato retrato, seções de campos label/valor (não tabela) — usada pra imprimir o cadastro completo de um aluno. */
+export async function gerarFichaPdf({
+  titulo,
+  subtitulo,
+  secoes,
+}: {
+  titulo: string;
+  subtitulo?: string;
+  secoes: SecaoFicha[];
+}): Promise<string> {
+  const pdf = await PDFDocument.create();
+  const fonte = await pdf.embedFont(StandardFonts.Helvetica);
+  const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+
+  const PW = 595;
+  const PH = 842;
+  const LABEL_W = 130;
+  const CONTEUDO_MAX = PW - MARGIN * 2 - LABEL_W;
+  const geradoEm = new Date().toLocaleString("pt-BR");
+
+  function novaPagina(): PDFPage {
+    const pagina = pdf.addPage([PW, PH]);
+    pagina.drawRectangle({ x: 0, y: PH - HEADER_H, width: PW, height: HEADER_H, color: NAVY });
+    pagina.drawRectangle({ x: 0, y: PH - HEADER_H - 3, width: PW, height: 3, color: YELLOW });
+    pagina.drawText("ESCOLA CDA", { x: MARGIN, y: PH - 30, size: 18, font: fonteBold, color: WHITE });
+    pagina.drawText("Onde, há 15 anos, família e escola sonham juntas", {
+      x: MARGIN,
+      y: PH - 46,
+      size: 8.5,
+      font: fonte,
+      color: rgb(0.75, 0.8, 0.9),
+    });
+    const tituloLargura = fonteBold.widthOfTextAtSize(titulo, 14);
+    pagina.drawText(titulo, { x: PW - MARGIN - tituloLargura, y: PH - 28, size: 14, font: fonteBold, color: WHITE });
+    const geradoTexto = `Gerado em ${geradoEm}`;
+    const geradoLargura = fonte.widthOfTextAtSize(geradoTexto, 8.5);
+    pagina.drawText(geradoTexto, {
+      x: PW - MARGIN - geradoLargura,
+      y: PH - 44,
+      size: 8.5,
+      font: fonte,
+      color: rgb(0.75, 0.8, 0.9),
+    });
+    return pagina;
+  }
+
+  let pagina = novaPagina();
+  let y = PH - HEADER_H - 24;
+
+  if (subtitulo) {
+    pagina.drawText(subtitulo, { x: MARGIN, y, size: 10, font: fonte, color: TEXT2 });
+    y -= 22;
+  }
+
+  for (const secao of secoes) {
+    if (y < MARGIN + 60) {
+      pagina = novaPagina();
+      y = PH - HEADER_H - 24;
+    }
+
+    pagina.drawText(secao.titulo.toUpperCase(), { x: MARGIN, y, size: 10, font: fonteBold, color: NAVY });
+    y -= 6;
+    pagina.drawLine({ start: { x: MARGIN, y }, end: { x: PW - MARGIN, y }, thickness: 1, color: BORDER });
+    y -= 16;
+
+    for (const campo of secao.campos) {
+      const linhasValor = quebrarLinhas(fonte, campo.valor || "—", 9.5, CONTEUDO_MAX);
+      const alturaCampo = linhasValor.length * 13 + 6;
+
+      if (y - alturaCampo < MARGIN + 20) {
+        pagina = novaPagina();
+        y = PH - HEADER_H - 24;
+      }
+
+      pagina.drawText(campo.label, { x: MARGIN, y, size: 8.5, font: fonteBold, color: TEXT2 });
+      linhasValor.forEach((linha, i) => {
+        pagina.drawText(linha, { x: MARGIN + LABEL_W, y: y - i * 13, size: 9.5, font: fonte, color: BLACK });
+      });
+      y -= alturaCampo;
+    }
+
+    y -= 10;
+  }
+
+  const bytes = await pdf.save();
+  const base64 = Buffer.from(bytes).toString("base64");
+  return `data:application/pdf;base64,${base64}`;
+}
+
 export function respostaPDF(dataUri: string, nomeArquivo: string): Response {
   const base64 = dataUri.split(",")[1] ?? dataUri;
   const bytes = Buffer.from(base64, "base64");

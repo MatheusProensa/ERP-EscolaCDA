@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Search, Download, FileText } from "lucide-react";
 import type { ItemEstoque } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
@@ -14,10 +15,21 @@ import { EditarItemModal } from "./EditarItemModal";
 import { statusEstoque, type StatusEstoque } from "@/lib/estoqueStatus";
 
 export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
+  const router = useRouter();
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<StatusEstoque | "todos">("todos");
   const [itemMovimentacao, setItemMovimentacao] = useState<{ item: ItemEstoque; tipo: "ENTRADA" | "SAIDA" } | null>(null);
   const [itemEditar, setItemEditar] = useState<ItemEstoque | null>(null);
+
+  async function excluirItem(item: ItemEstoque) {
+    if (!confirm(`Excluir "${item.nome}" do estoque? O histórico de movimentações também será removido.`)) return;
+    const res = await fetch(`/api/estoque/${item.id}`, { method: "DELETE" });
+    if (!res.ok) {
+      alert("Não foi possível excluir o item.");
+      return;
+    }
+    router.refresh();
+  }
 
   const contagens = { todos: itens.length, ok: 0, baixa: 0, crit: 0, zero: 0 };
   itens.forEach((i) => contagens[statusEstoque(i.quantidade, i.minimo)]++);
@@ -106,6 +118,7 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
                       onEntrada={() => setItemMovimentacao({ item, tipo: "ENTRADA" })}
                       onSaida={() => setItemMovimentacao({ item, tipo: "SAIDA" })}
                       onEditar={() => setItemEditar(item)}
+                      onExcluir={() => excluirItem(item)}
                     />
                   </div>
                 </Td>

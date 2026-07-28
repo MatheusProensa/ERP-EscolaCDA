@@ -1,4 +1,9 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Undo2 } from "lucide-react";
 import type { Aluno, Mensalidade, Pagamento, SituacaoMensalidade, Turma } from "@prisma/client";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
@@ -37,8 +42,22 @@ export function MensalidadeTable({
   mensalidades: MensalidadeLinha[];
   onRegistrarPagamento?: (mensalidade: MensalidadeLinha) => void;
 }) {
+  const router = useRouter();
+  const [estornandoId, setEstornandoId] = useState<string | null>(null);
   const mostrarAluno = mensalidades.some((m) => m.matricula);
   const colSpan = (mostrarAluno ? 1 : 0) + (onRegistrarPagamento ? 6 : 5);
+
+  async function estornar(pagamentoId: string) {
+    if (!confirm("Estornar este pagamento? A mensalidade volta a ficar em aberto.")) return;
+    setEstornandoId(pagamentoId);
+    const res = await fetch(`/api/financeiro/pagamentos/${pagamentoId}`, { method: "DELETE" });
+    setEstornandoId(null);
+    if (!res.ok) {
+      alert("Não foi possível estornar o pagamento.");
+      return;
+    }
+    router.refresh();
+  }
 
   return (
     <Table>
@@ -90,7 +109,25 @@ export function MensalidadeTable({
               <Td>
                 <Badge variant={SITUACAO_VARIANT[situacaoExibida]}>{SITUACAO_LABEL[situacaoExibida]}</Badge>
               </Td>
-              <Td>{pagamento ? formatarData(pagamento.dataPagamento) : "—"}</Td>
+              <Td>
+                {pagamento ? (
+                  <span className="flex items-center gap-1.5">
+                    {formatarData(pagamento.dataPagamento)}
+                    {onRegistrarPagamento && (
+                      <button
+                        onClick={() => estornar(pagamento.id)}
+                        disabled={estornandoId === pagamento.id}
+                        title="Estornar pagamento"
+                        className="text-cda-text3 hover:text-cda-red disabled:opacity-50"
+                      >
+                        <Undo2 className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </span>
+                ) : (
+                  "—"
+                )}
+              </Td>
               {onRegistrarPagamento && (
                 <Td>
                   {m.situacao !== "PAGA" && m.situacao !== "CANCELADA" && (
