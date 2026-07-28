@@ -31,6 +31,7 @@ type Mensagem = {
 export function ChatApp({ meId, selecionadoInicial }: { meId: string; selecionadoInicial?: string }) {
   const router = useRouter();
   const [conversas, setConversas] = useState<Conversa[]>([]);
+  const [carregandoConversas, setCarregandoConversas] = useState(true);
   const [selecionado, setSelecionado] = useState<string | null>(selecionadoInicial ?? null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [texto, setTexto] = useState("");
@@ -44,6 +45,7 @@ export function ChatApp({ meId, selecionadoInicial }: { meId: string; selecionad
       const res = await fetch("/api/chat");
       if (!res.ok || cancelado) return;
       setConversas(await res.json());
+      setCarregandoConversas(false);
     }
     carregarConversas();
     const intervalo = setInterval(carregarConversas, 15000);
@@ -108,7 +110,7 @@ export function ChatApp({ meId, selecionadoInicial }: { meId: string; selecionad
   return (
     <div className="mt-2 flex min-h-0 flex-1 overflow-hidden rounded-[10px] border border-cda-border bg-cda-surface">
       <div className={`w-full shrink-0 overflow-y-auto border-r border-cda-border sm:w-72 ${selecionado ? "hidden sm:block" : ""}`}>
-        {conversas.length === 0 && (
+        {!carregandoConversas && conversas.length === 0 && (
           <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhum outro perfil cadastrado.</p>
         )}
         {conversas.map((c) => (
@@ -151,68 +153,72 @@ export function ChatApp({ meId, selecionadoInicial }: { meId: string; selecionad
               </div>
             </div>
 
-            <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
-              {mensagens.map((m) => {
-                const minha = m.remetenteId === meId;
-                return (
-                  <div key={m.id} className={`flex ${minha ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-[75%] rounded-xl px-3 py-2 text-sm ${
-                        minha ? "bg-cda-blue text-white" : "bg-cda-bg text-cda-text"
-                      }`}
-                    >
-                      {m.conteudo && <p className="whitespace-pre-wrap">{m.conteudo}</p>}
-                      {m.anexo && (
-                        <a
-                          href={m.anexo}
-                          download={m.anexoNome ?? "anexo"}
-                          className={`mt-1 flex items-center gap-1.5 text-xs underline ${minha ? "text-white" : "text-cda-blue"}`}
-                        >
-                          <FileText className="h-3.5 w-3.5" />
-                          {m.anexoNome}
-                        </a>
-                      )}
-                      <p className={`mt-1 text-[10px] ${minha ? "text-white/70" : "text-cda-text3"}`}>
-                        {formatarDataHora(m.createdAt)}
-                      </p>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+                {mensagens.map((m) => {
+                  const minha = m.remetenteId === meId;
+                  return (
+                    <div key={m.id} className={`flex ${minha ? "justify-end" : "justify-start"}`}>
+                      <div
+                        className={`max-w-[75%] rounded-xl px-3 py-2 text-sm ${
+                          minha ? "bg-cda-blue text-white" : "bg-cda-bg text-cda-text"
+                        }`}
+                      >
+                        {m.conteudo && <p className="whitespace-pre-wrap">{m.conteudo}</p>}
+                        {m.anexo && (
+                          <a
+                            href={m.anexo}
+                            download={m.anexoNome ?? "anexo"}
+                            className={`mt-1 flex items-center gap-1.5 text-xs underline ${minha ? "text-white" : "text-cda-blue"}`}
+                          >
+                            <FileText className="h-3.5 w-3.5" />
+                            {m.anexoNome}
+                          </a>
+                        )}
+                        <p className={`mt-1 text-[10px] ${minha ? "text-white/70" : "text-cda-text3"}`}>
+                          {formatarDataHora(m.createdAt)}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-              <div ref={fimRef} />
+                  );
+                })}
+                <div ref={fimRef} />
+              </div>
             </div>
 
-            <form onSubmit={enviar} className="flex flex-col gap-2 border-t border-cda-border p-3">
-              {anexo && (
-                <div className="flex items-center gap-2 text-xs text-cda-text2">
-                  <FileText className="h-3.5 w-3.5" />
-                  {anexo.nome}
-                  <button type="button" onClick={() => setAnexo(null)} className="text-cda-red hover:underline">
-                    remover
+            <form onSubmit={enviar} className="border-t border-cda-border p-3">
+              <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
+                {anexo && (
+                  <div className="flex items-center gap-2 text-xs text-cda-text2">
+                    <FileText className="h-3.5 w-3.5" />
+                    {anexo.nome}
+                    <button type="button" onClick={() => setAnexo(null)} className="text-cda-red hover:underline">
+                      remover
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <FileUpload
+                    maxSizeMB={3}
+                    label=""
+                    onSelect={(dados, nome) => setAnexo({ dados, nome })}
+                    disabled={enviando}
+                  />
+                  <input
+                    type="text"
+                    value={texto}
+                    onChange={(e) => setTexto(e.target.value)}
+                    placeholder="Escreva uma mensagem..."
+                    className="h-10 flex-1 rounded-lg border border-cda-border bg-white px-3 text-sm text-cda-text outline-none focus:border-cda-blue"
+                  />
+                  <button
+                    type="submit"
+                    disabled={enviando || (!texto.trim() && !anexo)}
+                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-cda-blue text-white disabled:opacity-50"
+                  >
+                    <Send className="h-4 w-4" />
                   </button>
                 </div>
-              )}
-              <div className="flex items-center gap-2">
-                <FileUpload
-                  maxSizeMB={3}
-                  label=""
-                  onSelect={(dados, nome) => setAnexo({ dados, nome })}
-                  disabled={enviando}
-                />
-                <input
-                  type="text"
-                  value={texto}
-                  onChange={(e) => setTexto(e.target.value)}
-                  placeholder="Escreva uma mensagem..."
-                  className="h-10 flex-1 rounded-lg border border-cda-border bg-white px-3 text-sm text-cda-text outline-none focus:border-cda-blue"
-                />
-                <button
-                  type="submit"
-                  disabled={enviando || (!texto.trim() && !anexo)}
-                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-cda-blue text-white disabled:opacity-50"
-                >
-                  <Send className="h-4 w-4" />
-                </button>
               </div>
             </form>
           </>
