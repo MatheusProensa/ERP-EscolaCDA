@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ROLES_ATIVAS } from "@/lib/permissoes";
+import { gerarSenhaAleatoria } from "@/lib/senha";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -25,6 +27,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   });
 
   return NextResponse.json(usuario);
+}
+
+export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+
+  const { id } = await params;
+  const senha = gerarSenhaAleatoria();
+  const hash = await bcrypt.hash(senha, 10);
+
+  await prisma.user.update({ where: { id }, data: { password: hash } });
+
+  return NextResponse.json({ senha });
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
