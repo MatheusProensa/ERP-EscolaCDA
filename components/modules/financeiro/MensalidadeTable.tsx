@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Undo2 } from "lucide-react";
+import { Undo2, Pencil } from "lucide-react";
 import type { Aluno, Mensalidade, Pagamento, SituacaoMensalidade, Turma } from "@prisma/client";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
+import { Modal } from "@/components/ui/Modal";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { formatarData, formatarMoeda } from "@/lib/utils";
 import { saldoDevedor } from "@/lib/inadimplencia";
 
@@ -38,12 +41,17 @@ export type MensalidadeLinha = Mensalidade & {
 export function MensalidadeTable({
   mensalidades,
   onRegistrarPagamento,
+  podeEditar,
 }: {
   mensalidades: MensalidadeLinha[];
   onRegistrarPagamento?: (mensalidade: MensalidadeLinha) => void;
+  podeEditar?: boolean;
 }) {
   const router = useRouter();
   const [estornandoId, setEstornandoId] = useState<string | null>(null);
+  const [editando, setEditando] = useState<MensalidadeLinha | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
   const mostrarAluno = mensalidades.some((m) => m.matricula);
   const colSpan = (mostrarAluno ? 1 : 0) + (onRegistrarPagamento ? 6 : 5);
 
@@ -59,7 +67,35 @@ export function MensalidadeTable({
     router.refresh();
   }
 
+  async function salvarEdicao(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!editando) return;
+    setError("");
+    setLoading(true);
+    const fd = new FormData(e.currentTarget);
+    const res = await fetch(`/api/financeiro/mensalidades/${editando.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        valor: fd.get("valor"),
+        vencimento: fd.get("vencimento"),
+        descricao: fd.get("descricao") || null,
+      }),
+    });
+    setLoading(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Não foi possível salvar.");
+      return;
+    }
+
+    setEditando(null);
+    router.refresh();
+  }
+
   return (
+    <>
     <Table>
       <TableHead>
         {mostrarAluno && <Th>Aluno</Th>}
@@ -98,10 +134,21 @@ export function MensalidadeTable({
                   )}
                 </Td>
               )}
-              <Td>{MESES[m.mes - 1]}/{m.ano}</Td>
+              <Td>{m.descricao || `${MESES[m.mes - 1]}/${m.ano}`}</Td>
               <Td>{formatarData(m.vencimento)}</Td>
               <Td>
-                {formatarMoeda(m.valor)}
+                <span className="flex items-center gap-1.5">
+                  {formatarMoeda(m.valor)}
+                  {podeEditar && m.pagamentos.length === 0 && (
+                    <button
+                      onClick={() => setEditando(m)}
+                      title="Editar mensalidade"
+                      className="text-cda-text3 hover:text-cda-blue"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </span>
                 {parcial && (
                   <span className="block text-xs text-cda-amber">saldo: {formatarMoeda(restante)}</span>
                 )}
@@ -145,5 +192,35 @@ export function MensalidadeTable({
         })}
       </TableBody>
     </Table>
+
+      <Modal open={!!editando} onClose={() => setEditando(null)} title="Editar mensalidade">
+        {editando && (
+          <form onSubmit={salvarEdicao} className="flex flex-col gap-4">
+            <Input
+              label="Descrição (opcional, só pra cobranças avulsas)"
+              name="descricao"
+              defaultValue={editando.descricao ?? ""}
+            />
+            <Input label="Valor" name="valor" type="number" step="0.01" min="0.01" required defaultValue={editando.valor} />
+            <Input
+              label="Vencimento"
+              name="vencimento"
+              type="date"
+              required
+              defaultValue={new Date(editando.vencimento).toISOString().slice(0, 10)}
+            />
+            {error && <p className="text-sm text-cda-red">{error}</p>}
+            <div className="flex justify-end gap-3">
+              <Button type="button" variant="outline" onClick={() => setEditando(null)}>
+                Cancelar
+              </Button>
+              <Button type="submit" loading={loading}>
+                Salvar
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
+    </>
   );
 }

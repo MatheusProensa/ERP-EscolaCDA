@@ -9,7 +9,7 @@ export function MensalidadesGerenciar({ mensalidades }: { mensalidades: Mensalid
 
   return (
     <>
-      <MensalidadeTable mensalidades={mensalidades} onRegistrarPagamento={setSelecionada} />
+      <MensalidadeTable mensalidades={mensalidades} onRegistrarPagamento={setSelecionada} podeEditar />
       <RegistrarPagamentoModal mensalidade={selecionada} onClose={() => setSelecionada(null)} />
     </>
   );

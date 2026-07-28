@@ -196,6 +196,7 @@ model Mensalidade {
   valor       Float
   vencimento  DateTime
   situacao    SituacaoMensalidade @default(PENDENTE)
+  descricao   String?
   pagamentos  Pagamento[]
   createdAt   DateTime            @default(now())
 }
