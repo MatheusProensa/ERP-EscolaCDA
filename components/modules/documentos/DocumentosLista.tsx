@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Trash2, FileText, TriangleAlert } from "lucide-react";
+import { ExternalLink, Trash2, Pencil, FileText, TriangleAlert } from "lucide-react";
 import type { DocumentoInstitucional } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatarData } from "@/lib/utils";
+import { EditarDocumentoModal } from "./EditarDocumentoModal";
 
 function statusValidade(validade: Date | null): { label: string; variant: "red" | "amber" | "green" } | null {
   if (!validade) return null;
@@ -20,6 +21,7 @@ function statusValidade(validade: Date | null): { label: string; variant: "red" 
 export function DocumentosLista({ grupos }: { grupos: { categoria: string; itens: DocumentoInstitucional[] }[] }) {
   const router = useRouter();
   const [removendoId, setRemovendoId] = useState<string | null>(null);
+  const [editando, setEditando] = useState<DocumentoInstitucional | null>(null);
 
   async function handleRemover(id: string) {
     if (!confirm("Remover este documento da lista? O arquivo continua no Drive.")) return;
@@ -66,6 +68,12 @@ export function DocumentosLista({ grupos }: { grupos: { categoria: string; itens
                       <ExternalLink className="h-4 w-4" />
                     </a>
                     <button
+                      onClick={() => setEditando(doc)}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                    <button
                       onClick={() => handleRemover(doc.id)}
                       disabled={removendoId === doc.id}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
@@ -79,6 +87,8 @@ export function DocumentosLista({ grupos }: { grupos: { categoria: string; itens
           </div>
         </Card>
       ))}
+
+      <EditarDocumentoModal documento={editando} onClose={() => setEditando(null)} />
     </div>
   );
 }
