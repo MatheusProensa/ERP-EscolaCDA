@@ -46,7 +46,11 @@ export default async function AniversariantesPage({
   const [matriculas, funcionarios] = await Promise.all([
     prisma.matricula.findMany({
       where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
-      include: { aluno: true, turma: true },
+      select: {
+        alunoId: true,
+        aluno: { select: { nome: true, foto: true, dataNascimento: true } },
+        turma: { select: { nome: true } },
+      },
     }),
     prisma.funcionario.findMany({ where: { ativo: true, dataNascimento: { not: null } } }),
   ]);
@@ -82,7 +86,7 @@ export default async function AniversariantesPage({
       nome: f.nome,
       foto: null,
       dataNascimento: f.dataNascimento!,
-      detalhe: `${f.cargo} · ${f.setor}`,
+      detalhe: f.cargo,
       href: `/funcionarios/${f.id}`,
     }));
 

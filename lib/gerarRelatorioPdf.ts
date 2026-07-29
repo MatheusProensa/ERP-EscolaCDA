@@ -314,6 +314,120 @@ export async function gerarRelatorioPdfMultiSecao({
   return `data:application/pdf;base64,${base64}`;
 }
 
+/** Mesmo visual do gerarRelatorioPdf, mas com várias seções empilhadas NA MESMA página
+ * (uma tabela embaixo da outra) — só quebra de página se o conteúdo realmente não couber. */
+export async function gerarRelatorioPdfSecoesEmpilhadas({
+  titulo,
+  subtitulo,
+  secoes,
+}: {
+  titulo: string;
+  subtitulo?: string;
+  secoes: SecaoRelatorio[];
+}): Promise<string> {
+  const pdf = await PDFDocument.create();
+  const fonte = await pdf.embedFont(StandardFonts.Helvetica);
+  const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+
+  const geradoEm = new Date().toLocaleString("pt-BR");
+  let paginaAtual = 1;
+  let totalPaginas = 1;
+
+  function desenharCabecalho(pagina: PDFPage) {
+    pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H, width: PAGE_W, height: HEADER_H, color: NAVY });
+    pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H - 3, width: PAGE_W, height: 3, color: YELLOW });
+
+    pagina.drawText("ESCOLA CDA", { x: MARGIN, y: PAGE_H - 30, size: 18, font: fonteBold, color: WHITE });
+    pagina.drawText("Onde, há 15 anos, família e escola sonham juntas", {
+      x: MARGIN, y: PAGE_H - 46, size: 8.5, font: fonte, color: rgb(0.75, 0.8, 0.9),
+    });
+
+    const tituloLargura = fonteBold.widthOfTextAtSize(titulo, 14);
+    pagina.drawText(titulo, { x: PAGE_W - MARGIN - tituloLargura, y: PAGE_H - 28, size: 14, font: fonteBold, color: WHITE });
+    const geradoTexto = `Gerado em ${geradoEm} · página ${paginaAtual}/${totalPaginas}`;
+    const geradoLargura = fonte.widthOfTextAtSize(geradoTexto, 8.5);
+    pagina.drawText(geradoTexto, {
+      x: PAGE_W - MARGIN - geradoLargura, y: PAGE_H - 44, size: 8.5, font: fonte, color: rgb(0.75, 0.8, 0.9),
+    });
+  }
+
+  let pagina = pdf.addPage([PAGE_W, PAGE_H]);
+  desenharCabecalho(pagina);
+  let y = PAGE_H - HEADER_H - 16;
+
+  if (subtitulo) {
+    pagina.drawText(subtitulo, { x: MARGIN, y, size: 10, font: fonte, color: TEXT2 });
+    y -= 22;
+  }
+
+  function novaPagina() {
+    pagina = pdf.addPage([PAGE_W, PAGE_H]);
+    paginaAtual += 1;
+    totalPaginas = paginaAtual;
+    desenharCabecalho(pagina);
+    y = PAGE_H - HEADER_H - 16;
+  }
+
+  for (const secao of secoes) {
+    const larguraTabela = secao.colunas.reduce((acc, c) => acc + c.largura, 0);
+    const escala = Math.min(1, (PAGE_W - MARGIN * 2) / larguraTabela);
+    const colunasEscaladas = secao.colunas.map((c) => ({ ...c, largura: c.largura * escala }));
+
+    // Título da seção + espaço mínimo pra pelo menos o cabeçalho da tabela + 1 linha.
+    if (y - 20 - HEAD_ROW_H - ROW_H < MARGIN) novaPagina();
+
+    pagina.drawText(secao.titulo, { x: MARGIN, y, size: 12, font: fonteBold, color: NAVY });
+    if (secao.subtitulo) {
+      const largura = fonteBold.widthOfTextAtSize(secao.titulo, 12);
+      pagina.drawText(secao.subtitulo, { x: MARGIN + largura + 10, y: y + 1, size: 9, font: fonte, color: TEXT2 });
+    }
+    y -= 20;
+
+    pagina.drawRectangle({ x: MARGIN, y: y - HEAD_ROW_H, width: larguraTabela * escala, height: HEAD_ROW_H, color: NAVY });
+    let xCab = MARGIN;
+    for (const col of colunasEscaladas) {
+      pagina.drawText(truncar(fonteBold, col.label.toUpperCase(), 8, col.largura - 10), {
+        x: xCab + 6, y: y - HEAD_ROW_H + 8, size: 8, font: fonteBold, color: WHITE,
+      });
+      xCab += col.largura;
+    }
+    y -= HEAD_ROW_H;
+
+    secao.linhas.forEach((linha, i) => {
+      if (y - ROW_H < MARGIN) novaPagina();
+
+      if (i % 2 === 1) {
+        pagina.drawRectangle({ x: MARGIN, y: y - ROW_H, width: larguraTabela * escala, height: ROW_H, color: ROW_ALT });
+      }
+      let x = MARGIN;
+      for (const col of colunasEscaladas) {
+        const valor = truncar(fonte, linha[col.chave] ?? "", 9, col.largura - 12);
+        pagina.drawText(valor, { x: x + 6, y: y - ROW_H + 7, size: 9, font: fonte, color: BLACK });
+        x += col.largura;
+      }
+      pagina.drawLine({
+        start: { x: MARGIN, y: y - ROW_H },
+        end: { x: MARGIN + larguraTabela * escala, y: y - ROW_H },
+        thickness: 0.5,
+        color: BORDER,
+      });
+      y -= ROW_H;
+    });
+
+    if (secao.linhas.length === 0) {
+      pagina.drawText("Nenhum registro encontrado.", { x: MARGIN + 6, y: y - ROW_H + 7, size: 9, font: fonte, color: TEXT3 });
+      y -= ROW_H;
+    }
+
+    y -= 20; // espaço entre seções
+  }
+
+  // Repassa o número de página em todos os cabeçalhos já desenhados (agora que sabemos o total).
+  const bytes = await pdf.save();
+  const base64 = Buffer.from(bytes).toString("base64");
+  return `data:application/pdf;base64,${base64}`;
+}
+
 export type CampoFicha = { label: string; valor: string };
 export type SecaoFicha = { titulo: string; campos: CampoFicha[] };
 

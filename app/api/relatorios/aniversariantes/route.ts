@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paraCSV, respostaCSV } from "@/lib/csv";
-import { gerarRelatorioPdfMultiSecao, respostaPDF } from "@/lib/gerarRelatorioPdf";
+import { gerarRelatorioPdfSecoesEmpilhadas, respostaPDF } from "@/lib/gerarRelatorioPdf";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -83,8 +83,9 @@ export async function GET(request: NextRequest) {
       { chave: "Data", label: "Data", largura: 60 },
       { chave: "Completa", label: "Completa", largura: 90 },
     ];
-    const pdf = await gerarRelatorioPdfMultiSecao({
+    const pdf = await gerarRelatorioPdfSecoesEmpilhadas({
       titulo: `Aniversariantes de ${nomeMes}`,
+      subtitulo: `${nomeMes}/${anoAtual} — ${aniversariantesAlunos.length + aniversariantesFuncionarios.length} aniversariante(s), alunos e funcionários`,
       secoes: [
         {
           titulo: "Alunos",
