@@ -110,11 +110,11 @@ export async function DashboardFinanceiro() {
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <Suspense fallback={<WidgetFallback className="h-80" />}>
-            <CalendarioWidget />
+            <MuralWidget />
           </Suspense>
         </div>
         <Suspense fallback={<WidgetFallback />}>
-          <MuralWidget />
+          <CalendarioWidget />
         </Suspense>
       </div>
     </div>
