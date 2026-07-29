@@ -13,6 +13,13 @@
   --cda-green: #16a34a;
   --cda-red: #dc2626;
   --cda-amber: #d97706;
+  /* NOVO — antes só existia como hex solto em lib/estoqueStatus.ts */
+  --cda-critical: #ea580c;
+  --cda-purple: #7c3aed;
+  --cda-teal: #0d9488;
+  --cda-pink: #db2777;
+  /* NOVO — anel de foco de teclado, usado no @layer base abaixo */
+  --cda-focus-ring: 0 0 0 3px rgb(26 111 216 / 35%);
 }
 
 @theme inline {
@@ -28,6 +35,10 @@
   --color-cda-green: var(--cda-green);
   --color-cda-red: var(--cda-red);
   --color-cda-amber: var(--cda-amber);
+  --color-cda-critical: var(--cda-critical);
+  --color-cda-purple: var(--cda-purple);
+  --color-cda-teal: var(--cda-teal);
+  --color-cda-pink: var(--cda-pink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -35,4 +46,27 @@
 body {
   background: var(--cda-bg);
   color: var(--cda-text);
+}
+
+/* NOVO — diagnóstico de UX apontou ausência de indicador de foco de teclado
+   em botões/links/linhas de tabela clicáveis (maior ganho de acessibilidade
+   prático, menor esforço). Aplica-se globalmente via :focus-visible. */
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--cda-blue);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  /* barra de rolagem fina e discreta (Chrome/Edge/Firefox) */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--cda-border) transparent;
+  }
+  *::-webkit-scrollbar { width: 8px; height: 8px; }
+  *::-webkit-scrollbar-track { background: transparent; }
+  *::-webkit-scrollbar-thumb { background: var(--cda-border); border-radius: 9999px; }
+  *::-webkit-scrollbar-thumb:hover { background: var(--cda-text3); }
+  [data-cda-scroll="dark"] { scrollbar-color: rgb(255 255 255 / 25%) transparent; }
+  [data-cda-scroll="dark"]::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 25%); }
+  [data-cda-scroll="dark"]::-webkit-scrollbar-thumb:hover { background: rgb(255 255 255 / 40%); }
 }

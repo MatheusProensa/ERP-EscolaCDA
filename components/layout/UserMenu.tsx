@@ -22,7 +22,10 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-cda-bg"
+        aria-label="Menu do usuário"
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="flex min-h-11 items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-cda-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cda-blue/40"
       >
         <Avatar nome={name} />
         <div className="hidden text-left sm:block">
@@ -34,8 +37,9 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-20 mt-2 w-48 rounded-lg border border-cda-border bg-white py-1 shadow-lg">
+        <div role="menu" className="absolute right-0 top-full z-20 mt-2 w-48 rounded-lg border border-cda-border bg-white py-1 shadow-lg">
           <button
+            role="menuitem"
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="flex w-full items-center gap-2 px-3 py-2 text-sm text-cda-red hover:bg-cda-bg"
           >

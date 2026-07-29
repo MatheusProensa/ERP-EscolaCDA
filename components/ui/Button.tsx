@@ -38,7 +38,9 @@ type LinkButtonProps = BaseProps & {
 
 function baseClasses(variant: Variant, size: Size, className?: string) {
   return cn(
-    "inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none",
+    // NOVO: focus-visible:ring-2 — diagnóstico de UX apontou falta de indicador de foco
+    // de teclado em botões (maior ganho de acessibilidade, menor esforço).
+    "inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cda-blue/40 focus-visible:ring-offset-2",
     VARIANT_CLASSES[variant],
     SIZE_CLASSES[size],
     className

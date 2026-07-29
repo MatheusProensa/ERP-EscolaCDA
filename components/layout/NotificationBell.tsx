@@ -68,7 +68,9 @@ export function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         onClick={abrir}
-        className="relative flex h-9 w-9 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg"
+        aria-label={`Notificações${naoLidas > 0 ? ` (${naoLidas} não lidas)` : ""}`}
+        aria-expanded={open}
+        className="relative flex h-11 w-11 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cda-blue/40"
       >
         <Bell className="h-[18px] w-[18px]" />
         {naoLidas > 0 && (

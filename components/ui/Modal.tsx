@@ -34,7 +34,7 @@ export function Modal({
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-label={title}>
       <div className="absolute inset-0 bg-cda-navy/40" onClick={onClose} />
       <div
         className={cn(
@@ -47,7 +47,8 @@ export function Modal({
             <h3 className="text-sm font-semibold text-cda-text">{title}</h3>
             <button
               onClick={onClose}
-              className="rounded-md p-1 text-cda-text3 hover:bg-cda-bg hover:text-cda-text"
+              aria-label="Fechar"
+              className="rounded-md p-1 text-cda-text3 hover:bg-cda-bg hover:text-cda-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cda-blue/40"
             >
               <X className="h-4 w-4" />
             </button>

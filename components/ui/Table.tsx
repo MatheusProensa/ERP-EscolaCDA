@@ -35,10 +35,28 @@ export function Tr({
   className?: string;
   onClick?: () => void;
 }) {
+  // NOVO: linhas clicáveis agora são focáveis e ativáveis via teclado (Enter/Espaço),
+  // com anel de foco visível — antes só funcionavam com o mouse.
   return (
     <tr
       onClick={onClick}
-      className={cn("transition-colors", onClick && "cursor-pointer hover:bg-cda-bg", className)}
+      tabIndex={onClick ? 0 : undefined}
+      role={onClick ? "button" : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+      className={cn(
+        "transition-colors",
+        onClick && "cursor-pointer hover:bg-cda-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-cda-blue/40",
+        className
+      )}
     >
       {children}
     </tr>

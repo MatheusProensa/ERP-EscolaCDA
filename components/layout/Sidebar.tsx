@@ -99,12 +99,13 @@ export function Sidebar({ role, open, onClose }: { role: string; open: boolean; 
               ERP
             </span>
           </div>
-          <button onClick={onClose} className="text-white/60 hover:text-white lg:hidden">
+          <button onClick={onClose} aria-label="Fechar menu" className="text-white/60 hover:text-white lg:hidden">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-3 pb-4">
+        {/* NOVO: data-cda-scroll="dark" pega a barra de rolagem clara definida em globals.css */}
+        <nav data-cda-scroll="dark" className="flex-1 overflow-y-auto px-3 pb-4">
           {grupos.map((group) => (
             <div key={group.label} className="mb-5">
               <div className="mb-1.5 px-2 text-[11px] font-semibold uppercase tracking-wide text-white/35">
@@ -119,8 +120,9 @@ export function Sidebar({ role, open, onClose }: { role: string; open: boolean; 
                       key={item.href}
                       href={item.href}
                       onClick={onClose}
+                      aria-current={active ? "page" : undefined}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/50",
                         active
                           ? "bg-cda-blue text-white"
                           : "text-white/65 hover:bg-white/10 hover:text-white"

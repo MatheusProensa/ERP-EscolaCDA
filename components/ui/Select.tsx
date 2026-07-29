@@ -21,8 +21,12 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           <select
             ref={ref}
             id={selectId}
+            // NOVO: accent-color + color-scheme — é o máximo de estilo que o CSS permite
+            // no popup nativo do <select> (destaque combinando com a marca, e nunca vira
+            // escuro em SO com dark mode ativado).
+            style={{ accentColor: "var(--cda-blue)", colorScheme: "light" }}
             className={cn(
-              "h-10 w-full appearance-none rounded-lg border bg-white pl-3 pr-9 text-sm text-cda-text outline-none transition-colors focus:border-cda-blue",
+              "h-10 w-full appearance-none rounded-lg border bg-white pl-3 pr-9 text-sm text-cda-text outline-none transition-colors focus:border-cda-blue focus-visible:ring-2 focus-visible:ring-cda-blue/40 focus-visible:ring-offset-2",
               error ? "border-cda-red" : "border-cda-border",
               className
             )}
