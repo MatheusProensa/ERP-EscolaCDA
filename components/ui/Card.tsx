@@ -5,14 +5,17 @@ export function Card({
   className,
   title,
   action,
+  style,
 }: {
   children: React.ReactNode;
   className?: string;
   title?: React.ReactNode;
   action?: React.ReactNode;
+  style?: React.CSSProperties;
 }) {
   return (
     <div
+      style={style}
       className={cn(
         "rounded-[10px] border border-cda-border bg-cda-surface",
         className

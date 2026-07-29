@@ -41,7 +41,10 @@ export function MetricCard({
   trend?: number[];
 }) {
   return (
-    <Card className="group relative flex flex-col items-center p-5 text-center transition-transform hover:scale-[1.02]">
+    <Card
+      className="group relative flex flex-col items-center p-5 text-center transition-[transform,border-color,box-shadow] duration-500 ease-out hover:scale-[1.015] hover:[border-color:var(--metric-border)] hover:shadow-[0_4px_16px_-4px_var(--metric-border)]"
+      style={{ ["--metric-border" as string]: `color-mix(in oklch, ${iconColor} 45%, transparent)` }}
+    >
       {/* NOVO: badge agora é um selinho encostado no canto do círculo do ícone
           (position: absolute), em vez de ficar ao lado — assim o ícone continua
           sempre centralizado, com ou sem badge. */}
@@ -54,7 +57,7 @@ export function MetricCard({
         {/* NOVO: chip circular com anel + sombra suave na cor do ícone, em vez do
             quadrado com tinta chapada — visual mais rico/"premium". */}
         <div
-          className="flex h-12 w-12 items-center justify-center rounded-full border transition-transform group-hover:scale-110"
+          className="flex h-12 w-12 items-center justify-center rounded-full border transition-transform duration-500 ease-out group-hover:scale-110"
           style={{
             backgroundColor: `color-mix(in oklch, ${iconColor} 14%, white)`,
             borderColor: `color-mix(in oklch, ${iconColor} 22%, transparent)`,

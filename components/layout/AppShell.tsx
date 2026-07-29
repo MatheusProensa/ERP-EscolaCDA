@@ -26,8 +26,11 @@ export function AppShell({
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar name={name} role={role} onMenuClick={() => setMenuAberto(true)} />
           <main className="flex-1 overflow-y-auto bg-cda-bg p-4 sm:p-5">
-            {/* NOVO: um erro de render numa tela não derruba mais o app inteiro */}
-            <ErrorBoundary key={pathname}>{children}</ErrorBoundary>
+            {/* NOVO: fade + leve deslize a cada troca de rota, pra não ser um corte seco */}
+            <div key={pathname} className="animate-page-in">
+              {/* NOVO: um erro de render numa tela não derruba mais o app inteiro */}
+              <ErrorBoundary>{children}</ErrorBoundary>
+            </div>
           </main>
           {/* NOVO: rodapé institucional, presente em toda tela */}
           <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-cda-border bg-white px-5 py-2.5 text-xs text-cda-text3">
