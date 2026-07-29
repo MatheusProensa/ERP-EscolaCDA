@@ -4,6 +4,7 @@ import { useState, type FocusEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Users } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
 import { minParaHora } from "@/lib/ponto";
 
 type FuncionarioResumo = {
@@ -61,13 +62,10 @@ export function GerenciarParticipantesModal({ funcionarios }: { funcionarios: Fu
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
-      >
-        <Users className="h-3.5 w-3.5" />
+      <Button onClick={() => setOpen(true)}>
+        <Users className="h-4 w-4" />
         Gerenciar participantes
-      </button>
+      </Button>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Configurar o Ponto por funcionário" className="max-w-2xl">
         <div className="flex flex-col gap-1">

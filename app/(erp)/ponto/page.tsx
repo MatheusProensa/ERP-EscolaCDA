@@ -61,6 +61,7 @@ export default async function PontoPage({
         action={
           <div className="flex items-center gap-2">
             <GerenciarParticipantesModal funcionarios={todosFuncionarios} />
+            <div className="mx-1 hidden h-7 w-px bg-cda-border sm:block" />
             <ExportButtons href="/api/relatorios/ponto" params={{ mes: String(mesFiltro), ano: String(ano) }} />
           </div>
         }

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { Pencil } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { formatarCPF, formatarData } from "@/lib/utils";
 import type { Aluno } from "@prisma/client";
@@ -27,13 +27,10 @@ export function AlunoCard({
               <h2 className="text-lg font-bold text-cda-text">{aluno.nome}</h2>
               <Badge variant={SITUACAO_VARIANT[situacao]}>{SITUACAO_LABEL[situacao]}</Badge>
             </div>
-            <Link
-              href={`/alunos/${aluno.id}/editar`}
-              className="flex items-center gap-1.5 rounded-lg border border-cda-border px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
-            >
+            <Button href={`/alunos/${aluno.id}/editar`} variant="outline" size="sm">
               <Pencil className="h-3.5 w-3.5" />
               Editar cadastro
-            </Link>
+            </Button>
           </div>
           <p className="mt-0.5 text-sm text-cda-text2">
             {turmas.length > 0 ? turmas.join(" · ") : "Sem turma"}

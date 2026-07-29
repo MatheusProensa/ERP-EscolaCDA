@@ -44,13 +44,10 @@ export function NovaCobrancaModal({ matriculaId }: { matriculaId: string }) {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
-      >
+      <Button onClick={() => setOpen(true)} variant="outline" size="sm">
         <Plus className="h-3.5 w-3.5" />
         Cobrança avulsa
-      </button>
+      </Button>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Nova cobrança avulsa">
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">

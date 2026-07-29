@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { AlunoCard } from "@/components/modules/alunos/AlunoCard";
 import { CensoSecao } from "@/components/modules/alunos/CensoSecao";
 import { ContratoSecao } from "@/components/modules/alunos/ContratoSecao";
@@ -44,13 +45,10 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
         title={aluno.nome}
         breadcrumb={[{ label: "Alunos", href: "/alunos" }, { label: aluno.nome }]}
         action={
-          <a
-            href={`/api/alunos/${aluno.id}/ficha`}
-            className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
-          >
-            <FileDown className="h-3.5 w-3.5" />
+          <Button href={`/api/alunos/${aluno.id}/ficha`} variant="outline">
+            <FileDown className="h-4 w-4" />
             Baixar ficha PDF
-          </a>
+          </Button>
         }
       />
 

@@ -79,38 +79,37 @@ export function ContratoSecao({
             )}
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {contrato.arquivo && (
               <a
                 href={contrato.arquivo}
                 download={`contrato-${turmaNome}.pdf`}
-                className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
+                className="flex h-10 items-center gap-1.5 rounded-lg border border-cda-border bg-white px-4 text-sm font-medium text-cda-text hover:bg-cda-bg"
               >
-                <Download className="h-3.5 w-3.5" />
+                <Download className="h-4 w-4" />
                 Baixar PDF
               </a>
             )}
-            <button
-              onClick={alternarAssinado}
-              disabled={loading}
-              className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg disabled:opacity-50"
-            >
-              {contrato.assinado ? "Marcar como pendente" : "Marcar como assinado"}
-            </button>
+            {!contrato.assinado ? (
+              <Button onClick={alternarAssinado} loading={loading} size="sm" className="bg-cda-green hover:bg-cda-green/90">
+                Marcar como assinado
+              </Button>
+            ) : (
+              <Button onClick={alternarAssinado} loading={loading} size="sm" variant="outline">
+                Marcar como pendente
+              </Button>
+            )}
             {!contrato.dataEnvio && (
-              <button
-                onClick={marcarEnviado}
-                disabled={loading}
-                className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg disabled:opacity-50"
-              >
+              <Button onClick={marcarEnviado} loading={loading} size="sm" variant="outline">
                 <Send className="h-3.5 w-3.5" />
                 Marcar como enviado
-              </button>
+              </Button>
             )}
+            <div className="mx-1 h-6 w-px bg-cda-border" />
             <button
               onClick={gerarContrato}
               disabled={loading}
-              className="text-xs font-medium text-cda-blue hover:underline"
+              className="text-sm font-medium text-cda-blue hover:underline"
             >
               Gerar novamente
             </button>

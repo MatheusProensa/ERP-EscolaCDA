@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { Phone, Mail, Calendar, Cake, Briefcase, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { DocumentosFuncionario } from "@/components/modules/funcionarios/DocumentosFuncionario";
 import { formatarCPF, formatarData, formatarTelefone } from "@/lib/utils";
@@ -36,13 +36,10 @@ export default async function FuncionarioPerfilPage({ params }: { params: Promis
                   {funcionario.ativo ? "Ativo" : "Inativo"}
                 </Badge>
               </div>
-              <Link
-                href={`/funcionarios/${funcionario.id}/editar`}
-                className="flex items-center gap-1.5 rounded-lg border border-cda-border px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
-              >
+              <Button href={`/funcionarios/${funcionario.id}/editar`} variant="outline" size="sm">
                 <Pencil className="h-3.5 w-3.5" />
                 Editar
-              </Link>
+              </Button>
             </div>
             <p className="mt-0.5 text-sm text-cda-text2">
               {funcionario.cargo} · {funcionario.setor}

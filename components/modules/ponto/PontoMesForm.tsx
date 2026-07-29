@@ -299,7 +299,12 @@ export function PontoMesForm({
       </Card>
 
       <div className="flex items-center justify-between">
-        <Button variant="outline" size="sm" onClick={adicionarDia}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={adicionarDia}
+          className="border-cda-blue text-cda-blue hover:bg-cda-blue/5"
+        >
           <Plus className="h-4 w-4" /> Adicionar dia
         </Button>
         <div className="flex items-center gap-3">
