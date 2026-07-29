@@ -32,6 +32,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { label: "Calendário", href: "/calendario", icon: CalendarDays },
+      { label: "Mural", href: "/mural", icon: Megaphone },
       { label: "Chat", href: "/chat", icon: MessageCircle },
     ],
   },
@@ -39,7 +40,6 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Pedagógico",
     items: [
       { label: "Acadêmico", href: "/academico", icon: GraduationCap },
-      { label: "Mural", href: "/mural", icon: Megaphone },
       { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
     ],
   },

@@ -5,6 +5,7 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { TabelaInadimplentes } from "@/components/modules/dashboard/TabelaInadimplentes";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
+import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { VenceEstaSemana, type ItemVencimento } from "@/components/modules/dashboard/VenceEstaSemana";
 import { agruparInadimplentes, saldoDevedor, whereAtrasadas } from "@/lib/inadimplencia";
 import { formatarMoeda } from "@/lib/utils";
@@ -85,8 +86,11 @@ export async function DashboardFinanceiro() {
         </div>
       </div>
 
-      <div className="mt-5">
-        <CalendarioWidget />
+      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <CalendarioWidget />
+        </div>
+        <MuralWidget />
       </div>
     </div>
   );

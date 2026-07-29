@@ -6,6 +6,7 @@ import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/component
 import { Card } from "@/components/ui/Card";
 import { StatusEstoquePill } from "@/components/modules/estoque/EstoqueVisuais";
 import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
+import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { statusEstoque } from "@/lib/estoqueStatus";
 
 export async function DashboardAdministrativo() {
@@ -60,8 +61,11 @@ export async function DashboardAdministrativo() {
         </Table>
       </Card>
 
-      <div className="mt-5">
-        <CalendarioWidget />
+      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <CalendarioWidget />
+        </div>
+        <MuralWidget />
       </div>
     </div>
   );
