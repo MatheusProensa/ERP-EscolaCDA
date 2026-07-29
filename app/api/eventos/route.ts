@@ -14,9 +14,14 @@ export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const mes = params.get("mes");
   const ano = params.get("ano");
+  const desde = params.get("desde");
+  const limite = params.get("limite");
 
-  const where =
-    mes && ano
+  // "desde" ignora o mês em exibição no grid — usado pelo painel "Próximos eventos"
+  // pra continuar mostrando itens mesmo quando o mês atual está acabando.
+  const where = desde
+    ? { data: { gte: new Date(desde) } }
+    : mes && ano
       ? {
           data: {
             gte: new Date(Date.UTC(Number(ano), Number(mes) - 1, 1)),
@@ -25,7 +30,11 @@ export async function GET(request: NextRequest) {
         }
       : undefined;
 
-  const eventos = await prisma.eventoCalendario.findMany({ where, orderBy: { data: "asc" } });
+  const eventos = await prisma.eventoCalendario.findMany({
+    where,
+    orderBy: { data: "asc" },
+    take: limite ? Number(limite) : undefined,
+  });
   return NextResponse.json(eventos);
 }
 

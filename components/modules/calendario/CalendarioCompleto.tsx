@@ -34,6 +34,7 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
   const [mes, setMes] = useState(hoje.getUTCMonth() + 1);
   const [ano, setAno] = useState(hoje.getUTCFullYear());
   const [eventos, setEventos] = useState<Evento[]>([]);
+  const [proximosEventos, setProximosEventos] = useState<Evento[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [modal, setModal] = useState<{ aberto: boolean; evento?: Evento; dataPadrao?: string }>({ aberto: false });
   const [salvando, setSalvando] = useState(false);
@@ -60,6 +61,28 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
     };
   }, [mes, ano]);
 
+  // "Próximos eventos" é independente do mês exibido no grid — sempre olha pra frente
+  // a partir de hoje, mesmo cruzando pro mês seguinte, em vez de zerar quando o mês
+  // atual está acabando.
+  async function buscarProximos(): Promise<Evento[]> {
+    const d = new Date();
+    const hojeStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const res = await fetch(`/api/eventos?desde=${hojeStr}&limite=6`);
+    return res.ok ? await res.json() : [];
+  }
+
+  useEffect(() => {
+    let cancelado = false;
+    async function carregar() {
+      const dados = await buscarProximos();
+      if (!cancelado) setProximosEventos(dados);
+    }
+    carregar();
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
   const eventosPorDia = useMemo(() => {
     const mapa = new Map<string, Evento[]>();
     for (const e of eventos) {
@@ -71,15 +94,13 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
     return mapa;
   }, [eventos]);
 
-  // Lista dos próximos eventos a partir de hoje (não os que já passaram), para o painel lateral.
-  const proximosEventos = useMemo(() => {
-    const d = new Date();
-    const hojeStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-    return [...eventos]
-      .filter((e) => e.data.slice(0, 10) >= hojeStr)
-      .sort((a, b) => a.data.localeCompare(b.data))
-      .slice(0, 6);
-  }, [eventos]);
+  // Pula o grid pro mês do evento clicado no painel "Próximos eventos".
+  function irParaEvento(e: Evento) {
+    const d = new Date(e.data);
+    setMes(d.getUTCMonth() + 1);
+    setAno(d.getUTCFullYear());
+    if (podeEditar) abrirEditar(e);
+  }
 
   function mudarMes(delta: number) {
     let novoMes = mes + delta;
@@ -139,6 +160,7 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
     setMes((m) => m);
     const r = await fetch(`/api/eventos?mes=${mes}&ano=${ano}`);
     setEventos(await r.json());
+    buscarProximos().then(setProximosEventos);
   }
 
   async function excluir() {
@@ -151,6 +173,7 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
     showToast("Evento removido.", "info");
     const r = await fetch(`/api/eventos?mes=${mes}&ano=${ano}`);
     setEventos(await r.json());
+    buscarProximos().then(setProximosEventos);
   }
 
   return (
@@ -281,10 +304,14 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
         >
           <div className="flex flex-col">
             {proximosEventos.length === 0 && (
-              <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhum evento este mês.</p>
+              <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhum evento nos próximos dias.</p>
             )}
             {proximosEventos.map((e, i) => (
-              <div key={e.id} className={`flex items-center gap-2.5 px-4 py-3 ${i > 0 ? "border-t border-cda-border" : ""}`}>
+              <button
+                key={e.id}
+                onClick={() => irParaEvento(e)}
+                className={`flex w-full items-center gap-2.5 px-4 py-3 text-left hover:bg-cda-bg ${i > 0 ? "border-t border-cda-border" : ""}`}
+              >
                 <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: corCategoria(e.categoria).dot }} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm text-cda-text">{e.titulo}</p>
@@ -294,7 +321,7 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
                   </p>
                 </div>
                 {e.responsavel && <Avatar nome={e.responsavel} size="sm" />}
-              </div>
+              </button>
             ))}
           </div>
         </Card>
