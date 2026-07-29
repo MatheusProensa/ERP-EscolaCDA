@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
+import { NavigationProgress } from "./NavigationProgress";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
@@ -21,14 +22,18 @@ export function AppShell({
 
   return (
     <ToastProvider>
+      <Suspense fallback={null}>
+        <NavigationProgress />
+      </Suspense>
       <div className="flex h-screen">
         <Sidebar role={role} open={menuAberto} onClose={() => setMenuAberto(false)} />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar name={name} role={role} onMenuClick={() => setMenuAberto(true)} />
           <main className="flex-1 overflow-y-auto bg-cda-bg p-4 sm:p-5">
-            {/* A animação de entrada mora no template.tsx de cada grupo de rotas, não aqui —
-                template.tsx remonta exatamente quando o conteúdo real troca o loading.tsx
-                (key={pathname} aqui não pegava essa troca, só a navegação em si). */}
+            {/* Fade-in do conteúdo mora no template.tsx (remonta a cada navegação);
+                a barra de progresso acima (NavigationProgress) dá o feedback
+                imediato no clique, já que o Next não expõe quando exatamente o
+                Suspense do loading.tsx troca pro conteúdo real. */}
             <ErrorBoundary key={pathname}>{children}</ErrorBoundary>
           </main>
           {/* NOVO: rodapé institucional, presente em toda tela */}
