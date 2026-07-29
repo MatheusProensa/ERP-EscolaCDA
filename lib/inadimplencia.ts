@@ -1,7 +1,14 @@
-import type { Mensalidade, Pagamento, SituacaoMensalidade } from "@prisma/client";
+import type { SituacaoMensalidade } from "@prisma/client";
 import { diasEmAtraso } from "@/lib/utils";
 
-export type MensalidadeComPagamentos = Mensalidade & { pagamentos: Pagamento[] };
+// Estrutural (não o tipo Mensalidade inteiro do Prisma) — assim uma query com `select`
+// enxuto também serve aqui, sem precisar trazer todas as colunas da tabela.
+export type MensalidadeComPagamentos = {
+  situacao: SituacaoMensalidade;
+  valor: number;
+  vencimento: Date;
+  pagamentos: { valor: number }[];
+};
 
 /**
  * Filtro Prisma pra mensalidades em aberto e já vencidas — "atrasada" é calculado

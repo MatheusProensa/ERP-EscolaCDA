@@ -22,7 +22,6 @@ export default async function MensalidadesPage({
   const hoje = new Date();
 
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
-  const turmas = ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }));
 
   // "Atrasada" é calculado (vencida e ainda não paga), não um valor gravado — nada no sistema
   // grava ATRASADA em `situacao`, então filtrar literalmente por esse valor nunca traria resultado.
@@ -35,20 +34,41 @@ export default async function MensalidadesPage({
     situacaoWhere = { situacao: situacao as SituacaoMensalidade };
   }
 
-  const mensalidades = await prisma.mensalidade.findMany({
-    where: {
-      mes: mes ? Number(mes) : undefined,
-      ...situacaoWhere,
-      matricula: {
-        anoLetivoId: anoLetivo?.id,
-        turmaId: turma || undefined,
-        aluno: busca ? { nome: { contains: busca, mode: "insensitive" } } : undefined,
+  // turmas (pro dropdown) e mensalidades só dependem do anoLetivo, uma não depende da outra —
+  // rodam em paralelo em vez de round-trips sequenciais ao banco.
+  const [turmasRaw, mensalidades] = await Promise.all([
+    prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }),
+    prisma.mensalidade.findMany({
+      where: {
+        mes: mes ? Number(mes) : undefined,
+        ...situacaoWhere,
+        matricula: {
+          anoLetivoId: anoLetivo?.id,
+          turmaId: turma || undefined,
+          aluno: busca ? { nome: { contains: busca, mode: "insensitive" } } : undefined,
+        },
       },
-    },
-    include: { pagamentos: { orderBy: { dataPagamento: "desc" } }, matricula: { include: { aluno: true, turma: true } } },
-    orderBy: [{ vencimento: "asc" }],
-    take: 200,
-  });
+      select: {
+        id: true,
+        mes: true,
+        ano: true,
+        valor: true,
+        vencimento: true,
+        situacao: true,
+        descricao: true,
+        pagamentos: { select: { id: true, dataPagamento: true, valor: true }, orderBy: { dataPagamento: "desc" } },
+        matricula: {
+          select: {
+            aluno: { select: { id: true, nome: true, foto: true } },
+            turma: { select: { nome: true } },
+          },
+        },
+      },
+      orderBy: [{ vencimento: "asc" }],
+      take: 200,
+    }),
+  ]);
+  const turmas = ordenarTurmas(turmasRaw);
 
   return (
     <div>

@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Undo2, Pencil } from "lucide-react";
-import type { Aluno, Mensalidade, Pagamento, SituacaoMensalidade, Turma } from "@prisma/client";
+import type { SituacaoMensalidade } from "@prisma/client";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
@@ -34,9 +34,18 @@ const SITUACAO_LABEL: Record<SituacaoMensalidade, string> = {
   CANCELADA: "Cancelada",
 };
 
-export type MensalidadeLinha = Mensalidade & {
-  pagamentos: Pagamento[];
-  matricula?: { aluno: Aluno; turma: Turma };
+// Estrutural — só os campos que a tabela/modal realmente usam, assim uma query com
+// `select` enxuto (em vez de trazer o registro inteiro) também serve aqui.
+export type MensalidadeLinha = {
+  id: string;
+  mes: number;
+  ano: number;
+  valor: number;
+  vencimento: Date;
+  situacao: SituacaoMensalidade;
+  descricao: string | null;
+  pagamentos: { id: string; dataPagamento: Date; valor: number }[];
+  matricula?: { aluno: { id: string; nome: string; foto: string | null }; turma: { nome: string } };
 };
 
 export function MensalidadeTable({
