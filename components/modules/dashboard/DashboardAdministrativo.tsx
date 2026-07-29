@@ -6,7 +6,7 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Card } from "@/components/ui/Card";
 import { StatusEstoquePill } from "@/components/modules/estoque/EstoqueVisuais";
-import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
+import { ProximosEventosWidget } from "@/components/modules/dashboard/ProximosEventosWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 import { statusEstoque } from "@/lib/estoqueStatus";
@@ -70,8 +70,8 @@ export async function DashboardAdministrativo() {
       </Card>
 
       <div className="mt-5">
-        <Suspense fallback={<WidgetFallback className="h-80" />}>
-          <CalendarioWidget />
+        <Suspense fallback={<WidgetFallback className="h-60" />}>
+          <ProximosEventosWidget />
         </Suspense>
       </div>
     </div>

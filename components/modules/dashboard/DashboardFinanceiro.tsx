@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { TabelaInadimplentes } from "@/components/modules/dashboard/TabelaInadimplentes";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
-import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
+import { ProximosEventosWidget } from "@/components/modules/dashboard/ProximosEventosWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 import { VenceEstaSemana, type ItemVencimento } from "@/components/modules/dashboard/VenceEstaSemana";
@@ -107,8 +107,8 @@ export async function DashboardFinanceiro() {
       </div>
 
       <div className="mt-5">
-        <Suspense fallback={<WidgetFallback className="h-80" />}>
-          <CalendarioWidget />
+        <Suspense fallback={<WidgetFallback className="h-60" />}>
+          <ProximosEventosWidget />
         </Suspense>
       </div>
     </div>

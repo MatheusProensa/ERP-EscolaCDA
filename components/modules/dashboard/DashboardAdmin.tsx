@@ -4,7 +4,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 import { MetricasGerais } from "@/components/modules/dashboard/MetricasGerais";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
-import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
+import { ProximosEventosWidget } from "@/components/modules/dashboard/ProximosEventosWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { saldoDevedor, whereAtrasadas } from "@/lib/inadimplencia";
 
@@ -65,8 +65,8 @@ export async function DashboardAdmin() {
       </div>
 
       <div className="mb-5">
-        <Suspense fallback={<WidgetFallback className="h-80" />}>
-          <CalendarioWidget />
+        <Suspense fallback={<WidgetFallback className="h-60" />}>
+          <ProximosEventosWidget />
         </Suspense>
       </div>
 

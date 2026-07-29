@@ -5,7 +5,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
-import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
+import { ProximosEventosWidget } from "@/components/modules/dashboard/ProximosEventosWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 
@@ -48,8 +48,8 @@ export async function DashboardPedagogico() {
       <FeedAtividade logs={logs} />
 
       <div className="mt-5">
-        <Suspense fallback={<WidgetFallback className="h-80" />}>
-          <CalendarioWidget />
+        <Suspense fallback={<WidgetFallback className="h-60" />}>
+          <ProximosEventosWidget />
         </Suspense>
       </div>
     </div>
