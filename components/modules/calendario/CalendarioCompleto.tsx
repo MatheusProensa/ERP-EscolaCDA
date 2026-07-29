@@ -71,11 +71,15 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
     return mapa;
   }, [eventos]);
 
-  // NOVO: lista dos próximos eventos do mês, para o painel lateral
-  const proximosEventos = useMemo(
-    () => [...eventos].sort((a, b) => a.data.localeCompare(b.data)).slice(0, 6),
-    [eventos]
-  );
+  // Lista dos próximos eventos a partir de hoje (não os que já passaram), para o painel lateral.
+  const proximosEventos = useMemo(() => {
+    const d = new Date();
+    const hojeStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    return [...eventos]
+      .filter((e) => e.data.slice(0, 10) >= hojeStr)
+      .sort((a, b) => a.data.localeCompare(b.data))
+      .slice(0, 6);
+  }, [eventos]);
 
   function mudarMes(delta: number) {
     let novoMes = mes + delta;
