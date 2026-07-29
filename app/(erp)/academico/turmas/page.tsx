@@ -2,14 +2,18 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { TurmaCard } from "@/components/modules/academico/TurmaCard";
 import { NovaTurmaModal } from "@/components/modules/academico/NovaTurmaModal";
+import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
 import { ordenarTurmas } from "@/lib/utils";
 
 export default async function TurmasPage() {
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
-  const turmas = await prisma.turma.findMany({
-    where: { anoLetivoId: anoLetivo?.id },
-    include: { _count: { select: { matriculas: { where: { situacao: "ATIVA" } } } } },
-  });
+  const [turmas, totalAlunos] = await Promise.all([
+    prisma.turma.findMany({
+      where: { anoLetivoId: anoLetivo?.id },
+      include: { _count: { select: { matriculas: { where: { situacao: "ATIVA" } } } } },
+    }),
+    prisma.matricula.count({ where: { anoLetivoId: anoLetivo?.id, situacao: "ATIVA" } }),
+  ]);
 
   const regulares = ordenarTurmas(turmas.filter((t) => t.turno === "TARDE"));
   const contraturno = ordenarTurmas(turmas.filter((t) => t.turno === "MANHA"));
@@ -22,6 +26,8 @@ export default async function TurmasPage() {
         breadcrumb={[{ label: "Acadêmico", href: "/academico" }, { label: "Turmas" }]}
         action={<NovaTurmaModal />}
       />
+
+      <AcademicoTabs active="turmas" totalTurmas={turmas.length} totalAlunos={totalAlunos} />
 
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-cda-text2">

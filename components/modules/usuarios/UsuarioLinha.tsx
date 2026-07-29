@@ -8,6 +8,7 @@ import { Select } from "@/components/ui/Select";
 import { Tr, Td } from "@/components/ui/Table";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { showToast } from "@/components/ui/Toast";
 import { formatarData } from "@/lib/utils";
 import { ROLES_ATIVAS, ROLE_LABEL } from "@/lib/permissoes";
 
@@ -34,12 +35,16 @@ export function UsuarioLinha({ usuario, souEu }: { usuario: Usuario; souEu: bool
     }
     const data = await res.json();
     setNovaSenha(data.senha);
+    // NOVO
+    showToast(`Nova senha gerada para ${usuario.name}.`);
   }
 
   async function copiarSenha() {
     if (!novaSenha) return;
     await navigator.clipboard.writeText(novaSenha);
     setCopiado(true);
+    // NOVO
+    showToast("Senha copiada para a área de transferência.", "info");
     setTimeout(() => setCopiado(false), 2000);
   }
 
@@ -108,6 +113,7 @@ export function UsuarioLinha({ usuario, souEu }: { usuario: Usuario; souEu: bool
           <button
             onClick={redefinirSenha}
             disabled={redefinindo}
+            aria-label="Redefinir senha"
             className="rounded-lg p-1.5 text-cda-text3 hover:bg-cda-blue/10 hover:text-cda-blue disabled:pointer-events-none disabled:opacity-30"
             title="Redefinir senha"
           >
@@ -116,6 +122,7 @@ export function UsuarioLinha({ usuario, souEu }: { usuario: Usuario; souEu: bool
           <button
             onClick={excluir}
             disabled={souEu}
+            aria-label={souEu ? "Você não pode excluir seu próprio usuário" : "Excluir usuário"}
             className="rounded-lg p-1.5 text-cda-text3 hover:bg-cda-red/10 hover:text-cda-red disabled:pointer-events-none disabled:opacity-30"
             title={souEu ? "Você não pode excluir seu próprio usuário" : "Excluir"}
           >
@@ -134,6 +141,7 @@ export function UsuarioLinha({ usuario, souEu }: { usuario: Usuario; souEu: bool
             <code className="flex-1 font-mono text-base font-semibold text-cda-text">{novaSenha}</code>
             <button
               onClick={copiarSenha}
+              aria-label="Copiar senha"
               className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-white hover:text-cda-blue"
               title="Copiar"
             >

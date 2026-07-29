@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { showToast } from "@/components/ui/Toast";
 import type { MensalidadeLinha } from "./MensalidadeTable";
 
 export function RegistrarPagamentoModal({
@@ -47,6 +48,9 @@ export function RegistrarPagamentoModal({
     }
 
     onClose();
+    // NOVO — resolve o diagnóstico de UX: antes a lista só atualizava em
+    // silêncio (router.refresh()), sem nenhuma confirmação visual de sucesso.
+    showToast("Pagamento registrado com sucesso.");
     router.refresh();
   }
 

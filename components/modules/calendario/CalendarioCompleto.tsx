@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, CalendarClock } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { Avatar } from "@/components/ui/Avatar";
+import { showToast } from "@/components/ui/Toast";
 import {
   CATEGORIAS_EVENTO,
   DIAS_SEMANA_ABREV,
@@ -23,6 +25,7 @@ type Evento = {
   data: string;
   categoria: string;
   descricao: string | null;
+  responsavel?: string | null;
 };
 
 export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
@@ -67,6 +70,12 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
     }
     return mapa;
   }, [eventos]);
+
+  // NOVO: lista dos próximos eventos do mês, para o painel lateral
+  const proximosEventos = useMemo(
+    () => [...eventos].sort((a, b) => a.data.localeCompare(b.data)).slice(0, 6),
+    [eventos]
+  );
 
   function mudarMes(delta: number) {
     let novoMes = mes + delta;
@@ -120,6 +129,8 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
       return;
     }
     setModal({ aberto: false });
+    // NOVO — confirmação visual de sucesso
+    showToast(modal.evento ? "Evento atualizado." : "Evento criado com sucesso.");
     router.refresh();
     setMes((m) => m);
     const r = await fetch(`/api/eventos?mes=${mes}&ano=${ano}`);
@@ -133,39 +144,52 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
     await fetch(`/api/eventos/${modal.evento.id}`, { method: "DELETE" });
     setSalvando(false);
     setModal({ aberto: false });
+    showToast("Evento removido.", "info");
     const r = await fetch(`/api/eventos?mes=${mes}&ano=${ano}`);
     setEventos(await r.json());
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <Card className="flex flex-wrap items-center justify-between gap-3 p-4">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => mudarMes(-1)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <Select value={mes} onChange={(e) => setMes(Number(e.target.value))} className="w-40">
-            {MESES.map((m, i) => (
-              <option key={m} value={i + 1}>{m}</option>
-            ))}
-          </Select>
-          <Select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="w-28">
-            {[ano - 1, ano, ano + 1].map((a) => (
-              <option key={a} value={a}>{a}</option>
-            ))}
-          </Select>
-          <button
-            onClick={() => mudarMes(1)}
-            className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+      {/* NOVO: filtros e legenda em duas linhas separadas por um divisor —
+          antes disputavam espaço na mesma linha com o botão "Novo evento" */}
+      <Card className="flex flex-col gap-3.5 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => mudarMes(-1)}
+              aria-label="Mês anterior"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <Select value={mes} onChange={(e) => setMes(Number(e.target.value))} className="w-[130px]">
+              {MESES.map((m, i) => (
+                <option key={m} value={i + 1}>{m}</option>
+              ))}
+            </Select>
+            <Select value={ano} onChange={(e) => setAno(Number(e.target.value))} className="w-[84px]">
+              {[ano - 1, ano, ano + 1].map((a) => (
+                <option key={a} value={a}>{a}</option>
+              ))}
+            </Select>
+            <button
+              onClick={() => mudarMes(1)}
+              aria-label="Próximo mês"
+              className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+
+          {podeEditar && (
+            <Button size="sm" onClick={() => abrirNovo()}>
+              <Plus className="h-4 w-4" /> Novo evento
+            </Button>
+          )}
         </div>
 
-        <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+        <div className="flex flex-wrap gap-x-4 gap-y-1.5 border-t border-cda-border pt-3">
           {CATEGORIAS_EVENTO.map((cat) => {
             const cor = corCategoria(cat);
             return (
@@ -176,73 +200,101 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
             );
           })}
         </div>
-
-        {podeEditar && (
-          <Button size="sm" onClick={() => abrirNovo()}>
-            <Plus className="h-4 w-4" /> Novo evento
-          </Button>
-        )}
       </Card>
 
-      <Card className="overflow-hidden p-0">
-        {carregando ? (
-          <div className="p-10 text-center text-sm text-cda-text3">Carregando...</div>
-        ) : (
-          <div className="grid grid-cols-7 gap-px bg-cda-border">
-            {DIAS_SEMANA_ABREV.map((d) => (
-              <div key={d} className="bg-cda-bg py-2 text-center text-xs font-semibold uppercase text-cda-text3">
-                {d}
+      {/* NOVO: grade + painel "Próximos eventos" lado a lado */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_1fr]">
+        <Card className="overflow-hidden p-0">
+          {carregando ? (
+            <div className="p-10 text-center text-sm text-cda-text3">Carregando...</div>
+          ) : (
+            <div className="grid grid-cols-7 gap-px bg-cda-border">
+              {DIAS_SEMANA_ABREV.map((d) => (
+                <div key={d} className="bg-white py-2.5 text-center text-[11px] font-bold uppercase tracking-wide text-cda-text3">
+                  {d}
+                </div>
+              ))}
+              {grade.map(({ data, doMesAtual }, i) => {
+                const chave = data.toISOString().slice(0, 10);
+                const eventosDoDia = eventosPorDia.get(chave) ?? [];
+                const ehHoje = mesmaData(data, hoje);
+                return (
+                  <div
+                    key={i}
+                    className={`group min-h-[108px] bg-white p-1.5 ${!doMesAtual ? "bg-cda-bg/50" : ""}`}
+                  >
+                    <div className="mb-1 flex items-center justify-between">
+                      <span
+                        className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${
+                          ehHoje ? "bg-cda-blue font-bold text-white" : doMesAtual ? "text-cda-text" : "text-cda-text3"
+                        }`}
+                      >
+                        {data.getUTCDate()}
+                      </span>
+                      {podeEditar && (
+                        <button
+                          onClick={() => abrirNovo(chave)}
+                          className="text-cda-text3 opacity-0 hover:text-cda-blue group-hover:opacity-100"
+                          title="Novo evento neste dia"
+                          aria-label="Novo evento neste dia"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      {eventosDoDia.map((e) => {
+                        const cor = corCategoria(e.categoria);
+                        return (
+                          <button
+                            key={e.id}
+                            onClick={() => podeEditar && abrirEditar(e)}
+                            title={e.titulo}
+                            // NOVO: hover com leve sombra/deslocamento no chip do evento
+                            className="truncate rounded px-1.5 py-1 text-left text-[10.5px] font-medium leading-tight transition-shadow hover:shadow-sm"
+                            style={{ backgroundColor: cor.bg, color: cor.text }}
+                          >
+                            {e.titulo}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Card>
+
+        {/* NOVO: painel lateral com os próximos eventos do mês */}
+        <Card
+          title={
+            <span className="flex items-center gap-2">
+              <CalendarClock className="h-[15px] w-[15px] text-cda-blue" />
+              Próximos eventos
+            </span>
+          }
+        >
+          <div className="flex flex-col">
+            {proximosEventos.length === 0 && (
+              <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhum evento este mês.</p>
+            )}
+            {proximosEventos.map((e, i) => (
+              <div key={e.id} className={`flex items-center gap-2.5 px-4 py-3 ${i > 0 ? "border-t border-cda-border" : ""}`}>
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: corCategoria(e.categoria).dot }} />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm text-cda-text">{e.titulo}</p>
+                  <p className="text-xs text-cda-text3">
+                    {new Date(e.data).toLocaleDateString("pt-BR", { timeZone: "UTC", day: "2-digit", month: "short" })}
+                    {e.responsavel ? ` · ${e.responsavel}` : ""}
+                  </p>
+                </div>
+                {e.responsavel && <Avatar nome={e.responsavel} size="sm" />}
               </div>
             ))}
-            {grade.map(({ data, doMesAtual }, i) => {
-              const chave = data.toISOString().slice(0, 10);
-              const eventosDoDia = eventosPorDia.get(chave) ?? [];
-              const ehHoje = mesmaData(data, hoje);
-              return (
-                <div
-                  key={i}
-                  className={`min-h-[110px] bg-white p-1.5 ${!doMesAtual ? "bg-cda-bg/50" : ""}`}
-                >
-                  <div className="mb-1 flex items-center justify-between">
-                    <span
-                      className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${
-                        ehHoje ? "bg-cda-blue font-bold text-white" : doMesAtual ? "text-cda-text" : "text-cda-text3"
-                      }`}
-                    >
-                      {data.getUTCDate()}
-                    </span>
-                    {podeEditar && (
-                      <button
-                        onClick={() => abrirNovo(chave)}
-                        className="text-cda-text3 opacity-0 hover:text-cda-blue group-hover:opacity-100"
-                        title="Novo evento neste dia"
-                      >
-                        <Plus className="h-3.5 w-3.5" />
-                      </button>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-0.5">
-                    {eventosDoDia.map((e) => {
-                      const cor = corCategoria(e.categoria);
-                      return (
-                        <button
-                          key={e.id}
-                          onClick={() => podeEditar && abrirEditar(e)}
-                          title={e.titulo}
-                          className="truncate rounded px-1 py-0.5 text-left text-[10px] leading-tight"
-                          style={{ backgroundColor: cor.bg, color: cor.text }}
-                        >
-                          {e.titulo}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
           </div>
-        )}
-      </Card>
+        </Card>
+      </div>
 
       <Modal
         open={modal.aberto}

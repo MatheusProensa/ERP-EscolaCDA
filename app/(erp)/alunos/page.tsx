@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { AlunoTable } from "@/components/modules/alunos/AlunoTable";
 import { ExportButtons } from "@/components/ui/ExportButtons";
+import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
 import { ordenarTurmas } from "@/lib/utils";
 import type { SituacaoMatricula } from "@prisma/client";
 
@@ -57,6 +58,8 @@ export default async function AlunosPage({
           </div>
         }
       />
+
+      <AcademicoTabs active="alunos" totalAlunos={matriculas.length} />
 
       {censoIncompleto && (
         <div className="mb-5 flex items-center gap-2">

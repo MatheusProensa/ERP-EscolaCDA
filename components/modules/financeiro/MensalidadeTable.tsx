@@ -11,6 +11,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { showToast } from "@/components/ui/Toast";
 import { formatarData, formatarMoeda } from "@/lib/utils";
 import { saldoDevedor } from "@/lib/inadimplencia";
 
@@ -64,6 +65,8 @@ export function MensalidadeTable({
       alert("Não foi possível estornar o pagamento.");
       return;
     }
+    // NOVO
+    showToast("Pagamento estornado.", "info");
     router.refresh();
   }
 
@@ -91,6 +94,7 @@ export function MensalidadeTable({
     }
 
     setEditando(null);
+    showToast("Mensalidade atualizada.");
     router.refresh();
   }
 
@@ -143,6 +147,7 @@ export function MensalidadeTable({
                     <button
                       onClick={() => setEditando(m)}
                       title="Editar mensalidade"
+                      aria-label="Editar mensalidade"
                       className="text-cda-text3 hover:text-cda-blue"
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -165,6 +170,7 @@ export function MensalidadeTable({
                         onClick={() => estornar(pagamento.id)}
                         disabled={estornandoId === pagamento.id}
                         title="Estornar pagamento"
+                        aria-label="Estornar pagamento"
                         className="text-cda-text3 hover:text-cda-red disabled:opacity-50"
                       >
                         <Undo2 className="h-3.5 w-3.5" />

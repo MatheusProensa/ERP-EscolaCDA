@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { showToast } from "@/components/ui/Toast";
 import { formatarDataHora } from "@/lib/utils";
 
 export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoChave[] } }) {
@@ -58,10 +59,11 @@ export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoC
     setError("");
     setLoading(true);
     const fd = new FormData(e.currentTarget);
+    const responsavel = String(fd.get("responsavel") ?? "");
     const res = await fetch(`/api/chaves/${chave.id}/emprestimos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ responsavel: fd.get("responsavel") }),
+      body: JSON.stringify({ responsavel }),
     });
     setLoading(false);
 
@@ -72,6 +74,8 @@ export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoC
     }
 
     setOpen(false);
+    // NOVO: confirmação visual — antes a retirada só atualizava a lista em silêncio.
+    showToast(`Chave "${chave.sala}" retirada por ${responsavel}.`);
     router.refresh();
   }
 
@@ -88,6 +92,8 @@ export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoC
       return;
     }
 
+    // NOVO
+    showToast(`Chave "${chave.sala}" devolvida.`);
     router.refresh();
   }
 
@@ -100,6 +106,7 @@ export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoC
           <button
             onClick={() => setEditando(true)}
             title="Editar"
+            aria-label="Editar chave"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg hover:text-cda-text"
           >
             <Pencil className="h-[18px] w-[18px]" />
@@ -107,6 +114,7 @@ export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoC
           <button
             onClick={excluir}
             title="Excluir"
+            aria-label="Excluir chave"
             className="flex h-9 w-9 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg hover:text-cda-red"
           >
             <Trash2 className="h-[18px] w-[18px]" />

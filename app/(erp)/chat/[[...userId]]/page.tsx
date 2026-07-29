@@ -13,6 +13,7 @@ export default async function ChatPage({ params }: { params: Promise<{ userId?: 
       <PageHeader title="Chat" subtitle="Converse com outros perfis do sistema" />
       <ChatApp
         meId={session!.user.id}
+        meNome={session!.user.name ?? "Você"}
         selecionadoInicial={userId?.[0]}
         conversasIniciais={conversasIniciais}
       />

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Send, FileText, ArrowLeft } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { ROLE_LABEL } from "@/lib/permissoes";
 import { formatarDataHora } from "@/lib/utils";
@@ -16,6 +15,7 @@ type Conversa = {
   ultimaMensagem: string | null;
   ultimaEm: string | null;
   naoLidas: number;
+  online?: boolean;
 };
 
 type Mensagem = {
@@ -30,10 +30,13 @@ type Mensagem = {
 
 export function ChatApp({
   meId,
+  meNome,
   selecionadoInicial,
   conversasIniciais,
 }: {
   meId: string;
+  /** NOVO: precisa do nome de quem está logado pra rotular o próprio balão de mensagem. */
+  meNome: string;
   selecionadoInicial?: string;
   conversasIniciais?: Conversa[];
 }) {
@@ -164,15 +167,32 @@ export function ChatApp({
               selecionado === c.id ? "bg-cda-bg" : ""
             }`}
           >
-            <Avatar nome={c.name} size="md" />
+            {/* NOVO: bolinha de status online no avatar */}
+            <div className="relative shrink-0">
+              <Avatar nome={c.name} size="md" />
+              {c.online && (
+                <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-cda-green" />
+              )}
+            </div>
             <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-2">
-                <span className="truncate text-sm font-medium text-cda-text">{c.name}</span>
-                {c.naoLidas > 0 && <Badge variant="blue">{c.naoLidas}</Badge>}
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="truncate text-sm font-semibold text-cda-text">{c.name}</span>
+                {/* NOVO: horário da última mensagem */}
+                {c.ultimaEm && (
+                  <span className="shrink-0 text-[11px] text-cda-text3">{formatarDataHora(c.ultimaEm).split(" ").pop()}</span>
+                )}
               </div>
-              <p className="truncate text-xs text-cda-text3">
-                {c.ultimaMensagem || (ROLE_LABEL[c.role] ?? c.role)}
-              </p>
+              <div className="flex items-center justify-between gap-2">
+                <p className="truncate text-xs text-cda-text3">
+                  {c.ultimaMensagem || (ROLE_LABEL[c.role] ?? c.role)}
+                </p>
+                {/* NOVO: selo sólido (não mais o Badge tintado) — bem mais visível */}
+                {c.naoLidas > 0 && (
+                  <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-cda-red px-1 text-[11px] font-bold text-white">
+                    {c.naoLidas}
+                  </span>
+                )}
+              </div>
             </div>
           </button>
         ))}
@@ -191,10 +211,19 @@ export function ChatApp({
               </button>
               {conversaAtual ? (
                 <>
-                  <Avatar nome={conversaAtual.name} size="sm" />
+                  <div className="relative">
+                    <Avatar nome={conversaAtual.name} size="sm" />
+                    {conversaAtual.online && (
+                      <span className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full border-2 border-white bg-cda-green" />
+                    )}
+                  </div>
                   <div>
                     <p className="text-sm font-semibold text-cda-text">{conversaAtual.name}</p>
-                    <p className="text-xs text-cda-text3">{ROLE_LABEL[conversaAtual.role] ?? conversaAtual.role}</p>
+                    {/* NOVO: "Online" em verde no lugar do cargo, quando aplicável */}
+                    <p className={`flex items-center gap-1 text-xs ${conversaAtual.online ? "text-cda-green" : "text-cda-text3"}`}>
+                      {conversaAtual.online && <span className="h-1.5 w-1.5 rounded-full bg-cda-green" />}
+                      {conversaAtual.online ? "Online" : ROLE_LABEL[conversaAtual.role] ?? conversaAtual.role}
+                    </p>
                   </div>
                 </>
               ) : (
@@ -205,31 +234,37 @@ export function ChatApp({
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto px-4 py-4">
-              <div className="mx-auto flex w-full max-w-2xl flex-col gap-3">
+            <div className="flex-1 overflow-y-auto bg-cda-bg px-4 py-4">
+              <div className="mx-auto flex w-full max-w-2xl flex-col gap-3.5">
                 {mensagens.map((m) => {
                   const minha = m.remetenteId === meId;
+                  const nome = minha ? meNome : conversaAtual?.name ?? "";
                   return (
-                    <div key={m.id} className={`flex ${minha ? "justify-end" : "justify-start"}`}>
-                      <div
-                        className={`max-w-[75%] rounded-xl px-3 py-2 text-sm ${
-                          minha ? "bg-cda-blue text-white" : "bg-cda-bg text-cda-text"
-                        }`}
-                      >
-                        {m.conteudo && <p className="whitespace-pre-wrap">{m.conteudo}</p>}
-                        {m.anexo && (
-                          <a
-                            href={m.anexo}
-                            download={m.anexoNome ?? "anexo"}
-                            className={`mt-1 flex items-center gap-1.5 text-xs underline ${minha ? "text-white" : "text-cda-blue"}`}
-                          >
-                            <FileText className="h-3.5 w-3.5" />
-                            {m.anexoNome}
-                          </a>
-                        )}
-                        <p className={`mt-1 text-[10px] ${minha ? "text-white/70" : "text-cda-text3"}`}>
-                          {formatarDataHora(m.createdAt)}
-                        </p>
+                    // NOVO: avatar + nome do remetente acima do balão (dos dois lados)
+                    <div key={m.id} className={`flex items-end gap-2 ${minha ? "flex-row-reverse" : ""}`}>
+                      <Avatar nome={nome} size="sm" />
+                      <div className={`flex max-w-[70%] flex-col ${minha ? "items-end" : "items-start"}`}>
+                        <span className="mb-0.5 text-[11px] font-semibold text-cda-text3">{nome}</span>
+                        <div
+                          className={`rounded-xl px-3 py-2 text-sm ${
+                            minha ? "rounded-br-sm bg-cda-blue text-white" : "rounded-bl-sm bg-white text-cda-text"
+                          }`}
+                        >
+                          {m.conteudo && <p className="whitespace-pre-wrap">{m.conteudo}</p>}
+                          {m.anexo && (
+                            <a
+                              href={m.anexo}
+                              download={m.anexoNome ?? "anexo"}
+                              className={`mt-1 flex items-center gap-1.5 text-xs underline ${minha ? "text-white" : "text-cda-blue"}`}
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                              {m.anexoNome}
+                            </a>
+                          )}
+                          <p className={`mt-1 text-[10px] ${minha ? "text-white/70" : "text-cda-text3"}`}>
+                            {formatarDataHora(m.createdAt)}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   );
@@ -238,7 +273,7 @@ export function ChatApp({
               </div>
             </div>
 
-            <form onSubmit={enviar} className="border-t border-cda-border p-3">
+            <form onSubmit={enviar} className="border-t border-cda-border bg-white p-3">
               <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
                 {anexo && (
                   <div className="flex items-center gap-2 text-xs text-cda-text2">
@@ -250,23 +285,29 @@ export function ChatApp({
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <FileUpload
-                    maxSizeMB={3}
-                    label=""
-                    onSelect={(dados, nome) => setAnexo({ dados, nome })}
-                    disabled={enviando}
-                  />
-                  <input
-                    type="text"
-                    value={texto}
-                    onChange={(e) => setTexto(e.target.value)}
-                    placeholder="Escreva uma mensagem..."
-                    className="h-10 flex-1 rounded-lg border border-cda-border bg-white px-3 text-sm text-cda-text outline-none focus:border-cda-blue"
-                  />
+                  {/* NOVO: anexo + input unificados numa pill só */}
+                  <div className="flex flex-1 items-center gap-1 rounded-full border border-cda-border bg-cda-bg px-1.5">
+                    <FileUpload
+                      maxSizeMB={3}
+                      label=""
+                      onSelect={(dados, nome) => setAnexo({ dados, nome })}
+                      disabled={enviando}
+                    />
+                    <input
+                      type="text"
+                      value={texto}
+                      onChange={(e) => setTexto(e.target.value)}
+                      placeholder="Escreva uma mensagem..."
+                      aria-label="Escreva uma mensagem"
+                      className="h-9 flex-1 border-none bg-transparent px-1 text-sm text-cda-text outline-none"
+                    />
+                  </div>
+                  {/* NOVO: botão de enviar circular */}
                   <button
                     type="submit"
                     disabled={enviando || (!texto.trim() && !anexo)}
-                    className="flex h-10 w-10 items-center justify-center rounded-lg bg-cda-blue text-white disabled:opacity-50"
+                    aria-label="Enviar mensagem"
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cda-blue text-white transition-colors disabled:bg-cda-bg disabled:text-cda-text3"
                   >
                     <Send className="h-4 w-4" />
                   </button>

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlertTriangle } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Avatar } from "@/components/ui/Avatar";
@@ -17,7 +18,13 @@ export function TabelaInadimplentes({
 }) {
   return (
     <Card
-      title="Alunos com pendência financeira"
+      // NOVO: ícone no título
+      title={
+        <span className="flex items-center gap-2">
+          <AlertTriangle className="h-[15px] w-[15px] text-cda-red" />
+          Alunos com pendência financeira
+        </span>
+      }
       action={
         linkVerTodos ? (
           <Link href="/financeiro/inadimplentes" className="text-sm font-medium text-cda-blue hover:underline">
