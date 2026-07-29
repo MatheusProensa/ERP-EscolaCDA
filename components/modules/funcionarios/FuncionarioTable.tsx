@@ -46,14 +46,21 @@ export function FuncionarioTable({
         {funcionarios.length === 0 && (
           <TableEmpty colSpan={mostrarSetor ? 6 : 5}>Nenhum funcionário encontrado.</TableEmpty>
         )}
-        {funcionarios.map((f) => (
+        {funcionarios.map((f) => {
+          const pendencias: string[] = [];
+          if (f.ativo && f.participaPonto && f.jornadaPrevistaMinutos == null) {
+            pendencias.push("Sem jornada prevista definida — o Ponto não vai calcular horas extra/atraso corretamente");
+          }
+          if (!f.telefone) pendencias.push("Sem telefone cadastrado");
+          if (!f.dataNascimento) pendencias.push("Sem data de nascimento cadastrada");
+          return (
           <Tr key={f.id}>
             <Td>
               <Link href={`/funcionarios/${f.id}`} className="flex items-center gap-2.5 hover:text-cda-blue">
                 <Avatar nome={f.nome} size="sm" />
                 {f.nome}
-                {f.ativo && f.participaPonto && f.jornadaPrevistaMinutos == null && (
-                  <span title="Sem jornada prevista definida — o Ponto não vai calcular horas extra/atraso corretamente">
+                {pendencias.length > 0 && (
+                  <span title={pendencias.join(" · ")}>
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-cda-amber" />
                   </span>
                 )}
@@ -73,7 +80,8 @@ export function FuncionarioTable({
               </button>
             </Td>
           </Tr>
-        ))}
+          );
+        })}
       </TableBody>
     </Table>
   );
