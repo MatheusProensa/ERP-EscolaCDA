@@ -7,16 +7,23 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const body = await req.json();
-  const { data, almoco, lanche } = body;
+  const { data, fruta, almoco, lancheInfantil, lancheFundamental } = body;
 
-  if (!data || !almoco) {
-    return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
+  if (!data) {
+    return NextResponse.json({ error: "Data obrigatória" }, { status: 400 });
   }
+
+  const campos = {
+    fruta: fruta || null,
+    almoco: almoco || null,
+    lancheInfantil: lancheInfantil || null,
+    lancheFundamental: lancheFundamental || null,
+  };
 
   const cardapio = await prisma.cardapio.upsert({
     where: { data: new Date(data) },
-    create: { data: new Date(data), almoco, lanche: lanche || null },
-    update: { almoco, lanche: lanche || null },
+    create: { data: new Date(data), ...campos },
+    update: campos,
   });
 
   return NextResponse.json(cardapio, { status: 201 });

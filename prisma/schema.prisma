@@ -331,11 +331,14 @@ enum TipoMov {
 }
 
 model Cardapio {
-  id        String   @id @default(cuid())
-  data      DateTime @unique
-  almoco    String
-  lanche    String?
-  createdAt DateTime @default(now())
+  id                String   @id @default(cuid())
+  data              DateTime @unique
+  fruta             String?
+  almoco            String?
+  lancheInfantil    String?
+  lancheFundamental String?
+  lanche            String? // legado (antes do detalhamento por turno/segmento) — não usado na UI
+  createdAt         DateTime @default(now())
 }
 
 model Chave {
