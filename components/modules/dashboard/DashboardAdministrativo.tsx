@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { UserCog, TriangleAlert, KeyRound } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -7,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { StatusEstoquePill } from "@/components/modules/estoque/EstoqueVisuais";
 import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
+import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 import { statusEstoque } from "@/lib/estoqueStatus";
 
 export async function DashboardAdministrativo() {
@@ -63,9 +65,13 @@ export async function DashboardAdministrativo() {
 
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <CalendarioWidget />
+          <Suspense fallback={<WidgetFallback className="h-80" />}>
+            <CalendarioWidget />
+          </Suspense>
         </div>
-        <MuralWidget />
+        <Suspense fallback={<WidgetFallback />}>
+          <MuralWidget />
+        </Suspense>
       </div>
     </div>
   );

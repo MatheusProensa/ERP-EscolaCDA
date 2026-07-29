@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 import { MetricasGerais } from "@/components/modules/dashboard/MetricasGerais";
 import { TabelaInadimplentes } from "@/components/modules/dashboard/TabelaInadimplentes";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
@@ -34,9 +36,14 @@ export async function DashboardAdmin() {
     prisma.turma.count({ where: { anoLetivoId: anoLetivo?.id } }),
     prisma.mensalidade.findMany({
       where: whereAtrasadas(),
-      include: {
-        pagamentos: true,
-        matricula: { include: { aluno: { select: { id: true, nome: true } }, turma: { select: { nome: true } } } },
+      select: {
+        situacao: true,
+        valor: true,
+        vencimento: true,
+        pagamentos: { select: { valor: true } },
+        matricula: {
+          select: { alunoId: true, aluno: { select: { nome: true } }, turma: { select: { nome: true } } },
+        },
       },
       orderBy: { vencimento: "asc" },
     }),
@@ -53,7 +60,14 @@ export async function DashboardAdmin() {
     }),
     prisma.mensalidade.findMany({
       where: { situacao: "PENDENTE", vencimento: { gte: hoje, lte: em7dias } },
-      include: { matricula: { include: { aluno: { select: { id: true, nome: true } }, turma: { select: { nome: true } } } } },
+      select: {
+        id: true,
+        valor: true,
+        vencimento: true,
+        matricula: {
+          select: { aluno: { select: { id: true, nome: true } }, turma: { select: { nome: true } } },
+        },
+      },
       orderBy: { vencimento: "asc" },
       take: 5,
     }),
@@ -112,9 +126,13 @@ export async function DashboardAdmin() {
 
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <CalendarioWidget />
+          <Suspense fallback={<WidgetFallback className="h-80" />}>
+            <CalendarioWidget />
+          </Suspense>
         </div>
-        <MuralWidget />
+        <Suspense fallback={<WidgetFallback />}>
+          <MuralWidget />
+        </Suspense>
       </div>
     </div>
   );

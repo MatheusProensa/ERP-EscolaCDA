@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Wallet, TrendingUp, AlertCircle, Percent } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -6,6 +7,7 @@ import { TabelaInadimplentes } from "@/components/modules/dashboard/TabelaInadim
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
+import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 import { VenceEstaSemana, type ItemVencimento } from "@/components/modules/dashboard/VenceEstaSemana";
 import { agruparInadimplentes, saldoDevedor, whereAtrasadas } from "@/lib/inadimplencia";
 import { formatarMoeda } from "@/lib/utils";
@@ -21,24 +23,36 @@ export async function DashboardFinanceiro() {
     await Promise.all([
       prisma.mensalidade.findMany({
         where: { ano: anoAtual, mes: mesAtual, matricula: { anoLetivoId: anoLetivo?.id }, situacao: { not: "CANCELADA" } },
-        include: { pagamentos: true },
+        select: { valor: true, pagamentos: { select: { valor: true } } },
       }),
       prisma.mensalidade.findMany({
         where: whereAtrasadas(),
-        include: {
-          pagamentos: true,
-          matricula: { include: { aluno: { select: { id: true, nome: true } }, turma: { select: { nome: true } } } },
+        select: {
+          situacao: true,
+          valor: true,
+          vencimento: true,
+          pagamentos: { select: { valor: true } },
+          matricula: {
+            select: { alunoId: true, aluno: { select: { nome: true } }, turma: { select: { nome: true } } },
+          },
         },
         orderBy: { vencimento: "asc" },
       }),
       prisma.mensalidade.findMany({
         where: { situacao: { in: ["PENDENTE", "ATRASADA"] } },
-        include: { pagamentos: true },
+        select: { situacao: true, valor: true, vencimento: true, pagamentos: { select: { valor: true } } },
       }),
       prisma.logAtividade.findMany({ where: { entidade: "Mensalidade" }, orderBy: { createdAt: "desc" }, take: 8 }),
       prisma.mensalidade.findMany({
         where: { situacao: "PENDENTE", vencimento: { gte: hoje, lte: em7dias } },
-        include: { matricula: { include: { aluno: { select: { id: true, nome: true } }, turma: { select: { nome: true } } } } },
+        select: {
+          id: true,
+          valor: true,
+          vencimento: true,
+          matricula: {
+            select: { aluno: { select: { id: true, nome: true } }, turma: { select: { nome: true } } },
+          },
+        },
         orderBy: { vencimento: "asc" },
         take: 8,
       }),
@@ -88,9 +102,13 @@ export async function DashboardFinanceiro() {
 
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <CalendarioWidget />
+          <Suspense fallback={<WidgetFallback className="h-80" />}>
+            <CalendarioWidget />
+          </Suspense>
         </div>
-        <MuralWidget />
+        <Suspense fallback={<WidgetFallback />}>
+          <MuralWidget />
+        </Suspense>
       </div>
     </div>
   );

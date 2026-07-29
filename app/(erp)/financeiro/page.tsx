@@ -17,7 +17,13 @@ export default async function FinanceiroPage() {
 
   const mensalidades = await prisma.mensalidade.findMany({
     where: { ano: anoAtual, matricula: { anoLetivoId: anoLetivo?.id } },
-    include: { pagamentos: true },
+    select: {
+      mes: true,
+      valor: true,
+      situacao: true,
+      vencimento: true,
+      pagamentos: { select: { valor: true } },
+    },
   });
 
   const porMes: ResumoMensal[] = MESES_ABREV.map((mes, i) => {

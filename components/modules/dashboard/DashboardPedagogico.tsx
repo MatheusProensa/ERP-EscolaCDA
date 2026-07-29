@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { Users, GraduationCap, Megaphone } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -6,6 +7,7 @@ import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
+import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 
 export async function DashboardPedagogico() {
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
@@ -41,9 +43,13 @@ export async function DashboardPedagogico() {
 
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <CalendarioWidget />
+          <Suspense fallback={<WidgetFallback className="h-80" />}>
+            <CalendarioWidget />
+          </Suspense>
         </div>
-        <MuralWidget />
+        <Suspense fallback={<WidgetFallback />}>
+          <MuralWidget />
+        </Suspense>
       </div>
     </div>
   );
