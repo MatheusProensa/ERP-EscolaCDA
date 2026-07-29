@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -11,6 +11,7 @@ export function LoginForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -48,9 +49,20 @@ export function LoginForm() {
       <Input
         label="Senha"
         name="password"
-        type="password"
+        type={mostrarSenha ? "text" : "password"}
         placeholder="••••••••"
         icon={<Lock className="h-4 w-4" />}
+        rightElement={
+          <button
+            type="button"
+            onClick={() => setMostrarSenha((v) => !v)}
+            className="pointer-events-auto text-cda-text3 hover:text-cda-text2"
+            tabIndex={-1}
+            aria-label={mostrarSenha ? "Esconder senha" : "Mostrar senha"}
+          >
+            {mostrarSenha ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        }
         required
       />
       {error && <p className="text-sm text-cda-red">{error}</p>}
