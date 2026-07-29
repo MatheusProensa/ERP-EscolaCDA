@@ -8,6 +8,7 @@ import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
+import { AvisoFixadoBanner } from "@/components/modules/dashboard/AvisoFixadoBanner";
 
 export async function DashboardPedagogico() {
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
@@ -28,6 +29,12 @@ export async function DashboardPedagogico() {
   return (
     <div>
       <PageHeader title="Dashboard Pedagógico" subtitle="Alunos, turmas e censo escolar" />
+
+      <div className="mb-5">
+        <Suspense fallback={null}>
+          <AvisoFixadoBanner />
+        </Suspense>
+      </div>
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard icon={Users} iconColor="#1A6FD8" value={totalAlunos} label="Total de alunos" subtext="Matrículas ativas" />

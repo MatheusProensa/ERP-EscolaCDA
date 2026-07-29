@@ -9,6 +9,7 @@ import { StatusEstoquePill } from "@/components/modules/estoque/EstoqueVisuais";
 import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
+import { AvisoFixadoBanner } from "@/components/modules/dashboard/AvisoFixadoBanner";
 import { statusEstoque } from "@/lib/estoqueStatus";
 
 export async function DashboardAdministrativo() {
@@ -25,6 +26,12 @@ export async function DashboardAdministrativo() {
   return (
     <div>
       <PageHeader title="Dashboard Administrativo" subtitle="Funcionários, estoque e chaves" />
+
+      <div className="mb-5">
+        <Suspense fallback={null}>
+          <AvisoFixadoBanner />
+        </Suspense>
+      </div>
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard icon={UserCog} iconColor="#1A6FD8" value={funcionariosAtivos} label="Funcionários ativos" />

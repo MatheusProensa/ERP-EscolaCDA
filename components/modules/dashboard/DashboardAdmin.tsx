@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
+import { AvisoFixadoBanner } from "@/components/modules/dashboard/AvisoFixadoBanner";
 import { MetricasGerais } from "@/components/modules/dashboard/MetricasGerais";
 import { TabelaInadimplentes } from "@/components/modules/dashboard/TabelaInadimplentes";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
@@ -100,6 +101,12 @@ export async function DashboardAdmin() {
   return (
     <div>
       <PageHeader title="Dashboard" subtitle="Visão geral da Escola CDA — todos os setores" />
+
+      <div className="mb-5">
+        <Suspense fallback={null}>
+          <AvisoFixadoBanner />
+        </Suspense>
+      </div>
 
       <div className="mb-5">
         <MetricasGerais
