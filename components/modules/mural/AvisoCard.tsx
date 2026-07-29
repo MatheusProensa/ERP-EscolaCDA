@@ -7,9 +7,20 @@ import type { MuralAviso } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { formatarDataHora } from "@/lib/utils";
+import { ConfirmarLeituraButton } from "@/components/modules/dashboard/ConfirmarLeituraButton";
 import { EditarAvisoModal } from "./EditarAvisoModal";
 
-export function AvisoCard({ aviso, podeGerenciar }: { aviso: MuralAviso; podeGerenciar: boolean }) {
+export function AvisoCard({
+  aviso,
+  podeGerenciar,
+  totalLeituras,
+  confirmadoInicial,
+}: {
+  aviso: MuralAviso;
+  podeGerenciar: boolean;
+  totalLeituras: number;
+  confirmadoInicial: boolean;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState(false);
@@ -82,6 +93,13 @@ export function AvisoCard({ aviso, podeGerenciar }: { aviso: MuralAviso; podeGer
         {aviso.autor} · {formatarDataHora(aviso.createdAt)}
       </p>
       {erro && <p className="mt-2 text-xs text-cda-red">{erro}</p>}
+
+      {aviso.fixado && (
+        <div className="mt-3 flex items-center justify-between gap-3 border-t border-cda-border pt-3">
+          <span className="text-xs text-cda-text3">{totalLeituras} confirmaram a leitura</span>
+          <ConfirmarLeituraButton avisoId={aviso.id} confirmadoInicial={confirmadoInicial} />
+        </div>
+      )}
 
       <EditarAvisoModal aviso={editando ? aviso : null} onClose={() => setEditando(false)} />
     </Card>

@@ -1,13 +1,23 @@
 import { Megaphone } from "lucide-react";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { ConfirmarLeituraButton } from "@/components/modules/dashboard/ConfirmarLeituraButton";
 
 export async function AvisoFixadoBanner() {
+  const session = await auth();
+
   const aviso = await prisma.muralAviso.findFirst({
     where: { fixado: true },
     orderBy: { createdAt: "desc" },
-    select: { titulo: true, conteudo: true },
+    select: {
+      id: true,
+      titulo: true,
+      conteudo: true,
+      _count: { select: { leituras: true } },
+      leituras: { where: { userId: session!.user.id }, select: { id: true } },
+    },
   });
 
   if (!aviso) return null;
@@ -20,9 +30,11 @@ export async function AvisoFixadoBanner() {
       <div className="min-w-0 flex-1">
         <p className="text-sm font-semibold text-cda-text">{aviso.titulo}</p>
         <p className="line-clamp-1 text-sm text-cda-text2">{aviso.conteudo}</p>
+        <p className="mt-0.5 text-xs text-cda-text3">{aviso._count.leituras} confirmaram a leitura</p>
       </div>
-      <Button href="/mural" className="shrink-0 bg-cda-navy hover:bg-cda-navy/90">
-        Ver mural
+      <ConfirmarLeituraButton avisoId={aviso.id} confirmadoInicial={aviso.leituras.length > 0} />
+      <Button href="/mural" variant="outline" className="shrink-0">
+        Ver detalhes
       </Button>
     </Card>
   );

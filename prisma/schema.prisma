@@ -24,6 +24,7 @@ model User {
   mensagensRecebidas Mensagem[]    @relation("MensagensRecebidas")
   notificacoes       Notificacao[]
   avisosMural        MuralAviso[]
+  leiturasAvisos     AvisoLeitura[]
 }
 
 model Mensagem {
@@ -358,14 +359,26 @@ model EmprestimoChave {
 }
 
 model MuralAviso {
-  id        String   @id @default(cuid())
+  id        String         @id @default(cuid())
   titulo    String
   conteudo  String
   autor     String
   autorId   String?
-  autorUser User?    @relation(fields: [autorId], references: [id], onDelete: SetNull)
-  fixado    Boolean  @default(false)
-  createdAt DateTime @default(now())
+  autorUser User?          @relation(fields: [autorId], references: [id], onDelete: SetNull)
+  fixado    Boolean        @default(false)
+  createdAt DateTime       @default(now())
+  leituras  AvisoLeitura[]
+}
+
+model AvisoLeitura {
+  id        String     @id @default(cuid())
+  avisoId   String
+  aviso     MuralAviso @relation(fields: [avisoId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+
+  @@unique([avisoId, userId])
 }
 
 model LogAtividade {

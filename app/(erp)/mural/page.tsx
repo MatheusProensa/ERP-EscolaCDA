@@ -9,6 +9,10 @@ export default async function MuralPage() {
   const session = await auth();
   const avisos = await prisma.muralAviso.findMany({
     orderBy: [{ fixado: "desc" }, { createdAt: "desc" }],
+    include: {
+      _count: { select: { leituras: true } },
+      leituras: { where: { userId: session!.user.id }, select: { id: true } },
+    },
   });
   const ehGestao = GESTAO.includes(session!.user.role as (typeof GESTAO)[number]);
 
@@ -29,6 +33,8 @@ export default async function MuralPage() {
               key={aviso.id}
               aviso={aviso}
               podeGerenciar={ehGestao || aviso.autorId === session!.user.id}
+              totalLeituras={aviso._count.leituras}
+              confirmadoInicial={aviso.leituras.length > 0}
             />
           ))}
         </div>
