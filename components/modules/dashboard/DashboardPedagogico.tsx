@@ -8,7 +8,6 @@ import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
-import { AvisoFixadoBanner } from "@/components/modules/dashboard/AvisoFixadoBanner";
 
 export async function DashboardPedagogico() {
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
@@ -31,8 +30,8 @@ export async function DashboardPedagogico() {
       <PageHeader title="Dashboard Pedagógico" subtitle="Alunos, turmas e censo escolar" />
 
       <div className="mb-5">
-        <Suspense fallback={null}>
-          <AvisoFixadoBanner />
+        <Suspense fallback={<WidgetFallback className="h-40" />}>
+          <MuralWidget />
         </Suspense>
       </div>
 
@@ -48,13 +47,8 @@ export async function DashboardPedagogico() {
 
       <FeedAtividade logs={logs} />
 
-      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <Suspense fallback={<WidgetFallback className="h-80" />}>
-            <MuralWidget />
-          </Suspense>
-        </div>
-        <Suspense fallback={<WidgetFallback />}>
+      <div className="mt-5">
+        <Suspense fallback={<WidgetFallback className="h-80" />}>
           <CalendarioWidget />
         </Suspense>
       </div>

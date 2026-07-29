@@ -8,7 +8,6 @@ import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { CalendarioWidget } from "@/components/modules/dashboard/CalendarioWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
-import { AvisoFixadoBanner } from "@/components/modules/dashboard/AvisoFixadoBanner";
 import { VenceEstaSemana, type ItemVencimento } from "@/components/modules/dashboard/VenceEstaSemana";
 import { agruparInadimplentes, saldoDevedor, whereAtrasadas } from "@/lib/inadimplencia";
 import { formatarMoeda } from "@/lib/utils";
@@ -79,8 +78,8 @@ export async function DashboardFinanceiro() {
       <PageHeader title="Dashboard Financeiro" subtitle="Receita, inadimplência e mensalidades" />
 
       <div className="mb-5">
-        <Suspense fallback={null}>
-          <AvisoFixadoBanner />
+        <Suspense fallback={<WidgetFallback className="h-40" />}>
+          <MuralWidget />
         </Suspense>
       </div>
 
@@ -107,13 +106,8 @@ export async function DashboardFinanceiro() {
         </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <Suspense fallback={<WidgetFallback className="h-80" />}>
-            <MuralWidget />
-          </Suspense>
-        </div>
-        <Suspense fallback={<WidgetFallback />}>
+      <div className="mt-5">
+        <Suspense fallback={<WidgetFallback className="h-80" />}>
           <CalendarioWidget />
         </Suspense>
       </div>
