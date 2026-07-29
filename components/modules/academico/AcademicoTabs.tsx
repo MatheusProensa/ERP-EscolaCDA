@@ -18,7 +18,7 @@ export function AcademicoTabs({
   totalAlunos?: number;
 }) {
   const tabs = [
-    { key: "turmas" as const, label: "Turmas", href: "/academico/turmas", count: totalTurmas },
+    { key: "turmas" as const, label: "Turmas", href: "/academico", count: totalTurmas },
     { key: "alunos" as const, label: "Alunos", href: "/alunos", count: totalAlunos },
   ];
 

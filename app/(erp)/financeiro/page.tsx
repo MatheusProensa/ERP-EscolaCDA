@@ -1,4 +1,4 @@
-import { Wallet, TrendingUp, AlertCircle, Percent } from "lucide-react";
+import { Wallet, TrendingUp, AlertCircle, Percent, Receipt, TriangleAlert } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
@@ -43,12 +43,15 @@ export default async function FinanceiroPage() {
         breadcrumb={[{ label: "Financeiro" }]}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <Button href="/financeiro/mensalidades" variant="outline" size="sm">
+            <Button href="/financeiro/mensalidades">
+              <Receipt className="h-4 w-4" />
               Mensalidades
             </Button>
-            <Button href="/financeiro/inadimplentes" variant="outline" size="sm">
+            <Button href="/financeiro/inadimplentes" className="bg-cda-red hover:bg-cda-red/90">
+              <TriangleAlert className="h-4 w-4" />
               Inadimplentes
             </Button>
+            <div className="mx-1 hidden h-7 w-px bg-cda-border sm:block" />
             <ExportButtons href="/api/relatorios/receita-mensal" label="Receita mensal" />
           </div>
         }

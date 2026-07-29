@@ -31,6 +31,7 @@ export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionari
         telefone: fd.get("telefone"),
         email: fd.get("email"),
         dataNascimento: fd.get("dataNascimento") || null,
+        admissao: fd.get("admissao"),
       }),
     });
 
@@ -58,6 +59,13 @@ export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionari
             name="dataNascimento"
             type="date"
             defaultValue={funcionario.dataNascimento ? new Date(funcionario.dataNascimento).toISOString().slice(0, 10) : ""}
+          />
+          <Input
+            label="Data de admissão"
+            name="admissao"
+            type="date"
+            required
+            defaultValue={new Date(funcionario.admissao).toISOString().slice(0, 10)}
           />
           <Select label="Setor" name="setor" required defaultValue={funcionario.setor}>
             {SETORES.map((s) => (

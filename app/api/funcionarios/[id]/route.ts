@@ -10,7 +10,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
-  const { ativo, nome, cpf, cargo, setor, telefone, email, dataNascimento, jornadaPrevista, participaPonto } = body;
+  const { ativo, nome, cpf, cargo, setor, telefone, email, dataNascimento, admissao, jornadaPrevista, participaPonto } = body;
 
   try {
     const funcionario = await prisma.funcionario.update({
@@ -25,6 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         telefone: telefone !== undefined ? telefone || null : undefined,
         email: email !== undefined ? email || null : undefined,
         dataNascimento: dataNascimento !== undefined ? (dataNascimento ? new Date(dataNascimento) : null) : undefined,
+        admissao: admissao ? new Date(admissao) : undefined,
         jornadaPrevistaMinutos:
           jornadaPrevista !== undefined ? (jornadaPrevista ? horaParaMin(jornadaPrevista) : null) : undefined,
       },

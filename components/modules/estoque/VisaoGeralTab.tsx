@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { Boxes, ArrowDownToLine, ArrowUpFromLine, TriangleAlert } from "lucide-react";
 import type { ItemEstoque, MovimentacaoEstoque } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
+import { MetricCard } from "@/components/ui/MetricCard";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { StatusEstoquePill } from "./EstoqueVisuais";
 import { statusEstoque } from "@/lib/estoqueStatus";
@@ -14,34 +14,6 @@ const TIPO_LABEL: Record<string, { label: string; bg: string; cor: string }> = {
   AJUSTE: { label: "Ajuste", bg: "#1A6FD81A", cor: "#1A6FD8" },
   ESTORNO: { label: "Estorno", bg: "#6B72801A", cor: "#6B7280" },
 };
-
-function KpiCard({
-  icon: Icon,
-  cor,
-  label,
-  valor,
-  sub,
-}: {
-  icon: typeof Boxes;
-  cor: string;
-  label: string;
-  valor: number;
-  sub: string;
-}) {
-  return (
-    <Card className="flex flex-col items-center p-4 text-center">
-      <span
-        className="mb-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
-        style={{ backgroundColor: `${cor}1A`, color: cor }}
-      >
-        <Icon className="h-5 w-5" />
-      </span>
-      <p className="text-xl font-bold text-cda-text">{valor}</p>
-      <p className="text-xs text-cda-text3">{label}</p>
-      <p className="mt-0.5 text-xs text-cda-text3">{sub}</p>
-    </Card>
-  );
-}
 
 export function VisaoGeralTab({
   itens,
@@ -65,10 +37,10 @@ export function VisaoGeralTab({
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <KpiCard icon={Boxes} cor="#1A6FD8" label="Itens cadastrados" valor={itens.length} sub="No catálogo" />
-        <KpiCard icon={ArrowDownToLine} cor="#16A34A" label="Entradas (mês)" valor={entradasMes} sub="Unidades recebidas" />
-        <KpiCard icon={ArrowUpFromLine} cor="#D97706" label="Saídas (mês)" valor={saidasMes} sub="Unidades retiradas" />
-        <KpiCard icon={TriangleAlert} cor="#DC2626" label="Itens críticos" valor={criticos.length} sub="Precisam de atenção" />
+        <MetricCard icon={Boxes} iconColor="#1A6FD8" label="Itens cadastrados" value={itens.length} subtext="No catálogo" />
+        <MetricCard icon={ArrowDownToLine} iconColor="#16A34A" label="Entradas (mês)" value={entradasMes} subtext="Unidades recebidas" />
+        <MetricCard icon={ArrowUpFromLine} iconColor="#D97706" label="Saídas (mês)" value={saidasMes} subtext="Unidades retiradas" />
+        <MetricCard icon={TriangleAlert} iconColor="#DC2626" label="Itens críticos" value={criticos.length} subtext="Precisam de atenção" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
