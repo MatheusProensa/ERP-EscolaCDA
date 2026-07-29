@@ -26,16 +26,6 @@ export function MetricasGerais({
         trend={[8, 12, 10, 14, 13, 16, 18]}
       />
       <MetricCard
-        icon={AlertTriangle}
-        iconColor="#DC2626"
-        value={inadimplentes}
-        label="Inadimplentes"
-        subtext="Com mensalidade em atraso"
-        trend={[2, 4, 3, 5, 4, 3, 3]}
-        // NOVO: removido o badge "Atenção"/"Em dia" — a cor vermelha do ícone já
-        // comunica o estado; o badge só disputava espaço com o valor.
-      />
-      <MetricCard
         icon={Wallet}
         iconColor="#16A34A"
         value={formatarMoeda(receitaMes)}
@@ -50,6 +40,16 @@ export function MetricasGerais({
         label="Turmas ativas"
         subtext="Ano letivo atual"
         trend={[12, 12, 13, 13, 14, 14, 14]}
+      />
+      <MetricCard
+        icon={AlertTriangle}
+        iconColor="#DC2626"
+        value={inadimplentes}
+        label="Inadimplentes"
+        subtext="Com mensalidade em atraso"
+        trend={[2, 4, 3, 5, 4, 3, 3]}
+        // NOVO: removido o badge "Atenção"/"Em dia" — a cor vermelha do ícone já
+        // comunica o estado; o badge só disputava espaço com o valor.
       />
     </div>
   );

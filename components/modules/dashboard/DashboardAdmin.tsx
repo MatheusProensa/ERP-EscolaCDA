@@ -65,12 +65,12 @@ export async function DashboardAdmin() {
       </div>
 
       <div className="mb-5">
-        <CensoAlerta quantidade={censoIncompleto} />
+        <Suspense fallback={<WidgetFallback className="h-80" />}>
+          <CalendarioWidget />
+        </Suspense>
       </div>
 
-      <Suspense fallback={<WidgetFallback className="h-80" />}>
-        <CalendarioWidget />
-      </Suspense>
+      <CensoAlerta quantidade={censoIncompleto} />
     </div>
   );
 }
