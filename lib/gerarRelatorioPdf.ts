@@ -1,4 +1,32 @@
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type PDFImage } from "pdf-lib";
+import { readFile } from "fs/promises";
+import path from "path";
+
+/** Embarca o logo real da escola (fundo branco atrás pra garantir contraste com o cabeçalho navy). */
+async function embarcarLogo(pdf: PDFDocument): Promise<PDFImage | null> {
+  try {
+    const bytes = await readFile(path.join(process.cwd(), "public", "logo-cda.png"));
+    return await pdf.embedPng(bytes);
+  } catch {
+    return null;
+  }
+}
+
+/** Desenha o badge branco com o logo no canto superior esquerdo do cabeçalho navy.
+ * `alturaPagina` porque nem toda página usa a mesma altura (ficha é retrato). */
+function desenharLogo(pagina: PDFPage, logo: PDFImage | null, alturaPagina: number) {
+  if (!logo) return;
+  const alturaLogo = 24;
+  const escala = alturaLogo / logo.height;
+  const larguraLogo = logo.width * escala;
+  const padding = 7;
+  const badgeW = larguraLogo + padding * 2;
+  const badgeH = alturaLogo + padding * 2;
+  const x = MARGIN;
+  const y = alturaPagina - 12 - badgeH;
+  pagina.drawRectangle({ x, y, width: badgeW, height: badgeH, color: WHITE });
+  pagina.drawImage(logo, { x: x + padding, y: y + padding, width: larguraLogo, height: alturaLogo });
+}
 
 const NAVY = rgb(0x0d / 255, 0x1f / 255, 0x4e / 255);
 const YELLOW = rgb(0xf5 / 255, 0xc4 / 255, 0);
@@ -41,6 +69,7 @@ export async function gerarRelatorioPdf({
   const pdf = await PDFDocument.create();
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const logo = await embarcarLogo(pdf);
 
   const larguraTabela = colunas.reduce((acc, c) => acc + c.largura, 0);
   const escala = Math.min(1, (PAGE_W - MARGIN * 2) / larguraTabela);
@@ -54,16 +83,10 @@ export async function gerarRelatorioPdf({
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H, width: PAGE_W, height: HEADER_H, color: NAVY });
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H - 3, width: PAGE_W, height: 3, color: YELLOW });
 
-    pagina.drawText("ESCOLA CDA", {
-      x: MARGIN,
-      y: PAGE_H - 30,
-      size: 18,
-      font: fonteBold,
-      color: WHITE,
-    });
+    desenharLogo(pagina, logo, PAGE_H);
     pagina.drawText("Onde, há 15 anos, família e escola sonham juntas", {
       x: MARGIN,
-      y: PAGE_H - 46,
+      y: PAGE_H - 58,
       size: 8.5,
       font: fonte,
       color: rgb(0.75, 0.8, 0.9),
@@ -194,6 +217,7 @@ export async function gerarRelatorioPdfMultiSecao({
   const pdf = await PDFDocument.create();
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const logo = await embarcarLogo(pdf);
 
   const geradoEm = new Date().toLocaleString("pt-BR");
 
@@ -209,10 +233,10 @@ export async function gerarRelatorioPdfMultiSecao({
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H, width: PAGE_W, height: HEADER_H, color: NAVY });
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H - 3, width: PAGE_W, height: 3, color: YELLOW });
 
-    pagina.drawText("ESCOLA CDA", { x: MARGIN, y: PAGE_H - 30, size: 18, font: fonteBold, color: WHITE });
+    desenharLogo(pagina, logo, PAGE_H);
     pagina.drawText("Onde, há 15 anos, família e escola sonham juntas", {
       x: MARGIN,
-      y: PAGE_H - 46,
+      y: PAGE_H - 58,
       size: 8.5,
       font: fonte,
       color: rgb(0.75, 0.8, 0.9),
@@ -328,6 +352,7 @@ export async function gerarRelatorioPdfSecoesEmpilhadas({
   const pdf = await PDFDocument.create();
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const logo = await embarcarLogo(pdf);
 
   const geradoEm = new Date().toLocaleString("pt-BR");
   let paginaAtual = 1;
@@ -337,9 +362,9 @@ export async function gerarRelatorioPdfSecoesEmpilhadas({
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H, width: PAGE_W, height: HEADER_H, color: NAVY });
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H - 3, width: PAGE_W, height: 3, color: YELLOW });
 
-    pagina.drawText("ESCOLA CDA", { x: MARGIN, y: PAGE_H - 30, size: 18, font: fonteBold, color: WHITE });
+    desenharLogo(pagina, logo, PAGE_H);
     pagina.drawText("Onde, há 15 anos, família e escola sonham juntas", {
-      x: MARGIN, y: PAGE_H - 46, size: 8.5, font: fonte, color: rgb(0.75, 0.8, 0.9),
+      x: MARGIN, y: PAGE_H - 58, size: 8.5, font: fonte, color: rgb(0.75, 0.8, 0.9),
     });
 
     const tituloLargura = fonteBold.widthOfTextAtSize(titulo, 14);
@@ -461,6 +486,7 @@ export async function gerarFichaPdf({
   const pdf = await PDFDocument.create();
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const logo = await embarcarLogo(pdf);
 
   const PW = 595;
   const PH = 842;
@@ -472,10 +498,10 @@ export async function gerarFichaPdf({
     const pagina = pdf.addPage([PW, PH]);
     pagina.drawRectangle({ x: 0, y: PH - HEADER_H, width: PW, height: HEADER_H, color: NAVY });
     pagina.drawRectangle({ x: 0, y: PH - HEADER_H - 3, width: PW, height: 3, color: YELLOW });
-    pagina.drawText("ESCOLA CDA", { x: MARGIN, y: PH - 30, size: 18, font: fonteBold, color: WHITE });
+    desenharLogo(pagina, logo, PH);
     pagina.drawText("Onde, há 15 anos, família e escola sonham juntas", {
       x: MARGIN,
-      y: PH - 46,
+      y: PH - 58,
       size: 8.5,
       font: fonte,
       color: rgb(0.75, 0.8, 0.9),
