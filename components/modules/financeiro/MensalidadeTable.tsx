@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Undo2, Pencil } from "lucide-react";
+import { Undo2, Pencil, Trash2 } from "lucide-react";
 import type { SituacaoMensalidade } from "@prisma/client";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
@@ -59,6 +59,7 @@ export function MensalidadeTable({
 }) {
   const router = useRouter();
   const [estornandoId, setEstornandoId] = useState<string | null>(null);
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
   const [editando, setEditando] = useState<MensalidadeLinha | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -76,6 +77,20 @@ export function MensalidadeTable({
     }
     // NOVO
     showToast("Pagamento estornado.", "info");
+    router.refresh();
+  }
+
+  async function excluir(id: string) {
+    if (!confirm("Excluir esta mensalidade? Essa ação não pode ser desfeita.")) return;
+    setExcluindoId(id);
+    const res = await fetch(`/api/financeiro/mensalidades/${id}`, { method: "DELETE" });
+    setExcluindoId(null);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      alert(data.error ?? "Não foi possível excluir a mensalidade.");
+      return;
+    }
+    showToast("Mensalidade excluída.", "info");
     router.refresh();
   }
 
@@ -153,14 +168,25 @@ export function MensalidadeTable({
                 <span className="flex items-center gap-1.5">
                   {formatarMoeda(m.valor)}
                   {podeEditar && m.pagamentos.length === 0 && (
-                    <button
-                      onClick={() => setEditando(m)}
-                      title="Editar mensalidade"
-                      aria-label="Editar mensalidade"
-                      className="text-cda-text3 hover:text-cda-blue"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => setEditando(m)}
+                        title="Editar mensalidade"
+                        aria-label="Editar mensalidade"
+                        className="text-cda-text3 hover:text-cda-blue"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => excluir(m.id)}
+                        disabled={excluindoId === m.id}
+                        title="Excluir mensalidade"
+                        aria-label="Excluir mensalidade"
+                        className="text-cda-text3 hover:text-cda-red disabled:opacity-50"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </>
                   )}
                 </span>
                 {parcial && (
