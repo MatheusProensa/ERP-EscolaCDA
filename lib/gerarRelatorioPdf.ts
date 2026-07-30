@@ -46,7 +46,7 @@ const HEAD_ROW_H = 24;
 
 export type ColunaRelatorio = { chave: string; label: string; largura: number };
 
-function truncar(font: PDFFont, texto: string, tamanho: number, larguraMax: number): string {
+export function truncar(font: PDFFont, texto: string, tamanho: number, larguraMax: number): string {
   if (font.widthOfTextAtSize(texto, tamanho) <= larguraMax) return texto;
   let resultado = texto;
   while (resultado.length > 1 && font.widthOfTextAtSize(resultado + "…", tamanho) > larguraMax) {
