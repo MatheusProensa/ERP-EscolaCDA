@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Megaphone, Pin } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -37,9 +38,9 @@ export async function MuralWidget() {
         </span>
       }
       action={
-        <Button href="/mural" variant="outline" size="sm">
+        <Link href="/mural" className="text-sm font-medium text-cda-blue hover:underline">
           Ver mural
-        </Button>
+        </Link>
       }
     >
       <div className="flex flex-col divide-y divide-cda-border">
@@ -61,7 +62,7 @@ export async function MuralWidget() {
               {aviso.fixado && (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   <ConfirmarLeituraButton avisoId={aviso.id} confirmadoInicial={aviso.leituras.length > 0} />
-                  <Button href="/mural" variant="outline" size="sm">
+                  <Button href="/mural" variant="ghost" size="sm">
                     Ver detalhes
                   </Button>
                   <span className="text-xs text-cda-text3">{aviso._count.leituras} confirmaram</span>

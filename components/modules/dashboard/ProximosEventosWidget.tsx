@@ -1,7 +1,7 @@
+import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { corCategoria, MESES } from "@/lib/calendario";
 
 export async function ProximosEventosWidget() {
@@ -23,9 +23,9 @@ export async function ProximosEventosWidget() {
         </span>
       }
       action={
-        <Button href="/calendario" variant="outline" size="sm">
+        <Link href="/calendario" className="text-sm font-medium text-cda-blue hover:underline">
           Ver tudo
-        </Button>
+        </Link>
       }
     >
       <div className="flex flex-col divide-y divide-cda-border">
