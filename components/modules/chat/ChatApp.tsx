@@ -70,6 +70,14 @@ function montarItens(mensagens: Mensagem[]): ItemRenderizavel[] {
   return itens;
 }
 
+/** Anexa `novas` a `atual` ignorando ids repetidos — segunda camada de proteção
+ * contra duplicata (ex.: polling e envio local competindo pela mesma mensagem). */
+function mesclarMensagens(atual: Mensagem[], novas: Mensagem[]): Mensagem[] {
+  const idsExistentes = new Set(atual.map((m) => m.id));
+  const semDuplicata = novas.filter((m) => !idsExistentes.has(m.id));
+  return semDuplicata.length > 0 ? [...atual, ...semDuplicata] : atual;
+}
+
 export function ChatApp({
   meId,
   meNome,
@@ -133,7 +141,7 @@ export function ChatApp({
       if (novas.length === 0) return;
 
       ultimaMensagemEmRef.current = novas[novas.length - 1].createdAt;
-      setMensagens((atual) => (incremental ? [...atual, ...novas] : novas));
+      setMensagens((atual) => (incremental ? mesclarMensagens(atual, novas) : novas));
     }
 
     carregarMensagens(false);
@@ -175,7 +183,11 @@ export function ChatApp({
 
     if (res.ok) {
       const nova = await res.json();
-      setMensagens((atual) => [...atual, nova]);
+      // Avança o cursor de polling pra essa mensagem já entrar como "vista" —
+      // sem isso, o próximo poll buscava "tudo desde X" (X ainda apontando
+      // pra antes dela) e a mesma mensagem voltava duplicada.
+      ultimaMensagemEmRef.current = nova.createdAt;
+      setMensagens((atual) => mesclarMensagens(atual, [nova]));
       setTexto("");
       setAnexo(null);
     }

@@ -3,7 +3,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 
 /** Embarca o logo real da escola (fundo branco atrás pra garantir contraste com o cabeçalho navy). */
-async function embarcarLogo(pdf: PDFDocument): Promise<PDFImage | null> {
+export async function embarcarLogo(pdf: PDFDocument): Promise<PDFImage | null> {
   try {
     const bytes = await readFile(path.join(process.cwd(), "public", "logo-cda.png"));
     return await pdf.embedPng(bytes);
@@ -14,7 +14,7 @@ async function embarcarLogo(pdf: PDFDocument): Promise<PDFImage | null> {
 
 /** Desenha o badge branco com o logo no canto superior esquerdo do cabeçalho navy.
  * `alturaPagina` porque nem toda página usa a mesma altura (ficha é retrato). */
-function desenharLogo(pagina: PDFPage, logo: PDFImage | null, alturaPagina: number) {
+export function desenharLogo(pagina: PDFPage, logo: PDFImage | null, alturaPagina: number) {
   if (!logo) return;
   const alturaLogo = 24;
   const escala = alturaLogo / logo.height;
@@ -28,19 +28,19 @@ function desenharLogo(pagina: PDFPage, logo: PDFImage | null, alturaPagina: numb
   pagina.drawImage(logo, { x: x + padding, y: y + padding, width: larguraLogo, height: alturaLogo });
 }
 
-const NAVY = rgb(0x0d / 255, 0x1f / 255, 0x4e / 255);
-const YELLOW = rgb(0xf5 / 255, 0xc4 / 255, 0);
-const BORDER = rgb(0xe2 / 255, 0xe8 / 255, 0xf2 / 255);
-const TEXT2 = rgb(0x5a / 255, 0x6a / 255, 0x85 / 255);
-const TEXT3 = rgb(0x9a / 255, 0xaa / 255, 0xbe / 255);
+export const NAVY = rgb(0x0d / 255, 0x1f / 255, 0x4e / 255);
+export const YELLOW = rgb(0xf5 / 255, 0xc4 / 255, 0);
+export const BORDER = rgb(0xe2 / 255, 0xe8 / 255, 0xf2 / 255);
+export const TEXT2 = rgb(0x5a / 255, 0x6a / 255, 0x85 / 255);
+export const TEXT3 = rgb(0x9a / 255, 0xaa / 255, 0xbe / 255);
 const ROW_ALT = rgb(0xf5 / 255, 0xf8 / 255, 0xfc / 255);
-const WHITE = rgb(1, 1, 1);
-const BLACK = rgb(0.05, 0.08, 0.14);
+export const WHITE = rgb(1, 1, 1);
+export const BLACK = rgb(0.05, 0.08, 0.14);
 
-const PAGE_W = 842;
-const PAGE_H = 595;
-const MARGIN = 36;
-const HEADER_H = 66;
+export const PAGE_W = 842;
+export const PAGE_H = 595;
+export const MARGIN = 36;
+export const HEADER_H = 66;
 const ROW_H = 22;
 const HEAD_ROW_H = 24;
 
