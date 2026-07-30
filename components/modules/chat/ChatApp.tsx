@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Send, FileText, ArrowLeft, Search, Check, CheckCheck } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { FileUpload } from "@/components/ui/FileUpload";
+import { EmojiPicker } from "@/components/modules/chat/EmojiPicker";
 import { ROLE_LABEL } from "@/lib/permissoes";
 import { formatarDataHora } from "@/lib/utils";
 
@@ -503,6 +504,7 @@ export function ChatApp({
                       onSelect={(dados, nome) => setAnexo({ dados, nome })}
                       disabled={enviando}
                     />
+                    <EmojiPicker onSelect={(emoji) => setTexto((t) => t + emoji)} disabled={enviando} />
                     <input
                       type="text"
                       value={texto}
