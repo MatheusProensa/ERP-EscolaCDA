@@ -24,31 +24,25 @@ export async function ProximosEventosWidget() {
       }
       action={
         <Button href="/calendario" variant="outline" size="sm">
-          Ver calendário
+          Ver tudo
         </Button>
       }
     >
       <div className="flex flex-col divide-y divide-cda-border">
         {eventos.length === 0 && (
-          <p className="px-5 py-6 text-center text-sm text-cda-text3">Nenhum evento agendado.</p>
+          <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhum evento agendado.</p>
         )}
         {eventos.map((evento) => {
           const cor = corCategoria(evento.categoria);
           const dia = evento.data.getUTCDate();
           const mes = MESES[evento.data.getUTCMonth()].slice(0, 3);
           return (
-            <div key={evento.id} className="flex items-center gap-3 px-5 py-3">
-              <div
-                className="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg text-[11px] font-semibold leading-none"
-                style={{ backgroundColor: cor.bg, color: cor.text }}
-              >
-                <span className="text-sm">{dia}</span>
-                <span className="uppercase">{mes}</span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-cda-text">{evento.titulo}</p>
-                <p className="truncate text-xs text-cda-text3">{evento.categoria}</p>
-              </div>
+            <div key={evento.id} className="flex items-center gap-2.5 px-4 py-2.5">
+              <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ backgroundColor: cor.dot }} />
+              <span className="shrink-0 text-xs font-semibold uppercase tabular-nums text-cda-text3">
+                {dia} {mes}
+              </span>
+              <p className="min-w-0 flex-1 truncate text-sm text-cda-text">{evento.titulo}</p>
             </div>
           );
         })}
