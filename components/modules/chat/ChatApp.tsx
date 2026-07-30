@@ -96,19 +96,29 @@ export function ChatApp({
   const [buscaConversa, setBuscaConversa] = useState("");
   const [selecionado, setSelecionado] = useState<string | null>(selecionadoInicial ?? null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const [temMaisAntigas, setTemMaisAntigas] = useState(false);
+  const [carregandoAntigas, setCarregandoAntigas] = useState(false);
+  const [erroMensagens, setErroMensagens] = useState(false);
   const [texto, setTexto] = useState("");
   const [anexo, setAnexo] = useState<{ dados: string; nome: string } | null>(null);
   const [enviando, setEnviando] = useState(false);
   const fimRef = useRef<HTMLDivElement>(null);
   const ultimaMensagemEmRef = useRef<string | null>(null);
+  const buscandoConversasRef = useRef(false);
+  const buscandoMensagensRef = useRef(false);
   /** Id da conversa a que `mensagens` pertence de fato — evita mostrar mensagens
    * da conversa anterior por baixo do cabeçalho da conversa nova recém-clicada. */
   const [mensagensDeId, setMensagensDeId] = useState<string | null>(null);
+  /** Incrementar força o efeito de carregar mensagens a rodar de novo mesmo com o
+   * mesmo `selecionado` — usado pelo botão "Tentar de novo" após falha de rede. */
+  const [tentativa, setTentativa] = useState(0);
 
   useEffect(() => {
     let cancelado = false;
     async function carregarConversas() {
-      if (document.hidden) return;
+      // Evita empilhar requisições se uma anterior ainda não voltou (ex.: rede lenta).
+      if (document.hidden || buscandoConversasRef.current) return;
+      buscandoConversasRef.current = true;
       try {
         const res = await fetch("/api/chat");
         if (!res.ok) throw new Error("resposta não-ok");
@@ -119,14 +129,22 @@ export function ChatApp({
       } catch {
         if (!cancelado) setErroConversas(true);
       } finally {
+        buscandoConversasRef.current = false;
         if (!cancelado) setCarregandoConversas(false);
       }
     }
     carregarConversas();
     const intervalo = setInterval(carregarConversas, 15000);
+    // Volta da aba minimizada/outra aba → busca na hora em vez de esperar o próximo
+    // tick do intervalo (podem ser quase 15s de espera pra ver algo que já mudou).
+    function aoFicarVisivel() {
+      if (!document.hidden) carregarConversas();
+    }
+    document.addEventListener("visibilitychange", aoFicarVisivel);
     return () => {
       cancelado = true;
       clearInterval(intervalo);
+      document.removeEventListener("visibilitychange", aoFicarVisivel);
     };
   }, []);
 
@@ -134,36 +152,75 @@ export function ChatApp({
     if (!selecionado) return;
     let cancelado = false;
     ultimaMensagemEmRef.current = null;
+    // erroMensagens/temMaisAntigas não precisam resetar aqui: enquanto o fetch da
+    // conversa nova não volta, "trocandoConversa" já esconde os dois na tela, e
+    // carregarMensagens(false) abaixo define o valor certo assim que responde.
     const idConversa = selecionado;
 
     async function carregarMensagens(incremental: boolean) {
-      if (incremental && document.hidden) return;
-      const desde = incremental && ultimaMensagemEmRef.current ? `?desde=${encodeURIComponent(ultimaMensagemEmRef.current)}` : "";
-      const res = await fetch(`/api/chat/${idConversa}${desde}`);
-      if (!res.ok || cancelado) return;
-      const novas: Mensagem[] = await res.json();
+      if (incremental && (document.hidden || buscandoMensagensRef.current)) return;
+      buscandoMensagensRef.current = true;
+      try {
+        const desde = incremental && ultimaMensagemEmRef.current ? `?desde=${encodeURIComponent(ultimaMensagemEmRef.current)}` : "";
+        const res = await fetch(`/api/chat/${idConversa}${desde}`);
+        if (!res.ok) throw new Error("resposta não-ok");
+        if (cancelado) return;
+        // "temMais" só é preenchido pela API na paginação pra cima (antes=), não aqui.
+        const { mensagens: novas }: { mensagens: Mensagem[] } = await res.json();
 
-      if (!incremental) {
-        // Troca de conversa: só substitui quando os dados novos chegam — mantém as
-        // mensagens antigas na tela até lá, em vez de piscar pra uma lista vazia.
-        if (novas.length > 0) ultimaMensagemEmRef.current = novas[novas.length - 1].createdAt;
-        setMensagensDeId(idConversa);
-        setMensagens(novas);
-        return;
+        if (!incremental) {
+          // Troca de conversa: só substitui quando os dados novos chegam — mantém as
+          // mensagens antigas na tela até lá, em vez de piscar pra uma lista vazia.
+          if (novas.length > 0) ultimaMensagemEmRef.current = novas[novas.length - 1].createdAt;
+          setMensagensDeId(idConversa);
+          setMensagens(novas);
+          setTemMaisAntigas(novas.length >= 50);
+          setErroMensagens(false);
+          return;
+        }
+
+        setErroMensagens(false);
+        if (novas.length === 0) return;
+        ultimaMensagemEmRef.current = novas[novas.length - 1].createdAt;
+        setMensagens((atual) => mesclarMensagens(atual, novas));
+      } catch {
+        // Só mostra erro pra carga inicial — falha num poll incremental de fundo
+        // não precisa assustar quem já está vendo o histórico certinho na tela.
+        if (!cancelado && !incremental) setErroMensagens(true);
+      } finally {
+        buscandoMensagensRef.current = false;
       }
-
-      if (novas.length === 0) return;
-      ultimaMensagemEmRef.current = novas[novas.length - 1].createdAt;
-      setMensagens((atual) => mesclarMensagens(atual, novas));
     }
 
     carregarMensagens(false);
     const intervalo = setInterval(() => carregarMensagens(true), 4000);
+    function aoFicarVisivel() {
+      if (!document.hidden) carregarMensagens(true);
+    }
+    document.addEventListener("visibilitychange", aoFicarVisivel);
     return () => {
       cancelado = true;
       clearInterval(intervalo);
+      document.removeEventListener("visibilitychange", aoFicarVisivel);
     };
-  }, [selecionado]);
+  }, [selecionado, tentativa]);
+
+  async function carregarMaisAntigas() {
+    if (!selecionado || mensagens.length === 0 || carregandoAntigas) return;
+    setCarregandoAntigas(true);
+    try {
+      const maisAntiga = mensagens[0].createdAt;
+      const res = await fetch(`/api/chat/${selecionado}?antes=${encodeURIComponent(maisAntiga)}`);
+      if (!res.ok) throw new Error("resposta não-ok");
+      const { mensagens: antigas, temMais }: { mensagens: Mensagem[]; temMais?: boolean } = await res.json();
+      setMensagens((atual) => mesclarMensagens(antigas, atual));
+      setTemMaisAntigas(!!temMais);
+    } catch {
+      // silencioso — o botão continua ali pra tentar de novo
+    } finally {
+      setCarregandoAntigas(false);
+    }
+  }
 
   useEffect(() => {
     fimRef.current?.scrollIntoView({ block: "end" });
@@ -331,6 +388,25 @@ export function ChatApp({
 
             <div className="flex-1 overflow-y-auto px-4 py-4">
               <div className="mx-auto flex w-full max-w-2xl flex-col gap-0.5">
+                {erroMensagens && !trocandoConversa && (
+                  <div className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-cda-red/10 px-3 py-2 text-xs text-cda-red">
+                    Não foi possível carregar as mensagens.
+                    <button onClick={() => setTentativa((t) => t + 1)} className="font-semibold underline">
+                      Tentar de novo
+                    </button>
+                  </div>
+                )}
+                {!trocandoConversa && temMaisAntigas && (
+                  <div className="mb-2 flex justify-center">
+                    <button
+                      onClick={carregarMaisAntigas}
+                      disabled={carregandoAntigas}
+                      className="text-xs font-medium text-cda-blue hover:underline disabled:opacity-50"
+                    >
+                      {carregandoAntigas ? "Carregando..." : "Carregar mensagens anteriores"}
+                    </button>
+                  </div>
+                )}
                 {trocandoConversa
                   ? [1, 2, 3].map((i) => (
                       <div key={i} className={`flex items-end gap-2 ${i === 2 ? "flex-row-reverse" : ""} mt-2.5`}>
