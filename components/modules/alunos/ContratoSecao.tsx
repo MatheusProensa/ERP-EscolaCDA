@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Download, Send } from "lucide-react";
+import { FileText, Download, Send, Trash2 } from "lucide-react";
 import type { Contrato } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -53,6 +53,19 @@ export function ContratoSecao({
       body: JSON.stringify({ marcarEnviado: true }),
     });
     setLoading(false);
+    router.refresh();
+  }
+
+  async function excluirContrato() {
+    if (!contrato) return;
+    if (!confirm("Excluir este contrato? Essa ação não pode ser desfeita.")) return;
+    setLoading(true);
+    const res = await fetch(`/api/contratos/${contrato.id}`, { method: "DELETE" });
+    setLoading(false);
+    if (!res.ok) {
+      alert("Não foi possível excluir o contrato.");
+      return;
+    }
     router.refresh();
   }
 
@@ -112,6 +125,15 @@ export function ContratoSecao({
               className="text-sm font-medium text-cda-blue hover:underline"
             >
               Gerar novamente
+            </button>
+            <button
+              onClick={excluirContrato}
+              disabled={loading}
+              title="Excluir contrato"
+              aria-label="Excluir contrato"
+              className="text-cda-text3 hover:text-cda-red disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
             </button>
           </div>
         </div>
