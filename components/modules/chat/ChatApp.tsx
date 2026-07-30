@@ -101,6 +101,9 @@ export function ChatApp({
   const [enviando, setEnviando] = useState(false);
   const fimRef = useRef<HTMLDivElement>(null);
   const ultimaMensagemEmRef = useRef<string | null>(null);
+  /** Id da conversa a que `mensagens` pertence de fato — evita mostrar mensagens
+   * da conversa anterior por baixo do cabeçalho da conversa nova recém-clicada. */
+  const [mensagensDeId, setMensagensDeId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelado = false;
@@ -131,17 +134,27 @@ export function ChatApp({
     if (!selecionado) return;
     let cancelado = false;
     ultimaMensagemEmRef.current = null;
+    const idConversa = selecionado;
 
     async function carregarMensagens(incremental: boolean) {
       if (incremental && document.hidden) return;
       const desde = incremental && ultimaMensagemEmRef.current ? `?desde=${encodeURIComponent(ultimaMensagemEmRef.current)}` : "";
-      const res = await fetch(`/api/chat/${selecionado}${desde}`);
+      const res = await fetch(`/api/chat/${idConversa}${desde}`);
       if (!res.ok || cancelado) return;
       const novas: Mensagem[] = await res.json();
-      if (novas.length === 0) return;
 
+      if (!incremental) {
+        // Troca de conversa: só substitui quando os dados novos chegam — mantém as
+        // mensagens antigas na tela até lá, em vez de piscar pra uma lista vazia.
+        if (novas.length > 0) ultimaMensagemEmRef.current = novas[novas.length - 1].createdAt;
+        setMensagensDeId(idConversa);
+        setMensagens(novas);
+        return;
+      }
+
+      if (novas.length === 0) return;
       ultimaMensagemEmRef.current = novas[novas.length - 1].createdAt;
-      setMensagens((atual) => (incremental ? mesclarMensagens(atual, novas) : novas));
+      setMensagens((atual) => mesclarMensagens(atual, novas));
     }
 
     carregarMensagens(false);
@@ -158,7 +171,6 @@ export function ChatApp({
 
   function selecionar(userId: string) {
     setSelecionado(userId);
-    setMensagens([]);
     // Atualiza a URL sem navegação do Next (evita re-render do Server Component
     // e um novo round-trip de listarConversas a cada troca de conversa — o
     // ChatApp já é autossuficiente e gerencia os dados via polling próprio).
@@ -200,6 +212,7 @@ export function ChatApp({
     return conversas.filter((c) => c.name.toLowerCase().includes(termo));
   }, [conversas, buscaConversa]);
   const itensConversa = useMemo(() => montarItens(mensagens), [mensagens]);
+  const trocandoConversa = selecionado !== mensagensDeId;
 
   return (
     <div className="mt-2 flex min-h-0 flex-1 overflow-hidden rounded-[10px] border border-cda-border bg-cda-surface">
@@ -318,7 +331,14 @@ export function ChatApp({
 
             <div className="flex-1 overflow-y-auto px-4 py-4">
               <div className="mx-auto flex w-full max-w-2xl flex-col gap-0.5">
-                {itensConversa.map((item) => {
+                {trocandoConversa
+                  ? [1, 2, 3].map((i) => (
+                      <div key={i} className={`flex items-end gap-2 ${i === 2 ? "flex-row-reverse" : ""} mt-2.5`}>
+                        <div className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-white/70" />
+                        <div className={`h-9 w-40 animate-pulse rounded-xl bg-white/70`} />
+                      </div>
+                    ))
+                  : itensConversa.map((item) => {
                   if (item.tipo === "data") {
                     return (
                       <div key={item.key} className="my-3 flex items-center justify-center">
