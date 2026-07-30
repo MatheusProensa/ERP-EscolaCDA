@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { Send, FileText, ArrowLeft, Search, Check, CheckCheck } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { FileUpload } from "@/components/ui/FileUpload";
@@ -83,7 +82,6 @@ export function ChatApp({
   selecionadoInicial?: string;
   conversasIniciais?: Conversa[];
 }) {
-  const router = useRouter();
   const [conversas, setConversas] = useState<Conversa[]>(conversasIniciais ?? []);
   const [carregandoConversas, setCarregandoConversas] = useState(!conversasIniciais);
   const [erroConversas, setErroConversas] = useState(false);
@@ -153,7 +151,10 @@ export function ChatApp({
   function selecionar(userId: string) {
     setSelecionado(userId);
     setMensagens([]);
-    router.replace(`/chat/${userId}`);
+    // Atualiza a URL sem navegação do Next (evita re-render do Server Component
+    // e um novo round-trip de listarConversas a cada troca de conversa — o
+    // ChatApp já é autossuficiente e gerencia os dados via polling próprio).
+    window.history.replaceState(null, "", `/chat/${userId}`);
   }
 
   async function enviar(e: FormEvent) {
