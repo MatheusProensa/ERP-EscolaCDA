@@ -29,12 +29,6 @@ export async function DashboardPedagogico() {
     <div>
       <PageHeader title="Dashboard Pedagógico" subtitle="Alunos, turmas e censo escolar" />
 
-      <div className="mb-5">
-        <Suspense fallback={<WidgetFallback className="h-40" />}>
-          <MuralWidget />
-        </Suspense>
-      </div>
-
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard icon={Users} iconColor="#1A6FD8" value={totalAlunos} label="Total de alunos" subtext="Matrículas ativas" />
         <MetricCard icon={GraduationCap} iconColor="#D97706" value={turmasAtivas} label="Turmas ativas" subtext="Ano letivo atual" />
@@ -45,9 +39,16 @@ export async function DashboardPedagogico() {
         <CensoAlerta quantidade={censoIncompleto} />
       </div>
 
-      <FeedAtividade logs={logs} />
+      <div className="mb-5">
+        <FeedAtividade logs={logs} />
+      </div>
 
-      <div className="mt-5">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Suspense fallback={<WidgetFallback className="h-40" />}>
+            <MuralWidget />
+          </Suspense>
+        </div>
         <Suspense fallback={<WidgetFallback className="h-60" />}>
           <ProximosEventosWidget />
         </Suspense>

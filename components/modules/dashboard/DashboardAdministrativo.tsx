@@ -26,12 +26,6 @@ export async function DashboardAdministrativo() {
     <div>
       <PageHeader title="Dashboard Administrativo" subtitle="Funcionários, estoque e chaves" />
 
-      <div className="mb-5">
-        <Suspense fallback={<WidgetFallback className="h-40" />}>
-          <MuralWidget />
-        </Suspense>
-      </div>
-
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard icon={UserCog} iconColor="#1A6FD8" value={funcionariosAtivos} label="Funcionários ativos" />
         <MetricCard
@@ -69,7 +63,12 @@ export async function DashboardAdministrativo() {
         </Table>
       </Card>
 
-      <div className="mt-5">
+      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Suspense fallback={<WidgetFallback className="h-40" />}>
+            <MuralWidget />
+          </Suspense>
+        </div>
         <Suspense fallback={<WidgetFallback className="h-60" />}>
           <ProximosEventosWidget />
         </Suspense>

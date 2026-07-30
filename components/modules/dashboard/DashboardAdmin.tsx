@@ -50,12 +50,6 @@ export async function DashboardAdmin() {
       <PageHeader title="Dashboard" subtitle="Visão geral da Escola CDA — todos os setores" />
 
       <div className="mb-5">
-        <Suspense fallback={<WidgetFallback className="h-40" />}>
-          <MuralWidget />
-        </Suspense>
-      </div>
-
-      <div className="mb-5">
         <MetricasGerais
           totalAlunos={totalAlunos}
           inadimplentes={totalInadimplentes}
@@ -65,12 +59,19 @@ export async function DashboardAdmin() {
       </div>
 
       <div className="mb-5">
+        <CensoAlerta quantidade={censoIncompleto} />
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <Suspense fallback={<WidgetFallback className="h-40" />}>
+            <MuralWidget />
+          </Suspense>
+        </div>
         <Suspense fallback={<WidgetFallback className="h-60" />}>
           <ProximosEventosWidget />
         </Suspense>
       </div>
-
-      <CensoAlerta quantidade={censoIncompleto} />
     </div>
   );
 }
