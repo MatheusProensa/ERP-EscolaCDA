@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 
+export async function contarNaoLidas(meId: string): Promise<number> {
+  return prisma.mensagem.count({ where: { destinatarioId: meId, lida: false } });
+}
+
 export type ConversaResumo = {
   id: string;
   name: string;

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   Wallet,
@@ -74,10 +75,32 @@ const NAV_GROUPS: NavGroup[] = [
 
 export function Sidebar({ role, open, onClose }: { role: string; open: boolean; onClose: () => void }) {
   const pathname = usePathname();
+  const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
   const grupos = NAV_GROUPS.map((group) => ({
     ...group,
     items: group.items.filter((item) => rotaPermitida(item.href, role)),
   })).filter((group) => group.items.length > 0);
+
+  useEffect(() => {
+    let cancelado = false;
+    async function verificar() {
+      if (document.hidden) return;
+      try {
+        const res = await fetch("/api/chat/nao-lidas");
+        if (!res.ok || cancelado) return;
+        const { total } = await res.json();
+        if (!cancelado) setMensagensNaoLidas(total);
+      } catch {
+        // silencioso — não é crítico, tenta de novo no próximo intervalo
+      }
+    }
+    verificar();
+    const intervalo = setInterval(verificar, 20000);
+    return () => {
+      cancelado = true;
+      clearInterval(intervalo);
+    };
+  }, [pathname]);
 
   return (
     <>
@@ -113,6 +136,7 @@ export function Sidebar({ role, open, onClose }: { role: string; open: boolean; 
                 {group.items.map((item) => {
                   const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
                   const Icon = item.icon;
+                  const naoLidas = item.href === "/chat" ? mensagensNaoLidas : 0;
                   return (
                     <Link
                       key={item.href}
@@ -127,7 +151,12 @@ export function Sidebar({ role, open, onClose }: { role: string; open: boolean; 
                       )}
                     >
                       <Icon className="h-4 w-4" />
-                      {item.label}
+                      <span className="flex-1">{item.label}</span>
+                      {naoLidas > 0 && (
+                        <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-cda-red px-1 text-[11px] font-bold text-white">
+                          {naoLidas}
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
