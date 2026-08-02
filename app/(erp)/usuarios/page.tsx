@@ -1,7 +1,9 @@
+import { Download } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { Table, TableHead, Th, TableBody, TableEmpty } from "@/components/ui/Table";
 import { NovoUsuarioModal } from "@/components/modules/usuarios/NovoUsuarioModal";
 import { UsuarioLinha } from "@/components/modules/usuarios/UsuarioLinha";
@@ -18,7 +20,15 @@ export default async function UsuariosPage() {
       <PageHeader
         title="Usuários"
         subtitle="Quem tem acesso ao sistema e a qual setor"
-        action={<NovoUsuarioModal />}
+        action={
+          <div className="flex items-center gap-2">
+            <Button href="/api/backup" variant="outline">
+              <Download className="h-4 w-4" />
+              Baixar backup
+            </Button>
+            <NovoUsuarioModal />
+          </div>
+        }
       />
 
       <Card>

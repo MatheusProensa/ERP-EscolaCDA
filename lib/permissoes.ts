@@ -57,6 +57,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/api/chaves", roles: ADMINISTRATIVO },
   { prefixo: "/api/usuarios", roles: GESTAO },
   { prefixo: "/api/virada-ano-letivo", roles: GESTAO },
+  { prefixo: "/api/backup", roles: GESTAO },
   { prefixo: "/academico/virada-de-ano", roles: GESTAO },
 ];
 
