@@ -1,17 +1,16 @@
 import { notFound } from "next/navigation";
-import { Phone, Mail, FileDown } from "lucide-react";
+import { FileDown } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { AlunoCard } from "@/components/modules/alunos/AlunoCard";
 import { CensoSecao } from "@/components/modules/alunos/CensoSecao";
 import { ContratoSecao } from "@/components/modules/alunos/ContratoSecao";
 import { MatriculaAcoes } from "@/components/modules/alunos/MatriculaAcoes";
+import { ResponsaveisSecao } from "@/components/modules/alunos/ResponsaveisSecao";
 import { MensalidadeTable } from "@/components/modules/financeiro/MensalidadeTable";
 import { NovaCobrancaModal } from "@/components/modules/financeiro/NovaCobrancaModal";
-import { formatarTelefone } from "@/lib/utils";
 
 export default async function AlunoPerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -80,36 +79,7 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
           ))}
         </div>
 
-        <Card title="Responsáveis" className="h-fit">
-          <div className="flex flex-col divide-y divide-cda-border">
-            {aluno.responsaveis.length === 0 && (
-              <p className="px-5 py-6 text-center text-sm text-cda-text3">
-                Nenhum responsável cadastrado.
-              </p>
-            )}
-            {aluno.responsaveis.map((r) => (
-              <div key={r.id} className="px-5 py-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-cda-text">{r.nome}</span>
-                  {r.autorizado && <Badge variant="green">Autorizado a retirar</Badge>}
-                </div>
-                <p className="mt-0.5 text-xs text-cda-text3">{r.parentesco}</p>
-                <div className="mt-2 flex flex-col gap-1 text-sm text-cda-text2">
-                  <span className="flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5" />
-                    {formatarTelefone(r.telefone)}
-                  </span>
-                  {r.email && (
-                    <span className="flex items-center gap-1.5">
-                      <Mail className="h-3.5 w-3.5" />
-                      {r.email}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </Card>
+        <ResponsaveisSecao alunoId={aluno.id} responsaveis={aluno.responsaveis} />
       </div>
     </div>
   );
