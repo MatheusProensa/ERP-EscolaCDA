@@ -5,7 +5,13 @@ import { ordenarTurmas } from "@/lib/utils";
 
 export default async function NovoAlunoPage() {
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
-  const turmas = ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }));
+  const turmasBrutas = ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }));
+  const turmas = await Promise.all(
+    turmasBrutas.map(async (t) => ({
+      ...t,
+      matriculados: await prisma.matricula.count({ where: { turmaId: t.id, situacao: "ATIVA" } }),
+    }))
+  );
 
   return (
     <div className="mx-auto max-w-3xl">

@@ -34,6 +34,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const body = await req.json();
   const { nome, turno, capacidade } = body;
 
+  if (capacidade) {
+    const matriculados = await prisma.matricula.count({ where: { turmaId: id, situacao: "ATIVA" } });
+    if (Number(capacidade) < matriculados) {
+      return NextResponse.json(
+        { error: `Já tem ${matriculados} aluno(s) matriculado(s) — a capacidade não pode ser menor que isso.` },
+        { status: 400 }
+      );
+    }
+  }
+
   try {
     const turma = await prisma.turma.update({
       where: { id },

@@ -3,6 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import type { Turma } from "@prisma/client";
+
+type TurmaComVagas = Turma & { matriculados: number };
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -10,7 +12,7 @@ import { Card } from "@/components/ui/Card";
 import { PhotoUpload } from "@/components/ui/PhotoUpload";
 import { CensoCampos } from "./CensoCampos";
 
-export function AlunoForm({ turmas }: { turmas: Turma[] }) {
+export function AlunoForm({ turmas }: { turmas: TurmaComVagas[] }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -157,11 +159,14 @@ export function AlunoForm({ turmas }: { turmas: Turma[] }) {
             <option value="" disabled>
               Selecione a turma
             </option>
-            {turmas.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.nome}
-              </option>
-            ))}
+            {turmas.map((t) => {
+              const cheia = t.matriculados >= t.capacidade;
+              return (
+                <option key={t.id} value={t.id} disabled={cheia}>
+                  {t.nome} — {cheia ? "lotada" : `${t.capacidade - t.matriculados} vaga(s)`}
+                </option>
+              );
+            })}
           </Select>
           <Input
             label="Valor da mensalidade"

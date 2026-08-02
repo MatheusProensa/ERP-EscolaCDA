@@ -30,8 +30,27 @@ export default async function AlunosPage({
       turmaId: turma || undefined,
       situacao: (situacao as SituacaoMatricula) || undefined,
       aluno: {
-        nome: busca ? { contains: busca, mode: "insensitive" } : undefined,
-        OR: censoIncompleto ? [{ racaCor: null }, { filiacao1: null }, { sexo: null }] : undefined,
+        AND: [
+          busca
+            ? {
+                OR: [
+                  { nome: { contains: busca, mode: "insensitive" } },
+                  { cpf: { contains: busca, mode: "insensitive" } },
+                  {
+                    responsaveis: {
+                      some: {
+                        OR: [
+                          { nome: { contains: busca, mode: "insensitive" } },
+                          { telefone: { contains: busca, mode: "insensitive" } },
+                        ],
+                      },
+                    },
+                  },
+                ],
+              }
+            : {},
+          censoIncompleto ? { OR: [{ racaCor: null }, { filiacao1: null }, { sexo: null }] } : {},
+        ],
       },
     },
     select: {
@@ -72,7 +91,7 @@ export default async function AlunosPage({
 
       <Card className="mb-5 p-4">
         <form className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-          <Input name="busca" placeholder="Buscar por nome..." defaultValue={busca} />
+          <Input name="busca" placeholder="Buscar por nome, CPF ou responsável..." defaultValue={busca} />
           <Select name="turma" defaultValue={turma ?? ""}>
             <option value="">Todas as turmas</option>
             {turmas.map((t) => (

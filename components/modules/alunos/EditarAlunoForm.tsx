@@ -20,6 +20,21 @@ export function EditarAlunoForm({ aluno }: { aluno: Aluno }) {
   const [error, setError] = useState("");
   const [foto, setFoto] = useState<string | null>(aluno.foto);
   const [nome, setNome] = useState(aluno.nome);
+  const [excluindo, setExcluindo] = useState(false);
+
+  async function excluirAluno() {
+    if (!confirm(`Excluir o cadastro de ${aluno.nome}? Essa ação não pode ser desfeita.`)) return;
+    setExcluindo(true);
+    const res = await fetch(`/api/alunos/${aluno.id}`, { method: "DELETE" });
+    setExcluindo(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Não foi possível excluir o cadastro.");
+      return;
+    }
+    router.push("/alunos");
+    router.refresh();
+  }
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -178,13 +193,18 @@ export function EditarAlunoForm({ aluno }: { aluno: Aluno }) {
 
       {error && <p className="text-sm text-cda-red">{error}</p>}
 
-      <div className="flex justify-end gap-3">
-        <Button type="button" variant="outline" onClick={() => router.back()}>
-          Cancelar
+      <div className="flex items-center justify-between gap-3">
+        <Button type="button" variant="ghost" onClick={excluirAluno} loading={excluindo} className="text-cda-red hover:bg-cda-red/10">
+          Excluir cadastro
         </Button>
-        <Button type="submit" loading={loading}>
-          Salvar alterações
-        </Button>
+        <div className="flex gap-3">
+          <Button type="button" variant="outline" onClick={() => router.back()}>
+            Cancelar
+          </Button>
+          <Button type="submit" loading={loading}>
+            Salvar alterações
+          </Button>
+        </div>
       </div>
     </form>
   );
