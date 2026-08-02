@@ -20,8 +20,29 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user) return null;
 
+        // Conta temporariamente bloqueada por excesso de tentativas erradas —
+        // nega sem nem checar a senha (evita reiniciar a janela de bloqueio).
+        if (user.bloqueadoAte && user.bloqueadoAte > new Date()) return null;
+
         const valid = await bcrypt.compare(password, user.password);
-        if (!valid) return null;
+        if (!valid) {
+          const tentativas = user.tentativasFalhas + 1;
+          const LIMITE = 5;
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              tentativasFalhas: tentativas,
+              // 15min de bloqueio a cada vez que bate o limite — não zera sozinho
+              // antes disso, só um login certo reseta o contador.
+              bloqueadoAte: tentativas >= LIMITE ? new Date(Date.now() + 15 * 60 * 1000) : undefined,
+            },
+          });
+          return null;
+        }
+
+        if (user.tentativasFalhas > 0 || user.bloqueadoAte) {
+          await prisma.user.update({ where: { id: user.id }, data: { tentativasFalhas: 0, bloqueadoAte: null } });
+        }
 
         return { id: user.id, name: user.name, email: user.email, role: user.role };
       },

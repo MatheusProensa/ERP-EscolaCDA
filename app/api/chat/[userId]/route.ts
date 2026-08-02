@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { criarNotificacao } from "@/lib/notificacoes";
+import { validarUploadDataUri } from "@/lib/validarUpload";
 
 const PAGINA = 50;
 
@@ -64,6 +65,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
 
   if (!conteudo && !anexo) {
     return NextResponse.json({ error: "Mensagem vazia" }, { status: 400 });
+  }
+
+  if (anexo) {
+    const validacao = validarUploadDataUri(anexo);
+    if (!validacao.ok) return NextResponse.json({ error: validacao.erro }, { status: 400 });
   }
 
   try {

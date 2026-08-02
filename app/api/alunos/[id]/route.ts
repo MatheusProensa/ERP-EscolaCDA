@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
+import { validarUploadDataUri } from "@/lib/validarUpload";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -43,6 +44,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     recursosAcessib,
     nis,
   } = body;
+
+  if (foto) {
+    const validacao = validarUploadDataUri(foto);
+    if (!validacao.ok) return NextResponse.json({ error: validacao.erro }, { status: 400 });
+  }
 
   try {
     const aluno = await prisma.aluno.update({

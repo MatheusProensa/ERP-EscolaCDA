@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
+import { validarUploadDataUri } from "@/lib/validarUpload";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -69,6 +70,11 @@ export async function POST(req: NextRequest) {
 
   if (!nome || !dataNascimento || !turmaId || !responsavel?.nome || !responsavel?.telefone) {
     return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
+  }
+
+  if (foto) {
+    const validacao = validarUploadDataUri(foto);
+    if (!validacao.ok) return NextResponse.json({ error: validacao.erro }, { status: 400 });
   }
 
   const turma = await prisma.turma.findUnique({ where: { id: turmaId } });
