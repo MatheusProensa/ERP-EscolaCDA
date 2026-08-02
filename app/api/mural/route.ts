@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { criarNotificacao } from "@/lib/notificacoes";
 
 export async function GET() {
   const session = await auth();
@@ -32,6 +33,25 @@ export async function POST(req: NextRequest) {
       autorId: session.user.id,
     },
   });
+
+  // Aviso fixado é coisa importante — avisa todo mundo, não só quem entrar no mural.
+  if (aviso.fixado) {
+    const outrosUsuarios = await prisma.user.findMany({
+      where: { id: { not: session.user.id } },
+      select: { id: true },
+    });
+    await Promise.all(
+      outrosUsuarios.map((u) =>
+        criarNotificacao({
+          usuarioId: u.id,
+          tipo: "MURAL_FIXADO",
+          titulo: `Aviso importante: ${aviso.titulo}`,
+          corpo: aviso.conteudo.slice(0, 120),
+          link: "/mural",
+        })
+      )
+    );
+  }
 
   return NextResponse.json(aviso, { status: 201 });
 }
