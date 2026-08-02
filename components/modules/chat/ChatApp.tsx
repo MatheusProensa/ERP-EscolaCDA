@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Send, FileText, ArrowLeft, Search, Check, CheckCheck } from "lucide-react";
+import { Send, FileText, ArrowLeft, Search, Check, CheckCheck, Pencil, Trash2, X as XIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { EmojiPicker } from "@/components/modules/chat/EmojiPicker";
@@ -27,6 +27,8 @@ type Mensagem = {
   anexoNome: string | null;
   createdAt: string;
   lida: boolean;
+  excluida: boolean;
+  editadaEm: string | null;
 };
 
 /** "Hoje" / "Ontem" / "23 de julho" — separador de data entre grupos de mensagens. */
@@ -103,6 +105,9 @@ export function ChatApp({
   const [texto, setTexto] = useState("");
   const [anexo, setAnexo] = useState<{ dados: string; nome: string } | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [editandoMsgId, setEditandoMsgId] = useState<string | null>(null);
+  const [textoEdicao, setTextoEdicao] = useState("");
+  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
   const fimRef = useRef<HTMLDivElement>(null);
   const ultimaMensagemEmRef = useRef<string | null>(null);
   const buscandoConversasRef = useRef(false);
@@ -260,6 +265,37 @@ export function ChatApp({
       setMensagens((atual) => mesclarMensagens(atual, [nova]));
       setTexto("");
       setAnexo(null);
+    }
+  }
+
+  function iniciarEdicao(m: Mensagem) {
+    setEditandoMsgId(m.id);
+    setTextoEdicao(m.conteudo ?? "");
+  }
+
+  async function salvarEdicao() {
+    if (!editandoMsgId || !textoEdicao.trim()) return;
+    setSalvandoEdicao(true);
+    const res = await fetch(`/api/chat/mensagem/${editandoMsgId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ conteudo: textoEdicao.trim() }),
+    });
+    setSalvandoEdicao(false);
+    if (res.ok) {
+      const atualizada = await res.json();
+      setMensagens((atual) => atual.map((m) => (m.id === atualizada.id ? atualizada : m)));
+      setEditandoMsgId(null);
+      setTextoEdicao("");
+    }
+  }
+
+  async function excluirMensagem(id: string) {
+    if (!confirm("Apagar esta mensagem? Vira \"Mensagem apagada\" pro destinatário também.")) return;
+    const res = await fetch(`/api/chat/mensagem/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      const atualizada = await res.json();
+      setMensagens((atual) => atual.map((m) => (m.id === atualizada.id ? atualizada : m)));
     }
   }
 
@@ -430,53 +466,124 @@ export function ChatApp({
                   const minha = m.remetenteId === meId;
                   const nome = minha ? meNome : conversaAtual?.name ?? "";
                   const imagem = m.anexo?.startsWith("data:image") ?? false;
+                  const editandoEssa = editandoMsgId === m.id;
 
                   return (
-                    <div key={item.key} className={`flex items-end gap-2 ${minha ? "flex-row-reverse" : ""} ${item.mostrarCabecalho ? "mt-2.5" : ""}`}>
+                    <div
+                      key={item.key}
+                      className={`group flex items-end gap-2 ${minha ? "flex-row-reverse" : ""} ${item.mostrarCabecalho ? "mt-2.5" : ""}`}
+                    >
                       {item.mostrarCabecalho ? (
                         <Avatar nome={nome} size="sm" />
                       ) : (
                         <div className="w-7 shrink-0" />
                       )}
+                      {minha && !m.excluida && !editandoEssa && (
+                        <div className="mb-1 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <button
+                            onClick={() => iniciarEdicao(m)}
+                            title="Editar mensagem"
+                            aria-label="Editar mensagem"
+                            className="flex h-6 w-6 items-center justify-center rounded-full text-cda-text3 hover:bg-white hover:text-cda-blue"
+                          >
+                            <Pencil className="h-3 w-3" />
+                          </button>
+                          <button
+                            onClick={() => excluirMensagem(m.id)}
+                            title="Apagar mensagem"
+                            aria-label="Apagar mensagem"
+                            className="flex h-6 w-6 items-center justify-center rounded-full text-cda-text3 hover:bg-white hover:text-cda-red"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
                       <div className={`flex max-w-[70%] flex-col ${minha ? "items-end" : "items-start"}`}>
                         {item.mostrarCabecalho && (
                           <span className="mb-0.5 text-[11px] font-semibold text-cda-text3">{nome}</span>
                         )}
-                        <div
-                          className={`rounded-xl px-3 py-2 text-sm shadow-sm ${
-                            minha ? "rounded-br-sm bg-cda-blue text-white" : "rounded-bl-sm bg-white text-cda-text"
-                          }`}
-                        >
-                          {m.conteudo && <p className="whitespace-pre-wrap">{m.conteudo}</p>}
-                          {m.anexo &&
-                            (imagem ? (
-                              <a href={m.anexo} target="_blank" rel="noreferrer" title="Ver imagem em tamanho real">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img
-                                  src={m.anexo}
-                                  alt={m.anexoNome ?? "Imagem enviada"}
-                                  className="mt-1 max-h-52 w-full rounded-lg object-cover"
-                                />
-                              </a>
-                            ) : (
-                              <a
-                                href={m.anexo}
-                                download={m.anexoNome ?? "anexo"}
-                                className={`mt-1 flex items-center gap-1.5 text-xs underline ${minha ? "text-white" : "text-cda-blue"}`}
+                        {editandoEssa ? (
+                          <div className="flex w-64 flex-col gap-1.5 rounded-xl border border-cda-blue bg-white p-2 shadow-sm">
+                            <textarea
+                              autoFocus
+                              value={textoEdicao}
+                              onChange={(e) => setTextoEdicao(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter" && !e.shiftKey) {
+                                  e.preventDefault();
+                                  salvarEdicao();
+                                }
+                                if (e.key === "Escape") setEditandoMsgId(null);
+                              }}
+                              rows={2}
+                              className="resize-none border-none bg-transparent text-sm text-cda-text outline-none"
+                            />
+                            <div className="flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setEditandoMsgId(null)}
+                                className="flex items-center gap-1 text-xs text-cda-text3 hover:text-cda-text"
                               >
-                                <FileText className="h-3.5 w-3.5" />
-                                {m.anexoNome}
-                              </a>
-                            ))}
+                                <XIcon className="h-3 w-3" /> Cancelar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={salvarEdicao}
+                                disabled={salvandoEdicao || !textoEdicao.trim()}
+                                className="text-xs font-semibold text-cda-blue hover:underline disabled:opacity-50"
+                              >
+                                Salvar
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
                           <div
-                            className={`mt-1 flex items-center gap-1 text-[10px] ${
-                              minha ? "justify-end text-white/70" : "text-cda-text3"
+                            className={`rounded-xl px-3 py-2 text-sm shadow-sm ${
+                              m.excluida
+                                ? "italic text-cda-text3 " + (minha ? "rounded-br-sm bg-white" : "rounded-bl-sm bg-white")
+                                : minha
+                                  ? "rounded-br-sm bg-cda-blue text-white"
+                                  : "rounded-bl-sm bg-white text-cda-text"
                             }`}
                           >
-                            {formatarDataHora(m.createdAt).split(" ").pop()}
-                            {minha && (m.lida ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />)}
+                            {m.excluida ? (
+                              <p>Mensagem apagada</p>
+                            ) : (
+                              <>
+                                {m.conteudo && <p className="whitespace-pre-wrap">{m.conteudo}</p>}
+                                {m.anexo &&
+                                  (imagem ? (
+                                    <a href={m.anexo} target="_blank" rel="noreferrer" title="Ver imagem em tamanho real">
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={m.anexo}
+                                        alt={m.anexoNome ?? "Imagem enviada"}
+                                        className="mt-1 max-h-52 w-full rounded-lg object-cover"
+                                      />
+                                    </a>
+                                  ) : (
+                                    <a
+                                      href={m.anexo}
+                                      download={m.anexoNome ?? "anexo"}
+                                      className={`mt-1 flex items-center gap-1.5 text-xs underline ${minha ? "text-white" : "text-cda-blue"}`}
+                                    >
+                                      <FileText className="h-3.5 w-3.5" />
+                                      {m.anexoNome}
+                                    </a>
+                                  ))}
+                              </>
+                            )}
+                            <div
+                              className={`mt-1 flex items-center gap-1 text-[10px] ${
+                                m.excluida ? "text-cda-text3" : minha ? "justify-end text-white/70" : "text-cda-text3"
+                              }`}
+                            >
+                              {m.editadaEm && !m.excluida && <span className="italic">editado ·</span>}
+                              {formatarDataHora(m.createdAt).split(" ").pop()}
+                              {minha && !m.excluida && (m.lida ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />)}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   );

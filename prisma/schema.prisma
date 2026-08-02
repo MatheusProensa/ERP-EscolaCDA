@@ -28,16 +28,18 @@ model User {
 }
 
 model Mensagem {
-  id             String   @id @default(cuid())
-  remetente      User     @relation("MensagensEnviadas", fields: [remetenteId], references: [id])
+  id             String    @id @default(cuid())
+  remetente      User      @relation("MensagensEnviadas", fields: [remetenteId], references: [id])
   remetenteId    String
-  destinatario   User     @relation("MensagensRecebidas", fields: [destinatarioId], references: [id])
+  destinatario   User      @relation("MensagensRecebidas", fields: [destinatarioId], references: [id])
   destinatarioId String
   conteudo       String?
   anexoNome      String?
   anexo          String?
-  lida           Boolean  @default(false)
-  createdAt      DateTime @default(now())
+  lida           Boolean   @default(false)
+  excluida       Boolean   @default(false)
+  editadaEm      DateTime?
+  createdAt      DateTime  @default(now())
 
   @@index([remetenteId, destinatarioId])
   @@index([destinatarioId, lida])
