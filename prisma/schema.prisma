@@ -75,14 +75,15 @@ model AnoLetivo {
 }
 
 model Turma {
-  id          String      @id @default(cuid())
+  id          String        @id @default(cuid())
   nome        String
   turno       Turno
-  capacidade  Int         @default(25)
-  anoLetivo   AnoLetivo   @relation(fields: [anoLetivoId], references: [id])
+  capacidade  Int           @default(25)
+  anoLetivo   AnoLetivo     @relation(fields: [anoLetivoId], references: [id])
   anoLetivoId String
   matriculas  Matricula[]
-  createdAt   DateTime    @default(now())
+  listaEspera ListaEspera[]
+  createdAt   DateTime      @default(now())
 
   @@unique([nome, anoLetivoId])
 }
@@ -90,6 +91,27 @@ model Turma {
 enum Turno {
   MANHA
   TARDE
+}
+
+model ListaEspera {
+  id                  String            @id @default(cuid())
+  nomeCrianca         String
+  dataNascimento      DateTime?
+  nomeResponsavel     String
+  telefoneResponsavel String
+  emailResponsavel    String?
+  turmaDesejada       Turma?            @relation(fields: [turmaDesejadaId], references: [id])
+  turmaDesejadaId     String?
+  observacoes         String?
+  status              StatusListaEspera @default(AGUARDANDO)
+  createdAt           DateTime          @default(now())
+}
+
+enum StatusListaEspera {
+  AGUARDANDO
+  CONTATADO
+  MATRICULADO
+  DESISTIU
 }
 
 model Aluno {

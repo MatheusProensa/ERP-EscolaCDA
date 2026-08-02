@@ -18,6 +18,7 @@ import {
   FileText,
   CalendarDays,
   MessageCircle,
+  Users,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -41,6 +42,7 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Pedagógico",
     items: [
       { label: "Acadêmico", href: "/academico", icon: GraduationCap },
+      { label: "Lista de espera", href: "/academico/lista-espera", icon: Users },
       { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
     ],
   },
