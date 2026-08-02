@@ -14,51 +14,54 @@ export type ConversaResumo = {
 };
 
 export async function listarConversas(meId: string): Promise<ConversaResumo[]> {
-  const [usuarios, mensagens] = await Promise.all([
+  const [usuarios, mensagens, naoLidasPorRemetente] = await Promise.all([
     prisma.user.findMany({
       where: { id: { not: meId } },
       select: { id: true, name: true, role: true },
       orderBy: { name: "asc" },
     }),
+    // Só serve pra achar a última mensagem de cada conversa (preview) — 100 é de
+    // sobra pra isso mesmo com bastante gente cadastrada.
     prisma.mensagem.findMany({
       where: { OR: [{ remetenteId: meId }, { destinatarioId: meId }] },
-      select: {
-        remetenteId: true,
-        destinatarioId: true,
-        conteudo: true,
-        anexoNome: true,
-        createdAt: true,
-        lida: true,
-      },
+      select: { remetenteId: true, destinatarioId: true, conteudo: true, anexoNome: true, createdAt: true, excluida: true },
       orderBy: { createdAt: "desc" },
-      take: 300,
+      take: 100,
+    }),
+    // Contagem de não lidas via agregação direta no banco — correta independente
+    // de quantas mensagens existem no total (antes dependia do mesmo lote de 300
+    // usado pro preview, então uma conversa muito falada podia "esconder" o não
+    // lido de outra).
+    prisma.mensagem.groupBy({
+      by: ["remetenteId"],
+      where: { destinatarioId: meId, lida: false },
+      _count: { _all: true },
     }),
   ]);
 
-  const porUsuario = new Map<
-    string,
-    { conteudo: string | null; anexoNome: string | null; createdAt: Date; naoLidas: number }
-  >();
+  const naoLidasPorId = new Map(naoLidasPorRemetente.map((g) => [g.remetenteId, g._count._all]));
 
+  const ultimaPorUsuario = new Map<string, { conteudo: string | null; anexoNome: string | null; createdAt: Date; excluida: boolean }>();
   for (const m of mensagens) {
     const outro = m.remetenteId === meId ? m.destinatarioId : m.remetenteId;
-    let info = porUsuario.get(outro);
-    if (!info) {
-      info = { conteudo: m.conteudo, anexoNome: m.anexoNome, createdAt: m.createdAt, naoLidas: 0 };
-      porUsuario.set(outro, info);
+    if (!ultimaPorUsuario.has(outro)) {
+      ultimaPorUsuario.set(outro, { conteudo: m.conteudo, anexoNome: m.anexoNome, createdAt: m.createdAt, excluida: m.excluida });
     }
-    if (m.destinatarioId === meId && !m.lida) info.naoLidas++;
   }
 
   return usuarios.map((u) => {
-    const info = porUsuario.get(u.id);
+    const info = ultimaPorUsuario.get(u.id);
     return {
       id: u.id,
       name: u.name,
       role: u.role,
-      ultimaMensagem: info ? (info.conteudo ?? (info.anexoNome ? `📎 ${info.anexoNome}` : "")) : null,
+      ultimaMensagem: info
+        ? info.excluida
+          ? "Mensagem apagada"
+          : (info.conteudo ?? (info.anexoNome ? `📎 ${info.anexoNome}` : ""))
+        : null,
       ultimaEm: info?.createdAt.toISOString() ?? null,
-      naoLidas: info?.naoLidas ?? 0,
+      naoLidas: naoLidasPorId.get(u.id) ?? 0,
     };
   });
 }
