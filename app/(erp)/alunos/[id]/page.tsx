@@ -9,8 +9,10 @@ import { CensoSecao } from "@/components/modules/alunos/CensoSecao";
 import { ContratoSecao } from "@/components/modules/alunos/ContratoSecao";
 import { MatriculaAcoes } from "@/components/modules/alunos/MatriculaAcoes";
 import { ResponsaveisSecao } from "@/components/modules/alunos/ResponsaveisSecao";
+import { NovaMatriculaModal } from "@/components/modules/alunos/NovaMatriculaModal";
 import { MensalidadeTable } from "@/components/modules/financeiro/MensalidadeTable";
 import { NovaCobrancaModal } from "@/components/modules/financeiro/NovaCobrancaModal";
+import { ordenarTurmas } from "@/lib/utils";
 
 export default async function AlunoPerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,16 +40,34 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
   const matriculasAtivas = aluno.matriculas.filter((m) => m.situacao === "ATIVA");
   const matriculaPrincipal = matriculasAtivas[0] ?? aluno.matriculas[0];
 
+  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const turmasBrutas = anoLetivo
+    ? ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo.id } }))
+    : [];
+  const turmasDisponiveis = await Promise.all(
+    turmasBrutas.map(async (t) => ({
+      ...t,
+      matriculados: await prisma.matricula.count({ where: { turmaId: t.id, situacao: "ATIVA" } }),
+    }))
+  );
+  const turmaIdsDoAluno = new Set(matriculasAtivas.map((m) => m.turmaId));
+
   return (
     <div>
       <PageHeader
         title={aluno.nome}
         breadcrumb={[{ label: "Alunos", href: "/alunos" }, { label: aluno.nome }]}
         action={
-          <Button href={`/api/alunos/${aluno.id}/ficha`} variant="outline">
-            <FileDown className="h-4 w-4" />
-            Baixar ficha PDF
-          </Button>
+          <div className="flex items-center gap-2">
+            <NovaMatriculaModal
+              alunoId={aluno.id}
+              turmas={turmasDisponiveis.filter((t) => !turmaIdsDoAluno.has(t.id))}
+            />
+            <Button href={`/api/alunos/${aluno.id}/ficha`} variant="outline">
+              <FileDown className="h-4 w-4" />
+              Baixar ficha PDF
+            </Button>
+          </div>
         }
       />
 
@@ -69,7 +89,11 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
                 action={
                   <div className="flex items-center gap-2">
                     <NovaCobrancaModal matriculaId={m.id} />
-                    <MatriculaAcoes matriculaId={m.id} situacaoAtual={m.situacao} />
+                    <MatriculaAcoes
+                      matriculaId={m.id}
+                      situacaoAtual={m.situacao}
+                      turmasDisponiveis={turmasDisponiveis.filter((t) => t.id !== m.turmaId)}
+                    />
                   </div>
                 }
               >

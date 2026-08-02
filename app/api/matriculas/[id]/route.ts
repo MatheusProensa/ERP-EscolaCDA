@@ -11,10 +11,51 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
-  const { situacao } = body;
+  const { situacao, turmaId } = body;
 
-  if (!situacao || !SITUACOES.includes(situacao)) {
+  if (situacao !== undefined && !SITUACOES.includes(situacao)) {
     return NextResponse.json({ error: "Situação inválida" }, { status: 400 });
+  }
+
+  // Transferência de turma de verdade: move a mesma matrícula (mantém histórico de
+  // mensalidades) pra outra turma do mesmo ano letivo, checando vaga antes.
+  if (turmaId) {
+    const [matriculaAtual, turmaDestino] = await Promise.all([
+      prisma.matricula.findUnique({ where: { id }, include: { turma: true } }),
+      prisma.turma.findUnique({ where: { id: turmaId } }),
+    ]);
+    if (!matriculaAtual) return NextResponse.json({ error: "Matrícula não encontrada" }, { status: 404 });
+    if (!turmaDestino) return NextResponse.json({ error: "Turma de destino não encontrada" }, { status: 400 });
+    if (turmaDestino.anoLetivoId !== matriculaAtual.anoLetivoId) {
+      return NextResponse.json({ error: "A turma de destino precisa ser do mesmo ano letivo" }, { status: 400 });
+    }
+
+    const matriculados = await prisma.matricula.count({
+      where: { turmaId, situacao: "ATIVA" },
+    });
+    if (matriculados >= turmaDestino.capacidade) {
+      return NextResponse.json(
+        { error: `A turma ${turmaDestino.nome} já está com a capacidade cheia (${matriculados}/${turmaDestino.capacidade}).` },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const matricula = await prisma.matricula.update({ where: { id }, data: { turmaId } });
+
+      await prisma.logAtividade.create({
+        data: {
+          acao: `Transferido(a) de ${matriculaAtual.turma.nome} para ${turmaDestino.nome}`,
+          entidade: "Matricula",
+          entidadeId: id,
+          usuario: session.user.name ?? "Usuário",
+        },
+      });
+
+      return NextResponse.json(matricula);
+    } catch (err) {
+      return erroApi(err);
+    }
   }
 
   try {
