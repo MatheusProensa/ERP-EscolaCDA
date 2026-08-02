@@ -56,6 +56,8 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/api/estoque", roles: ADMINISTRATIVO },
   { prefixo: "/api/chaves", roles: ADMINISTRATIVO },
   { prefixo: "/api/usuarios", roles: GESTAO },
+  { prefixo: "/api/virada-ano-letivo", roles: GESTAO },
+  { prefixo: "/academico/virada-de-ano", roles: GESTAO },
 ];
 
 /** Rotas sem regra explícita (ex.: /dashboard) ficam liberadas pra qualquer usuário logado. */

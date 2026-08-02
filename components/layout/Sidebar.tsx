@@ -67,7 +67,10 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Direção",
-    items: [{ label: "Documentos", href: "/documentos", icon: FileText }],
+    items: [
+      { label: "Documentos", href: "/documentos", icon: FileText },
+      { label: "Virada de ano letivo", href: "/academico/virada-de-ano", icon: CalendarDays },
+    ],
   },
   {
     label: "Sistema",
