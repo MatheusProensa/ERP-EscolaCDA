@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
-import { Send, FileText, ArrowLeft, Search, Check, CheckCheck, Pencil, Trash2, X as XIcon } from "lucide-react";
+import { Send, FileText, ArrowLeft, Search, Check, CheckCheck, Pencil, Trash2, X as XIcon, Users } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { EmojiPicker } from "@/components/modules/chat/EmojiPicker";
+import { CriarGrupoModal } from "@/components/modules/chat/CriarGrupoModal";
 import { ROLE_LABEL } from "@/lib/permissoes";
 import { formatarDataHora } from "@/lib/utils";
 
-type Conversa = {
+type ConversaDireta = {
   id: string;
   name: string;
   role: string;
@@ -18,18 +19,135 @@ type Conversa = {
   online?: boolean;
 };
 
+type GrupoResumo = {
+  id: string;
+  nome: string;
+  tipo: "GRUPO" | "SETOR";
+  participantesCount: number;
+  ultimaMensagem: string | null;
+  ultimaEm: string | null;
+  naoLidas: number;
+};
+
+/** Item unificado da lista lateral — pode ser uma conversa direta (1:1) ou um
+ * grupo/canal de setor. `key` carrega o prefixo ("u:"/"g:") usado pra rotear
+ * cada ação (buscar mensagens, enviar, editar) pro endpoint certo. */
+type ItemConversa = {
+  key: string;
+  id: string;
+  tipo: "direto" | "grupo" | "setor";
+  nome: string;
+  role?: string;
+  participantesCount?: number;
+  ultimaMensagem: string | null;
+  ultimaEm: string | null;
+  naoLidas: number;
+  online?: boolean;
+};
+
+function combinarLista(diretos: ConversaDireta[], grupos: GrupoResumo[]): ItemConversa[] {
+  const itensGrupo: ItemConversa[] = grupos.map((g) => ({
+    key: `g:${g.id}`,
+    id: g.id,
+    tipo: g.tipo === "SETOR" ? "setor" : "grupo",
+    nome: g.nome,
+    participantesCount: g.participantesCount,
+    ultimaMensagem: g.ultimaMensagem,
+    ultimaEm: g.ultimaEm,
+    naoLidas: g.naoLidas,
+  }));
+  const itensDireto: ItemConversa[] = diretos.map((c) => ({
+    key: `u:${c.id}`,
+    id: c.id,
+    tipo: "direto",
+    nome: c.name,
+    role: c.role,
+    ultimaMensagem: c.ultimaMensagem,
+    ultimaEm: c.ultimaEm,
+    naoLidas: c.naoLidas,
+    online: c.online,
+  }));
+  // Sort estável: quem tem mensagem mais recente sobe; sem nenhuma mensagem ainda,
+  // mantém grupos/canais antes dos contatos diretos (ordem de chegada nos arrays).
+  return [...itensGrupo, ...itensDireto].sort((a, b) => {
+    if (!a.ultimaEm && !b.ultimaEm) return 0;
+    if (!a.ultimaEm) return 1;
+    if (!b.ultimaEm) return -1;
+    return new Date(b.ultimaEm).getTime() - new Date(a.ultimaEm).getTime();
+  });
+}
+
 type Mensagem = {
+  id: string;
+  remetenteId: string;
+  /** Só presente em mensagens de grupo/setor — em conversa direta o nome vem de
+   * `conversaAtual.nome` (o outro usuário) ou `meNome` (mensagem própria). */
+  remetenteNome?: string;
+  conteudo: string | null;
+  anexo: string | null;
+  anexoNome: string | null;
+  createdAt: string;
+  /** Só existe em conversa direta — grupo não tem recibo de leitura por mensagem. */
+  lida?: boolean;
+  excluida: boolean;
+  editadaEm: string | null;
+};
+
+type MensagemDiretoBruta = {
   id: string;
   remetenteId: string;
   destinatarioId: string;
   conteudo: string | null;
   anexo: string | null;
   anexoNome: string | null;
-  createdAt: string;
   lida: boolean;
   excluida: boolean;
   editadaEm: string | null;
+  createdAt: string;
 };
+
+type MensagemGrupoBruta = {
+  id: string;
+  remetenteId: string;
+  remetente: { id: string; name: string };
+  conteudo: string | null;
+  anexo: string | null;
+  anexoNome: string | null;
+  excluida: boolean;
+  editadaEm: string | null;
+  createdAt: string;
+};
+
+function ehMensagemGrupo(m: MensagemDiretoBruta | MensagemGrupoBruta): m is MensagemGrupoBruta {
+  return "remetente" in m;
+}
+
+function normalizarMensagem(m: MensagemDiretoBruta | MensagemGrupoBruta): Mensagem {
+  if (ehMensagemGrupo(m)) {
+    return {
+      id: m.id,
+      remetenteId: m.remetenteId,
+      remetenteNome: m.remetente?.name,
+      conteudo: m.conteudo,
+      anexo: m.anexo,
+      anexoNome: m.anexoNome,
+      createdAt: m.createdAt,
+      excluida: m.excluida,
+      editadaEm: m.editadaEm,
+    };
+  }
+  return {
+    id: m.id,
+    remetenteId: m.remetenteId,
+    conteudo: m.conteudo,
+    anexo: m.anexo,
+    anexoNome: m.anexoNome,
+    lida: m.lida,
+    createdAt: m.createdAt,
+    excluida: m.excluida,
+    editadaEm: m.editadaEm,
+  };
+}
 
 /** "Hoje" / "Ontem" / "23 de julho" — separador de data entre grupos de mensagens. */
 function rotuloData(data: Date): string {
@@ -81,6 +199,17 @@ function mesclarMensagens(atual: Mensagem[], novas: Mensagem[]): Mensagem[] {
   return semDuplicata.length > 0 ? [...atual, ...semDuplicata] : atual;
 }
 
+/** Monta a URL de mensagens certa a partir da key ("u:<id>" ou "g:<id>"). */
+function urlMensagens(key: string): string {
+  const [tipo, id] = key.split(":");
+  return tipo === "u" ? `/api/chat/${id}` : `/api/grupos/${id}/mensagens`;
+}
+
+function urlMensagemAcao(key: string, msgId: string): string {
+  const [tipo] = key.split(":");
+  return tipo === "u" ? `/api/chat/mensagem/${msgId}` : `/api/grupos/mensagem/${msgId}`;
+}
+
 export function ChatApp({
   meId,
   meNome,
@@ -91,9 +220,10 @@ export function ChatApp({
   /** NOVO: precisa do nome de quem está logado pra rotular o próprio balão de mensagem. */
   meNome: string;
   selecionadoInicial?: string;
-  conversasIniciais?: Conversa[];
+  conversasIniciais?: ConversaDireta[];
 }) {
-  const [conversas, setConversas] = useState<Conversa[]>(conversasIniciais ?? []);
+  const [diretos, setDiretos] = useState<ConversaDireta[]>(conversasIniciais ?? []);
+  const [grupos, setGrupos] = useState<GrupoResumo[]>([]);
   const [carregandoConversas, setCarregandoConversas] = useState(!conversasIniciais);
   const [erroConversas, setErroConversas] = useState(false);
   const [buscaConversa, setBuscaConversa] = useState("");
@@ -126,11 +256,12 @@ export function ChatApp({
       if (document.hidden || buscandoConversasRef.current) return;
       buscandoConversasRef.current = true;
       try {
-        const res = await fetch("/api/chat");
-        if (!res.ok) throw new Error("resposta não-ok");
-        const dados = await res.json();
+        const [resDiretos, resGrupos] = await Promise.all([fetch("/api/chat"), fetch("/api/grupos")]);
+        if (!resDiretos.ok || !resGrupos.ok) throw new Error("resposta não-ok");
+        const [dadosDiretos, dadosGrupos] = await Promise.all([resDiretos.json(), resGrupos.json()]);
         if (cancelado) return;
-        setConversas(dados);
+        setDiretos(dadosDiretos);
+        setGrupos(dadosGrupos);
         setErroConversas(false);
       } catch {
         if (!cancelado) setErroConversas(true);
@@ -161,24 +292,26 @@ export function ChatApp({
     // erroMensagens/temMaisAntigas não precisam resetar aqui: enquanto o fetch da
     // conversa nova não volta, "trocandoConversa" já esconde os dois na tela, e
     // carregarMensagens(false) abaixo define o valor certo assim que responde.
-    const idConversa = selecionado;
+    const chaveConversa = selecionado;
+    const base = urlMensagens(chaveConversa);
 
     async function carregarMensagens(incremental: boolean) {
       if (incremental && (document.hidden || buscandoMensagensRef.current)) return;
       buscandoMensagensRef.current = true;
       try {
         const desde = incremental && ultimaMensagemEmRef.current ? `?desde=${encodeURIComponent(ultimaMensagemEmRef.current)}` : "";
-        const res = await fetch(`/api/chat/${idConversa}${desde}`);
+        const res = await fetch(`${base}${desde}`);
         if (!res.ok) throw new Error("resposta não-ok");
         if (cancelado) return;
         // "temMais" só é preenchido pela API na paginação pra cima (antes=), não aqui.
-        const { mensagens: novas }: { mensagens: Mensagem[] } = await res.json();
+        const { mensagens: brutas }: { mensagens: (MensagemDiretoBruta | MensagemGrupoBruta)[] } = await res.json();
+        const novas = brutas.map(normalizarMensagem);
 
         if (!incremental) {
           // Troca de conversa: só substitui quando os dados novos chegam — mantém as
           // mensagens antigas na tela até lá, em vez de piscar pra uma lista vazia.
           if (novas.length > 0) ultimaMensagemEmRef.current = novas[novas.length - 1].createdAt;
-          setMensagensDeId(idConversa);
+          setMensagensDeId(chaveConversa);
           setMensagens(novas);
           setTemMaisAntigas(novas.length >= 50);
           setErroMensagens(false);
@@ -216,10 +349,13 @@ export function ChatApp({
     setCarregandoAntigas(true);
     try {
       const maisAntiga = mensagens[0].createdAt;
-      const res = await fetch(`/api/chat/${selecionado}?antes=${encodeURIComponent(maisAntiga)}`);
+      const res = await fetch(`${urlMensagens(selecionado)}?antes=${encodeURIComponent(maisAntiga)}`);
       if (!res.ok) throw new Error("resposta não-ok");
-      const { mensagens: antigas, temMais }: { mensagens: Mensagem[]; temMais?: boolean } = await res.json();
-      setMensagens((atual) => mesclarMensagens(antigas, atual));
+      const {
+        mensagens: antigasBrutas,
+        temMais,
+      }: { mensagens: (MensagemDiretoBruta | MensagemGrupoBruta)[]; temMais?: boolean } = await res.json();
+      setMensagens((atual) => mesclarMensagens(antigasBrutas.map(normalizarMensagem), atual));
       setTemMaisAntigas(!!temMais);
     } catch {
       // silencioso — o botão continua ali pra tentar de novo
@@ -232,12 +368,23 @@ export function ChatApp({
     fimRef.current?.scrollIntoView({ block: "end" });
   }, [mensagens]);
 
-  function selecionar(userId: string) {
-    setSelecionado(userId);
+  function selecionar(key: string) {
+    setSelecionado(key);
     // Atualiza a URL sem navegação do Next (evita re-render do Server Component
     // e um novo round-trip de listarConversas a cada troca de conversa — o
     // ChatApp já é autossuficiente e gerencia os dados via polling próprio).
-    window.history.replaceState(null, "", `/chat/${userId}`);
+    const [tipo, id] = key.split(":");
+    window.history.replaceState(null, "", tipo === "u" ? `/chat/${id}` : `/chat/g/${id}`);
+  }
+
+  async function aposGrupoCriado(grupo: { id: string; nome: string; tipo: "GRUPO" }) {
+    try {
+      const res = await fetch("/api/grupos");
+      if (res.ok) setGrupos(await res.json());
+    } catch {
+      // silencioso — a lista de grupos atualiza sozinha no próximo poll
+    }
+    selecionar(`g:${grupo.id}`);
   }
 
   async function enviar(e: FormEvent) {
@@ -245,7 +392,7 @@ export function ChatApp({
     if (!selecionado || (!texto.trim() && !anexo) || enviando) return;
 
     setEnviando(true);
-    const res = await fetch(`/api/chat/${selecionado}`, {
+    const res = await fetch(urlMensagens(selecionado), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -257,7 +404,8 @@ export function ChatApp({
     setEnviando(false);
 
     if (res.ok) {
-      const nova = await res.json();
+      const bruta: MensagemDiretoBruta | MensagemGrupoBruta = await res.json();
+      const nova = normalizarMensagem(bruta);
       // Avança o cursor de polling pra essa mensagem já entrar como "vista" —
       // sem isso, o próximo poll buscava "tudo desde X" (X ainda apontando
       // pra antes dela) e a mesma mensagem voltava duplicada.
@@ -274,16 +422,16 @@ export function ChatApp({
   }
 
   async function salvarEdicao() {
-    if (!editandoMsgId || !textoEdicao.trim()) return;
+    if (!editandoMsgId || !textoEdicao.trim() || !selecionado) return;
     setSalvandoEdicao(true);
-    const res = await fetch(`/api/chat/mensagem/${editandoMsgId}`, {
+    const res = await fetch(urlMensagemAcao(selecionado, editandoMsgId), {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ conteudo: textoEdicao.trim() }),
     });
     setSalvandoEdicao(false);
     if (res.ok) {
-      const atualizada = await res.json();
+      const atualizada = normalizarMensagem(await res.json());
       setMensagens((atual) => atual.map((m) => (m.id === atualizada.id ? atualizada : m)));
       setEditandoMsgId(null);
       setTextoEdicao("");
@@ -291,28 +439,30 @@ export function ChatApp({
   }
 
   async function excluirMensagem(id: string) {
-    if (!confirm("Apagar esta mensagem? Vira \"Mensagem apagada\" pro destinatário também.")) return;
-    const res = await fetch(`/api/chat/mensagem/${id}`, { method: "DELETE" });
+    if (!selecionado) return;
+    if (!confirm('Apagar esta mensagem? Vira "Mensagem apagada" pros outros também.')) return;
+    const res = await fetch(urlMensagemAcao(selecionado, id), { method: "DELETE" });
     if (res.ok) {
-      const atualizada = await res.json();
+      const atualizada = normalizarMensagem(await res.json());
       setMensagens((atual) => atual.map((m) => (m.id === atualizada.id ? atualizada : m)));
     }
   }
 
-  const conversaAtual = conversas.find((c) => c.id === selecionado);
-  const conversasFiltradas = useMemo(() => {
+  const itensLista = useMemo(() => combinarLista(diretos, grupos), [diretos, grupos]);
+  const conversaAtual = itensLista.find((c) => c.key === selecionado);
+  const itensFiltrados = useMemo(() => {
     const termo = buscaConversa.trim().toLowerCase();
-    if (!termo) return conversas;
-    return conversas.filter((c) => c.name.toLowerCase().includes(termo));
-  }, [conversas, buscaConversa]);
+    if (!termo) return itensLista;
+    return itensLista.filter((c) => c.nome.toLowerCase().includes(termo));
+  }, [itensLista, buscaConversa]);
   const itensConversa = useMemo(() => montarItens(mensagens), [mensagens]);
   const trocandoConversa = selecionado !== mensagensDeId;
 
   return (
     <div className="mt-2 flex min-h-0 flex-1 overflow-hidden rounded-[10px] border border-cda-border bg-cda-surface">
       <div className={`flex w-full shrink-0 flex-col border-r border-cda-border sm:w-72 ${selecionado ? "hidden sm:flex" : ""}`}>
-        <div className="border-b border-cda-border p-2.5">
-          <div className="relative">
+        <div className="flex items-center gap-1.5 border-b border-cda-border p-2.5">
+          <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-cda-text3" />
             <input
               type="text"
@@ -323,6 +473,7 @@ export function ChatApp({
               className="h-8 w-full rounded-lg border border-cda-border bg-cda-bg pl-8 pr-2.5 text-sm text-cda-text placeholder:text-cda-text3 outline-none transition-colors focus:border-cda-blue focus:bg-white"
             />
           </div>
+          <CriarGrupoModal usuarios={diretos.map((d) => ({ id: d.id, name: d.name, role: d.role }))} onCriado={aposGrupoCriado} />
         </div>
         <div className="flex-1 overflow-y-auto">
           {carregandoConversas &&
@@ -335,27 +486,33 @@ export function ChatApp({
                 </div>
               </div>
             ))}
-          {!carregandoConversas && erroConversas && conversas.length === 0 && (
+          {!carregandoConversas && erroConversas && itensLista.length === 0 && (
             <p className="px-4 py-6 text-center text-sm text-cda-red">
               Não foi possível carregar. Tentando de novo em instantes...
             </p>
           )}
-          {!carregandoConversas && !erroConversas && conversas.length === 0 && (
-            <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhum outro perfil cadastrado.</p>
+          {!carregandoConversas && !erroConversas && itensLista.length === 0 && (
+            <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhuma conversa disponível.</p>
           )}
-          {!carregandoConversas && conversas.length > 0 && conversasFiltradas.length === 0 && (
+          {!carregandoConversas && itensLista.length > 0 && itensFiltrados.length === 0 && (
             <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhuma conversa com esse nome.</p>
           )}
-          {conversasFiltradas.map((c) => (
+          {itensFiltrados.map((c) => (
             <button
-              key={c.id}
-              onClick={() => selecionar(c.id)}
+              key={c.key}
+              onClick={() => selecionar(c.key)}
               className={`flex w-full items-center gap-3 border-b border-cda-border px-4 py-3 text-left transition-colors hover:bg-cda-bg ${
-                selecionado === c.id ? "bg-cda-bg" : ""
+                selecionado === c.key ? "bg-cda-bg" : ""
               }`}
             >
               <div className="relative shrink-0">
-                <Avatar nome={c.name} size="md" />
+                {c.tipo === "direto" ? (
+                  <Avatar nome={c.nome} size="md" />
+                ) : (
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-cda-blue/10 text-cda-blue">
+                    <Users className="h-4 w-4" />
+                  </div>
+                )}
                 {c.online && (
                   <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-cda-green" />
                 )}
@@ -363,7 +520,7 @@ export function ChatApp({
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className={`truncate text-sm ${c.naoLidas > 0 ? "font-bold text-cda-text" : "font-semibold text-cda-text"}`}>
-                    {c.name}
+                    {c.nome}
                   </span>
                   {c.ultimaEm && (
                     <span className="shrink-0 text-[11px] text-cda-text3">{formatarDataHora(c.ultimaEm).split(" ").pop()}</span>
@@ -371,7 +528,10 @@ export function ChatApp({
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <p className={`truncate text-xs ${c.naoLidas > 0 ? "font-medium text-cda-text2" : "text-cda-text3"}`}>
-                    {c.ultimaMensagem || (ROLE_LABEL[c.role] ?? c.role)}
+                    {c.ultimaMensagem ||
+                      (c.tipo === "direto"
+                        ? ROLE_LABEL[c.role ?? ""] ?? c.role
+                        : `${c.tipo === "setor" ? "Canal de setor" : "Grupo"} · ${c.participantesCount} participante(s)`)}
                   </p>
                   {c.naoLidas > 0 && (
                     <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-cda-red px-1 text-[11px] font-bold text-white">
@@ -391,7 +551,7 @@ export function ChatApp({
             <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white">
               <Send className="h-5 w-5 text-cda-text3" />
             </div>
-            Selecione um perfil pra conversar.
+            Selecione uma conversa.
           </div>
         ) : (
           <>
@@ -402,17 +562,29 @@ export function ChatApp({
               {conversaAtual ? (
                 <>
                   <div className="relative">
-                    <Avatar nome={conversaAtual.name} size="sm" />
+                    {conversaAtual.tipo === "direto" ? (
+                      <Avatar nome={conversaAtual.nome} size="sm" />
+                    ) : (
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-cda-blue/10 text-cda-blue">
+                        <Users className="h-4 w-4" />
+                      </div>
+                    )}
                     {conversaAtual.online && (
                       <span className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full border-2 border-white bg-cda-green" />
                     )}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-cda-text">{conversaAtual.name}</p>
-                    <p className={`flex items-center gap-1 text-xs ${conversaAtual.online ? "text-cda-green" : "text-cda-text3"}`}>
-                      {conversaAtual.online && <span className="h-1.5 w-1.5 rounded-full bg-cda-green" />}
-                      {conversaAtual.online ? "Online" : ROLE_LABEL[conversaAtual.role] ?? conversaAtual.role}
-                    </p>
+                    <p className="text-sm font-semibold text-cda-text">{conversaAtual.nome}</p>
+                    {conversaAtual.tipo === "direto" ? (
+                      <p className={`flex items-center gap-1 text-xs ${conversaAtual.online ? "text-cda-green" : "text-cda-text3"}`}>
+                        {conversaAtual.online && <span className="h-1.5 w-1.5 rounded-full bg-cda-green" />}
+                        {conversaAtual.online ? "Online" : ROLE_LABEL[conversaAtual.role ?? ""] ?? conversaAtual.role}
+                      </p>
+                    ) : (
+                      <p className="text-xs text-cda-text3">
+                        {conversaAtual.tipo === "setor" ? "Canal de setor" : "Grupo"} · {conversaAtual.participantesCount} participante(s)
+                      </p>
+                    )}
                   </div>
                 </>
               ) : (
@@ -464,7 +636,7 @@ export function ChatApp({
 
                   const m = item.mensagem;
                   const minha = m.remetenteId === meId;
-                  const nome = minha ? meNome : conversaAtual?.name ?? "";
+                  const nome = minha ? meNome : conversaAtual?.tipo === "direto" ? conversaAtual?.nome ?? "" : m.remetenteNome ?? "";
                   const imagem = m.anexo?.startsWith("data:image") ?? false;
                   const editandoEssa = editandoMsgId === m.id;
 
@@ -580,7 +752,7 @@ export function ChatApp({
                             >
                               {m.editadaEm && !m.excluida && <span className="italic">editado ·</span>}
                               {formatarDataHora(m.createdAt).split(" ").pop()}
-                              {minha && !m.excluida && (m.lida ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />)}
+                              {minha && !m.excluida && m.lida !== undefined && (m.lida ? <CheckCheck className="h-3 w-3" /> : <Check className="h-3 w-3" />)}
                             </div>
                           </div>
                         )}

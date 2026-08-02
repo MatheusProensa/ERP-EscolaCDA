@@ -27,6 +27,9 @@ model User {
   notificacoes       Notificacao[]
   avisosMural        MuralAviso[]
   leiturasAvisos     AvisoLeitura[]
+  conversasCriadas   Conversa[]             @relation("ConversasCriadas")
+  participacoes      ConversaParticipante[]
+  mensagensGrupo     MensagemGrupo[]
 }
 
 model Mensagem {
@@ -45,6 +48,54 @@ model Mensagem {
 
   @@index([remetenteId, destinatarioId])
   @@index([destinatarioId, lida])
+}
+
+enum TipoConversa {
+  GRUPO
+  SETOR
+}
+
+model Conversa {
+  id            String                 @id @default(cuid())
+  nome          String
+  tipo          TipoConversa
+  /// Preenchido só quando tipo = SETOR (ex.: "PEDAGOGICO", ou "TODOS" pro canal geral).
+  role          String?
+  criadaPor     User?                  @relation("ConversasCriadas", fields: [criadaPorId], references: [id])
+  criadaPorId   String?
+  participantes ConversaParticipante[]
+  mensagens     MensagemGrupo[]
+  createdAt     DateTime               @default(now())
+
+  @@unique([tipo, role])
+}
+
+model ConversaParticipante {
+  id              String    @id @default(cuid())
+  conversa        Conversa  @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  conversaId      String
+  usuario         User      @relation(fields: [usuarioId], references: [id])
+  usuarioId       String
+  ultimaLeituraEm DateTime?
+  createdAt       DateTime  @default(now())
+
+  @@unique([conversaId, usuarioId])
+}
+
+model MensagemGrupo {
+  id          String    @id @default(cuid())
+  conversa    Conversa  @relation(fields: [conversaId], references: [id], onDelete: Cascade)
+  conversaId  String
+  remetente   User      @relation(fields: [remetenteId], references: [id])
+  remetenteId String
+  conteudo    String?
+  anexoNome   String?
+  anexo       String?
+  excluida    Boolean   @default(false)
+  editadaEm   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([conversaId, createdAt])
 }
 
 model Notificacao {

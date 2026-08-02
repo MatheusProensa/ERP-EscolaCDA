@@ -8,13 +8,16 @@ export default async function ChatPage({ params }: { params: Promise<{ userId?: 
   const session = await auth();
   const conversasIniciais = await listarConversas(session!.user.id);
 
+  const selecionadoInicial =
+    userId && userId.length > 0 ? (userId[0] === "g" && userId[1] ? `g:${userId[1]}` : `u:${userId[0]}`) : undefined;
+
   return (
     <div className="flex h-[calc(100vh-7.5rem)] flex-col">
       <PageHeader title="Chat" subtitle="Converse com outros perfis do sistema" />
       <ChatApp
         meId={session!.user.id}
         meNome={session!.user.name ?? "Você"}
-        selecionadoInicial={userId?.[0]}
+        selecionadoInicial={selecionadoInicial}
         conversasIniciais={conversasIniciais}
       />
     </div>
