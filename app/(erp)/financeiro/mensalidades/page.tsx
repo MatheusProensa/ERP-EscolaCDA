@@ -13,12 +13,15 @@ const MESES = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
+const POR_PAGINA = 100;
+
 export default async function MensalidadesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string; situacao?: string; turma?: string; busca?: string }>;
+  searchParams: Promise<{ mes?: string; situacao?: string; turma?: string; busca?: string; pagina?: string }>;
 }) {
-  const { mes, situacao, turma, busca } = await searchParams;
+  const { mes, situacao, turma, busca, pagina: paginaRaw } = await searchParams;
+  const pagina = Math.max(1, Number(paginaRaw) || 1);
   const hoje = new Date();
 
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
@@ -34,20 +37,23 @@ export default async function MensalidadesPage({
     situacaoWhere = { situacao: situacao as SituacaoMensalidade };
   }
 
-  // turmas (pro dropdown) e mensalidades só dependem do anoLetivo, uma não depende da outra —
-  // rodam em paralelo em vez de round-trips sequenciais ao banco.
-  const [turmasRaw, mensalidades] = await Promise.all([
+  const where = {
+    mes: mes ? Number(mes) : undefined,
+    ...situacaoWhere,
+    matricula: {
+      anoLetivoId: anoLetivo?.id,
+      turmaId: turma || undefined,
+      aluno: busca ? { nome: { contains: busca, mode: "insensitive" as const } } : undefined,
+    },
+  };
+
+  // turmas (pro dropdown), total pra paginação e a página atual de mensalidades não
+  // dependem uma da outra — rodam em paralelo em vez de round-trips sequenciais ao banco.
+  const [turmasRaw, total, mensalidades] = await Promise.all([
     prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }),
+    prisma.mensalidade.count({ where }),
     prisma.mensalidade.findMany({
-      where: {
-        mes: mes ? Number(mes) : undefined,
-        ...situacaoWhere,
-        matricula: {
-          anoLetivoId: anoLetivo?.id,
-          turmaId: turma || undefined,
-          aluno: busca ? { nome: { contains: busca, mode: "insensitive" } } : undefined,
-        },
-      },
+      where,
       select: {
         id: true,
         mes: true,
@@ -65,16 +71,29 @@ export default async function MensalidadesPage({
         },
       },
       orderBy: [{ vencimento: "asc" }],
-      take: 200,
+      skip: (pagina - 1) * POR_PAGINA,
+      take: POR_PAGINA,
     }),
   ]);
   const turmas = ordenarTurmas(turmasRaw);
+  const totalPaginas = Math.max(1, Math.ceil(total / POR_PAGINA));
+
+  const paramsBase = new URLSearchParams();
+  if (mes) paramsBase.set("mes", mes);
+  if (situacao) paramsBase.set("situacao", situacao);
+  if (turma) paramsBase.set("turma", turma);
+  if (busca) paramsBase.set("busca", busca);
+  function hrefPagina(p: number) {
+    const params = new URLSearchParams(paramsBase);
+    params.set("pagina", String(p));
+    return `/financeiro/mensalidades?${params.toString()}`;
+  }
 
   return (
     <div>
       <PageHeader
         title="Mensalidades"
-        subtitle={`${mensalidades.length} mensalidade(s) encontrada(s)`}
+        subtitle={`${total} mensalidade(s) encontrada(s)`}
         breadcrumb={[{ label: "Financeiro", href: "/financeiro" }, { label: "Mensalidades" }]}
       />
 
@@ -112,6 +131,31 @@ export default async function MensalidadesPage({
 
       <Card>
         <MensalidadesGerenciar mensalidades={mensalidades} />
+        {totalPaginas > 1 && (
+          <div className="flex items-center justify-center gap-4 border-t border-cda-border py-3 text-sm">
+            {pagina > 1 ? (
+              <Button href={hrefPagina(pagina - 1)} variant="outline" size="sm">
+                Anterior
+              </Button>
+            ) : (
+              <span className="inline-flex h-8 items-center rounded-lg border border-cda-border bg-white px-3 text-xs text-cda-text3 opacity-50">
+                Anterior
+              </span>
+            )}
+            <span className="text-cda-text3">
+              Página {pagina} de {totalPaginas}
+            </span>
+            {pagina < totalPaginas ? (
+              <Button href={hrefPagina(pagina + 1)} variant="outline" size="sm">
+                Próxima
+              </Button>
+            ) : (
+              <span className="inline-flex h-8 items-center rounded-lg border border-cda-border bg-white px-3 text-xs text-cda-text3 opacity-50">
+                Próxima
+              </span>
+            )}
+          </div>
+        )}
       </Card>
     </div>
   );

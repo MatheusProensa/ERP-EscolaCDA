@@ -19,11 +19,33 @@ const TIPO_STYLE: Record<TipoMov, { label: string; bg: string; cor: string; sina
   ESTORNO: { label: "Estorno", bg: "#6B72801A", cor: "#6B7280", sinal: "" },
 };
 
-export function MovimentacoesTab({ movimentacoes }: { movimentacoes: MovimentacaoComItem[] }) {
+export function MovimentacoesTab({ movimentacoes: movimentacoesIniciais }: { movimentacoes: MovimentacaoComItem[] }) {
   const router = useRouter();
+  const [movimentacoes, setMovimentacoes] = useState(movimentacoesIniciais);
   const [busca, setBusca] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("");
   const [estornandoId, setEstornandoId] = useState<string | null>(null);
+  // A página só traz as 100 mais recentes — "temMais" indica se dá pra buscar um
+  // lote mais antigo ainda (movimentação é um log que só cresce com o tempo).
+  const [temMais, setTemMais] = useState(movimentacoesIniciais.length === 100);
+  const [carregandoMais, setCarregandoMais] = useState(false);
+
+  async function carregarMais() {
+    if (movimentacoes.length === 0 || carregandoMais) return;
+    setCarregandoMais(true);
+    try {
+      const maisAntiga = movimentacoes[movimentacoes.length - 1].createdAt;
+      const res = await fetch(`/api/estoque/movimentacoes?antes=${encodeURIComponent(new Date(maisAntiga).toISOString())}`);
+      if (!res.ok) throw new Error("resposta não-ok");
+      const { movimentacoes: antigas, temMais: maisAntigasDisponiveis } = await res.json();
+      setMovimentacoes((atual) => [...atual, ...antigas]);
+      setTemMais(maisAntigasDisponiveis);
+    } catch {
+      // silencioso — o botão continua ali pra tentar de novo
+    } finally {
+      setCarregandoMais(false);
+    }
+  }
 
   async function estornar(mov: MovimentacaoComItem) {
     if (!confirm(`Estornar esta movimentação de "${mov.item.nome}"? O saldo do item volta ao estado anterior.`)) return;
@@ -129,6 +151,17 @@ export function MovimentacoesTab({ movimentacoes }: { movimentacoes: Movimentaca
             })}
           </TableBody>
         </Table>
+        {temMais && (
+          <div className="flex justify-center border-t border-cda-border py-3">
+            <button
+              onClick={carregarMais}
+              disabled={carregandoMais}
+              className="text-sm font-medium text-cda-blue hover:underline disabled:opacity-50"
+            >
+              {carregandoMais ? "Carregando..." : "Carregar movimentações mais antigas"}
+            </button>
+          </div>
+        )}
       </Card>
     </div>
   );
