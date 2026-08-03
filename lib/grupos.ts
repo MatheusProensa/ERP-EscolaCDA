@@ -9,18 +9,22 @@ export async function garantirCanaisDoUsuario(userId: string, role: string): Pro
     canaisNecessarios.push({ nome: ROLE_LABEL[role] ?? role, roleChave: role });
   }
 
-  for (const canal of canaisNecessarios) {
-    const conversa = await prisma.conversa.upsert({
-      where: { tipo_role: { tipo: "SETOR", role: canal.roleChave } },
-      update: {},
-      create: { tipo: "SETOR", role: canal.roleChave, nome: canal.nome },
-    });
-    await prisma.conversaParticipante.upsert({
-      where: { conversaId_usuarioId: { conversaId: conversa.id, usuarioId: userId } },
-      update: {},
-      create: { conversaId: conversa.id, usuarioId: userId },
-    });
-  }
+  // "Todos" e o canal do próprio setor são independentes um do outro — resolve
+  // os dois em paralelo em vez de round-trips sequenciais.
+  await Promise.all(
+    canaisNecessarios.map(async (canal) => {
+      const conversa = await prisma.conversa.upsert({
+        where: { tipo_role: { tipo: "SETOR", role: canal.roleChave } },
+        update: {},
+        create: { tipo: "SETOR", role: canal.roleChave, nome: canal.nome },
+      });
+      await prisma.conversaParticipante.upsert({
+        where: { conversaId_usuarioId: { conversaId: conversa.id, usuarioId: userId } },
+        update: {},
+        create: { conversaId: conversa.id, usuarioId: userId },
+      });
+    })
+  );
 }
 
 export async function contarNaoLidasGrupos(meId: string): Promise<number> {

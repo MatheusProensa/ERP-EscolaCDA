@@ -1,4 +1,6 @@
+import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calcularMes, horaParaMin, type RegistroPontoDia } from "@/lib/ponto";
@@ -101,33 +103,44 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       },
     });
 
-    for (const linha of linhas) {
-      const data = new Date(`${linha.data}T00:00:00.000Z`);
-      await tx.registroPonto.upsert({
-        where: { funcionarioId_data: { funcionarioId, data } },
-        create: {
-          funcionarioId,
-          data,
-          entrada1: linha.entrada1 ? horaParaMin(linha.entrada1) : null,
-          saida1: linha.saida1 ? horaParaMin(linha.saida1) : null,
-          entrada2: linha.entrada2 ? horaParaMin(linha.entrada2) : null,
-          saida2: linha.saida2 ? horaParaMin(linha.saida2) : null,
-          entrada3: linha.entrada3 ? horaParaMin(linha.entrada3) : null,
-          saida3: linha.saida3 ? horaParaMin(linha.saida3) : null,
-          ocorrencia: (linha.ocorrencia as never) ?? "NORMAL",
-          observacao: linha.observacao || null,
-        },
-        update: {
-          entrada1: linha.entrada1 ? horaParaMin(linha.entrada1) : null,
-          saida1: linha.saida1 ? horaParaMin(linha.saida1) : null,
-          entrada2: linha.entrada2 ? horaParaMin(linha.entrada2) : null,
-          saida2: linha.saida2 ? horaParaMin(linha.saida2) : null,
-          entrada3: linha.entrada3 ? horaParaMin(linha.entrada3) : null,
-          saida3: linha.saida3 ? horaParaMin(linha.saida3) : null,
-          ocorrencia: (linha.ocorrencia as never) ?? "NORMAL",
-          observacao: linha.observacao || null,
-        },
+    // Upsert em lote (1 round-trip) em vez de um upsert por dia do mês (até 31
+    // round-trips sequenciais dentro da mesma transação) — era o principal
+    // motivo de "Salvar" na folha de ponto demorar visivelmente.
+    if (linhas.length > 0) {
+      const valores = linhas.map((linha) => {
+        const data = new Date(`${linha.data}T00:00:00.000Z`);
+        return Prisma.sql`(
+          ${randomUUID()},
+          ${funcionarioId},
+          ${data},
+          ${linha.entrada1 ? horaParaMin(linha.entrada1) : null},
+          ${linha.saida1 ? horaParaMin(linha.saida1) : null},
+          ${linha.entrada2 ? horaParaMin(linha.entrada2) : null},
+          ${linha.saida2 ? horaParaMin(linha.saida2) : null},
+          ${linha.entrada3 ? horaParaMin(linha.entrada3) : null},
+          ${linha.saida3 ? horaParaMin(linha.saida3) : null},
+          ${linha.ocorrencia ?? "NORMAL"}::"OcorrenciaPonto",
+          ${linha.observacao || null},
+          now(),
+          now()
+        )`;
       });
+
+      await tx.$executeRaw`
+        INSERT INTO "RegistroPonto"
+          ("id", "funcionarioId", "data", "entrada1", "saida1", "entrada2", "saida2", "entrada3", "saida3", "ocorrencia", "observacao", "createdAt", "updatedAt")
+        VALUES ${Prisma.join(valores)}
+        ON CONFLICT ("funcionarioId", "data") DO UPDATE SET
+          "entrada1" = EXCLUDED."entrada1",
+          "saida1" = EXCLUDED."saida1",
+          "entrada2" = EXCLUDED."entrada2",
+          "saida2" = EXCLUDED."saida2",
+          "entrada3" = EXCLUDED."entrada3",
+          "saida3" = EXCLUDED."saida3",
+          "ocorrencia" = EXCLUDED."ocorrencia",
+          "observacao" = EXCLUDED."observacao",
+          "updatedAt" = now()
+      `;
     }
   });
 

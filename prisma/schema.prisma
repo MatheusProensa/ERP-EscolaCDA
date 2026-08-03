@@ -210,6 +210,8 @@ model Aluno {
   responsaveis        Responsavel[]
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
+
+  @@index([nome])
 }
 
 enum Sexo {
@@ -256,6 +258,13 @@ model Matricula {
   mensalidades  Mensalidade[]
   contrato      Contrato?
   updatedAt     DateTime          @updatedAt
+
+  @@index([alunoId])
+  @@index([turmaId])
+  @@index([situacao])
+  @@index([anoLetivoId])
+  // Combinação mais repetida no sistema (matrícula ativa do ano letivo corrente).
+  @@index([anoLetivoId, situacao])
 }
 
 enum SituacaoMatricula {
@@ -278,6 +287,10 @@ model Mensalidade {
   descricao   String?
   pagamentos  Pagamento[]
   createdAt   DateTime            @default(now())
+
+  @@index([matriculaId])
+  @@index([situacao])
+  @@index([mes, ano])
 }
 
 enum SituacaoMensalidade {
@@ -296,6 +309,8 @@ model Pagamento {
   formaPagamento FormaPagamento
   observacao     String?
   createdAt      DateTime       @default(now())
+
+  @@index([mensalidadeId])
 }
 
 enum FormaPagamento {
@@ -465,6 +480,8 @@ model LogAtividade {
   entidadeId String
   usuario    String
   createdAt  DateTime @default(now())
+
+  @@index([entidade, createdAt])
 }
 
 model EventoCalendario {

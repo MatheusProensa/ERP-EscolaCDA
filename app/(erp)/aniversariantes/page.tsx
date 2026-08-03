@@ -1,4 +1,5 @@
 import { Cake } from "lucide-react";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -199,11 +200,11 @@ function ListaAniversariantes({
           {pessoas.map((p) => (
             <Tr key={p.id}>
               <Td>
-                <a href={p.href} className="flex items-center gap-2.5 hover:text-cda-blue">
+                <Link href={p.href} className="flex items-center gap-2.5 hover:text-cda-blue">
                   <Avatar nome={p.nome} foto={p.foto} size="sm" />
                   {p.nome}
                   {eHoje(p.dataNascimento, hoje) && <Badge variant="amber">Hoje</Badge>}
-                </a>
+                </Link>
               </Td>
               <Td>{p.detalhe}</Td>
               <Td>

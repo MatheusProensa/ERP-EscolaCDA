@@ -5,7 +5,8 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
 import { ExportButtons } from "@/components/ui/ExportButtons";
-import { ResumoFinanceiro, type ResumoMensal } from "@/components/modules/financeiro/ResumoFinanceiro";
+import { ResumoFinanceiroLazy } from "@/components/modules/financeiro/ResumoFinanceiroLazy";
+import type { ResumoMensal } from "@/components/modules/financeiro/ResumoFinanceiro";
 import { saldoDevedor } from "@/lib/inadimplencia";
 import { formatarMoeda } from "@/lib/utils";
 
@@ -71,7 +72,7 @@ export default async function FinanceiroPage() {
         <MetricCard icon={Percent} iconColor="#D97706" value={`${taxaRecebimento.toFixed(0)}%`} label="Taxa de recebimento" subtext="Mês atual" />
       </div>
 
-      <ResumoFinanceiro dados={porMes} />
+      <ResumoFinanceiroLazy dados={porMes} />
     </div>
   );
 }
