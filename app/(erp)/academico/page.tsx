@@ -1,4 +1,5 @@
 import { GraduationCap, Users, DoorOpen, School } from "lucide-react";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
@@ -6,16 +7,19 @@ import { TurmaCard } from "@/components/modules/academico/TurmaCard";
 import { NovaTurmaModal } from "@/components/modules/academico/NovaTurmaModal";
 import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
 import { ordenarTurmas } from "@/lib/utils";
+import { GESTAO } from "@/lib/permissoes";
 
 export default async function AcademicoPage() {
+  const session = await auth();
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
 
-  const [turmasRaw, totalAlunos] = await Promise.all([
+  const [turmasRaw, totalAlunos, totalListaEspera] = await Promise.all([
     prisma.turma.findMany({
       where: { anoLetivoId: anoLetivo?.id },
       include: { _count: { select: { matriculas: { where: { situacao: "ATIVA" } } } } },
     }),
     prisma.matricula.count({ where: { anoLetivoId: anoLetivo?.id, situacao: "ATIVA" } }),
+    prisma.listaEspera.count(),
   ]);
   const vagasDisponiveis = turmasRaw.reduce((acc, t) => acc + Math.max(0, t.capacidade - t._count.matriculas), 0);
   const regulares = ordenarTurmas(turmasRaw.filter((t) => t.turno === "TARDE"));
@@ -42,7 +46,13 @@ export default async function AcademicoPage() {
         />
       </div>
 
-      <AcademicoTabs active="turmas" totalTurmas={turmasRaw.length} totalAlunos={totalAlunos} />
+      <AcademicoTabs
+        active="turmas"
+        totalTurmas={turmasRaw.length}
+        totalAlunos={totalAlunos}
+        totalListaEspera={totalListaEspera}
+        souGestao={GESTAO.includes(session!.user.role as (typeof GESTAO)[number])}
+      />
 
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-cda-text2">

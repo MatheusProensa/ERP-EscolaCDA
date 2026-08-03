@@ -1,5 +1,6 @@
 import { UserPlus } from "lucide-react";
 import Link from "next/link";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -11,6 +12,7 @@ import { AlunoTable } from "@/components/modules/alunos/AlunoTable";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
 import { ordenarTurmas } from "@/lib/utils";
+import { GESTAO } from "@/lib/permissoes";
 import type { SituacaoMatricula } from "@prisma/client";
 
 export default async function AlunosPage({
@@ -21,6 +23,8 @@ export default async function AlunosPage({
   const { turma, situacao, busca, censo } = await searchParams;
   const censoIncompleto = censo === "incompleto";
 
+  const session = await auth();
+  const totalListaEspera = await prisma.listaEspera.count();
   const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
   const turmas = ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }));
 
@@ -78,7 +82,12 @@ export default async function AlunosPage({
         }
       />
 
-      <AcademicoTabs active="alunos" totalAlunos={matriculas.length} />
+      <AcademicoTabs
+        active="alunos"
+        totalAlunos={matriculas.length}
+        totalListaEspera={totalListaEspera}
+        souGestao={GESTAO.includes(session!.user.role as (typeof GESTAO)[number])}
+      />
 
       {censoIncompleto && (
         <div className="mb-5 flex items-center gap-2">

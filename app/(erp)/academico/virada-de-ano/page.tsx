@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { ViradaAnoLetivoForm } from "@/components/modules/academico/ViradaAnoLetivoForm";
+import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
 import { ordenarTurmas } from "@/lib/utils";
 
 export default async function ViradaDeAnoPage() {
@@ -28,6 +29,8 @@ export default async function ViradaDeAnoPage() {
           { label: "Virada de ano letivo" },
         ]}
       />
+
+      <AcademicoTabs active="virada-de-ano" souGestao />
 
       {!anoLetivo ? (
         <p className="text-sm text-cda-text3">Nenhum ano letivo ativo encontrado.</p>
