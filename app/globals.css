@@ -70,18 +70,3 @@ body {
   [data-cda-scroll="dark"]::-webkit-scrollbar-thumb { background: rgb(255 255 255 / 25%); }
   [data-cda-scroll="dark"]::-webkit-scrollbar-thumb:hover { background: rgb(255 255 255 / 40%); }
 }
-
-/* NOVO — transição suave entre telas (troca de rota/aba), em vez do corte seco.
-   AppShell remonta este wrapper a cada navegação via key={pathname}. */
-@keyframes cda-page-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-page-in {
-  animation: cda-page-in 260ms ease-out;
-}
-@media (prefers-reduced-motion: reduce) {
-  .animate-page-in {
-    animation: none;
-  }
-}

@@ -235,7 +235,7 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
           {carregando ? (
             <div className="p-10 text-center text-sm text-cda-text3">Carregando...</div>
           ) : (
-            <div key={`${ano}-${mes}`} className="animate-page-in grid grid-cols-7 gap-px bg-cda-border">
+            <div key={`${ano}-${mes}`} className="grid grid-cols-7 gap-px bg-cda-border">
               {DIAS_SEMANA_ABREV.map((d) => (
                 <div key={d} className="bg-white py-2.5 text-center text-[11px] font-bold uppercase tracking-wide text-cda-text3">
                   {d}

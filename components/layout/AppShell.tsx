@@ -30,10 +30,8 @@ export function AppShell({
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar name={name} role={role} onMenuClick={() => setMenuAberto(true)} />
           <main className="flex-1 overflow-y-auto bg-cda-bg p-4 sm:p-5">
-            {/* Fade-in do conteúdo mora no template.tsx (remonta a cada navegação);
-                a barra de progresso acima (NavigationProgress) dá o feedback
-                imediato no clique, já que o Next não expõe quando exatamente o
-                Suspense do loading.tsx troca pro conteúdo real. */}
+            {/* Troca de página é corte seco (sem fade) — a barra de progresso acima
+                (NavigationProgress) já dá o feedback imediato no clique. */}
             <ErrorBoundary key={pathname}>{children}</ErrorBoundary>
           </main>
           {/* NOVO: rodapé institucional, presente em toda tela */}
