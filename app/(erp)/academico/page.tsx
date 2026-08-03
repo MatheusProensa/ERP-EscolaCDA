@@ -1,17 +1,15 @@
 import { GraduationCap, Users, DoorOpen, School } from "lucide-react";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { TurmaCard } from "@/components/modules/academico/TurmaCard";
 import { NovaTurmaModal } from "@/components/modules/academico/NovaTurmaModal";
 import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
 import { ordenarTurmas } from "@/lib/utils";
-import { GESTAO } from "@/lib/permissoes";
 
 export default async function AcademicoPage() {
-  const session = await auth();
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
 
   const [turmasRaw, totalAlunos, totalListaEspera] = await Promise.all([
     prisma.turma.findMany({
@@ -51,7 +49,6 @@ export default async function AcademicoPage() {
         totalTurmas={turmasRaw.length}
         totalAlunos={totalAlunos}
         totalListaEspera={totalListaEspera}
-        souGestao={GESTAO.includes(session!.user.role as (typeof GESTAO)[number])}
       />
 
       <section className="mb-8">

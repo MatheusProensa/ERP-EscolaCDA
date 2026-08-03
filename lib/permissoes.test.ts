@@ -21,7 +21,7 @@ describe("rotaPermitida", () => {
   it("ADMIN e DIRECAO (GESTAO) sempre têm acesso a tudo que tem regra", () => {
     expect(rotaPermitida("/financeiro", "ADMIN")).toBe(true);
     expect(rotaPermitida("/estoque", "DIRECAO")).toBe(true);
-    expect(rotaPermitida("/academico/virada-de-ano", "DIRECAO")).toBe(true);
+    expect(rotaPermitida("/api/backup", "DIRECAO")).toBe(true);
   });
 
   it("casa sub-rotas pelo prefixo (ex.: /alunos/123/editar)", () => {
@@ -45,8 +45,8 @@ describe("rotaPermitida", () => {
   });
 
   it("rotas de API espelham as regras das páginas correspondentes", () => {
-    expect(rotaPermitida("/api/virada-ano-letivo", "PEDAGOGICO")).toBe(false);
-    expect(rotaPermitida("/api/virada-ano-letivo", "DIRECAO")).toBe(true);
+    expect(rotaPermitida("/api/backup", "PEDAGOGICO")).toBe(false);
+    expect(rotaPermitida("/api/backup", "DIRECAO")).toBe(true);
   });
 
   it("role desconhecida (não cadastrada) nunca acessa rota restrita", () => {

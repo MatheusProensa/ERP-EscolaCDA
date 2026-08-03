@@ -1,7 +1,7 @@
 import { UserPlus } from "lucide-react";
 import Link from "next/link";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -12,7 +12,6 @@ import { AlunoTable } from "@/components/modules/alunos/AlunoTable";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
 import { ordenarTurmas } from "@/lib/utils";
-import { GESTAO } from "@/lib/permissoes";
 import type { SituacaoMatricula } from "@prisma/client";
 
 export default async function AlunosPage({
@@ -23,9 +22,8 @@ export default async function AlunosPage({
   const { turma, situacao, busca, censo } = await searchParams;
   const censoIncompleto = censo === "incompleto";
 
-  const session = await auth();
   const totalListaEspera = await prisma.listaEspera.count();
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
   const turmas = ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }));
 
   const matriculas = await prisma.matricula.findMany({
@@ -60,7 +58,9 @@ export default async function AlunosPage({
     select: {
       id: true,
       situacao: true,
-      aluno: { select: { id: true, nome: true, foto: true, dataNascimento: true } },
+      // "foto" fica de fora de propósito: é base64 e pesa MB por aluno — a listagem
+      // só mostra um avatar de 28px, então não vale trazer o arquivo inteiro aqui.
+      aluno: { select: { id: true, nome: true, dataNascimento: true } },
       turma: { select: { nome: true } },
     },
     orderBy: { aluno: { nome: "asc" } },
@@ -82,12 +82,7 @@ export default async function AlunosPage({
         }
       />
 
-      <AcademicoTabs
-        active="alunos"
-        totalAlunos={matriculas.length}
-        totalListaEspera={totalListaEspera}
-        souGestao={GESTAO.includes(session!.user.role as (typeof GESTAO)[number])}
-      />
+      <AcademicoTabs active="alunos" totalAlunos={matriculas.length} totalListaEspera={totalListaEspera} />
 
       {censoIncompleto && (
         <div className="mb-5 flex items-center gap-2">
