@@ -45,7 +45,7 @@ export type MensalidadeLinha = {
   situacao: SituacaoMensalidade;
   descricao: string | null;
   pagamentos: { id: string; dataPagamento: Date; valor: number }[];
-  matricula?: { aluno: { id: string; nome: string; foto: string | null }; turma: { nome: string } };
+  matricula?: { aluno: { id: string; nome: string }; turma: { nome: string } };
 };
 
 export function MensalidadeTable({
@@ -153,7 +153,7 @@ export function MensalidadeTable({
                       href={`/alunos/${m.matricula.aluno.id}`}
                       className="flex items-center gap-2.5 hover:text-cda-blue"
                     >
-                      <Avatar nome={m.matricula.aluno.nome} foto={m.matricula.aluno.foto} size="sm" />
+                      <Avatar nome={m.matricula.aluno.nome} size="sm" />
                       <span>
                         {m.matricula.aluno.nome}
                         <span className="block text-xs text-cda-text3">{m.matricula.turma.nome}</span>

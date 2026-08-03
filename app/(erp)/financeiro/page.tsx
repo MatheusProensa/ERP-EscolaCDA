@@ -1,5 +1,6 @@
 import { Wallet, TrendingUp, AlertCircle, Percent, Receipt, TriangleAlert } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Button } from "@/components/ui/Button";
@@ -11,7 +12,7 @@ import { formatarMoeda } from "@/lib/utils";
 const MESES_ABREV = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 export default async function FinanceiroPage() {
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
   const anoAtual = new Date().getFullYear();
   const mesAtual = new Date().getMonth() + 1;
 

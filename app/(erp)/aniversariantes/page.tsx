@@ -1,5 +1,6 @@
 import { Cake } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
@@ -42,13 +43,16 @@ export default async function AniversariantesPage({
   const mesFiltro = mes ? Number(mes) : hoje.getUTCMonth() + 1;
   const anoAtual = hoje.getUTCFullYear();
 
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
+  // NOVO: a foto (base64, pode pesar MB por aluno) só é buscada depois, e só de
+  // quem realmente faz aniversário no mês filtrado — antes trazia a foto de todo
+  // mundo matriculado só pra descartar a maioria no filtro em JS logo abaixo.
   const [matriculas, funcionarios] = await Promise.all([
     prisma.matricula.findMany({
       where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
       select: {
         alunoId: true,
-        aluno: { select: { nome: true, foto: true, dataNascimento: true } },
+        aluno: { select: { nome: true, dataNascimento: true } },
         turma: { select: { nome: true } },
       },
     }),
@@ -64,7 +68,7 @@ export default async function AniversariantesPage({
       porAluno.set(m.alunoId, {
         id: m.alunoId,
         nome: m.aluno.nome,
-        foto: m.aluno.foto,
+        foto: null,
         dataNascimento: m.aluno.dataNascimento,
         turmas: [m.turma.nome],
         detalhe: "",
@@ -73,10 +77,16 @@ export default async function AniversariantesPage({
     }
   }
 
-  const alunosAniversariantes = Array.from(porAluno.values())
-    .filter((a) => eDoMes(a.dataNascimento, mesFiltro))
+  const alunosDoMes = Array.from(porAluno.values()).filter((a) => eDoMes(a.dataNascimento, mesFiltro));
+  const fotos =
+    alunosDoMes.length > 0
+      ? await prisma.aluno.findMany({ where: { id: { in: alunosDoMes.map((a) => a.id) } }, select: { id: true, foto: true } })
+      : [];
+  const fotoPorAlunoId = new Map(fotos.map((f) => [f.id, f.foto]));
+
+  const alunosAniversariantes = alunosDoMes
     .sort((a, b) => a.dataNascimento.getUTCDate() - b.dataNascimento.getUTCDate())
-    .map((a) => ({ ...a, detalhe: a.turmas.join(" + ") }));
+    .map((a) => ({ ...a, foto: fotoPorAlunoId.get(a.id) ?? null, detalhe: a.turmas.join(" + ") }));
 
   const funcionariosAniversariantes: Pessoa[] = funcionarios
     .filter((f) => f.dataNascimento && eDoMes(f.dataNascimento, mesFiltro))

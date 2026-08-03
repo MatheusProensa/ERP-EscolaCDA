@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdfSecoesEmpilhadas, respostaPDF } from "@/lib/gerarRelatorioPdf";
 
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
   const anoAtual = hoje.getUTCFullYear();
   const nomeMes = MESES[mesFiltro - 1];
 
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
   const [matriculas, funcionarios] = await Promise.all([
     prisma.matricula.findMany({
       where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdf, respostaPDF } from "@/lib/gerarRelatorioPdf";
 import { formatarData, formatarTelefone } from "@/lib/utils";
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
   const busca = params.get("busca") || undefined;
   const censoIncompleto = params.get("censo") === "incompleto";
 
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
 
   const matriculas = await prisma.matricula.findMany({
     where: {

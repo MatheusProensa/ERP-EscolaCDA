@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 import { MetricasGerais } from "@/components/modules/dashboard/MetricasGerais";
@@ -9,7 +10,7 @@ import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { saldoDevedor, whereAtrasadas } from "@/lib/inadimplencia";
 
 export async function DashboardAdmin() {
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
 
   const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
   const fimMes = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1);

@@ -1,6 +1,11 @@
+import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { authConfig } from "@/lib/auth.config";
 import { rotaPermitida } from "@/lib/permissoes";
+
+// Usa só a config leve (sem Credentials/bcrypt/Prisma) — o middleware roda em
+// toda navegação e só precisa ler o JWT da sessão, não fazer login de verdade.
+const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Users, GraduationCap, Megaphone } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
@@ -10,7 +11,7 @@ import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 
 export async function DashboardPedagogico() {
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
 
   const [totalAlunos, turmasAtivas, censoIncompleto, avisosFixados, logs] = await Promise.all([
     prisma.matricula.count({ where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id } }),

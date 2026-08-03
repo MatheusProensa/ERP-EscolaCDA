@@ -24,7 +24,7 @@ const SITUACAO_LABEL: Record<SituacaoMatricula, string> = {
 export type MatriculaLinha = {
   id: string;
   situacao: SituacaoMatricula;
-  aluno: { id: string; nome: string; foto: string | null; dataNascimento: Date };
+  aluno: { id: string; nome: string; dataNascimento: Date };
   turma: { nome: string };
 };
 
@@ -45,7 +45,7 @@ export function AlunoTable({ matriculas }: { matriculas: MatriculaLinha[] }) {
           <Tr key={m.id}>
             <Td>
               <Link href={`/alunos/${m.aluno.id}`} className="flex items-center gap-2.5 hover:text-cda-blue">
-                <Avatar nome={m.aluno.nome} foto={m.aluno.foto} size="sm" />
+                <Avatar nome={m.aluno.nome} size="sm" />
                 {m.aluno.nome}
               </Link>
             </Td>

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { FileDown } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -40,7 +41,7 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
   const matriculasAtivas = aluno.matriculas.filter((m) => m.situacao === "ATIVA");
   const matriculaPrincipal = matriculasAtivas[0] ?? aluno.matriculas[0];
 
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
   const turmasBrutas = anoLetivo
     ? ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo.id } }))
     : [];

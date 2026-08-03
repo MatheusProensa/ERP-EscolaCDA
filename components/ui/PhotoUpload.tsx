@@ -4,7 +4,41 @@ import { useRef, useState } from "react";
 import { Camera, X } from "lucide-react";
 import { corAvatar, iniciais } from "@/lib/utils";
 
-const TAMANHO_MAXIMO = 3 * 1024 * 1024; // 3MB
+const TAMANHO_MAXIMO = 3 * 1024 * 1024; // 3MB — limite do arquivo ORIGINAL selecionado
+const LADO_MAXIMO = 480; // a foto só aparece como avatar (no máx. 96px, ~192px em telas retina)
+
+/** Redimensiona a imagem no navegador antes de virar base64 — uma foto de
+ * celular sem compressão vinha com vários MB, e como fica salva direto numa
+ * coluna do banco e é buscada em telas de listagem inteiras (não só no perfil),
+ * isso pesava a navegação do site inteiro. Aqui ela vira um JPEG pequeno
+ * (poucos KB) antes de sair do navegador. */
+function redimensionar(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const escala = Math.min(1, LADO_MAXIMO / Math.max(img.width, img.height));
+      const largura = Math.round(img.width * escala);
+      const altura = Math.round(img.height * escala);
+      const canvas = document.createElement("canvas");
+      canvas.width = largura;
+      canvas.height = altura;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("Canvas indisponível"));
+        return;
+      }
+      ctx.drawImage(img, 0, 0, largura, altura);
+      resolve(canvas.toDataURL("image/jpeg", 0.82));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Não foi possível ler a imagem"));
+    };
+    img.src = url;
+  });
+}
 
 export function PhotoUpload({
   value,
@@ -18,7 +52,7 @@ export function PhotoUpload({
   const inputRef = useRef<HTMLInputElement>(null);
   const [erro, setErro] = useState("");
 
-  function handleFile(file: File | undefined) {
+  async function handleFile(file: File | undefined) {
     setErro("");
     if (!file) return;
 
@@ -31,9 +65,11 @@ export function PhotoUpload({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => onChange(reader.result as string);
-    reader.readAsDataURL(file);
+    try {
+      onChange(await redimensionar(file));
+    } catch {
+      setErro("Não foi possível processar essa imagem. Tente outro arquivo.");
+    }
   }
 
   return (

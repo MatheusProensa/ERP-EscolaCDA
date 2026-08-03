@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
@@ -24,7 +25,7 @@ export default async function MensalidadesPage({
   const pagina = Math.max(1, Number(paginaRaw) || 1);
   const hoje = new Date();
 
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
 
   // "Atrasada" é calculado (vencida e ainda não paga), não um valor gravado — nada no sistema
   // grava ATRASADA em `situacao`, então filtrar literalmente por esse valor nunca traria resultado.
@@ -65,7 +66,9 @@ export default async function MensalidadesPage({
         pagamentos: { select: { id: true, dataPagamento: true, valor: true }, orderBy: { dataPagamento: "desc" } },
         matricula: {
           select: {
-            aluno: { select: { id: true, nome: true, foto: true } },
+            // "foto" fica de fora: é base64 e pesa MB por aluno, e aqui só vira um
+            // avatar de 28px — até 100 linhas por página, não vale o payload.
+            aluno: { select: { id: true, nome: true } },
             turma: { select: { nome: true } },
           },
         },

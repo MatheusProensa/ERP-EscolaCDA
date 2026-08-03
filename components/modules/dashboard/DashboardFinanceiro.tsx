@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { Wallet, TrendingUp, AlertCircle, Percent } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { TabelaInadimplentes } from "@/components/modules/dashboard/TabelaInadimplentes";
@@ -13,7 +14,7 @@ import { agruparInadimplentes, saldoDevedor, whereAtrasadas } from "@/lib/inadim
 import { formatarMoeda } from "@/lib/utils";
 
 export async function DashboardFinanceiro() {
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
   const anoAtual = new Date().getFullYear();
   const mesAtual = new Date().getMonth() + 1;
   const hoje = new Date();

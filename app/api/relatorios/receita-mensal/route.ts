@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdf, respostaPDF } from "@/lib/gerarRelatorioPdf";
 
@@ -13,7 +14,7 @@ export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
   const anoAtual = anoLetivo?.ano ?? new Date().getFullYear();
 
   const mensalidades = await prisma.mensalidade.findMany({

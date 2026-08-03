@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { AlunoForm } from "@/components/modules/alunos/AlunoForm";
 import { ordenarTurmas } from "@/lib/utils";
 
 export default async function NovoAlunoPage() {
-  const anoLetivo = await prisma.anoLetivo.findFirst({ where: { ativo: true } });
+  const anoLetivo = await getAnoLetivoAtivo();
   const turmasBrutas = ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }));
   const turmas = await Promise.all(
     turmasBrutas.map(async (t) => ({
