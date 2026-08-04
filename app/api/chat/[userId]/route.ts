@@ -16,6 +16,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
   const meId = session.user.id;
   const desde = req.nextUrl.searchParams.get("desde");
   const antes = req.nextUrl.searchParams.get("antes");
+  // Prefetch no hover (antes do clique) busca as mensagens só pra esquentar o
+  // cache local — não conta como "abriu a conversa de verdade", então não
+  // pode marcar como lida.
+  const previa = req.nextUrl.searchParams.get("previa") === "1";
 
   const conversaWhere = {
     OR: [
@@ -54,7 +58,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
   // Marcar como lida só faz sentido se a pessoa realmente está olhando pra essa
   // conversa agora: abertura inicial, ou chegou mensagem nova nesse poll. Poupa
   // um UPDATE a cada 4s quando não há nada de fato novo pra marcar.
-  const devemarcarLidas = !desde || (mensagens.length > 0 && !antes);
+  const devemarcarLidas = !previa && (!desde || (mensagens.length > 0 && !antes));
   if (devemarcarLidas) {
     const { count } = await prisma.mensagem.updateMany({
       where: { remetenteId: userId, destinatarioId: meId, lida: false },

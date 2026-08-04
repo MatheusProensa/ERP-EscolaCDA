@@ -146,6 +146,30 @@ export function ChatApp({
    * saber que chegou mensagem nova. */
   const refetchConversasAgoraRef = useRef<() => void>(() => {});
   const refetchMensagensAgoraRef = useRef<() => void>(() => {});
+  /** Cache em memória (só dura a sessão da aba) das últimas mensagens de cada
+   * conversa já aberta — trocar de volta pra alguém que já foi visto antes
+   * mostra na hora, sem tela em branco, enquanto busca a versão mais nova por
+   * baixo dos panos. Também é preenchido no hover (prefetchConversa) pra
+   * primeira abertura já ter algo pronto quando o clique chega. */
+  const cacheMensagensRef = useRef<Map<string, { mensagens: Mensagem[]; cursor: string | null }>>(new Map());
+  const prefetchandoRef = useRef<Set<string>>(new Set());
+
+  function prefetchConversa(userId: string) {
+    if (userId === selecionado) return;
+    if (cacheMensagensRef.current.has(userId) || prefetchandoRef.current.has(userId)) return;
+    prefetchandoRef.current.add(userId);
+    fetch(`/api/chat/${userId}?previa=1`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((dados: { mensagens: Mensagem[] } | null) => {
+        if (!dados) return;
+        cacheMensagensRef.current.set(userId, {
+          mensagens: dados.mensagens,
+          cursor: dados.mensagens.length > 0 ? maiorUpdatedAt(dados.mensagens) : null,
+        });
+      })
+      .catch(() => {})
+      .finally(() => prefetchandoRef.current.delete(userId));
+  }
 
   useEffect(() => {
     let cancelado = false;
@@ -192,6 +216,18 @@ export function ChatApp({
     // carregarMensagens(false) abaixo define o valor certo assim que responde.
     const idConversa = selecionado;
 
+    // Já vimos essa conversa nessa sessão (ou o hover em cima dela já
+    // adiantou a busca)? Mostra o que já temos NA HORA — sem tela em branco —
+    // e ainda assim busca a versão mais nova por baixo, silenciosamente.
+    const emCache = cacheMensagensRef.current.get(idConversa);
+    if (emCache) {
+      ultimaMensagemEmRef.current = emCache.cursor;
+      setMensagensDeId(idConversa);
+      setMensagens(emCache.mensagens);
+      setTemMaisAntigas(emCache.mensagens.length >= 50);
+      setErroMensagens(false);
+    }
+
     async function carregarMensagens(incremental: boolean) {
       if (incremental && (document.hidden || buscandoMensagensRef.current)) return;
       buscandoMensagensRef.current = true;
@@ -211,6 +247,15 @@ export function ChatApp({
           setMensagens(novas);
           setTemMaisAntigas(novas.length >= 50);
           setErroMensagens(false);
+          // Guarda pra próxima vez que voltar nessa conversa na mesma sessão —
+          // limita a 8 conversas em cache, derruba a mais antiga (Map preserva
+          // ordem de inserção).
+          cacheMensagensRef.current.delete(idConversa);
+          cacheMensagensRef.current.set(idConversa, { mensagens: novas, cursor: ultimaMensagemEmRef.current });
+          if (cacheMensagensRef.current.size > 8) {
+            const maisAntiga = cacheMensagensRef.current.keys().next().value;
+            if (maisAntiga) cacheMensagensRef.current.delete(maisAntiga);
+          }
           return;
         }
 
@@ -219,7 +264,12 @@ export function ChatApp({
         // Máximo entre as recebidas E o cursor atual — uma mensagem antiga que só
         // teve "lida" atualizada pode ter updatedAt menor que o que já tínhamos.
         ultimaMensagemEmRef.current = maiorUpdatedAt(novas, ultimaMensagemEmRef.current);
-        setMensagens((atual) => mesclarMensagens(atual, novas));
+        setMensagens((atual) => {
+          const mescladas = mesclarMensagens(atual, novas);
+          const cache = cacheMensagensRef.current.get(idConversa);
+          if (cache) cacheMensagensRef.current.set(idConversa, { mensagens: mescladas, cursor: ultimaMensagemEmRef.current });
+          return mescladas;
+        });
       } catch {
         // Só mostra erro pra carga inicial — falha num poll incremental de fundo
         // não precisa assustar quem já está vendo o histórico certinho na tela.
@@ -447,6 +497,8 @@ export function ChatApp({
             <button
               key={c.id}
               onClick={() => selecionar(c.id)}
+              onMouseEnter={() => prefetchConversa(c.id)}
+              onTouchStart={() => prefetchConversa(c.id)}
               className={`flex w-full items-center gap-3 border-b border-cda-border px-4 py-3 text-left transition-colors ${
                 selecionado === c.id
                   ? "border-l-4 border-l-cda-blue bg-cda-blue/10"
