@@ -29,12 +29,18 @@ export async function avisarChatDireto(params: { remetenteId: string; destinatar
   const nomesCanais = [canalConversaDireta(params.remetenteId, params.destinatarioId), canalInbox(params.destinatarioId)];
   await Promise.all(
     nomesCanais.map(async (nome) => {
+      const canal = supabase.channel(nome);
       try {
-        const canal = supabase.channel(nome);
-        await canal.send({ type: "broadcast", event: "atualizou", payload: {} });
+        // httpSend em vez de send() puro: manda por REST sem precisar
+        // conectar/segurar um WebSocket na função serverless (que é sem
+        // estado, uma invocação por request) — send() sem subscribe cai nisso
+        // por baixo dos panos, mas fica marcado como comportamento a mudar.
+        await canal.httpSend("atualizou", {});
       } catch {
         // Realtime é só um atalho pra parecer instantâneo — se falhar (rede,
         // Supabase fora do ar), o polling de sempre continua cobrindo.
+      } finally {
+        await supabase.removeChannel(canal);
       }
     })
   );
