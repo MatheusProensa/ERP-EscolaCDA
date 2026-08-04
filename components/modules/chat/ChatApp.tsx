@@ -442,8 +442,10 @@ export function ChatApp({
             <button
               key={c.id}
               onClick={() => selecionar(c.id)}
-              className={`flex w-full items-center gap-3 border-b border-cda-border px-4 py-3 text-left transition-colors hover:bg-cda-bg ${
-                selecionado === c.id ? "bg-cda-bg" : ""
+              className={`flex w-full items-center gap-3 border-b border-cda-border px-4 py-3 text-left transition-colors ${
+                selecionado === c.id
+                  ? "border-l-4 border-l-cda-blue bg-cda-blue/10"
+                  : "border-l-4 border-l-transparent hover:bg-cda-bg"
               }`}
             >
               <div className="relative shrink-0">
