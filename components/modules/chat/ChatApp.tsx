@@ -366,16 +366,6 @@ export function ChatApp({
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
-          {carregandoConversas &&
-            [1, 2, 3, 4].map((i) => (
-              <div key={i} className="flex items-center gap-3 border-b border-cda-border px-4 py-3">
-                <div className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-cda-bg" />
-                <div className="flex-1">
-                  <div className="h-3 w-24 animate-pulse rounded bg-cda-bg" />
-                  <div className="mt-2 h-2.5 w-32 animate-pulse rounded bg-cda-bg" />
-                </div>
-              </div>
-            ))}
           {!carregandoConversas && erroConversas && conversas.length === 0 && (
             <p className="px-4 py-6 text-center text-sm text-cda-red">
               Não foi possível carregar. Tentando de novo em instantes...
@@ -456,12 +446,7 @@ export function ChatApp({
                     </p>
                   </div>
                 </>
-              ) : (
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 animate-pulse rounded-full bg-cda-bg" />
-                  <div className="h-3 w-28 animate-pulse rounded bg-cda-bg" />
-                </div>
-              )}
+              ) : null}
             </div>
 
             <div className="flex-1 overflow-y-auto px-4 py-4">
@@ -485,14 +470,8 @@ export function ChatApp({
                     </button>
                   </div>
                 )}
-                {trocandoConversa
-                  ? [1, 2, 3].map((i) => (
-                      <div key={i} className={`flex items-end gap-2 ${i === 2 ? "flex-row-reverse" : ""} mt-2.5`}>
-                        <div className="h-7 w-7 shrink-0 animate-pulse rounded-full bg-white/70" />
-                        <div className={`h-9 w-40 animate-pulse rounded-xl bg-white/70`} />
-                      </div>
-                    ))
-                  : itensConversa.map((item) => {
+                {!trocandoConversa &&
+                  itensConversa.map((item) => {
                   if (item.tipo === "data") {
                     return (
                       <div key={item.key} className="my-3 flex items-center justify-center">
