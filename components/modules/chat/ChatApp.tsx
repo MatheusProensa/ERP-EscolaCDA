@@ -249,6 +249,11 @@ export function ChatApp({
    * mesmo `selecionado` — usado pelo botão "Tentar de novo" após falha de rede. */
   const [tentativa, setTentativa] = useState(0);
 
+  // O servidor só precisa "garantir" que o usuário está nos canais de setor uma
+  // vez por sessão — repetir isso a cada poll de 15s significava 2 upserts no
+  // banco sem necessidade nenhuma no caminho mais quente do chat.
+  const primeiraChamadaGruposRef = useRef(true);
+
   useEffect(() => {
     let cancelado = false;
     async function carregarConversas() {
@@ -256,7 +261,9 @@ export function ChatApp({
       if (document.hidden || buscandoConversasRef.current) return;
       buscandoConversasRef.current = true;
       try {
-        const [resDiretos, resGrupos] = await Promise.all([fetch("/api/chat"), fetch("/api/grupos")]);
+        const urlGrupos = primeiraChamadaGruposRef.current ? "/api/grupos?garantir=1" : "/api/grupos";
+        primeiraChamadaGruposRef.current = false;
+        const [resDiretos, resGrupos] = await Promise.all([fetch("/api/chat"), fetch(urlGrupos)]);
         if (!resDiretos.ok || !resGrupos.ok) throw new Error("resposta não-ok");
         const [dadosDiretos, dadosGrupos] = await Promise.all([resDiretos.json(), resGrupos.json()]);
         if (cancelado) return;

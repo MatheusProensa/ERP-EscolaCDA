@@ -27,25 +27,29 @@ export async function garantirCanaisDoUsuario(userId: string, role: string): Pro
   );
 }
 
-export async function contarNaoLidasGrupos(meId: string): Promise<number> {
-  const participacoes = await prisma.conversaParticipante.findMany({
-    where: { usuarioId: meId },
-    select: { conversaId: true, ultimaLeituraEm: true },
-  });
-  if (participacoes.length === 0) return 0;
+/** Não lidas de todos os canais/grupos do usuário numa query só — cada
+ * participação tem seu próprio corte de "última leitura", então em vez de
+ * rodar um count por conversa (N queries, N crescendo a cada grupo que a
+ * pessoa entra), o corte por linha vira uma condição de JOIN e o banco
+ * resolve tudo de uma vez. */
+export async function contarNaoLidasPorConversa(meId: string): Promise<Map<string, number>> {
+  const linhas = await prisma.$queryRaw<{ conversaId: string; naoLidas: bigint }[]>`
+    SELECT cp."conversaId" as "conversaId", COUNT(mg.id) as "naoLidas"
+    FROM "ConversaParticipante" cp
+    JOIN "MensagemGrupo" mg ON mg."conversaId" = cp."conversaId"
+      AND mg."remetenteId" != cp."usuarioId"
+      AND (cp."ultimaLeituraEm" IS NULL OR mg."createdAt" > cp."ultimaLeituraEm")
+    WHERE cp."usuarioId" = ${meId}
+    GROUP BY cp."conversaId"
+  `;
+  return new Map(linhas.map((l) => [l.conversaId, Number(l.naoLidas)]));
+}
 
-  const contagens = await Promise.all(
-    participacoes.map((p) =>
-      prisma.mensagemGrupo.count({
-        where: {
-          conversaId: p.conversaId,
-          remetenteId: { not: meId },
-          createdAt: p.ultimaLeituraEm ? { gt: p.ultimaLeituraEm } : undefined,
-        },
-      })
-    )
-  );
-  return contagens.reduce((a, b) => a + b, 0);
+export async function contarNaoLidasGrupos(meId: string): Promise<number> {
+  const porConversa = await contarNaoLidasPorConversa(meId);
+  let total = 0;
+  for (const n of porConversa.values()) total += n;
+  return total;
 }
 
 export type GrupoResumo = {
@@ -59,47 +63,40 @@ export type GrupoResumo = {
 };
 
 export async function listarGrupos(meId: string): Promise<GrupoResumo[]> {
-  const participacoes = await prisma.conversaParticipante.findMany({
-    where: { usuarioId: meId },
-    select: {
-      ultimaLeituraEm: true,
-      conversa: {
-        select: {
-          id: true,
-          nome: true,
-          tipo: true,
-          _count: { select: { participantes: true } },
-          mensagens: {
-            where: { excluida: false },
-            orderBy: { createdAt: "desc" },
-            take: 1,
-            select: { conteudo: true, anexoNome: true, createdAt: true },
+  const [participacoes, naoLidasPorConversa] = await Promise.all([
+    prisma.conversaParticipante.findMany({
+      where: { usuarioId: meId },
+      select: {
+        conversa: {
+          select: {
+            id: true,
+            nome: true,
+            tipo: true,
+            _count: { select: { participantes: true } },
+            mensagens: {
+              where: { excluida: false },
+              orderBy: { createdAt: "desc" },
+              take: 1,
+              select: { conteudo: true, anexoNome: true, createdAt: true },
+            },
           },
         },
       },
-    },
-  });
+    }),
+    contarNaoLidasPorConversa(meId),
+  ]);
 
-  return Promise.all(
-    participacoes.map(async (p) => {
-      const c = p.conversa;
-      const ultima = c.mensagens[0];
-      const naoLidas = await prisma.mensagemGrupo.count({
-        where: {
-          conversaId: c.id,
-          remetenteId: { not: meId },
-          createdAt: p.ultimaLeituraEm ? { gt: p.ultimaLeituraEm } : undefined,
-        },
-      });
-      return {
-        id: c.id,
-        nome: c.nome,
-        tipo: c.tipo,
-        participantesCount: c._count.participantes,
-        ultimaMensagem: ultima ? (ultima.conteudo ?? (ultima.anexoNome ? `📎 ${ultima.anexoNome}` : "")) : null,
-        ultimaEm: ultima?.createdAt.toISOString() ?? null,
-        naoLidas,
-      };
-    })
-  );
+  return participacoes.map((p) => {
+    const c = p.conversa;
+    const ultima = c.mensagens[0];
+    return {
+      id: c.id,
+      nome: c.nome,
+      tipo: c.tipo,
+      participantesCount: c._count.participantes,
+      ultimaMensagem: ultima ? (ultima.conteudo ?? (ultima.anexoNome ? `📎 ${ultima.anexoNome}` : "")) : null,
+      ultimaEm: ultima?.createdAt.toISOString() ?? null,
+      naoLidas: naoLidasPorConversa.get(c.id) ?? 0,
+    };
+  });
 }
