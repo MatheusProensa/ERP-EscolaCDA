@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
@@ -52,8 +52,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
       data: { lida: true },
     });
     // Avisa quem enviou que foi lido agora — o visto (✓✓) atualiza sem esperar
-    // o próximo poll dele.
-    if (count > 0) await avisarChatDireto({ remetenteId: meId, destinatarioId: userId });
+    // o próximo poll dele. Via after(): manda depois de já ter respondido, pra
+    // abrir a conversa não ficar esperando essa chamada de rede pro Supabase
+    // (era exatamente isso que fazia o clique "travar" um pouco).
+    if (count > 0) after(() => avisarChatDireto({ remetenteId: meId, destinatarioId: userId }));
   }
 
   return NextResponse.json({ mensagens, temMais: antes ? mensagens.length === PAGINA : undefined });
@@ -95,16 +97,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
       },
     });
 
-    await Promise.all([
-      criarNotificacao({
-        usuarioId: userId,
-        tipo: "MENSAGEM",
-        titulo: session.user.name ?? "Nova mensagem",
-        corpo: conteudo ? String(conteudo).slice(0, 120) : `📎 ${anexoNome}`,
-        link: `/chat/${meId}`,
-      }),
-      avisarChatDireto({ remetenteId: meId, destinatarioId: userId }),
-    ]);
+    // Notificação e aviso em tempo real não precisam segurar a resposta — o
+    // client já mostra a mensagem otimisticamente, então isso roda depois de
+    // já ter respondido (after()), sem atrasar o "enviado" na tela.
+    after(() =>
+      Promise.all([
+        criarNotificacao({
+          usuarioId: userId,
+          tipo: "MENSAGEM",
+          titulo: session.user.name ?? "Nova mensagem",
+          corpo: conteudo ? String(conteudo).slice(0, 120) : `📎 ${anexoNome}`,
+          link: `/chat/${meId}`,
+        }),
+        avisarChatDireto({ remetenteId: meId, destinatarioId: userId }),
+      ])
+    );
 
     return NextResponse.json(mensagem, { status: 201 });
   } catch (err) {

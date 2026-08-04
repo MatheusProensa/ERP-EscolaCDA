@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
@@ -30,7 +30,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       where: { id },
       data: { conteudo: String(conteudo).trim(), editadaEm: new Date() },
     });
-    await avisarChatDireto({ remetenteId: atualizada.remetenteId, destinatarioId: atualizada.destinatarioId });
+    after(() => avisarChatDireto({ remetenteId: atualizada.remetenteId, destinatarioId: atualizada.destinatarioId }));
     return NextResponse.json(atualizada);
   } catch (err) {
     return erroApi(err);
@@ -56,7 +56,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       where: { id },
       data: { excluida: true, conteudo: null, anexo: null, anexoNome: null },
     });
-    await avisarChatDireto({ remetenteId: atualizada.remetenteId, destinatarioId: atualizada.destinatarioId });
+    after(() => avisarChatDireto({ remetenteId: atualizada.remetenteId, destinatarioId: atualizada.destinatarioId }));
     return NextResponse.json(atualizada);
   } catch (err) {
     return erroApi(err);
