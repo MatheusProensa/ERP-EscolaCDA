@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { criarNotificacao } from "@/lib/notificacoes";
 import { validarUploadDataUri } from "@/lib/validarUpload";
+import { avisarChatDireto } from "@/lib/realtime";
 
 const PAGINA = 50;
 
@@ -23,13 +24,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
     ],
   };
 
-  // "desde": polling incremental (só o que chegou depois da última mensagem já vista).
+  // "desde": polling incremental — usa updatedAt (não createdAt) pra pegar tanto
+  // mensagem nova quanto mudança em mensagem já vista (lida, editada, apagada).
   // "antes": paginação pra cima, carregando um lote mais antigo sob demanda.
   // Sem nenhum dos dois: abertura inicial da conversa, só o lote mais recente.
   const mensagens = await prisma.mensagem.findMany({
     where: {
       ...conversaWhere,
-      createdAt: desde ? { gt: new Date(desde) } : antes ? { lt: new Date(antes) } : undefined,
+      ...(desde
+        ? { updatedAt: { gt: new Date(desde) } }
+        : antes
+          ? { createdAt: { lt: new Date(antes) } }
+          : {}),
     },
     orderBy: { createdAt: antes ? "desc" : "asc" },
     take: desde ? undefined : PAGINA,
@@ -41,10 +47,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
   // um UPDATE a cada 4s quando não há nada de fato novo pra marcar.
   const devemarcarLidas = !desde || (mensagens.length > 0 && !antes);
   if (devemarcarLidas) {
-    await prisma.mensagem.updateMany({
+    const { count } = await prisma.mensagem.updateMany({
       where: { remetenteId: userId, destinatarioId: meId, lida: false },
       data: { lida: true },
     });
+    // Avisa quem enviou que foi lido agora — o visto (✓✓) atualiza sem esperar
+    // o próximo poll dele.
+    if (count > 0) await avisarChatDireto({ remetenteId: meId, destinatarioId: userId });
   }
 
   return NextResponse.json({ mensagens, temMais: antes ? mensagens.length === PAGINA : undefined });
@@ -86,13 +95,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ use
       },
     });
 
-    await criarNotificacao({
-      usuarioId: userId,
-      tipo: "MENSAGEM",
-      titulo: session.user.name ?? "Nova mensagem",
-      corpo: conteudo ? String(conteudo).slice(0, 120) : `📎 ${anexoNome}`,
-      link: `/chat/${meId}`,
-    });
+    await Promise.all([
+      criarNotificacao({
+        usuarioId: userId,
+        tipo: "MENSAGEM",
+        titulo: session.user.name ?? "Nova mensagem",
+        corpo: conteudo ? String(conteudo).slice(0, 120) : `📎 ${anexoNome}`,
+        link: `/chat/${meId}`,
+      }),
+      avisarChatDireto({ remetenteId: meId, destinatarioId: userId }),
+    ]);
 
     return NextResponse.json(mensagem, { status: 201 });
   } catch (err) {

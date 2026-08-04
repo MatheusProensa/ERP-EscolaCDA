@@ -7,6 +7,8 @@ import { FileUpload } from "@/components/ui/FileUpload";
 import { EmojiPicker } from "@/components/modules/chat/EmojiPicker";
 import { ROLE_LABEL } from "@/lib/permissoes";
 import { formatarDataHora } from "@/lib/utils";
+import { canalConversaDireta, canalInbox } from "@/lib/chatCanais";
+import { getSupabaseRealtimeClient } from "@/lib/supabaseRealtimeClient";
 
 type Conversa = {
   id: string;
@@ -26,6 +28,7 @@ type Mensagem = {
   anexo: string | null;
   anexoNome: string | null;
   createdAt: string;
+  updatedAt: string;
   lida: boolean;
   excluida: boolean;
   editadaEm: string | null;
@@ -76,12 +79,27 @@ function montarItens(mensagens: Mensagem[]): ItemRenderizavel[] {
   return itens;
 }
 
-/** Anexa `novas` a `atual` ignorando ids repetidos — segunda camada de proteção
- * contra duplicata (ex.: polling e envio local competindo pela mesma mensagem). */
+/** Maior `updatedAt` entre uma lista de mensagens e (opcionalmente) um cursor
+ * já conhecido — usado pra avançar o cursor do polling incremental sem nunca
+ * voltar pra trás. */
+function maiorUpdatedAt(mensagens: Mensagem[], cursorAtual?: string | null): string {
+  let maior = cursorAtual ?? mensagens[0].updatedAt;
+  for (const m of mensagens) {
+    if (m.updatedAt > maior) maior = m.updatedAt;
+  }
+  return maior;
+}
+
+/** Mescla `novas` em `atual`: quem já existe (mesmo id) é atualizado no lugar —
+ * é assim que "lida"/edição/exclusão aparecem sem esperar um reload completo,
+ * já que o polling incremental busca por `updatedAt`, não só mensagem nova de
+ * verdade. Quem não existe ainda entra no fim da lista. */
 function mesclarMensagens(atual: Mensagem[], novas: Mensagem[]): Mensagem[] {
+  if (novas.length === 0) return atual;
   const idsExistentes = new Set(atual.map((m) => m.id));
-  const semDuplicata = novas.filter((m) => !idsExistentes.has(m.id));
-  return semDuplicata.length > 0 ? [...atual, ...semDuplicata] : atual;
+  const atualizado = atual.map((m) => novas.find((n) => n.id === m.id) ?? m);
+  const inteiramenteNovas = novas.filter((n) => !idsExistentes.has(n.id));
+  return inteiramenteNovas.length > 0 ? [...atualizado, ...inteiramenteNovas] : atualizado;
 }
 
 export function ChatApp({
@@ -120,6 +138,13 @@ export function ChatApp({
   /** Incrementar força o efeito de carregar mensagens a rodar de novo mesmo com o
    * mesmo `selecionado` — usado pelo botão "Tentar de novo" após falha de rede. */
   const [tentativa, setTentativa] = useState(0);
+  /** O Realtime (lib/chatCanais + lib/supabaseRealtimeClient) chama essas refs
+   * pra forçar uma busca imediata assim que alguém avisa "mudou algo" — o
+   * polling abaixo continua existindo como rede de segurança (Realtime fora
+   * do ar, aba que perdeu a conexão, etc.), só não é mais a única forma de
+   * saber que chegou mensagem nova. */
+  const refetchConversasAgoraRef = useRef<() => void>(() => {});
+  const refetchMensagensAgoraRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     let cancelado = false;
@@ -141,6 +166,7 @@ export function ChatApp({
         if (!cancelado) setCarregandoConversas(false);
       }
     }
+    refetchConversasAgoraRef.current = carregarConversas;
     carregarConversas();
     const intervalo = setInterval(carregarConversas, 15000);
     // Volta da aba minimizada/outra aba → busca na hora em vez de esperar o próximo
@@ -179,7 +205,7 @@ export function ChatApp({
         if (!incremental) {
           // Troca de conversa: só substitui quando os dados novos chegam — mantém as
           // mensagens antigas na tela até lá, em vez de piscar pra uma lista vazia.
-          if (novas.length > 0) ultimaMensagemEmRef.current = novas[novas.length - 1].createdAt;
+          if (novas.length > 0) ultimaMensagemEmRef.current = maiorUpdatedAt(novas);
           setMensagensDeId(idConversa);
           setMensagens(novas);
           setTemMaisAntigas(novas.length >= 50);
@@ -189,7 +215,9 @@ export function ChatApp({
 
         setErroMensagens(false);
         if (novas.length === 0) return;
-        ultimaMensagemEmRef.current = novas[novas.length - 1].createdAt;
+        // Máximo entre as recebidas E o cursor atual — uma mensagem antiga que só
+        // teve "lida" atualizada pode ter updatedAt menor que o que já tínhamos.
+        ultimaMensagemEmRef.current = maiorUpdatedAt(novas, ultimaMensagemEmRef.current);
         setMensagens((atual) => mesclarMensagens(atual, novas));
       } catch {
         // Só mostra erro pra carga inicial — falha num poll incremental de fundo
@@ -200,6 +228,7 @@ export function ChatApp({
       }
     }
 
+    refetchMensagensAgoraRef.current = () => carregarMensagens(true);
     carregarMensagens(false);
     // 2.5s em vez de 4s — banco e servidor agora estão na mesma região (Oregon),
     // então um poll a mais não pesa, e a mensagem do outro lado chega mais perto
@@ -215,6 +244,36 @@ export function ChatApp({
       document.removeEventListener("visibilitychange", aoFicarVisivel);
     };
   }, [selecionado, tentativa]);
+
+  // Escuta o Realtime pra saber "chegou algo novo" sem esperar o próximo poll —
+  // um canal fixo pra caixa de entrada (atualiza a lista lateral sempre) e um
+  // por conversa aberta (atualiza as mensagens na hora). Se as variáveis do
+  // Supabase Realtime não estiverem configuradas, getSupabaseRealtimeClient()
+  // devolve null e isso tudo vira no-op — o polling comum continua cobrindo.
+  useEffect(() => {
+    const supabase = getSupabaseRealtimeClient();
+    if (!supabase) return;
+    const canal = supabase
+      .channel(canalInbox(meId))
+      .on("broadcast", { event: "atualizou" }, () => refetchConversasAgoraRef.current())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(canal);
+    };
+  }, [meId]);
+
+  useEffect(() => {
+    if (!selecionado) return;
+    const supabase = getSupabaseRealtimeClient();
+    if (!supabase) return;
+    const canal = supabase
+      .channel(canalConversaDireta(meId, selecionado))
+      .on("broadcast", { event: "atualizou" }, () => refetchMensagensAgoraRef.current())
+      .subscribe();
+    return () => {
+      supabase.removeChannel(canal);
+    };
+  }, [meId, selecionado]);
 
   async function carregarMaisAntigas() {
     if (!selecionado || mensagens.length === 0 || carregandoAntigas) return;
@@ -257,6 +316,7 @@ export function ChatApp({
     // é a diferença entre "parece Facebook/WhatsApp" e "parece que travou".
     // Se der erro, essa mesma mensagem vira um "toque pra tentar de novo".
     const idTemporario = `tmp-${crypto.randomUUID()}`;
+    const agora = new Date().toISOString();
     const mensagemOtimista: Mensagem = {
       id: idTemporario,
       remetenteId: meId,
@@ -264,7 +324,8 @@ export function ChatApp({
       conteudo,
       anexo: anexoEnviado?.dados ?? null,
       anexoNome: anexoEnviado?.nome ?? null,
-      createdAt: new Date().toISOString(),
+      createdAt: agora,
+      updatedAt: agora,
       lida: false,
       excluida: false,
       editadaEm: null,
@@ -285,7 +346,7 @@ export function ChatApp({
       // Avança o cursor de polling pra essa mensagem já entrar como "vista" —
       // sem isso, o próximo poll buscava "tudo desde X" (X ainda apontando
       // pra antes dela) e a mesma mensagem voltava duplicada.
-      ultimaMensagemEmRef.current = nova.createdAt;
+      ultimaMensagemEmRef.current = nova.updatedAt;
       setMensagens((atual) => atual.map((m) => (m.id === idTemporario ? nova : m)));
     } else {
       setMensagens((atual) => atual.map((m) => (m.id === idTemporario ? { ...m, enviando: false, falhouEnvio: true } : m)));
@@ -302,7 +363,7 @@ export function ChatApp({
     });
     if (res.ok) {
       const nova = await res.json();
-      ultimaMensagemEmRef.current = nova.createdAt;
+      ultimaMensagemEmRef.current = nova.updatedAt;
       setMensagens((atual) => atual.map((x) => (x.id === m.id ? nova : x)));
     } else {
       setMensagens((atual) => atual.map((x) => (x.id === m.id ? { ...x, enviando: false, falhouEnvio: true } : x)));

@@ -23,6 +23,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { rotaPermitida } from "@/lib/permissoes";
+import { canalInbox } from "@/lib/chatCanais";
+import { getSupabaseRealtimeClient } from "@/lib/supabaseRealtimeClient";
 
 type NavItem = { label: string; href: string; icon: LucideIcon };
 type NavGroup = { label: string; items: NavItem[] };
@@ -73,7 +75,17 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
-export function Sidebar({ role, open, onClose }: { role: string; open: boolean; onClose: () => void }) {
+export function Sidebar({
+  meId,
+  role,
+  open,
+  onClose,
+}: {
+  meId: string;
+  role: string;
+  open: boolean;
+  onClose: () => void;
+}) {
   const pathname = usePathname();
   const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
   const grupos = NAV_GROUPS.map((group) => ({
@@ -96,11 +108,21 @@ export function Sidebar({ role, open, onClose }: { role: string; open: boolean; 
     }
     verificar();
     const intervalo = setInterval(verificar, 20000);
+
+    // Realtime: assim que chega mensagem em qualquer conversa, o badge atualiza
+    // na hora, em qualquer tela do sistema — não só dentro do Chat.
+    const supabase = getSupabaseRealtimeClient();
+    const canal = supabase
+      ?.channel(canalInbox(meId))
+      .on("broadcast", { event: "atualizou" }, verificar)
+      .subscribe();
+
     return () => {
       cancelado = true;
       clearInterval(intervalo);
+      if (supabase && canal) supabase.removeChannel(canal);
     };
-  }, [pathname]);
+  }, [pathname, meId]);
 
   return (
     <>

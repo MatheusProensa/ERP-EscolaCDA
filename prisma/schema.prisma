@@ -42,6 +42,10 @@ model Mensagem {
   excluida       Boolean   @default(false)
   editadaEm      DateTime?
   createdAt      DateTime  @default(now())
+  /// Muda em qualquer alteração (lida, edição, exclusão) — é o que o polling
+  /// incremental usa pra saber que uma mensagem JÁ mostrada na tela mudou,
+  /// não só pra achar mensagem nova.
+  updatedAt      DateTime  @default(now()) @updatedAt
 
   @@index([remetenteId, destinatarioId])
   @@index([destinatarioId, lida])

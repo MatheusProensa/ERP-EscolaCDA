@@ -6,7 +6,7 @@ export default async function ErpLayout({ children }: { children: React.ReactNod
   const user = session!.user;
 
   return (
-    <AppShell role={user.role} name={user.name ?? "Usuário"}>
+    <AppShell meId={user.id} role={user.role} name={user.name ?? "Usuário"}>
       {children}
     </AppShell>
   );

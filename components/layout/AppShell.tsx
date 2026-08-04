@@ -9,10 +9,12 @@ import { ToastProvider } from "@/components/ui/Toast";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 
 export function AppShell({
+  meId,
   role,
   name,
   children,
 }: {
+  meId: string;
   role: string;
   name: string;
   children: React.ReactNode;
@@ -26,7 +28,7 @@ export function AppShell({
         <NavigationProgress />
       </Suspense>
       <div className="flex h-screen">
-        <Sidebar role={role} open={menuAberto} onClose={() => setMenuAberto(false)} />
+        <Sidebar meId={meId} role={role} open={menuAberto} onClose={() => setMenuAberto(false)} />
         <div className="flex min-w-0 flex-1 flex-col">
           <Topbar name={name} role={role} onMenuClick={() => setMenuAberto(true)} />
           <main className="flex-1 overflow-y-auto bg-cda-bg p-4 sm:p-5">
