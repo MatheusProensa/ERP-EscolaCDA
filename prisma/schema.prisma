@@ -47,7 +47,11 @@ model Mensagem {
   /// não só pra achar mensagem nova.
   updatedAt      DateTime  @default(now()) @updatedAt
 
-  @@index([remetenteId, destinatarioId])
+  // "createdAt" no fim de cada uma cobre o ORDER BY + LIMIT de abrir uma
+  // conversa (pega as mais recentes) sem precisar ordenar a conversa inteira
+  // na mão — uma índice pra cada lado do OR (remetente/destinatário trocados).
+  @@index([remetenteId, destinatarioId, createdAt])
+  @@index([destinatarioId, remetenteId, createdAt])
   @@index([destinatarioId, lida])
 }
 

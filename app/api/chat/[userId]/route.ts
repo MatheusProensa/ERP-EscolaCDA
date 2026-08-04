@@ -26,21 +26,30 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ user
 
   // "desde": polling incremental — usa updatedAt (não createdAt) pra pegar tanto
   // mensagem nova quanto mudança em mensagem já vista (lida, editada, apagada).
-  // "antes": paginação pra cima, carregando um lote mais antigo sob demanda.
-  // Sem nenhum dos dois: abertura inicial da conversa, só o lote mais recente.
-  const mensagens = await prisma.mensagem.findMany({
-    where: {
-      ...conversaWhere,
-      ...(desde
-        ? { updatedAt: { gt: new Date(desde) } }
-        : antes
-          ? { createdAt: { lt: new Date(antes) } }
-          : {}),
-    },
-    orderBy: { createdAt: antes ? "desc" : "asc" },
-    take: desde ? undefined : PAGINA,
-  });
-  if (antes) mensagens.reverse();
+  // Poucos itens em geral, não precisa de limite nem inverter ordem.
+  //
+  // "antes" / abertura inicial: os dois precisam do MESMO padrão pra usar o
+  // índice — pegar os N mais recentes (ou mais recentes que sejam antes de X)
+  // em ordem DESCENDENTE, e só então inverter em memória pra ordem cronológica.
+  // ANTES tinha um bug real aqui: abertura inicial pedia `orderBy: asc, take: 50`
+  // sem nenhum filtro de data — isso pega as 50 mensagens mais ANTIGAS da
+  // conversa inteira, não as mais recentes, e ainda obriga o Postgres a
+  // ordenar TODAS as linhas da conversa (sem índice em createdAt) toda vez
+  // que alguém clica pra abrir uma conversa.
+  let mensagens;
+  if (desde) {
+    mensagens = await prisma.mensagem.findMany({
+      where: { ...conversaWhere, updatedAt: { gt: new Date(desde) } },
+      orderBy: { createdAt: "asc" },
+    });
+  } else {
+    mensagens = await prisma.mensagem.findMany({
+      where: { ...conversaWhere, ...(antes ? { createdAt: { lt: new Date(antes) } } : {}) },
+      orderBy: { createdAt: "desc" },
+      take: PAGINA,
+    });
+    mensagens.reverse();
+  }
 
   // Marcar como lida só faz sentido se a pessoa realmente está olhando pra essa
   // conversa agora: abertura inicial, ou chegou mensagem nova nesse poll. Poupa
