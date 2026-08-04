@@ -40,8 +40,6 @@ export async function GET() {
     eventosCalendario,
     documentosInstitucionais,
     mensagens,
-    mensagensGrupo,
-    conversas,
   ] = await Promise.all([
     prisma.user.findMany({ select: { id: true, name: true, email: true, role: true, createdAt: true } }),
     prisma.anoLetivo.findMany(),
@@ -66,8 +64,6 @@ export async function GET() {
     prisma.eventoCalendario.findMany(),
     prisma.documentoInstitucional.findMany(),
     prisma.mensagem.findMany({ omit: { anexo: true } }),
-    prisma.mensagemGrupo.findMany({ omit: { anexo: true } }),
-    prisma.conversa.findMany({ include: { participantes: true } }),
   ]);
 
   const backup = {
@@ -97,8 +93,6 @@ export async function GET() {
     eventosCalendario,
     documentosInstitucionais,
     mensagens,
-    mensagensGrupo,
-    conversas,
   };
 
   const nomeArquivo = `backup-cda-${new Date().toISOString().slice(0, 10)}.json`;
