@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { flushSync } from "react-dom";
 import { Send, FileText, ArrowLeft, Search, Check, CheckCheck, Clock, AlertCircle, Pencil, Trash2, X as XIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { FileUpload } from "@/components/ui/FileUpload";
@@ -297,7 +298,11 @@ export function ChatApp({
   }, [mensagens]);
 
   function selecionar(userId: string) {
-    setSelecionado(userId);
+    // flushSync força o React a aplicar isso na tela imediatamente, no mesmo
+    // clique — sem esperar o agendamento normal de render, que em telas mais
+    // lentas podia deixar cabeçalho/lista aparentemente "atrasados" por um
+    // instante até o próximo clique/evento forçar um novo render.
+    flushSync(() => setSelecionado(userId));
     // Atualiza a URL sem navegação do Next (evita re-render do Server Component
     // e um novo round-trip de listarConversas a cada troca de conversa — o
     // ChatApp já é autossuficiente e gerencia os dados via polling próprio).
@@ -489,7 +494,7 @@ export function ChatApp({
           </div>
         ) : (
           <>
-            <div className="flex items-center gap-3 border-b border-cda-border bg-white px-4 py-3">
+            <div key={selecionado} className="flex items-center gap-3 border-b border-cda-border bg-white px-4 py-3">
               <button onClick={() => setSelecionado(null)} className="text-cda-text2 hover:text-cda-text sm:hidden">
                 <ArrowLeft className="h-4 w-4" />
               </button>
