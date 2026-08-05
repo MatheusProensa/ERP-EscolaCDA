@@ -184,6 +184,11 @@ export function ChatApp({
         if (cancelado) return;
         setConversas(dados);
         setErroConversas(false);
+        // São poucas conversas possíveis (perfis do sistema, não pessoas
+        // soltas) — adianta buscar as mensagens de todas em segundo plano,
+        // não só de quem passou o mouse em cima. Assim o clique quase sempre
+        // acha o cache já quente, mesmo na primeira abertura da sessão.
+        for (const c of dados as { id: string }[]) prefetchConversa(c.id);
       } catch {
         if (!cancelado) setErroConversas(true);
       } finally {
