@@ -59,7 +59,15 @@ export function formatarData(data: Date | string): string {
 
 export function formatarDataHora(data: Date | string): string {
   const d = typeof data === "string" ? new Date(data) : data;
-  return d.toLocaleString("pt-BR");
+  // Fuso fixo explícito: sem isso, o servidor (Vercel, geralmente UTC) e o
+  // navegador de quem acessa (horário do Brasil) formatam a MESMA data como
+  // textos diferentes — e como esse valor entra no HTML renderizado no
+  // servidor (lista de conversas do chat), a diferença de texto faz o React
+  // detectar "hydration mismatch" (erro #418) assim que a página carrega.
+  // Esse erro deixa a página numa reconciliação quebrada: cliques continuam
+  // mudando a URL (browser puro), mas o estado do React para de refletir na
+  // tela — exatamente o "preciso clicar 2x" que vinha sendo reportado no chat.
+  return d.toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 }
 
 export function formatarCPF(cpf: string): string {
