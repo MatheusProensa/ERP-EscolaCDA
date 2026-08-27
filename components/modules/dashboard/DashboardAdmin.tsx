@@ -16,7 +16,7 @@ import { primeiroNome } from "@/lib/utils";
 export async function DashboardAdmin({ nome }: { nome: string }) {
   const anoLetivo = await getAnoLetivoAtivo();
 
-  const [totalAlunos, turmasAtivas, censoIncompleto] = await Promise.all([
+  const [totalAlunos, turmasAtivas, censoIncompleto, funcionariosAtivos, contratosPendentes] = await Promise.all([
     contarAlunosAtivos(anoLetivo?.id),
     prisma.turma.count({ where: { anoLetivoId: anoLetivo?.id } }),
     prisma.aluno.count({
@@ -25,6 +25,8 @@ export async function DashboardAdmin({ nome }: { nome: string }) {
         OR: [{ racaCor: null }, { filiacao1: null }, { sexo: null }],
       },
     }),
+    prisma.funcionario.count({ where: { ativo: true } }),
+    prisma.contrato.count({ where: { assinado: false } }),
   ]);
 
   return (
@@ -41,7 +43,12 @@ export async function DashboardAdmin({ nome }: { nome: string }) {
       />
 
       <div className="mb-5">
-        <MetricasGerais totalAlunos={totalAlunos} turmasAtivas={turmasAtivas} />
+        <MetricasGerais
+          totalAlunos={totalAlunos}
+          turmasAtivas={turmasAtivas}
+          funcionariosAtivos={funcionariosAtivos}
+          contratosPendentes={contratosPendentes}
+        />
       </div>
 
       <div className="mb-5">
