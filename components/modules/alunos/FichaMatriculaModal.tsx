@@ -46,12 +46,15 @@ function Linha({ children }: { children: React.ReactNode }) {
   return <div className={`flex divide-x ${DIVISORIA} ${BORDA} border-x border-b first:border-t`}>{children}</div>;
 }
 
-/** Uma célula: rótulo fixo (igual ao documento) + o valor, editável ou não. */
+/** Uma célula: rótulo em cima (igual etiqueta de formulário), valor embaixo — editável ou não.
+ * Rótulo e valor na MESMA linha (como no documento) espremia e sobrepunha texto quando o valor
+ * era um grupo de checkbox que quebra em 2 linhas; empilhado nunca sobrepõe, cada caixa cresce
+ * sozinha sem invadir a vizinha. */
 function Celula({ label, peso = 1, children }: { label: string; peso?: number; children: React.ReactNode }) {
   return (
-    <div className="flex min-w-0 items-center gap-2 px-3 py-2.5" style={{ flex: peso }}>
-      <span className="shrink-0 whitespace-nowrap text-[12px] font-bold text-[#0d1f4e]">{label}:</span>
-      <span className="min-w-0 flex-1">{children}</span>
+    <div className="flex min-w-0 flex-col gap-1 px-3 py-2.5" style={{ flex: peso }}>
+      <span className="text-[10.5px] font-bold uppercase tracking-wide text-[#0d1f4e]">{label}</span>
+      <span className="min-w-0">{children}</span>
     </div>
   );
 }
