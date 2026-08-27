@@ -123,9 +123,9 @@ export function GerarContratoModal({
 
           <div className="flex flex-col gap-2">
             <p className="text-xs font-medium text-cda-text2">Pré-visualização — exatamente como sai no PDF</p>
-            <div className="h-[520px] overflow-y-auto rounded-lg border border-cda-border bg-white p-4 text-[11px] leading-relaxed text-cda-text">
-              <p className="mb-0.5 text-sm font-bold text-cda-navy">ESCOLA CDA</p>
-              <p className="mb-3 text-[10px] text-cda-text3">CONTRATO DE SERVIÇOS EDUCACIONAIS {anoLetivo}</p>
+            <div className="h-[600px] overflow-y-auto rounded-lg border border-cda-border bg-white p-4 text-[13px] leading-relaxed text-cda-text">
+              <p className="mb-0.5 text-base font-bold text-cda-navy">ESCOLA CDA</p>
+              <p className="mb-3 text-[11px] text-cda-text3">CONTRATO DE SERVIÇOS EDUCACIONAIS {anoLetivo}</p>
               <p className="mb-1">
                 <span className="font-medium">Aluno(a):</span> {alunoNome || "—"}
               </p>

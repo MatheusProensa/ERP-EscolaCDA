@@ -49,8 +49,8 @@ function Linha({ children }: { children: React.ReactNode }) {
 /** Uma célula: rótulo fixo (igual ao documento) + o valor, editável ou não. */
 function Celula({ label, peso = 1, children }: { label: string; peso?: number; children: React.ReactNode }) {
   return (
-    <div className="flex min-w-0 items-center gap-1.5 px-2.5 py-2" style={{ flex: peso }}>
-      <span className="shrink-0 whitespace-nowrap text-[9.5px] font-bold text-[#0d1f4e]">{label}:</span>
+    <div className="flex min-w-0 items-center gap-2 px-3 py-2.5" style={{ flex: peso }}>
+      <span className="shrink-0 whitespace-nowrap text-[12px] font-bold text-[#0d1f4e]">{label}:</span>
       <span className="min-w-0 flex-1">{children}</span>
     </div>
   );
@@ -62,18 +62,18 @@ function CampoTexto({ value, onChange, placeholder }: { value: string; onChange:
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full min-w-0 border-b border-dashed border-cda-border bg-transparent text-[11px] text-cda-text outline-none focus:border-cda-blue"
+      className="w-full min-w-0 border-b border-dashed border-cda-border bg-transparent text-[14px] text-cda-text outline-none focus:border-cda-blue"
     />
   );
 }
 
 function Fixo({ children }: { children: React.ReactNode }) {
-  return <span className="text-[11px] text-cda-text2">{children}</span>;
+  return <span className="text-[14px] text-cda-text2">{children}</span>;
 }
 
 function ToggleSimNao({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
   return (
-    <span className="inline-flex items-center gap-2.5 text-[11px]">
+    <span className="inline-flex items-center gap-3.5 text-[13px]">
       <button
         type="button"
         onClick={() => onChange(true)}
@@ -102,7 +102,7 @@ function ChipEscolha<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+    <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[13px]">
       {opcoes.map((o) => (
         <button
           key={o.valor}
@@ -122,13 +122,13 @@ function CampoTextoLivre({ value, onChange }: { value: string; onChange: (v: str
     <input
       value={value}
       onChange={(e) => onChange(e.target.value)}
-      className="w-full min-w-0 border-b border-dashed border-cda-border bg-transparent text-[11px] text-cda-text outline-none focus:border-cda-blue"
+      className="w-full min-w-0 border-b border-dashed border-cda-border bg-transparent text-[14px] text-cda-text outline-none focus:border-cda-blue"
     />
   );
 }
 
 function TituloSecao({ children }: { children: React.ReactNode }) {
-  return <p className="mb-1 mt-3 text-[10px] font-bold uppercase tracking-wide text-cda-text3 first:mt-0">{children}</p>;
+  return <p className="mb-1.5 mt-5 text-[13px] font-bold uppercase tracking-wide text-cda-text3 first:mt-0">{children}</p>;
 }
 
 function CamposResponsavel({ r, set }: { r: Responsavel; set: (r: Responsavel) => void }) {
@@ -315,8 +315,8 @@ export function FichaMatriculaModal({
         Ficha de matrícula
       </Button>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Ficha de matrícula" className="max-w-3xl">
-        <p className="mb-3 text-xs text-cda-text3">
+      <Modal open={open} onClose={() => setOpen(false)} title="Ficha de matrícula" className="max-w-6xl">
+        <p className="mb-3 text-sm text-cda-text3">
           É o próprio documento — edita direto em cima. O que já tá no cadastro aparece fixo; só o que falta vira campo.
         </p>
 
@@ -332,8 +332,8 @@ export function FichaMatriculaModal({
             }}
           />
 
-          <div className="max-h-[52vh] overflow-y-auto bg-white px-4 py-2">
-            <p className="mb-2 text-[13px] font-bold text-cda-text">FICHA DE MATRÍCULA</p>
+          <div className="max-h-[72vh] overflow-y-auto bg-white px-6 py-3">
+            <p className="mb-3 text-[18px] font-bold text-cda-text">FICHA DE MATRÍCULA</p>
 
             <Linha>
               <Celula label="Data de ingresso/renovação" peso={1.3}>
@@ -423,7 +423,7 @@ export function FichaMatriculaModal({
                 <CampoTextoLivre value={reacoesContrariado} onChange={setReacoesContrariado} />
               </Celula>
             </Linha>
-            <p className="mt-1 text-[10px] text-cda-text3">
+            <p className="mt-1.5 text-[12px] text-cda-text3">
               Saúde, alergias e medicação vêm do cadastro (aba Censo) — entram na ficha automaticamente.
             </p>
 
@@ -457,23 +457,23 @@ export function FichaMatriculaModal({
             <button
               type="button"
               onClick={() => setPessoasAutorizadas((atual) => [...atual, { nome: "", parentesco: "" }])}
-              className="mt-1.5 flex w-fit items-center gap-1.5 text-[11px] font-medium text-cda-blue hover:underline"
+              className="mt-2 flex w-fit items-center gap-1.5 text-[13px] font-medium text-cda-blue hover:underline"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
               Adicionar pessoa
             </button>
 
-            <div className="mt-3 border-t border-cda-border pt-2">
-              <p className="text-[10.5px] leading-snug text-cda-text2">
+            <div className="mt-4 border-t border-cda-border pt-3">
+              <p className="text-[12.5px] leading-relaxed text-cda-text2">
                 Eu autorizo a utilizar a imagem do aluno (em fotos e vídeos) em materiais de divulgação institucional
                 e pedagógica da escola, exclusivamente para fins de promoção de suas atividades, podendo vinculá-las
                 em suas redes sociais, website oficial, material impresso e outdoor.
               </p>
-              <div className="mt-1">
+              <div className="mt-1.5">
                 <ToggleSimNao value={autorizacaoImagem} onChange={setAutorizacaoImagem} />
               </div>
             </div>
-            <div className="h-2" />
+            <div className="h-3" />
           </div>
 
           {/* Rodapé do papel timbrado real (endereço/telefone/@) */}
