@@ -55,6 +55,12 @@ export function ContratoSecao({
 
   async function alternarAssinado() {
     if (!contrato) return;
+    // NOVO: confirma antes de marcar/desmarcar — é um botão de 1 clique só que decide o
+    // status legal do contrato, sem aviso nenhum até aqui.
+    const confirmacao = contrato.assinado
+      ? "Marcar este contrato como pendente de novo? Ele volta a aparecer como não assinado."
+      : "Marcar este contrato como assinado? Use só depois que a assinatura (física ou pelo link) realmente aconteceu.";
+    if (!confirm(confirmacao)) return;
     setLoading(true);
     await fetch(`/api/contratos/${contrato.id}`, {
       method: "PATCH",

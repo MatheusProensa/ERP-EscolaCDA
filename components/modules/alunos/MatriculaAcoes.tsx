@@ -16,9 +16,25 @@ const SITUACAO_LABEL: Record<SituacaoMatricula, string> = {
   CONCLUIDA: "Concluída",
 };
 
-const CONFIRMA: Partial<Record<SituacaoMatricula, string>> = {
-  CANCELADA: "Cancelar esta matrícula?",
-  TRANSFERIDA: "Marcar esta matrícula como transferida (saiu da escola)?",
+// NOVO: toda mudança de situação agora explica o efeito prático — antes só CANCELADA e
+// TRANSFERIDA confirmavam, e mesmo essas não diziam o que muda na prática. Ficava fácil
+// mudar sem querer no <select> e não perceber (foi o que aconteceu com uma matrícula real).
+const CONFIRMA: Record<SituacaoMatricula, string> = {
+  ATIVA: "Reativar esta matrícula? Ela volta a contar como aluno ativo na turma.",
+  TRANCADA: "Trancar esta matrícula? O aluno some das listagens de ativos, mas o histórico fica guardado — use pra uma pausa temporária (ex.: licença).",
+  CANCELADA: "Cancelar esta matrícula? O aluno some das listagens de ativos — use quando ele realmente saiu da escola.",
+  TRANSFERIDA: "Marcar esta matrícula como transferida? Use quando o aluno saiu pra outra escola.",
+  CONCLUIDA: "Marcar esta matrícula como concluída? Use quando o aluno terminou o ciclo (ex.: formatura do Pré-Escola II).",
+};
+
+// Cor do <select> muda com a situação — dá pra perceber o estado atual num relance,
+// sem precisar ler o texto pequeno.
+const SITUACAO_COR: Record<SituacaoMatricula, string> = {
+  ATIVA: "border-cda-green text-cda-green",
+  TRANCADA: "border-cda-amber text-cda-amber",
+  CANCELADA: "border-cda-red text-cda-red",
+  TRANSFERIDA: "border-cda-text3 text-cda-text3",
+  CONCLUIDA: "border-cda-blue text-cda-blue",
 };
 
 type TurmaComVagas = Turma & { matriculados: number };
@@ -40,8 +56,7 @@ export function MatriculaAcoes({
 
   async function alterar(novaSituacao: string) {
     if (novaSituacao === situacaoAtual) return;
-    const confirmacao = CONFIRMA[novaSituacao as SituacaoMatricula];
-    if (confirmacao && !confirm(confirmacao)) return;
+    if (!confirm(CONFIRMA[novaSituacao as SituacaoMatricula])) return;
 
     setError("");
     setLoading(true);
@@ -97,7 +112,7 @@ export function MatriculaAcoes({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       {situacaoAtual === "ATIVA" && turmasDisponiveis && turmasDisponiveis.length > 0 && (
         <button
           onClick={() => setTransferindo(true)}
@@ -120,10 +135,11 @@ export function MatriculaAcoes({
         </button>
       )}
       <Select
+        label="Situação da matrícula"
         value={situacaoAtual}
         disabled={loading}
         onChange={(e) => alterar(e.target.value)}
-        className="h-8 w-40 text-xs"
+        className={`h-8 w-40 text-xs font-medium ${SITUACAO_COR[situacaoAtual]}`}
       >
         {Object.entries(SITUACAO_LABEL).map(([valor, label]) => (
           <option key={valor} value={valor}>
