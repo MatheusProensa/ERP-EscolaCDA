@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export type BadgeVariant = "green" | "red" | "amber" | "blue" | "purple" | "gray";
+export type BadgeVariant = "green" | "red" | "amber" | "blue" | "purple" | "teal" | "pink" | "gray";
 
 const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   green: "bg-cda-green/10 text-cda-green",
@@ -8,6 +8,10 @@ const VARIANT_CLASSES: Record<BadgeVariant, string> = {
   amber: "bg-cda-amber/10 text-cda-amber",
   blue: "bg-cda-blue/10 text-cda-blue",
   purple: "bg-purple-500/10 text-purple-600",
+  // NOVO: teal/pink já existiam como token de marca (globals.css) mas nunca tinham
+  // sido usados no Badge — reaproveitados pra diferenciar os tipos do Log de Atividades.
+  teal: "bg-cda-teal/10 text-cda-teal",
+  pink: "bg-cda-pink/10 text-cda-pink",
   gray: "bg-cda-text3/15 text-cda-text2",
 };
 

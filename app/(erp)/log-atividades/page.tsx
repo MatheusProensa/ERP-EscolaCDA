@@ -7,17 +7,33 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { formatarDataHora } from "@/lib/utils";
+import type { BadgeVariant } from "@/components/ui/Badge";
 
 const POR_PAGINA = 50;
 
+// Lista real de entidades que o sistema grava hoje (ver `entidade:` em
+// logAtividade.create pelo código) — cada uma com rótulo em português e cor
+// própria, pra achar rápido numa lista longa em vez de precisar ler linha a linha.
 const ENTIDADE_LABEL: Record<string, string> = {
   Aluno: "Aluno",
   Matricula: "Matrícula",
   Contrato: "Contrato",
   Funcionario: "Funcionário",
-  Chave: "Chave",
-  Documento: "Documento",
   Usuario: "Usuário",
+  Boleto: "Boleto",
+  NotaFiscal: "Nota Fiscal",
+  ListaEspera: "Lista de Espera",
+};
+
+const ENTIDADE_VARIANT: Record<string, BadgeVariant> = {
+  Aluno: "blue",
+  Matricula: "teal",
+  Contrato: "purple",
+  Funcionario: "amber",
+  Usuario: "gray",
+  Boleto: "green",
+  NotaFiscal: "pink",
+  ListaEspera: "red",
 };
 
 export default async function LogAtividadesPage({
@@ -93,7 +109,7 @@ export default async function LogAtividadesPage({
                     {log.usuario} · {formatarDataHora(log.createdAt)}
                   </p>
                 </div>
-                <Badge variant="blue">{ENTIDADE_LABEL[log.entidade] ?? log.entidade}</Badge>
+                <Badge variant={ENTIDADE_VARIANT[log.entidade] ?? "gray"}>{ENTIDADE_LABEL[log.entidade] ?? log.entidade}</Badge>
               </div>
             ))}
           </div>
