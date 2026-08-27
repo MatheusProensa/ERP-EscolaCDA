@@ -59,7 +59,7 @@ export default async function PontoPage({
         title="Ponto"
         subtitle="Lançamento das folhas de ponto e cálculo automático de horas (tolerância CLT, adicional noturno e banco de horas)"
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <GerenciarParticipantesModal funcionarios={todosFuncionarios} />
             <div className="mx-1 hidden h-7 w-px bg-cda-border sm:block" />
             <ExportButtons href="/api/relatorios/ponto" params={{ mes: String(mesFiltro), ano: String(ano) }} />

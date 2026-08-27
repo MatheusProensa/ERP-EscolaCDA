@@ -1,4 +1,4 @@
-import { GraduationCap, Users, Hourglass, School } from "lucide-react";
+import { GraduationCap, Users, School } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -31,10 +31,9 @@ export default async function AcademicoPage() {
         action={<NovaTurmaModal />}
       />
 
-      <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
         <MetricCard icon={School} iconColor="#1A6FD8" value={turmasRaw.length} label="Turmas ativas" />
         <MetricCard icon={Users} iconColor="#16A34A" value={totalAlunos} label="Alunos matriculados" />
-        <MetricCard icon={Hourglass} iconColor="#D97706" value={totalListaEspera} label="Na lista de espera" />
         <MetricCard
           icon={GraduationCap}
           iconColor="#7C3AED"

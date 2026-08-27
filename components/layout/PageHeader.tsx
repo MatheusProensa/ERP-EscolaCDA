@@ -13,7 +13,9 @@ export function PageHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex items-start justify-between gap-4">
+    // NOVO: empilha (título em cima, ação embaixo, largura livre pra quebrar linha) no celular —
+    // o action com vários botões numa linha só sem quebrar empurrava a página inteira pro lado.
+    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
         {breadcrumb && breadcrumb.length > 0 && (
           <div className="mb-1.5 flex items-center gap-1.5 text-sm text-cda-text2">
@@ -34,7 +36,7 @@ export function PageHeader({
         <h1 className="text-2xl font-bold text-cda-text">{title}</h1>
         {subtitle && <p className="mt-1 text-base text-cda-text2">{subtitle}</p>}
       </div>
-      {action && <div className="shrink-0">{action}</div>}
+      {action && <div className="flex flex-wrap items-center gap-2 sm:shrink-0">{action}</div>}
     </div>
   );
 }

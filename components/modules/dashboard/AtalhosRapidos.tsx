@@ -8,12 +8,12 @@ export type Atalho = { label: string; href: string; icon: LucideIcon; color: str
  * pra manter a linguagem visual do dashboard. */
 export function AtalhosRapidos({ itens }: { itens: Atalho[] }) {
   return (
-    <div className="mb-5 flex flex-wrap gap-3">
+    <div className="mb-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
       {itens.map((a) => (
         <Link
           key={a.href}
           href={a.href}
-          className="flex items-center gap-2.5 rounded-xl border border-cda-border bg-white px-4 py-3 text-sm font-medium text-cda-text shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md"
+          className="flex items-center justify-center gap-2.5 rounded-xl border border-cda-border bg-white px-4 py-3 text-sm font-medium text-cda-text shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md sm:justify-start"
         >
           <span
             className="flex h-8 w-8 items-center justify-center rounded-full"

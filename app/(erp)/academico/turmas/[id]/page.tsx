@@ -69,7 +69,7 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
           { label: turma.nome },
         ]}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button href={`/api/relatorios/chamada?turma=${turma.id}`} variant="outline" size="sm">
               <ClipboardList className="h-3.5 w-3.5" />
               Lista de chamada

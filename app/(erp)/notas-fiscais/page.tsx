@@ -27,8 +27,10 @@ export default async function NotasFiscaisPage() {
       />
 
       {!configurado && (
-        <div className="mb-5 flex items-start gap-2 rounded-[10px] border border-cda-amber/30 bg-cda-amber/5 p-4">
-          <Badge variant="amber">Emissão ainda não ligada</Badge>
+        <div className="mb-5 flex flex-col items-start gap-2 rounded-[10px] border border-cda-amber/30 bg-cda-amber/5 p-4 sm:flex-row">
+          <Badge variant="amber" className="shrink-0">
+            Emissão ainda não ligada
+          </Badge>
           <p className="text-sm text-cda-text2">
             Falta o certificado digital da escola e a autorização de webservice da Prefeitura de Santa Maria. Dá pra
             lançar as notas normalmente — elas ficam registradas e você tenta emitir de novo assim que isso estiver

@@ -70,7 +70,7 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
         title={aluno.nome}
         breadcrumb={[{ label: "Alunos", href: "/alunos" }, { label: aluno.nome }]}
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <NovaMatriculaModal
               alunoId={aluno.id}
               turmas={turmasDisponiveis.filter((t) => !turmaIdsDoAluno.has(t.id))}

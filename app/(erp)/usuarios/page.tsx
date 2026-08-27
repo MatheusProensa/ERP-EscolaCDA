@@ -21,7 +21,7 @@ export default async function UsuariosPage() {
         title="Usuários"
         subtitle="Quem tem acesso ao sistema e a qual setor"
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button href="/api/backup" variant="outline">
               <Download className="h-4 w-4" />
               Baixar backup
