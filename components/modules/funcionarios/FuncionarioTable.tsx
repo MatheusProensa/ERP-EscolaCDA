@@ -78,7 +78,27 @@ export function FuncionarioTable({
                 <Avatar nome={f.nome} size="sm" />
                 {f.nome}
                 {pendencias.length > 0 && (
-                  <span title={pendencias.join(" · ")}>
+                  // NOVO: title (hover) não funciona em toque — no celular o ícone ficava
+                  // sem explicação nenhuma. Agora também abre a explicação ao tocar/clicar
+                  // (span em vez de button pra não aninhar elemento interativo dentro do Link).
+                  <span
+                    title={pendencias.join(" · ")}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Pendências de cadastro: ${pendencias.join(", ")}`}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      alert(`Pendências de ${f.nome}:\n\n${pendencias.join("\n")}`);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      alert(`Pendências de ${f.nome}:\n\n${pendencias.join("\n")}`);
+                    }}
+                    className="cursor-pointer"
+                  >
                     <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-cda-amber" />
                   </span>
                 )}
