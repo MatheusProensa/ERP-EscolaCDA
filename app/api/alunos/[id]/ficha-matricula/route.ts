@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { gerarFichaMatriculaPdf } from "@/lib/gerarFichaMatriculaPdf";
 import { respostaPDF } from "@/lib/gerarRelatorioPdf";
 import { turnoDoContrato } from "@/lib/contratoTexto";
-import { SEXO_LABEL, RACA_COR_LABEL } from "@/lib/censo";
+import { RACA_COR_LABEL } from "@/lib/censo";
 
 type ResponsavelInput = {
   nome: string;
@@ -31,6 +31,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const body = await req.json();
   const {
     matriculaId,
+    alunoCpf,
     sexo,
     racaCor,
     autorizacaoImagem,
@@ -49,6 +50,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     pessoasAutorizadas,
   }: {
     matriculaId?: string;
+    alunoCpf?: string;
     sexo?: "M" | "F" | null;
     racaCor?: string | null;
     autorizacaoImagem?: boolean;
@@ -83,6 +85,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   await prisma.aluno.update({
     where: { id },
     data: {
+      cpf: alunoCpf ? alunoCpf.replace(/\D/g, "") : undefined,
       sexo: sexo ?? undefined,
       racaCor: (racaCor as never) ?? undefined,
       autorizacaoImagem: autorizacaoImagem ?? undefined,
@@ -168,9 +171,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     alunoNome: alunoAtualizado.nome,
     alunoDataNascimento: alunoAtualizado.dataNascimento,
     alunoCpf: alunoAtualizado.cpf,
-    sexoLabel: alunoAtualizado.sexo ? SEXO_LABEL[alunoAtualizado.sexo] : null,
+    sexo: alunoAtualizado.sexo,
     racaCorLabel: alunoAtualizado.racaCor ? RACA_COR_LABEL[alunoAtualizado.racaCor] : null,
-    autorizacaoImagem: alunoAtualizado.autorizacaoImagem,
+    autorizaImagemMarcado: alunoAtualizado.autorizacaoImagem,
     temIrmaos: alunoAtualizado.temIrmaos,
     idadesIrmaos: alunoAtualizado.idadesIrmaos,
     usaBico: alunoAtualizado.usaBico,
@@ -178,6 +181,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     obsBicoMamadeira: alunoAtualizado.obsBicoMamadeira,
     jaFrequentouEscola: alunoAtualizado.jaFrequentouEscola,
     duracaoEscolaAnterior: alunoAtualizado.duracaoEscolaAnterior,
+    temProblemaSaude: obsSaude.length > 0,
     obsSaude,
     rotinaSonoAlimentacao: alunoAtualizado.rotinaSonoAlimentacao,
     brincadeirasPrediletas: alunoAtualizado.brincadeirasPrediletas,

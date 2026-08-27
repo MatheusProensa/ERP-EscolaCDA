@@ -100,6 +100,7 @@ function CamposResponsavel({ r, set }: { r: Responsavel; set: (r: Responsavel) =
 export function FichaMatriculaModal({
   alunoId,
   matriculaId,
+  alunoCpfInicial,
   sexoInicial,
   racaCorInicial,
   autorizacaoImagemInicial,
@@ -119,6 +120,7 @@ export function FichaMatriculaModal({
 }: {
   alunoId: string;
   matriculaId: string;
+  alunoCpfInicial: string;
   sexoInicial: "M" | "F" | "";
   racaCorInicial: string;
   autorizacaoImagemInicial: boolean;
@@ -141,6 +143,7 @@ export function FichaMatriculaModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [alunoCpf, setAlunoCpf] = useState(alunoCpfInicial);
   const [sexo, setSexo] = useState(sexoInicial);
   const [racaCor, setRacaCor] = useState(racaCorInicial);
   const [autorizacaoImagem, setAutorizacaoImagem] = useState(autorizacaoImagemInicial);
@@ -172,6 +175,7 @@ export function FichaMatriculaModal({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         matriculaId,
+        alunoCpf,
         sexo: sexo || null,
         racaCor: racaCor || null,
         autorizacaoImagem,
@@ -221,6 +225,7 @@ export function FichaMatriculaModal({
 
         <div className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto pr-1">
           <SecaoForm titulo="Dados do aluno">
+            <Input label="CPF do aluno" value={alunoCpf} onChange={(e) => setAlunoCpf(e.target.value)} />
             <div className="grid grid-cols-3 gap-2.5">
               <Select label="Sexo" value={sexo} onChange={(e) => setSexo(e.target.value as "M" | "F" | "")}>
                 <option value="">Não informado</option>

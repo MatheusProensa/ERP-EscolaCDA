@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { formatarData, formatarCPF, formatarTelefone } from "@/lib/utils";
+import { TEXTO_AUTORIZACAO_IMAGEM, TEXTO_DECLARACAO_MATRICULA, marca } from "@/lib/fichaMatriculaTexto";
 
 export type DadosResponsavelFicha = {
   nome: string;
@@ -18,13 +19,14 @@ export type DadosResponsavelFicha = {
 export type DadosFichaMatricula = {
   anoLetivo: number;
   dataIngresso: Date;
+  /** Manhã / Tarde / Integral / Contraturno — ver nota em lib/contratoTexto sobre o gap de modelagem do turno. */
   turnoLabel: string;
   alunoNome: string;
   alunoDataNascimento: Date;
   alunoCpf: string | null;
-  sexoLabel: string | null;
+  sexo: "M" | "F" | null;
   racaCorLabel: string | null;
-  autorizacaoImagem: boolean;
+  autorizaImagemMarcado: boolean | null;
   temIrmaos: boolean | null;
   idadesIrmaos: string | null;
   usaBico: boolean | null;
@@ -32,6 +34,7 @@ export type DadosFichaMatricula = {
   obsBicoMamadeira: string | null;
   jaFrequentouEscola: boolean | null;
   duracaoEscolaAnterior: string | null;
+  temProblemaSaude: boolean;
   obsSaude: string;
   rotinaSonoAlimentacao: string | null;
   brincadeirasPrediletas: string | null;
@@ -43,7 +46,7 @@ export type DadosFichaMatricula = {
 
 const AZUL_NAVY = rgb(0x0d / 255, 0x1f / 255, 0x4e / 255);
 const CINZA = rgb(0x5a / 255, 0x6a / 255, 0x85 / 255);
-const CINZA_CLARO = rgb(0xe3 / 255, 0xe7 / 255, 0xef / 255);
+const CINZA_LINHA = rgb(0xd8 / 255, 0xdc / 255, 0xe4 / 255);
 const PRETO = rgb(0, 0, 0);
 
 const LARGURA = 595;
@@ -60,12 +63,8 @@ function calcularIdade(nascimento: Date, referencia: Date): string {
     anos -= 1;
     meses += 12;
   }
-  if (anos <= 0) return `${meses} mes(es)`;
-  return `${anos} ano(s) e ${meses} mes(es)`;
+  return anos <= 0 ? `${meses} mes(es)` : `${anos} ano(s) e ${meses} mes(es)`;
 }
-
-const naoInf = (v: string | null | undefined) => (v && v.trim() ? v : "Não informado");
-const simNao = (v: boolean | null | undefined) => (v == null ? "Não informado" : v ? "Sim" : "Não");
 
 export async function gerarFichaMatriculaPdf(d: DadosFichaMatricula): Promise<string> {
   const pdf = await PDFDocument.create();
@@ -84,14 +83,13 @@ export async function gerarFichaMatriculaPdf(d: DadosFichaMatricula): Promise<st
     if (y - altura < RODAPE) novaPagina();
   }
 
-  function quebrarLinhas(texto: string, tamanho: number, larguraMax: number, negrito = false): string[] {
-    const fonteUsada = negrito ? fonteNegrito : fonte;
+  function quebrarLinhas(texto: string, tamanho: number, larguraMax: number): string[] {
     const palavras = texto.split(" ");
     const linhas: string[] = [];
     let atual = "";
     for (const palavra of palavras) {
       const teste = atual ? `${atual} ${palavra}` : palavra;
-      if (fonteUsada.widthOfTextAtSize(teste, tamanho) > larguraMax && atual) {
+      if (fonte.widthOfTextAtSize(teste, tamanho) > larguraMax && atual) {
         linhas.push(atual);
         atual = palavra;
       } else {
@@ -102,177 +100,168 @@ export async function gerarFichaMatriculaPdf(d: DadosFichaMatricula): Promise<st
     return linhas;
   }
 
-  function tituloSecao(texto: string) {
-    garantirEspaco(26);
-    y -= 4;
-    pagina.drawRectangle({ x: MARGEM, y: y - 16, width: LARGURA_UTIL, height: 18, color: CINZA_CLARO });
-    pagina.drawText(texto.toUpperCase(), {
-      x: MARGEM + 6,
-      y: y - 12,
-      size: 9.5,
-      font: fonteNegrito,
-      color: AZUL_NAVY,
-    });
-    y -= 26;
-  }
-
-  /** Duas colunas label:valor por linha. */
-  function linhaCampos(campos: { label: string; valor: string }[]) {
-    garantirEspaco(15);
-    const larguraCol = LARGURA_UTIL / campos.length;
-    campos.forEach((c, i) => {
+  /** Uma "linha de campos" da ficha real: um ou mais "Rótulo: valor" na mesma linha, com régua embaixo. */
+  function linhaCampos(partes: { label: string; valor: string }[], opts?: { semRegua?: boolean }) {
+    garantirEspaco(20);
+    const larguraCol = LARGURA_UTIL / partes.length;
+    partes.forEach((p, i) => {
       const x = MARGEM + i * larguraCol;
-      pagina.drawText(`${c.label}: `, { x, y, size: 8.5, font: fonteNegrito, color: CINZA });
-      const larguraLabel = fonteNegrito.widthOfTextAtSize(`${c.label}: `, 8.5);
-      const valorTrunc = c.valor;
-      pagina.drawText(valorTrunc, {
-        x: x + larguraLabel,
-        y,
-        size: 9,
-        font: fonte,
-        color: PRETO,
-        maxWidth: larguraCol - larguraLabel - 6,
-      });
+      pagina.drawText(`${p.label}: `, { x, y, size: 8.5, font: fonteNegrito, color: CINZA });
+      const larguraLabel = fonteNegrito.widthOfTextAtSize(`${p.label}: `, 8.5);
+      pagina.drawText(p.valor, { x: x + larguraLabel, y, size: 9, font: fonte, color: PRETO, maxWidth: larguraCol - larguraLabel - 4 });
     });
-    y -= 17;
+    y -= 9;
+    if (!opts?.semRegua) {
+      pagina.drawLine({ start: { x: MARGEM, y }, end: { x: MARGEM + LARGURA_UTIL, y }, thickness: 0.5, color: CINZA_LINHA });
+    }
+    y -= 10;
   }
 
   function blocoTexto(label: string, texto: string) {
-    garantirEspaco(13);
-    pagina.drawText(`${label}:`, { x: MARGEM, y, size: 8.5, font: fonteNegrito, color: CINZA });
+    garantirEspaco(20);
+    pagina.drawText(`${label}: `, { x: MARGEM, y, size: 8.5, font: fonteNegrito, color: CINZA });
+    const larguraLabel = fonteNegrito.widthOfTextAtSize(`${label}: `, 8.5);
+    const primeiraLinhaLargura = LARGURA_UTIL - larguraLabel;
+    const linhas = quebrarLinhas(texto || "—", 9, primeiraLinhaLargura > 120 ? primeiraLinhaLargura : LARGURA_UTIL);
+    pagina.drawText(linhas[0] ?? "—", { x: MARGEM + larguraLabel, y, size: 9, font: fonte, color: PRETO });
     y -= 12;
-    const linhas = quebrarLinhas(texto, 9, LARGURA_UTIL);
-    for (const l of linhas) {
+    for (const l of linhas.slice(1)) {
       garantirEspaco(11);
       pagina.drawText(l, { x: MARGEM, y, size: 9, font: fonte, color: PRETO });
       y -= 11;
     }
-    y -= 6;
+    y -= 2;
+    pagina.drawLine({ start: { x: MARGEM, y }, end: { x: MARGEM + LARGURA_UTIL, y }, thickness: 0.5, color: CINZA_LINHA });
+    y -= 10;
   }
 
   // ---- Cabeçalho ----
   pagina.drawText("ESCOLA CDA", { x: MARGEM, y, size: 16, font: fonteNegrito, color: AZUL_NAVY });
   y -= 14;
   pagina.drawText("Onde, há 15 anos, família e escola sonham juntas", { x: MARGEM, y, size: 9, font: fonte, color: CINZA });
-  y -= 22;
-  pagina.drawText(`FICHA DE MATRÍCULA ${d.anoLetivo}`, { x: MARGEM, y, size: 12.5, font: fonteNegrito, color: PRETO });
-  y -= 22;
+  y -= 24;
+  pagina.drawText(`FICHA DE MATRÍCULA ${d.anoLetivo}`, { x: MARGEM, y, size: 13, font: fonteNegrito, color: PRETO });
+  y -= 20;
 
-  // ---- Dados do aluno ----
-  tituloSecao("Dados do aluno");
+  // ---- Tabela de identificação (mesma ordem do modelo em papel) ----
   linhaCampos([
     { label: "Data de ingresso/renovação", valor: formatarData(d.dataIngresso) },
-    { label: "Turno", valor: d.turnoLabel },
+    { label: "Turno", valor: `${marca("Manhã", d.turnoLabel === "Manhã")}  ${marca("Tarde", d.turnoLabel === "Tarde")}  ${marca("Integral", d.turnoLabel === "Integral")}  ${marca("Contraturno", d.turnoLabel === "Contraturno")}` },
+  ]);
+  linhaCampos([
+    { label: "Data de Nascimento", valor: formatarData(d.alunoDataNascimento) },
+    { label: "Idade", valor: calcularIdade(d.alunoDataNascimento, new Date()) },
+    { label: "Sexo", valor: `${marca("Masculino", d.sexo === "M")}  ${marca("Feminino", d.sexo === "F")}` },
   ]);
   linhaCampos([
     { label: "Nome completo", valor: d.alunoNome },
+    { label: "CPF", valor: d.alunoCpf ? formatarCPF(d.alunoCpf) : "—" },
   ]);
   linhaCampos([
-    { label: "Data de nascimento", valor: formatarData(d.alunoDataNascimento) },
-    { label: "Idade", valor: calcularIdade(d.alunoDataNascimento, new Date()) },
-    { label: "Sexo", valor: naoInf(d.sexoLabel) },
-  ]);
-  linhaCampos([
-    { label: "CPF", valor: d.alunoCpf ? formatarCPF(d.alunoCpf) : "Não informado" },
-    { label: "Raça/etnia", valor: naoInf(d.racaCorLabel) },
-    { label: "Autoriza uso de imagem", valor: d.autorizacaoImagem ? "Sim" : "Não" },
+    {
+      label: "Raça/etnia",
+      valor: ["Branca", "Preta", "Indígena", "Parda", "Amarela", "N.D."].map((r) => marca(r, d.racaCorLabel === r || (r === "N.D." && d.racaCorLabel === "Não declarada"))).join("  "),
+    },
   ]);
 
-  // ---- Pai / Mãe ----
-  function secaoResponsavel(rotulo: "Pai" | "Mãe", r: DadosResponsavelFicha) {
-    tituloSecao(`Filiação — ${rotulo}`);
-    if (!r) {
-      garantirEspaco(12);
-      pagina.drawText("Não informado", { x: MARGEM, y, size: 9, font: fonte, color: CINZA });
-      y -= 17;
-      return;
-    }
+  function linhasResponsavel(rotulo: "Pai" | "Mãe", r: DadosResponsavelFicha) {
     linhaCampos([
-      { label: "Nome", valor: r.nome },
-      { label: "RG", valor: naoInf(r.rg) },
+      { label: `Nome do(a) ${rotulo}`, valor: r?.nome || "—" },
+      { label: "RG", valor: r?.rg || "—" },
     ]);
     linhaCampos([
-      { label: "CPF", valor: r.cpf ? formatarCPF(r.cpf) : "Não informado" },
-      { label: "E-mail", valor: naoInf(r.email) },
+      { label: "CPF", valor: r?.cpf ? formatarCPF(r.cpf) : "—" },
+      { label: "E-mail", valor: r?.email || "—" },
     ]);
     linhaCampos([
-      { label: "Escolaridade", valor: naoInf(r.escolaridade) },
-      { label: "Profissão", valor: naoInf(r.profissao) },
+      { label: "Escolaridade", valor: r?.escolaridade || "—" },
+      { label: "Profissão", valor: r?.profissao || "—" },
     ]);
     linhaCampos([
-      { label: "Endereço", valor: naoInf(r.endereco) },
-      { label: "CEP", valor: naoInf(r.cep) },
+      { label: "Endereço", valor: r?.endereco || "—" },
+      { label: "CEP", valor: r?.cep || "—" },
     ]);
     linhaCampos([
-      { label: "Tel. fixo", valor: r.telefoneFixo ? formatarTelefone(r.telefoneFixo) : "Não informado" },
-      { label: "Celular", valor: r.telefoneCelular ? formatarTelefone(r.telefoneCelular) : "Não informado" },
-      { label: "Tel. comercial", valor: r.telefoneComercial ? formatarTelefone(r.telefoneComercial) : "Não informado" },
+      { label: "Tel. Fixo", valor: r?.telefoneFixo ? formatarTelefone(r.telefoneFixo) : "—" },
+      { label: "Celular", valor: r?.telefoneCelular ? formatarTelefone(r.telefoneCelular) : "—" },
+      { label: "Tel. Comercial", valor: r?.telefoneComercial ? formatarTelefone(r.telefoneComercial) : "—" },
     ]);
   }
-  secaoResponsavel("Pai", d.pai);
-  secaoResponsavel("Mãe", d.mae);
+  linhasResponsavel("Pai", d.pai);
+  linhasResponsavel("Mãe", d.mae);
 
-  // ---- Perfil da criança ----
-  tituloSecao("Perfil da criança");
   linhaCampos([
-    { label: "Tem irmãos?", valor: simNao(d.temIrmaos) },
-    { label: "Idades", valor: naoInf(d.idadesIrmaos) },
+    { label: "Tem irmãos?", valor: `${marca("Sim", d.temIrmaos)}  ${marca("Não", d.temIrmaos === false)}    Idades respectivas: ${d.idadesIrmaos || "—"}` },
   ]);
   linhaCampos([
-    { label: "Usa bico?", valor: simNao(d.usaBico) },
-    { label: "Usa mamadeira?", valor: simNao(d.usaMamadeira) },
+    { label: "Usa bico?", valor: `${marca("Sim", d.usaBico)}  ${marca("Não", d.usaBico === false)}` },
+    { label: "Usa mamadeira?", valor: `${marca("Sim", d.usaMamadeira)}  ${marca("Não", d.usaMamadeira === false)}` },
   ]);
-  if (d.obsBicoMamadeira) blocoTexto("Observações (bico/mamadeira)", d.obsBicoMamadeira);
+  if (d.obsBicoMamadeira) blocoTexto("Obs. (bico/mamadeira)", d.obsBicoMamadeira);
   linhaCampos([
-    { label: "Já frequentou outra escola?", valor: simNao(d.jaFrequentouEscola) },
-    { label: "Duração", valor: naoInf(d.duracaoEscolaAnterior) },
+    { label: "Já frequentou outra escola?", valor: `${marca("Sim", d.jaFrequentouEscola)}  ${marca("Não", d.jaFrequentouEscola === false)}    Duração: ${d.duracaoEscolaAnterior || "—"}` },
   ]);
-  blocoTexto("Problemas de saúde / alergias / medicação", d.obsSaude || "Nenhum informado");
-  if (d.rotinaSonoAlimentacao) blocoTexto("Rotina de sono e alimentação", d.rotinaSonoAlimentacao);
-  if (d.brincadeirasPrediletas) blocoTexto("Brincadeiras prediletas", d.brincadeirasPrediletas);
-  if (d.reacoesContrariado) blocoTexto("Reações quando contrariado(a)", d.reacoesContrariado);
+  linhaCampos([
+    { label: "Possui algum problema de saúde?", valor: `${marca("Sim", d.temProblemaSaude)}  ${marca("Não", !d.temProblemaSaude)}` },
+  ]);
+  if (d.temProblemaSaude) blocoTexto("Obs. (saúde)", d.obsSaude);
+  blocoTexto("Questões relacionadas ao sono/alimentação", d.rotinaSonoAlimentacao || "—");
+  blocoTexto("Brincadeiras prediletas", d.brincadeirasPrediletas || "—");
+  blocoTexto("Reações quando contrariado(a)", d.reacoesContrariado || "—");
 
-  // ---- Pessoas autorizadas a buscar ----
-  tituloSecao("Pessoas autorizadas a buscar o aluno");
-  const autorizados = [
-    ...(d.pai ? [{ nome: d.pai.nome, parentesco: "Pai" }] : []),
-    ...(d.mae ? [{ nome: d.mae.nome, parentesco: "Mãe" }] : []),
-    ...d.pessoasAutorizadas,
-  ];
-  if (autorizados.length === 0) {
+  const maeAutorizada = !!d.mae;
+  const paiAutorizado = !!d.pai;
+  linhaCampos([
+    { label: "Pessoas autorizadas a buscar o aluno", valor: `${marca("Mãe", maeAutorizada)}  ${marca("Pai", paiAutorizado)}` },
+  ], { semRegua: true });
+  y -= 2;
+  const outras = d.pessoasAutorizadas.slice(0, 3);
+  for (let i = 0; i < 3; i++) {
+    const p = outras[i];
+    garantirEspaco(14);
+    pagina.drawText(`${i + 1}) Nome: ${p?.nome || "_______________________"}    Parentesco: ${p?.parentesco || "___________"}`, {
+      x: MARGEM,
+      y,
+      size: 9,
+      font: fonte,
+      color: p ? PRETO : CINZA,
+    });
+    y -= 15;
+  }
+
+  // ---- Autorização de imagem ----
+  y -= 6;
+  garantirEspaco(13);
+  for (const l of quebrarLinhas(TEXTO_AUTORIZACAO_IMAGEM, 9, LARGURA_UTIL)) {
     garantirEspaco(12);
-    pagina.drawText("Nenhuma pessoa informada", { x: MARGEM, y, size: 9, font: fonte, color: CINZA });
-    y -= 17;
-  } else {
-    for (const p of autorizados) {
-      garantirEspaco(13);
-      pagina.drawText(`• ${p.nome}`, { x: MARGEM, y, size: 9, font: fonte, color: PRETO });
-      pagina.drawText(`(${p.parentesco})`, { x: MARGEM + 300, y, size: 9, font: fonte, color: CINZA });
-      y -= 14;
-    }
+    pagina.drawText(l, { x: MARGEM, y, size: 9, font: fonte, color: PRETO });
+    y -= 12;
   }
+  garantirEspaco(14);
+  pagina.drawText(`${marca("Sim", d.autorizaImagemMarcado)}     ${marca("Não", d.autorizaImagemMarcado === false)}`, {
+    x: MARGEM,
+    y,
+    size: 9.5,
+    font: fonteNegrito,
+  });
+  y -= 26;
 
   // ---- Declaração e assinatura ----
-  y -= 12;
   garantirEspaco(13);
-  const declaracao =
-    "Declaro que as informações prestadas nesta ficha são verdadeiras e me responsabilizo por comunicar " +
-    "à Escola CDA qualquer alteração nos dados acima. Solicito a matrícula do(a) aluno(a) e declaro estar " +
-    "ciente do Regimento Interno da instituição.";
-  for (const l of quebrarLinhas(declaracao, 9.5, LARGURA_UTIL)) {
+  for (const l of quebrarLinhas(TEXTO_DECLARACAO_MATRICULA, 9.5, LARGURA_UTIL)) {
     garantirEspaco(13);
     pagina.drawText(l, { x: MARGEM, y, size: 9.5, font: fonte, color: PRETO });
     y -= 13;
   }
-  y -= 26;
+  y -= 24;
 
   garantirEspaco(60);
   pagina.drawText(`Santa Maria - RS, ${formatarData(new Date())}.`, { x: MARGEM, y, size: 9.5, font: fonte, color: PRETO });
   y -= 42;
   garantirEspaco(24);
-  pagina.drawText("_____________________________________", { x: MARGEM, y, size: 10, font: fonte });
+  pagina.drawText("_________________________________", { x: MARGEM, y, size: 10, font: fonte });
   y -= 12;
-  pagina.drawText("Assinatura do(a) responsável", { x: MARGEM, y, size: 8.5, font: fonte, color: CINZA });
+  pagina.drawText("Ass. do Responsável", { x: MARGEM, y, size: 8.5, font: fonte, color: CINZA });
 
   const bytes = await pdf.save();
   const base64 = Buffer.from(bytes).toString("base64");

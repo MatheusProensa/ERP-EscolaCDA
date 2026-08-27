@@ -82,6 +82,7 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
               <FichaMatriculaModal
                 alunoId={aluno.id}
                 matriculaId={matriculaPrincipal.id}
+                alunoCpfInicial={aluno.cpf ?? ""}
                 sexoInicial={aluno.sexo ?? ""}
                 racaCorInicial={aluno.racaCor ?? ""}
                 autorizacaoImagemInicial={aluno.autorizacaoImagem}
