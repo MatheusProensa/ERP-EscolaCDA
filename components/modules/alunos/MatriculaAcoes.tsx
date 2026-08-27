@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeftRight } from "lucide-react";
+import { ArrowLeftRight, XCircle } from "lucide-react";
 import type { SituacaoMatricula, Turma } from "@prisma/client";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -91,6 +91,17 @@ export function MatriculaAcoes({
         >
           <ArrowLeftRight className="h-3.5 w-3.5" />
           Transferir turma
+        </button>
+      )}
+      {situacaoAtual === "ATIVA" && (
+        <button
+          onClick={() => alterar("CANCELADA")}
+          disabled={loading}
+          title="Cancelar matrícula"
+          className="flex h-8 items-center gap-1.5 rounded-lg border border-cda-border bg-white px-2.5 text-xs font-medium text-cda-red hover:bg-cda-red/5 disabled:opacity-50"
+        >
+          <XCircle className="h-3.5 w-3.5" />
+          Cancelar matrícula
         </button>
       )}
       <Select

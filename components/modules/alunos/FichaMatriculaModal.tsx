@@ -35,17 +35,21 @@ const RESPONSAVEL_VAZIO: Responsavel = {
   telefoneCelular: "",
 };
 
+// Tailwind precisa das duas classes separadas: "divide-x" só cria a largura da borda entre os
+// filhos, quem colore é "divide-{cor}" — reaproveitar "border-{cor}" pra isso não pinta nada
+// (a linha interna ficava com a cor default, mais escura, destoando da caixa por fora).
 const BORDA = "border-[#8fd8f5]";
+const DIVISORIA = "divide-[#8fd8f5]";
 
 /** Uma linha da "grade" da ficha real — mesma ideia da tabela do papel: caixas coladas, borda azul clarinha. */
 function Linha({ children }: { children: React.ReactNode }) {
-  return <div className={`flex divide-x ${BORDA} border-x border-b first:border-t ${BORDA}`}>{children}</div>;
+  return <div className={`flex divide-x ${DIVISORIA} ${BORDA} border-x border-b first:border-t`}>{children}</div>;
 }
 
 /** Uma célula: rótulo fixo (igual ao documento) + o valor, editável ou não. */
 function Celula({ label, peso = 1, children }: { label: string; peso?: number; children: React.ReactNode }) {
   return (
-    <div className="flex min-w-0 items-center gap-1 px-2 py-1.5" style={{ flex: peso }}>
+    <div className="flex min-w-0 items-center gap-1.5 px-2.5 py-2" style={{ flex: peso }}>
       <span className="shrink-0 whitespace-nowrap text-[9.5px] font-bold text-[#0d1f4e]">{label}:</span>
       <span className="min-w-0 flex-1">{children}</span>
     </div>
@@ -98,7 +102,7 @@ function ChipEscolha<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <span className="inline-flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px]">
+    <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
       {opcoes.map((o) => (
         <button
           key={o.valor}
