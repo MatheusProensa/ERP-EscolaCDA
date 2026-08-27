@@ -77,14 +77,13 @@ export function DocumentosLista({ grupos }: { grupos: { categoria: string; itens
                         {status.label}
                       </Badge>
                     )}
-                    <a
-                      href={doc.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={() => abrirDocumento(doc.link)}
+                      aria-label="Abrir documento"
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg"
                     >
                       <ExternalLink className="h-4 w-4" />
-                    </a>
+                    </button>
                     <button
                       onClick={() => setEditando(doc)}
                       className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg"
