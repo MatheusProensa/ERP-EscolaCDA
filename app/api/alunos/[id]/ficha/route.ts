@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gerarFichaPdf, respostaPDF, type SecaoFicha } from "@/lib/gerarRelatorioPdf";
-import { formatarCPF, formatarData, formatarMoeda, formatarTelefone } from "@/lib/utils";
-import { saldoDevedor } from "@/lib/inadimplencia";
+import { formatarCPF, formatarData, formatarTelefone } from "@/lib/utils";
 
 const SITUACAO_LABEL: Record<string, string> = {
   ATIVA: "Ativa",
@@ -33,14 +32,12 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     include: {
       responsaveis: true,
       matriculas: {
-        include: { turma: true, mensalidades: { include: { pagamentos: true } } },
+        include: { turma: true },
         orderBy: { dataMatricula: "desc" },
       },
     },
   });
   if (!aluno) return NextResponse.json({ error: "Aluno não encontrado" }, { status: 404 });
-
-  const matriculaAtiva = aluno.matriculas.find((m) => m.situacao === "ATIVA") ?? aluno.matriculas[0];
 
   const secoes: SecaoFicha[] = [
     {
@@ -105,24 +102,6 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
           : [{ label: "Matrículas", valor: "Nenhuma matrícula" }],
     },
   ];
-
-  if (matriculaAtiva) {
-    const anoAtual = new Date().getFullYear();
-    const mensalidadesAno = matriculaAtiva.mensalidades.filter((m) => m.ano === anoAtual);
-    const recebidoAno = mensalidadesAno.reduce(
-      (acc, m) => acc + m.pagamentos.reduce((a, p) => a + p.valor, 0),
-      0
-    );
-    const emAberto = matriculaAtiva.mensalidades.reduce((acc, m) => acc + saldoDevedor(m), 0);
-
-    secoes.push({
-      titulo: `Situação financeira — ${matriculaAtiva.turma.nome}`,
-      campos: [
-        { label: "Recebido no ano", valor: formatarMoeda(recebidoAno) },
-        { label: "Em aberto (total)", valor: formatarMoeda(emAberto) },
-      ],
-    });
-  }
 
   const pdf = await gerarFichaPdf({
     titulo: "Ficha do Aluno",

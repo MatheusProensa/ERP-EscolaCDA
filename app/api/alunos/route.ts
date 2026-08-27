@@ -138,24 +138,14 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      const matricula = await tx.matricula.create({
+      await tx.matricula.create({
         data: {
           alunoId: novoAluno.id,
           turmaId,
           anoLetivoId: turma.anoLetivoId,
           situacao: "ATIVA",
+          valorMensalidade: valor,
         },
-      });
-
-      await tx.mensalidade.createMany({
-        data: Array.from({ length: 12 }, (_, i) => ({
-          matriculaId: matricula.id,
-          mes: i + 1,
-          ano: new Date().getFullYear(),
-          valor,
-          vencimento: new Date(new Date().getFullYear(), i, 10),
-          situacao: "PENDENTE" as const,
-        })),
       });
 
       await tx.logAtividade.create({

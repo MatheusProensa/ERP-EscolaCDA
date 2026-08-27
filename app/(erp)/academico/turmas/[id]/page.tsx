@@ -38,7 +38,7 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
     include: {
       anoLetivo: true,
       matriculas: {
-        include: { aluno: true, mensalidades: true },
+        include: { aluno: true },
         orderBy: { aluno: { nome: "asc" } },
       },
     },
@@ -107,17 +107,12 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
           <TableHead>
             <Th>Aluno</Th>
             <Th>Situação da matrícula</Th>
-            <Th>Status financeiro</Th>
           </TableHead>
           <TableBody>
             {turma.matriculas.length === 0 && (
-              <TableEmpty colSpan={3}>Nenhum aluno matriculado nesta turma.</TableEmpty>
+              <TableEmpty colSpan={2}>Nenhum aluno matriculado nesta turma.</TableEmpty>
             )}
             {turma.matriculas.map((m) => {
-              const hoje = new Date();
-              const temAtraso = m.mensalidades.some(
-                (men) => (men.situacao === "PENDENTE" || men.situacao === "ATRASADA") && men.vencimento < hoje
-              );
               return (
                 <Tr key={m.id}>
                   <Td>
@@ -128,9 +123,6 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
                   </Td>
                   <Td>
                     <Badge variant={SITUACAO_VARIANT[m.situacao]}>{SITUACAO_LABEL[m.situacao]}</Badge>
-                  </Td>
-                  <Td>
-                    <Badge variant={temAtraso ? "red" : "green"}>{temAtraso ? "Atrasado" : "Em dia"}</Badge>
                   </Td>
                 </Tr>
               );

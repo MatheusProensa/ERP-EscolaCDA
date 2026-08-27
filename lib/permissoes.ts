@@ -22,7 +22,6 @@ const ANIVERSARIANTES: RoleAtiva[] = ["ADMIN", "DIRECAO", "PEDAGOGICO", "ADMINIS
 // aparecem antes de regras mais genéricas.
 const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   // Páginas
-  { prefixo: "/financeiro", roles: FINANCEIRO },
   { prefixo: "/alunos", roles: PEDAGOGICO },
   { prefixo: "/academico", roles: PEDAGOGICO },
   { prefixo: "/cardapio", roles: PEDAGOGICO },
@@ -35,8 +34,6 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/usuarios", roles: GESTAO },
 
   // APIs
-  { prefixo: "/api/relatorios/inadimplentes", roles: FINANCEIRO },
-  { prefixo: "/api/relatorios/receita-mensal", roles: FINANCEIRO },
   { prefixo: "/api/relatorios/alunos", roles: PEDAGOGICO },
   { prefixo: "/api/relatorios/chamada", roles: PEDAGOGICO },
   { prefixo: "/api/relatorios/aniversariantes", roles: ANIVERSARIANTES },
@@ -44,7 +41,6 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/api/relatorios/ponto", roles: FINANCEIRO },
   { prefixo: "/api/ponto", roles: FINANCEIRO },
   { prefixo: "/api/documentos", roles: GESTAO },
-  { prefixo: "/api/financeiro", roles: FINANCEIRO },
   { prefixo: "/api/alunos", roles: PEDAGOGICO },
   { prefixo: "/api/matriculas", roles: PEDAGOGICO },
   { prefixo: "/api/lista-espera", roles: PEDAGOGICO },

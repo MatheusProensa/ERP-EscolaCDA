@@ -17,7 +17,7 @@ const SITUACAO_LABEL: Record<SituacaoMatricula, string> = {
 };
 
 const CONFIRMA: Partial<Record<SituacaoMatricula, string>> = {
-  CANCELADA: "Cancelar esta matrícula? As mensalidades já geradas continuam no histórico.",
+  CANCELADA: "Cancelar esta matrícula?",
   TRANSFERIDA: "Marcar esta matrícula como transferida (saiu da escola)?",
 };
 
@@ -109,9 +109,7 @@ export function MatriculaAcoes({
 
       <Modal open={transferindo} onClose={() => setTransferindo(false)} title="Transferir de turma">
         <div className="flex flex-col gap-4">
-          <p className="text-sm text-cda-text2">
-            A matrícula muda de turma agora mesmo — o histórico de mensalidades continua o mesmo.
-          </p>
+          <p className="text-sm text-cda-text2">A matrícula muda de turma agora mesmo.</p>
           <Select value={novaTurmaId} onChange={(e) => setNovaTurmaId(e.target.value)} label="Nova turma">
             <option value="" disabled>
               Selecione a turma de destino

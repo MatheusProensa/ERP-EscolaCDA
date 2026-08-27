@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
-  Wallet,
   GraduationCap,
   UserCog,
   Megaphone,
@@ -48,10 +47,7 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Financeiro",
-    items: [
-      { label: "Financeiro", href: "/financeiro", icon: Wallet },
-      { label: "Ponto", href: "/ponto", icon: Clock },
-    ],
+    items: [{ label: "Ponto", href: "/ponto", icon: Clock }],
   },
   {
     label: "Administrativo",

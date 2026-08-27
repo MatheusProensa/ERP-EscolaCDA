@@ -293,8 +293,6 @@ function sortearRacaCor(): "BRANCA" | "PRETA" | "PARDA" | "AMARELA" | "INDIGENA"
 async function main() {
   console.log("Limpando dados existentes...");
   await prisma.logAtividade.deleteMany();
-  await prisma.pagamento.deleteMany();
-  await prisma.mensalidade.deleteMany();
   await prisma.contrato.deleteMany();
   await prisma.matricula.deleteMany();
   await prisma.responsavel.deleteMany();
@@ -411,27 +409,16 @@ async function main() {
       const nomeTurma = CODIGO_TURMA[codigo];
       const turma = turmasPorNome.get(nomeTurma)!;
 
-      const matricula = await prisma.matricula.create({
+      await prisma.matricula.create({
         data: {
           alunoId: aluno.id,
           turmaId: turma.id,
           anoLetivoId: anoLetivo.id,
           situacao: "ATIVA",
+          // Só o valor contratado (fica no contrato) — mensalidade é cobrada
+          // fora do sistema, não existe mais controle de pagamento aqui.
+          valorMensalidade: VALOR_MENSALIDADE[nomeTurma],
         },
-      });
-
-      // Mensalidades de janeiro a dezembro, sem dados financeiros fictícios:
-      // todas ficam PENDENTE até a secretaria registrar pagamentos reais.
-      const valor = VALOR_MENSALIDADE[nomeTurma];
-      await prisma.mensalidade.createMany({
-        data: Array.from({ length: 12 }, (_, i) => ({
-          matriculaId: matricula.id,
-          mes: i + 1,
-          ano: ANO,
-          valor,
-          vencimento: new Date(ANO, i, 10),
-          situacao: "PENDENTE" as const,
-        })),
       });
     }
   }

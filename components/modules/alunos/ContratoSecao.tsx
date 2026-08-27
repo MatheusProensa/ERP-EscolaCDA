@@ -13,10 +13,12 @@ export function ContratoSecao({
   matriculaId,
   turmaNome,
   contrato,
+  action,
 }: {
   matriculaId: string;
   turmaNome: string;
   contrato: Contrato | null;
+  action?: React.ReactNode;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -70,7 +72,7 @@ export function ContratoSecao({
   }
 
   return (
-    <Card title={`Contrato — ${turmaNome}`} className="p-5">
+    <Card title={`Contrato — ${turmaNome}`} action={action} className="p-5">
       {!contrato ? (
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-cda-text2">Nenhum contrato gerado para esta matrícula ainda.</p>

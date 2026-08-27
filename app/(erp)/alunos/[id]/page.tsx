@@ -3,7 +3,6 @@ import { FileDown } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { AlunoCard } from "@/components/modules/alunos/AlunoCard";
 import { CensoSecao } from "@/components/modules/alunos/CensoSecao";
@@ -11,8 +10,6 @@ import { ContratoSecao } from "@/components/modules/alunos/ContratoSecao";
 import { MatriculaAcoes } from "@/components/modules/alunos/MatriculaAcoes";
 import { ResponsaveisSecao } from "@/components/modules/alunos/ResponsaveisSecao";
 import { NovaMatriculaModal } from "@/components/modules/alunos/NovaMatriculaModal";
-import { MensalidadeTable } from "@/components/modules/financeiro/MensalidadeTable";
-import { NovaCobrancaModal } from "@/components/modules/financeiro/NovaCobrancaModal";
 import { ordenarTurmas } from "@/lib/utils";
 
 export default async function AlunoPerfilPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,14 +20,7 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
     include: {
       responsaveis: true,
       matriculas: {
-        include: {
-          turma: true,
-          contrato: true,
-          mensalidades: {
-            include: { pagamentos: { orderBy: { dataPagamento: "desc" } } },
-            orderBy: { mes: "asc" },
-          },
-        },
+        include: { turma: true, contrato: true },
         orderBy: { dataMatricula: "desc" },
       },
     },
@@ -83,24 +73,19 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
           <CensoSecao aluno={aluno} />
 
           {aluno.matriculas.map((m) => (
-            <div key={m.id} className="flex flex-col gap-5">
-              <ContratoSecao matriculaId={m.id} turmaNome={m.turma.nome} contrato={m.contrato} />
-              <Card
-                title={`Mensalidades — ${m.turma.nome}`}
-                action={
-                  <div className="flex items-center gap-2">
-                    <NovaCobrancaModal matriculaId={m.id} />
-                    <MatriculaAcoes
-                      matriculaId={m.id}
-                      situacaoAtual={m.situacao}
-                      turmasDisponiveis={turmasDisponiveis.filter((t) => t.id !== m.turmaId)}
-                    />
-                  </div>
-                }
-              >
-                <MensalidadeTable mensalidades={m.mensalidades} podeEditar />
-              </Card>
-            </div>
+            <ContratoSecao
+              key={m.id}
+              matriculaId={m.id}
+              turmaNome={m.turma.nome}
+              contrato={m.contrato}
+              action={
+                <MatriculaAcoes
+                  matriculaId={m.id}
+                  situacaoAtual={m.situacao}
+                  turmasDisponiveis={turmasDisponiveis.filter((t) => t.id !== m.turmaId)}
+                />
+              }
+            />
           ))}
         </div>
 

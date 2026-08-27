@@ -14,16 +14,16 @@ datasource db {
 }
 
 model User {
-  id                 String        @id @default(cuid())
+  id                 String         @id @default(cuid())
   name               String
-  email              String        @unique
+  email              String         @unique
   password           String
-  role               Role          @default(SECRETARIA)
-  tentativasFalhas   Int           @default(0)
+  role               Role           @default(SECRETARIA)
+  tentativasFalhas   Int            @default(0)
   bloqueadoAte       DateTime?
-  createdAt          DateTime      @default(now())
-  mensagensEnviadas  Mensagem[]    @relation("MensagensEnviadas")
-  mensagensRecebidas Mensagem[]    @relation("MensagensRecebidas")
+  createdAt          DateTime       @default(now())
+  mensagensEnviadas  Mensagem[]     @relation("MensagensEnviadas")
+  mensagensRecebidas Mensagem[]     @relation("MensagensRecebidas")
   notificacoes       Notificacao[]
   avisosMural        MuralAviso[]
   leiturasAvisos     AvisoLeitura[]
@@ -127,46 +127,46 @@ enum StatusListaEspera {
 }
 
 model Aluno {
-  id                  String        @id @default(cuid())
-  nome                String
-  nomeSocial          String?
-  dataNascimento      DateTime
-  naturalidade        String?
-  cpf                 String?       @unique
-  rg                  String?
-  certidaoNascimento  String?
-  foto                String?
-  endereco            String?
-  bairro              String?
-  cidade              String?
-  cep                 String?
-  tipoSanguineo       String?
-  convenioMedico      String?
-  medicacaoContinua   String?
-  alergias            String?
-  restricoes          String?
-  necessidadesEsp     String?
-  autorizacaoImagem   Boolean       @default(false)
+  id                 String   @id @default(cuid())
+  nome               String
+  nomeSocial         String?
+  dataNascimento     DateTime
+  naturalidade       String?
+  cpf                String?  @unique
+  rg                 String?
+  certidaoNascimento String?
+  foto               String?
+  endereco           String?
+  bairro             String?
+  cidade             String?
+  cep                String?
+  tipoSanguineo      String?
+  convenioMedico     String?
+  medicacaoContinua  String?
+  alergias           String?
+  restricoes         String?
+  necessidadesEsp    String?
+  autorizacaoImagem  Boolean  @default(false)
 
   // Dados do Censo Escolar (Educacenso)
-  sexo                Sexo?
-  racaCor             RacaCor?
-  povoIndigena        String?
-  nacionalidade       Nacionalidade @default(BRASILEIRA)
-  municipioNasc       String?
-  ufNasc              String?
-  filiacao1           String?
-  filiacao2           String?
-  bolsaFamilia        Boolean       @default(false)
-  deficiencia         Boolean       @default(false)
-  tipoDeficiencia     String?
-  recursosAcessib     String?
-  nis                 String?
+  sexo            Sexo?
+  racaCor         RacaCor?
+  povoIndigena    String?
+  nacionalidade   Nacionalidade @default(BRASILEIRA)
+  municipioNasc   String?
+  ufNasc          String?
+  filiacao1       String?
+  filiacao2       String?
+  bolsaFamilia    Boolean       @default(false)
+  deficiencia     Boolean       @default(false)
+  tipoDeficiencia String?
+  recursosAcessib String?
+  nis             String?
 
-  matriculas          Matricula[]
-  responsaveis        Responsavel[]
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  matriculas   Matricula[]
+  responsaveis Responsavel[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   @@index([nome])
 }
@@ -203,18 +203,21 @@ model Responsavel {
 }
 
 model Matricula {
-  id            String            @id @default(cuid())
-  aluno         Aluno             @relation(fields: [alunoId], references: [id])
-  alunoId       String
-  turma         Turma             @relation(fields: [turmaId], references: [id])
-  turmaId       String
-  anoLetivo     AnoLetivo         @relation(fields: [anoLetivoId], references: [id])
-  anoLetivoId   String
-  situacao      SituacaoMatricula @default(ATIVA)
-  dataMatricula DateTime          @default(now())
-  mensalidades  Mensalidade[]
-  contrato      Contrato?
-  updatedAt     DateTime          @updatedAt
+  id               String            @id @default(cuid())
+  aluno            Aluno             @relation(fields: [alunoId], references: [id])
+  alunoId          String
+  turma            Turma             @relation(fields: [turmaId], references: [id])
+  turmaId          String
+  anoLetivo        AnoLetivo         @relation(fields: [anoLetivoId], references: [id])
+  anoLetivoId      String
+  situacao         SituacaoMatricula @default(ATIVA)
+  dataMatricula    DateTime          @default(now())
+  // Só o valor contratado — fica pra constar no contrato (lib/gerarContratoPdf).
+  // A escola cobra a mensalidade por fora (Banrisul), então não existe mais
+  // controle de cobrança/pagamento dentro do sistema (era Mensalidade/Pagamento).
+  valorMensalidade Float?
+  contrato         Contrato?
+  updatedAt        DateTime          @updatedAt
 
   @@index([alunoId])
   @@index([turmaId])
@@ -230,53 +233,6 @@ enum SituacaoMatricula {
   CANCELADA
   TRANSFERIDA
   CONCLUIDA
-}
-
-model Mensalidade {
-  id          String              @id @default(cuid())
-  matricula   Matricula           @relation(fields: [matriculaId], references: [id])
-  matriculaId String
-  mes         Int
-  ano         Int
-  valor       Float
-  vencimento  DateTime
-  situacao    SituacaoMensalidade @default(PENDENTE)
-  descricao   String?
-  pagamentos  Pagamento[]
-  createdAt   DateTime            @default(now())
-
-  @@index([matriculaId])
-  @@index([situacao])
-  @@index([mes, ano])
-}
-
-enum SituacaoMensalidade {
-  PENDENTE
-  PAGA
-  ATRASADA
-  CANCELADA
-}
-
-model Pagamento {
-  id             String         @id @default(cuid())
-  mensalidade    Mensalidade    @relation(fields: [mensalidadeId], references: [id])
-  mensalidadeId  String
-  valor          Float
-  dataPagamento  DateTime
-  formaPagamento FormaPagamento
-  observacao     String?
-  createdAt      DateTime       @default(now())
-
-  @@index([mensalidadeId])
-}
-
-enum FormaPagamento {
-  PIX
-  DINHEIRO
-  CARTAO_DEBITO
-  CARTAO_CREDITO
-  BOLETO
-  TRANSFERENCIA
 }
 
 model Contrato {
@@ -347,16 +303,16 @@ model DocumentoFuncionario {
 }
 
 model ItemEstoque {
-  id            String                 @id @default(cuid())
+  id            String                @id @default(cuid())
   nome          String
   categoria     String
   unidade       String
-  quantidade    Int                    @default(0)
-  minimo        Int                    @default(5)
+  quantidade    Int                   @default(0)
+  minimo        Int                   @default(5)
   localizacao   String?
   fornecedor    String?
   movimentacoes MovimentacaoEstoque[]
-  updatedAt     DateTime               @updatedAt
+  updatedAt     DateTime              @updatedAt
 }
 
 model MovimentacaoEstoque {
@@ -442,12 +398,12 @@ model LogAtividade {
 }
 
 model EventoCalendario {
-  id         String   @id @default(cuid())
-  titulo     String
-  data       DateTime
-  categoria  String
-  descricao  String?
-  createdAt  DateTime @default(now())
+  id        String   @id @default(cuid())
+  titulo    String
+  data      DateTime
+  categoria String
+  descricao String?
+  createdAt DateTime @default(now())
 }
 
 model DocumentoInstitucional {
@@ -459,4 +415,3 @@ model DocumentoInstitucional {
   observacao String?
   createdAt  DateTime  @default(now())
 }
-

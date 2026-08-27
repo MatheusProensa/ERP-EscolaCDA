@@ -9,7 +9,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const { id } = await params;
   const body = await req.json();
-  const { turmaId, valorMensalidade, gerarMensalidades } = body;
+  const { turmaId, valorMensalidade } = body;
 
   if (!turmaId) return NextResponse.json({ error: "Turma é obrigatória" }, { status: 400 });
 
@@ -40,21 +40,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const matricula = await prisma.$transaction(async (tx) => {
       const nova = await tx.matricula.create({
-        data: { alunoId: id, turmaId, anoLetivoId: turma.anoLetivoId, situacao: "ATIVA" },
+        data: { alunoId: id, turmaId, anoLetivoId: turma.anoLetivoId, situacao: "ATIVA", valorMensalidade: valor },
       });
-
-      if (gerarMensalidades) {
-        await tx.mensalidade.createMany({
-          data: Array.from({ length: 12 }, (_, i) => ({
-            matriculaId: nova.id,
-            mes: i + 1,
-            ano: new Date().getFullYear(),
-            valor,
-            vencimento: new Date(new Date().getFullYear(), i, 10),
-            situacao: "PENDENTE" as const,
-          })),
-        });
-      }
 
       await tx.logAtividade.create({
         data: {

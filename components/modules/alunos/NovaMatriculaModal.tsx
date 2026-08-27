@@ -28,7 +28,6 @@ export function NovaMatriculaModal({ alunoId, turmas }: { alunoId: string; turma
       body: JSON.stringify({
         turmaId: fd.get("turmaId"),
         valorMensalidade: fd.get("valorMensalidade"),
-        gerarMensalidades: fd.get("gerarMensalidades") === "on",
       }),
     });
     setLoading(false);
@@ -68,11 +67,10 @@ export function NovaMatriculaModal({ alunoId, turmas }: { alunoId: string; turma
               );
             })}
           </Select>
-          <label className="flex items-center gap-2 text-sm text-cda-text2">
-            <input type="checkbox" name="gerarMensalidades" defaultChecked className="h-4 w-4 rounded border-cda-border" />
-            Gerar as 12 mensalidades do ano pra essa matrícula
-          </label>
-          <Input label="Valor da mensalidade" name="valorMensalidade" type="number" step="0.01" min="0" defaultValue={450} />
+          <div className="flex flex-col gap-1">
+            <Input label="Valor da mensalidade" name="valorMensalidade" type="number" step="0.01" min="0" defaultValue={450} />
+            <p className="text-xs text-cda-text3">Só pra constar no contrato — a cobrança é feita fora do sistema.</p>
+          </div>
           {error && <p className="text-sm text-cda-red">{error}</p>}
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

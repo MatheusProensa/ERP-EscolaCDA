@@ -8,18 +8,18 @@ describe("rotaPermitida", () => {
   });
 
   it("bloqueia módulo restrito pra role sem acesso", () => {
-    expect(rotaPermitida("/financeiro", "PEDAGOGICO")).toBe(false);
+    expect(rotaPermitida("/ponto", "PEDAGOGICO")).toBe(false);
     expect(rotaPermitida("/usuarios", "PEDAGOGICO")).toBe(false);
   });
 
   it("libera módulo restrito pra role com acesso", () => {
-    expect(rotaPermitida("/financeiro", "FINANCEIRO")).toBe(true);
+    expect(rotaPermitida("/ponto", "FINANCEIRO")).toBe(true);
     expect(rotaPermitida("/usuarios", "ADMIN")).toBe(true);
     expect(rotaPermitida("/usuarios", "DIRECAO")).toBe(true);
   });
 
   it("ADMIN e DIRECAO (GESTAO) sempre têm acesso a tudo que tem regra", () => {
-    expect(rotaPermitida("/financeiro", "ADMIN")).toBe(true);
+    expect(rotaPermitida("/ponto", "ADMIN")).toBe(true);
     expect(rotaPermitida("/estoque", "DIRECAO")).toBe(true);
     expect(rotaPermitida("/api/backup", "DIRECAO")).toBe(true);
   });
@@ -40,8 +40,8 @@ describe("rotaPermitida", () => {
     // pra /api/relatorios — cada sub-rota de relatório tem a própria regra.
     expect(rotaPermitida("/api/relatorios/chamada", "PEDAGOGICO")).toBe(true);
     expect(rotaPermitida("/api/relatorios/chamada", "FINANCEIRO")).toBe(false);
-    expect(rotaPermitida("/api/relatorios/inadimplentes", "FINANCEIRO")).toBe(true);
-    expect(rotaPermitida("/api/relatorios/inadimplentes", "PEDAGOGICO")).toBe(false);
+    expect(rotaPermitida("/api/relatorios/ponto", "FINANCEIRO")).toBe(true);
+    expect(rotaPermitida("/api/relatorios/ponto", "PEDAGOGICO")).toBe(false);
   });
 
   it("rotas de API espelham as regras das páginas correspondentes", () => {
@@ -50,6 +50,6 @@ describe("rotaPermitida", () => {
   });
 
   it("role desconhecida (não cadastrada) nunca acessa rota restrita", () => {
-    expect(rotaPermitida("/financeiro", "ROLE_INEXISTENTE")).toBe(false);
+    expect(rotaPermitida("/ponto", "ROLE_INEXISTENTE")).toBe(false);
   });
 });

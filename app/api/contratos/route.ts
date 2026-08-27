@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
       aluno: { include: { responsaveis: true } },
       turma: true,
       anoLetivo: true,
-      mensalidades: { orderBy: { mes: "asc" }, take: 1 },
     },
   });
 
@@ -33,7 +32,7 @@ export async function POST(req: NextRequest) {
     responsavelCpf: responsavel?.cpf ?? null,
     turmaNome: matricula.turma.nome,
     anoLetivo: matricula.anoLetivo.ano,
-    valorMensalidade: matricula.mensalidades[0]?.valor ?? 0,
+    valorMensalidade: matricula.valorMensalidade ?? 0,
     dataMatricula: matricula.dataMatricula,
   });
 

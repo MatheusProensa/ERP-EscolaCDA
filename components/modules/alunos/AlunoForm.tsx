@@ -176,9 +176,7 @@ export function AlunoForm({ turmas }: { turmas: TurmaComVagas[] }) {
             defaultValue="450"
           />
         </div>
-        <p className="mt-3 text-xs text-cda-text3">
-          Ao confirmar, 12 mensalidades serão geradas automaticamente para o ano letivo.
-        </p>
+        <p className="mt-3 text-xs text-cda-text3">Só pra constar no contrato — a cobrança é feita fora do sistema.</p>
       </Card>
 
       {error && <p className="text-sm text-cda-red">{error}</p>}

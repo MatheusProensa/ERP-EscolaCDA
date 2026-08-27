@@ -104,18 +104,17 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const aluno = await prisma.aluno.findUnique({
     where: { id },
     include: {
-      matriculas: { include: { mensalidades: { include: { pagamentos: true } }, contrato: true } },
+      matriculas: { include: { contrato: true } },
     },
   });
   if (!aluno) return NextResponse.json({ error: "Aluno não encontrado" }, { status: 404 });
 
-  const temPagamento = aluno.matriculas.some((m) => m.mensalidades.some((x) => x.pagamentos.length > 0));
   const temContratoAssinado = aluno.matriculas.some((m) => m.contrato?.assinado);
-  if (temPagamento || temContratoAssinado) {
+  if (temContratoAssinado) {
     return NextResponse.json(
       {
         error:
-          "Não é possível excluir: esse aluno já tem pagamento registrado ou contrato assinado. Tranque ou cancele a matrícula em vez de excluir o cadastro.",
+          "Não é possível excluir: esse aluno já tem contrato assinado. Tranque ou cancele a matrícula em vez de excluir o cadastro.",
       },
       { status: 400 }
     );
@@ -124,7 +123,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   try {
     await prisma.$transaction(async (tx) => {
       for (const m of aluno.matriculas) {
-        await tx.mensalidade.deleteMany({ where: { matriculaId: m.id } });
         if (m.contrato) await tx.contrato.delete({ where: { id: m.contrato.id } });
       }
       await tx.matricula.deleteMany({ where: { alunoId: id } });
