@@ -4,11 +4,14 @@ import { ChaveCard } from "@/components/modules/chaves/ChaveCard";
 import { NovaChaveModal } from "@/components/modules/chaves/NovaChaveModal";
 
 export default async function ChavesPage() {
-  const chaves = await prisma.chave.findMany({
-    where: { ativa: true },
-    include: { emprestimos: { where: { devolucao: null } } },
-    orderBy: { sala: "asc" },
-  });
+  const [chaves, funcionarios] = await Promise.all([
+    prisma.chave.findMany({
+      where: { ativa: true },
+      include: { emprestimos: { where: { devolucao: null } } },
+      orderBy: { sala: "asc" },
+    }),
+    prisma.funcionario.findMany({ where: { ativo: true }, select: { id: true, nome: true }, orderBy: { nome: "asc" } }),
+  ]);
 
   return (
     <div>
@@ -21,7 +24,7 @@ export default async function ChavesPage() {
         // (ex.: "Contraturno V") ficava espremido e cortado ao lado do badge/botões.
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {chaves.map((chave) => (
-            <ChaveCard key={chave.id} chave={chave} />
+            <ChaveCard key={chave.id} chave={chave} funcionarios={funcionarios} />
           ))}
         </div>
       )}

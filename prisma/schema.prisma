@@ -416,6 +416,7 @@ model Funcionario {
   jornadaPrevistaMinutos Int?
   documentos             DocumentoFuncionario[]
   registrosPonto         RegistroPonto[]
+  chavesRetiradas        EmprestimoChave[]
   createdAt              DateTime               @default(now())
 }
 
@@ -514,7 +515,12 @@ model EmprestimoChave {
   id          String    @id @default(cuid())
   chave       Chave     @relation(fields: [chaveId], references: [id])
   chaveId     String
+  /// Nome do responsável — sempre preenchido a partir do Funcionario selecionado
+  /// (snapshot, igual a NotaFiscal/LogAtividade). Registros antigos (antes do
+  /// autocomplete) podem não ter responsavelFuncionarioId — não foram migrados.
   responsavel String
+  responsavelFuncionario   Funcionario? @relation(fields: [responsavelFuncionarioId], references: [id])
+  responsavelFuncionarioId String?
   retirada    DateTime  @default(now())
   devolucao   DateTime?
 }

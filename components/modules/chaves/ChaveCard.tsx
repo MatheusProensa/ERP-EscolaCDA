@@ -7,17 +7,25 @@ import type { Chave, EmprestimoChave } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { showToast } from "@/components/ui/Toast";
 import { formatarDataHora } from "@/lib/utils";
 
-export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoChave[] } }) {
+export function ChaveCard({
+  chave,
+  funcionarios,
+}: {
+  chave: Chave & { emprestimos: EmprestimoChave[] };
+  funcionarios: { id: string; nome: string }[];
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editando, setEditando] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [funcionarioId, setFuncionarioId] = useState("");
   const emprestimo = chave.emprestimos[0] ?? null;
 
   async function salvarEdicao(e: FormEvent<HTMLFormElement>) {
@@ -56,14 +64,13 @@ export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoC
 
   async function retirar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!funcionarioId) return;
     setError("");
     setLoading(true);
-    const fd = new FormData(e.currentTarget);
-    const responsavel = String(fd.get("responsavel") ?? "");
     const res = await fetch(`/api/chaves/${chave.id}/emprestimos`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ responsavel }),
+      body: JSON.stringify({ funcionarioId }),
     });
     setLoading(false);
 
@@ -73,9 +80,11 @@ export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoC
       return;
     }
 
+    const nome = funcionarios.find((f) => f.id === funcionarioId)?.nome ?? "";
     setOpen(false);
+    setFuncionarioId("");
     // NOVO: confirmação visual — antes a retirada só atualizava a lista em silêncio.
-    showToast(`Chave "${chave.sala}" retirada por ${responsavel}.`);
+    showToast(`Chave "${chave.sala}" retirada por ${nome}.`);
     router.refresh();
   }
 
@@ -152,13 +161,27 @@ export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoC
 
       <Modal open={open} onClose={() => setOpen(false)} title={`Retirar chave — ${chave.sala}`}>
         <form onSubmit={retirar} className="flex flex-col gap-4">
-          <Input label="Responsável pela retirada" name="responsavel" required />
+          <Select
+            label="Responsável pela retirada"
+            value={funcionarioId}
+            onChange={(e) => setFuncionarioId(e.target.value)}
+            required
+          >
+            <option value="" disabled>
+              Selecione o funcionário
+            </option>
+            {funcionarios.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.nome}
+              </option>
+            ))}
+          </Select>
           {error && <p className="text-sm text-cda-red">{error}</p>}
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit" loading={loading}>
+            <Button type="submit" loading={loading} disabled={!funcionarioId}>
               Confirmar retirada
             </Button>
           </div>
