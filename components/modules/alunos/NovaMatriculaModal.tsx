@@ -46,10 +46,10 @@ export function NovaMatriculaModal({ alunoId, turmas }: { alunoId: string; turma
     <>
       <Button onClick={() => setOpen(true)} variant="outline">
         <GraduationCap className="h-4 w-4" />
-        Nova matrícula
+        Matricular em outra turma
       </Button>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Nova matrícula">
+      <Modal open={open} onClose={() => setOpen(false)} title="Matricular em outra turma">
         <form onSubmit={matricular} className="flex flex-col gap-4">
           <p className="text-sm text-cda-text2">
             Matricula esse aluno em outra turma (ex.: contraturno, ou virada de ano) sem precisar recadastrar tudo.
