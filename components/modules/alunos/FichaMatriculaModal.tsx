@@ -4,8 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ClipboardList, Plus, Trash2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { RACA_COR_LABEL } from "@/lib/censo";
 
@@ -37,69 +35,156 @@ const RESPONSAVEL_VAZIO: Responsavel = {
   telefoneCelular: "",
 };
 
-function Checkbox({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <label className="flex items-center gap-2 text-sm text-cda-text">
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className="h-4 w-4 rounded border-cda-border"
-      />
-      {label}
-    </label>
-  );
+const BORDA = "border-[#8fd8f5]";
+
+/** Uma linha da "grade" da ficha real — mesma ideia da tabela do papel: caixas coladas, borda azul clarinha. */
+function Linha({ children }: { children: React.ReactNode }) {
+  return <div className={`flex divide-x ${BORDA} border-x border-b first:border-t ${BORDA}`}>{children}</div>;
 }
 
-function Textarea({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+/** Uma célula: rótulo fixo (igual ao documento) + o valor, editável ou não. */
+function Celula({ label, peso = 1, children }: { label: string; peso?: number; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium text-cda-text2">{label}</label>
-      <textarea
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        rows={2}
-        className="w-full rounded-lg border border-cda-border bg-white px-3 py-2 text-sm text-cda-text outline-none transition-colors focus:border-cda-blue"
-      />
+    <div className="flex min-w-0 items-center gap-1 px-2 py-1.5" style={{ flex: peso }}>
+      <span className="shrink-0 whitespace-nowrap text-[9.5px] font-bold text-[#0d1f4e]">{label}:</span>
+      <span className="min-w-0 flex-1">{children}</span>
     </div>
   );
 }
 
-function SecaoForm({ titulo, children }: { titulo: string; children: React.ReactNode }) {
+function CampoTexto({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
-    <div className="flex flex-col gap-2.5 border-t border-cda-border pt-3 first:border-t-0 first:pt-0">
-      <p className="text-xs font-semibold uppercase tracking-wide text-cda-text3">{titulo}</p>
-      {children}
-    </div>
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      placeholder={placeholder}
+      className="w-full min-w-0 border-b border-dashed border-cda-border bg-transparent text-[11px] text-cda-text outline-none focus:border-cda-blue"
+    />
   );
+}
+
+function Fixo({ children }: { children: React.ReactNode }) {
+  return <span className="text-[11px] text-cda-text2">{children}</span>;
+}
+
+function ToggleSimNao({ value, onChange }: { value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <span className="inline-flex items-center gap-2.5 text-[11px]">
+      <button
+        type="button"
+        onClick={() => onChange(true)}
+        className={value ? "font-bold text-cda-blue" : "text-cda-text3"}
+      >
+        {value ? "☑" : "☐"} Sim
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(false)}
+        className={!value ? "font-bold text-cda-blue" : "text-cda-text3"}
+      >
+        {!value ? "☑" : "☐"} Não
+      </button>
+    </span>
+  );
+}
+
+function ChipEscolha<T extends string>({
+  opcoes,
+  valor,
+  onChange,
+}: {
+  opcoes: { valor: T; label: string }[];
+  valor: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <span className="inline-flex flex-wrap items-center gap-x-2.5 gap-y-0.5 text-[11px]">
+      {opcoes.map((o) => (
+        <button
+          key={o.valor}
+          type="button"
+          onClick={() => onChange(o.valor)}
+          className={valor === o.valor ? "font-bold text-cda-blue" : "text-cda-text3"}
+        >
+          {valor === o.valor ? "☑" : "☐"} {o.label}
+        </button>
+      ))}
+    </span>
+  );
+}
+
+function CampoTextoLivre({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="w-full min-w-0 border-b border-dashed border-cda-border bg-transparent text-[11px] text-cda-text outline-none focus:border-cda-blue"
+    />
+  );
+}
+
+function TituloSecao({ children }: { children: React.ReactNode }) {
+  return <p className="mb-1 mt-3 text-[10px] font-bold uppercase tracking-wide text-cda-text3 first:mt-0">{children}</p>;
 }
 
 function CamposResponsavel({ r, set }: { r: Responsavel; set: (r: Responsavel) => void }) {
   const upd = (campo: keyof Responsavel) => (v: string) => set({ ...r, [campo]: v });
   return (
-    <div className="grid grid-cols-2 gap-2.5">
-      <div className="col-span-2">
-        <Input label="Nome" value={r.nome} onChange={(e) => upd("nome")(e.target.value)} />
-      </div>
-      <Input label="RG" value={r.rg} onChange={(e) => upd("rg")(e.target.value)} />
-      <Input label="CPF" value={r.cpf} onChange={(e) => upd("cpf")(e.target.value)} />
-      <Input label="E-mail" value={r.email} onChange={(e) => upd("email")(e.target.value)} />
-      <Input label="Escolaridade" value={r.escolaridade} onChange={(e) => upd("escolaridade")(e.target.value)} />
-      <Input label="Profissão" value={r.profissao} onChange={(e) => upd("profissao")(e.target.value)} />
-      <div className="col-span-2">
-        <Input label="Endereço" value={r.endereco} onChange={(e) => upd("endereco")(e.target.value)} />
-      </div>
-      <Input label="CEP" value={r.cep} onChange={(e) => upd("cep")(e.target.value)} />
-      <Input label="Celular" value={r.telefoneCelular} onChange={(e) => upd("telefoneCelular")(e.target.value)} />
-      <Input label="Tel. fixo" value={r.telefoneFixo} onChange={(e) => upd("telefoneFixo")(e.target.value)} />
-      <Input label="Tel. comercial" value={r.telefoneComercial} onChange={(e) => upd("telefoneComercial")(e.target.value)} />
-    </div>
+    <>
+      <Linha>
+        <Celula label="Nome" peso={2}>
+          <CampoTexto value={r.nome} onChange={upd("nome")} />
+        </Celula>
+        <Celula label="RG">
+          <CampoTexto value={r.rg} onChange={upd("rg")} />
+        </Celula>
+      </Linha>
+      <Linha>
+        <Celula label="CPF">
+          <CampoTexto value={r.cpf} onChange={upd("cpf")} />
+        </Celula>
+        <Celula label="E-mail" peso={2}>
+          <CampoTexto value={r.email} onChange={upd("email")} />
+        </Celula>
+      </Linha>
+      <Linha>
+        <Celula label="Escolaridade">
+          <CampoTexto value={r.escolaridade} onChange={upd("escolaridade")} />
+        </Celula>
+        <Celula label="Profissão">
+          <CampoTexto value={r.profissao} onChange={upd("profissao")} />
+        </Celula>
+      </Linha>
+      <Linha>
+        <Celula label="Endereço" peso={2}>
+          <CampoTexto value={r.endereco} onChange={upd("endereco")} />
+        </Celula>
+        <Celula label="CEP">
+          <CampoTexto value={r.cep} onChange={upd("cep")} />
+        </Celula>
+      </Linha>
+      <Linha>
+        <Celula label="Tel. Fixo">
+          <CampoTexto value={r.telefoneFixo} onChange={upd("telefoneFixo")} />
+        </Celula>
+        <Celula label="Celular">
+          <CampoTexto value={r.telefoneCelular} onChange={upd("telefoneCelular")} />
+        </Celula>
+        <Celula label="Tel. Comercial">
+          <CampoTexto value={r.telefoneComercial} onChange={upd("telefoneComercial")} />
+        </Celula>
+      </Linha>
+    </>
   );
 }
 
 export function FichaMatriculaModal({
   alunoId,
   matriculaId,
+  alunoNome,
+  alunoDataNascimentoLabel,
+  dataIngressoLabel,
+  turnoLabel,
   alunoCpfInicial,
   sexoInicial,
   racaCorInicial,
@@ -120,6 +205,10 @@ export function FichaMatriculaModal({
 }: {
   alunoId: string;
   matriculaId: string;
+  alunoNome: string;
+  alunoDataNascimentoLabel: string;
+  dataIngressoLabel: string;
+  turnoLabel: string;
   alunoCpfInicial: string;
   sexoInicial: "M" | "F" | "";
   racaCorInicial: string;
@@ -210,6 +299,11 @@ export function FichaMatriculaModal({
     router.refresh();
   }
 
+  const racaOpcoes = Object.entries(RACA_COR_LABEL).map(([valor, label]) => ({
+    valor,
+    label: label === "Não declarada" ? "N.D." : label,
+  }));
+
   return (
     <>
       <Button onClick={() => setOpen(true)} size="sm" variant="outline">
@@ -217,111 +311,181 @@ export function FichaMatriculaModal({
         Ficha de matrícula
       </Button>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Ficha de matrícula" className="max-w-4xl">
-        <p className="mb-4 text-xs text-cda-text3">
-          Preencha o que faltar — os dados básicos do aluno já vêm do cadastro. Ao gerar, tudo aqui é salvo no
-          cadastro do aluno e o PDF é baixado na hora.
+      <Modal open={open} onClose={() => setOpen(false)} title="Ficha de matrícula" className="max-w-3xl">
+        <p className="mb-3 text-xs text-cda-text3">
+          É o próprio documento — edita direto em cima. O que já tá no cadastro aparece fixo; só o que falta vira campo.
         </p>
 
-        <div className="flex max-h-[65vh] flex-col gap-4 overflow-y-auto pr-1">
-          <SecaoForm titulo="Dados do aluno">
-            <Input label="CPF do aluno" value={alunoCpf} onChange={(e) => setAlunoCpf(e.target.value)} />
-            <div className="grid grid-cols-3 gap-2.5">
-              <Select label="Sexo" value={sexo} onChange={(e) => setSexo(e.target.value as "M" | "F" | "")}>
-                <option value="">Não informado</option>
-                <option value="M">Masculino</option>
-                <option value="F">Feminino</option>
-              </Select>
-              <div className="col-span-2">
-                <Select label="Raça/etnia" value={racaCor} onChange={(e) => setRacaCor(e.target.value)}>
-                  <option value="">Não informado</option>
-                  {Object.entries(RACA_COR_LABEL).map(([valor, label]) => (
-                    <option key={valor} value={valor}>
-                      {label}
-                    </option>
-                  ))}
-                </Select>
+        <div className="overflow-hidden rounded-xl border border-cda-border shadow-sm">
+          {/* Faixa de cima do papel timbrado real (logo + "15 anos") */}
+          <div
+            className="w-full bg-white bg-no-repeat"
+            style={{
+              paddingTop: "18.4%",
+              backgroundImage: "url(/ficha-matricula-fundo.png)",
+              backgroundSize: "100% auto",
+              backgroundPosition: "top",
+            }}
+          />
+
+          <div className="max-h-[52vh] overflow-y-auto bg-white px-4 py-2">
+            <p className="mb-2 text-[13px] font-bold text-cda-text">FICHA DE MATRÍCULA</p>
+
+            <Linha>
+              <Celula label="Data de ingresso/renovação" peso={1.3}>
+                <Fixo>{dataIngressoLabel}</Fixo>
+              </Celula>
+              <Celula label="Turno" peso={1.3}>
+                <Fixo>{turnoLabel}</Fixo>
+              </Celula>
+            </Linha>
+            <Linha>
+              <Celula label="Data de Nascimento">
+                <Fixo>{alunoDataNascimentoLabel}</Fixo>
+              </Celula>
+              <Celula label="Sexo" peso={1.3}>
+                <ChipEscolha
+                  opcoes={[
+                    { valor: "M", label: "Masculino" },
+                    { valor: "F", label: "Feminino" },
+                  ]}
+                  valor={sexo}
+                  onChange={setSexo}
+                />
+              </Celula>
+            </Linha>
+            <Linha>
+              <Celula label="Nome completo" peso={2}>
+                <Fixo>{alunoNome}</Fixo>
+              </Celula>
+              <Celula label="CPF">
+                <CampoTexto value={alunoCpf} onChange={setAlunoCpf} placeholder="000.000.000-00" />
+              </Celula>
+            </Linha>
+            <Linha>
+              <Celula label="Raça/etnia" peso={3}>
+                <ChipEscolha opcoes={racaOpcoes} valor={racaCor} onChange={setRacaCor} />
+              </Celula>
+            </Linha>
+
+            <TituloSecao>Filiação — Pai</TituloSecao>
+            <CamposResponsavel r={pai} set={setPai} />
+
+            <TituloSecao>Filiação — Mãe</TituloSecao>
+            <CamposResponsavel r={mae} set={setMae} />
+
+            <TituloSecao>Perfil da criança</TituloSecao>
+            <Linha>
+              <Celula label="Tem irmãos?">
+                <ToggleSimNao value={temIrmaos} onChange={setTemIrmaos} />
+              </Celula>
+              <Celula label="Idades respectivas" peso={1.3}>
+                <CampoTexto value={idadesIrmaos} onChange={setIdadesIrmaos} />
+              </Celula>
+            </Linha>
+            <Linha>
+              <Celula label="Usa bico?">
+                <ToggleSimNao value={usaBico} onChange={setUsaBico} />
+              </Celula>
+              <Celula label="Usa mamadeira?">
+                <ToggleSimNao value={usaMamadeira} onChange={setUsaMamadeira} />
+              </Celula>
+            </Linha>
+            <Linha>
+              <Celula label="Obs. (bico/mamadeira)" peso={3}>
+                <CampoTextoLivre value={obsBicoMamadeira} onChange={setObsBicoMamadeira} />
+              </Celula>
+            </Linha>
+            <Linha>
+              <Celula label="Já frequentou outra escola?" peso={1.6}>
+                <ToggleSimNao value={jaFrequentouEscola} onChange={setJaFrequentouEscola} />
+              </Celula>
+              <Celula label="Duração">
+                <CampoTexto value={duracaoEscolaAnterior} onChange={setDuracaoEscolaAnterior} />
+              </Celula>
+            </Linha>
+            <Linha>
+              <Celula label="Questões de sono/alimentação" peso={3}>
+                <CampoTextoLivre value={rotinaSonoAlimentacao} onChange={setRotinaSonoAlimentacao} />
+              </Celula>
+            </Linha>
+            <Linha>
+              <Celula label="Brincadeiras prediletas" peso={3}>
+                <CampoTextoLivre value={brincadeirasPrediletas} onChange={setBrincadeirasPrediletas} />
+              </Celula>
+            </Linha>
+            <Linha>
+              <Celula label="Reações quando contrariado(a)" peso={3}>
+                <CampoTextoLivre value={reacoesContrariado} onChange={setReacoesContrariado} />
+              </Celula>
+            </Linha>
+            <p className="mt-1 text-[10px] text-cda-text3">
+              Saúde, alergias e medicação vêm do cadastro (aba Censo) — entram na ficha automaticamente.
+            </p>
+
+            <TituloSecao>Pessoas autorizadas a buscar o aluno</TituloSecao>
+            <Linha>
+              <Celula label="Mãe">
+                <Fixo>{mae.nome.trim() ? "☑ autorizada" : "☐"}</Fixo>
+              </Celula>
+              <Celula label="Pai">
+                <Fixo>{pai.nome.trim() ? "☑ autorizado" : "☐"}</Fixo>
+              </Celula>
+            </Linha>
+            {pessoasAutorizadas.map((p, i) => (
+              <Linha key={i}>
+                <Celula label={`${i + 1}) Nome`} peso={1.6}>
+                  <CampoTexto value={p.nome} onChange={(v) => setPessoa(i, "nome", v)} />
+                </Celula>
+                <Celula label="Parentesco">
+                  <CampoTexto value={p.parentesco} onChange={(v) => setPessoa(i, "parentesco", v)} />
+                </Celula>
+                <button
+                  type="button"
+                  onClick={() => setPessoasAutorizadas((atual) => atual.filter((_, idx) => idx !== i))}
+                  className="px-2 text-cda-text3 hover:text-cda-red"
+                  aria-label="Remover"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </Linha>
+            ))}
+            <button
+              type="button"
+              onClick={() => setPessoasAutorizadas((atual) => [...atual, { nome: "", parentesco: "" }])}
+              className="mt-1.5 flex w-fit items-center gap-1.5 text-[11px] font-medium text-cda-blue hover:underline"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Adicionar pessoa
+            </button>
+
+            <div className="mt-3 border-t border-cda-border pt-2">
+              <p className="text-[10.5px] leading-snug text-cda-text2">
+                Eu autorizo a utilizar a imagem do aluno (em fotos e vídeos) em materiais de divulgação institucional
+                e pedagógica da escola, exclusivamente para fins de promoção de suas atividades, podendo vinculá-las
+                em suas redes sociais, website oficial, material impresso e outdoor.
+              </p>
+              <div className="mt-1">
+                <ToggleSimNao value={autorizacaoImagem} onChange={setAutorizacaoImagem} />
               </div>
             </div>
-            <Checkbox label="Autoriza uso de imagem" checked={autorizacaoImagem} onChange={setAutorizacaoImagem} />
-          </SecaoForm>
+            <div className="h-2" />
+          </div>
 
-          <SecaoForm titulo="Filiação — Pai">
-            <CamposResponsavel r={pai} set={setPai} />
-          </SecaoForm>
-
-          <SecaoForm titulo="Filiação — Mãe">
-            <CamposResponsavel r={mae} set={setMae} />
-          </SecaoForm>
-
-          <SecaoForm titulo="Perfil da criança">
-            <div className="flex flex-wrap gap-4">
-              <Checkbox label="Tem irmãos?" checked={temIrmaos} onChange={setTemIrmaos} />
-              <Checkbox label="Usa bico?" checked={usaBico} onChange={setUsaBico} />
-              <Checkbox label="Usa mamadeira?" checked={usaMamadeira} onChange={setUsaMamadeira} />
-              <Checkbox label="Já frequentou outra escola?" checked={jaFrequentouEscola} onChange={setJaFrequentouEscola} />
-            </div>
-            <div className="grid grid-cols-2 gap-2.5">
-              {temIrmaos && (
-                <Input label="Idades dos irmãos" value={idadesIrmaos} onChange={(e) => setIdadesIrmaos(e.target.value)} />
-              )}
-              {jaFrequentouEscola && (
-                <Input
-                  label="Duração na escola anterior"
-                  value={duracaoEscolaAnterior}
-                  onChange={(e) => setDuracaoEscolaAnterior(e.target.value)}
-                />
-              )}
-            </div>
-            <Textarea label="Observações (bico/mamadeira)" value={obsBicoMamadeira} onChange={setObsBicoMamadeira} />
-            <Textarea label="Rotina de sono e alimentação" value={rotinaSonoAlimentacao} onChange={setRotinaSonoAlimentacao} />
-            <Textarea label="Brincadeiras prediletas" value={brincadeirasPrediletas} onChange={setBrincadeirasPrediletas} />
-            <Textarea label="Reações quando contrariado(a)" value={reacoesContrariado} onChange={setReacoesContrariado} />
-            <p className="text-xs text-cda-text3">
-              Saúde, alergias, medicação e restrições ficam na aba de Censo/cadastro do aluno — entram na ficha automaticamente.
-            </p>
-          </SecaoForm>
-
-          <SecaoForm titulo="Outras pessoas autorizadas a buscar (além do pai/mãe)">
-            <div className="flex flex-col gap-2">
-              {pessoasAutorizadas.map((p, i) => (
-                <div key={i} className="flex items-center gap-2">
-                  <Input
-                    placeholder="Nome"
-                    value={p.nome}
-                    onChange={(e) => setPessoa(i, "nome", e.target.value)}
-                    className="flex-1"
-                  />
-                  <Input
-                    placeholder="Parentesco"
-                    value={p.parentesco}
-                    onChange={(e) => setPessoa(i, "parentesco", e.target.value)}
-                    className="w-40"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setPessoasAutorizadas((atual) => atual.filter((_, idx) => idx !== i))}
-                    className="text-cda-text3 hover:text-cda-red"
-                    aria-label="Remover"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => setPessoasAutorizadas((atual) => [...atual, { nome: "", parentesco: "" }])}
-                className="flex w-fit items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Adicionar pessoa
-              </button>
-            </div>
-          </SecaoForm>
+          {/* Rodapé do papel timbrado real (endereço/telefone/@) */}
+          <div
+            className="w-full bg-white bg-no-repeat"
+            style={{
+              paddingTop: "3.2%",
+              backgroundImage: "url(/ficha-matricula-fundo.png)",
+              backgroundSize: "100% auto",
+              backgroundPosition: "bottom",
+            }}
+          />
         </div>
 
         {error && <p className="mt-3 text-sm text-cda-red">{error}</p>}
-        <div className="mt-4 flex justify-end gap-3 border-t border-cda-border pt-4">
+        <div className="mt-4 flex justify-end gap-3">
           <Button type="button" variant="outline" onClick={() => setOpen(false)}>
             Cancelar
           </Button>

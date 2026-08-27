@@ -11,7 +11,8 @@ import { MatriculaAcoes } from "@/components/modules/alunos/MatriculaAcoes";
 import { ResponsaveisSecao } from "@/components/modules/alunos/ResponsaveisSecao";
 import { NovaMatriculaModal } from "@/components/modules/alunos/NovaMatriculaModal";
 import { FichaMatriculaModal } from "@/components/modules/alunos/FichaMatriculaModal";
-import { ordenarTurmas } from "@/lib/utils";
+import { ordenarTurmas, formatarData } from "@/lib/utils";
+import { turnoDoContrato } from "@/lib/contratoTexto";
 
 export default async function AlunoPerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -82,6 +83,10 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
               <FichaMatriculaModal
                 alunoId={aluno.id}
                 matriculaId={matriculaPrincipal.id}
+                alunoNome={aluno.nome}
+                alunoDataNascimentoLabel={formatarData(aluno.dataNascimento)}
+                dataIngressoLabel={formatarData(matriculaPrincipal.dataMatricula)}
+                turnoLabel={turnoDoContrato(matriculaPrincipal.turma.nome, matriculaPrincipal.turma.turno)}
                 alunoCpfInicial={aluno.cpf ?? ""}
                 sexoInicial={aluno.sexo ?? ""}
                 racaCorInicial={aluno.racaCor ?? ""}
