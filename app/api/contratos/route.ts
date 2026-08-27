@@ -14,6 +14,7 @@ export async function POST(req: NextRequest) {
   // valor sem precisar sair dali pra editar o cadastro do aluno primeiro.
   const {
     matriculaId,
+    anoLetivo,
     alunoNome,
     alunoDataNascimento,
     responsavelNome,
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
     responsavelCpf: responsavelCpf || responsavel?.cpf || null,
     turmaNome: matricula.turma.nome,
     turnoLabel: turnoLabel || turnoDoContrato(matricula.turma.nome, matricula.turma.turno),
-    anoLetivo: matricula.anoLetivo.ano,
+    anoLetivo: Number(anoLetivo) || matricula.anoLetivo.ano,
     valorMensalidade: Number(valorMensalidade) || matricula.valorMensalidade || 0,
     dataMatricula: matricula.dataMatricula,
     diaVencimento: diaVencimento || "",

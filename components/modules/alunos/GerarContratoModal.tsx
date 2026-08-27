@@ -47,6 +47,10 @@ export function GerarContratoModal({
   const [responsavelCpf, setResponsavelCpf] = useState(responsavelCpfInicial);
   const [valorMensalidade, setValorMensalidade] = useState(String(valorMensalidadeInicial || ""));
   const [turno, setTurno] = useState<Turno>(turnoInicial);
+  // Editável pra dar pra gerar contrato de renovação já pro próximo ano letivo
+  // (ex.: portas abertas em setembro) sem precisar trocar o ano letivo ativo
+  // do sistema inteiro antes.
+  const [anoContrato, setAnoContrato] = useState(anoLetivo);
   // No modelo em papel são linhas em branco ("dia ____ ... mês de ____") — aqui viram campo,
   // com um valor já sugerido pra não obrigar preencher toda vez.
   const [diaVencimento, setDiaVencimento] = useState("05");
@@ -56,7 +60,7 @@ export function GerarContratoModal({
   // lib/gerarContratoPdf) — a pré-visualização abaixo é exatamente o que sai
   // impresso, não uma aproximação.
   const clausulas = montarClausulas({
-    anoLetivo,
+    anoLetivo: anoContrato,
     valorMensalidade: Number(valorMensalidade) || 0,
     turnoLabel: turno,
     diaVencimento,
@@ -71,6 +75,7 @@ export function GerarContratoModal({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         matriculaId,
+        anoLetivo: anoContrato,
         alunoNome,
         alunoDataNascimento: alunoNascimento,
         responsavelNome,
@@ -103,6 +108,12 @@ export function GerarContratoModal({
             <p className="text-xs text-cda-text3">
               Só estes campos entram no contrato — as 27 cláusulas ao lado são fixas, iguais em todo contrato da escola.
             </p>
+            <Input
+              label="Ano letivo do contrato"
+              type="number"
+              value={anoContrato}
+              onChange={(e) => setAnoContrato(Number(e.target.value) || anoLetivo)}
+            />
             <Input label="Aluno(a)" value={alunoNome} onChange={(e) => setAlunoNome(e.target.value)} />
             <Input label="Data de nascimento" type="date" value={alunoNascimento} onChange={(e) => setAlunoNascimento(e.target.value)} />
             <Input label="Turma" value={turmaNome} disabled />
@@ -162,7 +173,7 @@ export function GerarContratoModal({
                 }}
               />
               <div className="h-[520px] overflow-y-auto bg-white p-4 text-[13px] leading-relaxed text-cda-text">
-                <p className="mb-3 text-[15px] font-bold text-cda-text">CONTRATO DE SERVIÇOS EDUCACIONAIS {anoLetivo}</p>
+                <p className="mb-3 text-[15px] font-bold text-cda-text">CONTRATO DE SERVIÇOS EDUCACIONAIS {anoContrato}</p>
                 <p className="mb-1">
                   <span className="font-medium">Aluno(a):</span> {alunoNome || "—"}
                 </p>
