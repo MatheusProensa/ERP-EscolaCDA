@@ -54,6 +54,13 @@ export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionari
           <Input label="Nome completo" name="nome" required defaultValue={funcionario.nome} className="sm:col-span-2" />
           <Input label="CPF" name="cpf" required defaultValue={formatarCPF(funcionario.cpf)} placeholder="000.000.000-00" />
           <Input label="Cargo" name="cargo" required defaultValue={funcionario.cargo} />
+          <Select label="Setor" name="setor" required defaultValue={funcionario.setor}>
+            {SETORES.map((s) => (
+              <option key={s} value={s}>
+                {s}
+              </option>
+            ))}
+          </Select>
           <Input
             label="Data de nascimento"
             name="dataNascimento"
@@ -67,13 +74,6 @@ export function EditarFuncionarioForm({ funcionario }: { funcionario: Funcionari
             required
             defaultValue={new Date(funcionario.admissao).toISOString().slice(0, 10)}
           />
-          <Select label="Setor" name="setor" required defaultValue={funcionario.setor}>
-            {SETORES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </Select>
           <Input
             label="Telefone"
             name="telefone"
