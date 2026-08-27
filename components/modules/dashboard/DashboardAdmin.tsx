@@ -9,6 +9,7 @@ import { MetricasGerais } from "@/components/modules/dashboard/MetricasGerais";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
 import { AtalhosRapidos } from "@/components/modules/dashboard/AtalhosRapidos";
 import { ProximosEventosWidget } from "@/components/modules/dashboard/ProximosEventosWidget";
+import { AtividadeRecenteWidget } from "@/components/modules/dashboard/AtividadeRecenteWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { primeiroNome } from "@/lib/utils";
 
@@ -53,9 +54,15 @@ export async function DashboardAdmin({ nome }: { nome: string }) {
             <MuralWidget />
           </Suspense>
         </div>
-        <Suspense fallback={<WidgetFallback className="h-60" />}>
-          <ProximosEventosWidget />
-        </Suspense>
+        <div className="flex flex-col gap-5">
+          <Suspense fallback={<WidgetFallback className="h-60" />}>
+            <ProximosEventosWidget />
+          </Suspense>
+          {/* NOVO: só aparece pro Admin — mesma restrição de /log-atividades. */}
+          <Suspense fallback={null}>
+            <AtividadeRecenteWidget />
+          </Suspense>
+        </div>
       </div>
     </div>
   );

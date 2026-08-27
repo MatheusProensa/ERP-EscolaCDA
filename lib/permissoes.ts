@@ -11,6 +11,9 @@ export const ROLE_LABEL: Record<string, string> = {
 };
 
 export const GESTAO: RoleAtiva[] = ["ADMIN", "DIRECAO"];
+// Log de Atividades expõe quem mudou o quê no sistema inteiro — só o Admin (Matheus) vê,
+// nem Direção, a pedido explícito dele.
+const SOMENTE_ADMIN: RoleAtiva[] = ["ADMIN"];
 const FINANCEIRO: RoleAtiva[] = ["ADMIN", "DIRECAO", "FINANCEIRO"];
 const PEDAGOGICO: RoleAtiva[] = ["ADMIN", "DIRECAO", "PEDAGOGICO"];
 const ADMINISTRATIVO: RoleAtiva[] = ["ADMIN", "DIRECAO", "ADMINISTRATIVO"];
@@ -34,7 +37,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/boletos", roles: FINANCEIRO },
   { prefixo: "/documentos", roles: GESTAO },
   { prefixo: "/usuarios", roles: GESTAO },
-  { prefixo: "/log-atividades", roles: GESTAO },
+  { prefixo: "/log-atividades", roles: SOMENTE_ADMIN },
 
   // APIs
   { prefixo: "/api/relatorios/alunos", roles: PEDAGOGICO },
