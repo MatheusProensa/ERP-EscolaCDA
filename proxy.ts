@@ -13,8 +13,11 @@ export default auth((req) => {
   const isLoginPage = pathname.startsWith("/login");
   const isAuthApi = pathname.startsWith("/api/auth");
   const isApi = pathname.startsWith("/api");
+  // Link público de assinatura de contrato (app/assinar/[token]) — o
+  // responsável abre sem ter conta nenhuma no sistema.
+  const isAssinaturaPublica = pathname.startsWith("/assinar") || pathname.startsWith("/api/assinar");
 
-  if (isAuthApi) return;
+  if (isAuthApi || isAssinaturaPublica) return;
 
   if (!isLoggedIn && !isLoginPage) {
     if (isApi) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });

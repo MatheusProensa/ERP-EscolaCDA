@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "crypto";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
@@ -9,13 +10,22 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
-  const { assinado, marcarEnviado } = body;
+  const { assinado, marcarEnviado, gerarLink } = body;
+
+  // Gera (ou reaproveita) o token do link público de assinatura — ver app/assinar/[token].
+  // Só cria um novo token se ainda não tiver um, pra não invalidar um link já mandado pro responsável.
+  let tokenAssinatura: string | undefined;
+  if (gerarLink) {
+    const atual = await prisma.contrato.findUnique({ where: { id }, select: { tokenAssinatura: true } });
+    tokenAssinatura = atual?.tokenAssinatura ?? randomBytes(24).toString("base64url");
+  }
 
   const contrato = await prisma.contrato.update({
     where: { id },
     data: {
       assinado: typeof assinado === "boolean" ? assinado : undefined,
       dataEnvio: marcarEnviado ? new Date() : undefined,
+      tokenAssinatura,
     },
   });
 

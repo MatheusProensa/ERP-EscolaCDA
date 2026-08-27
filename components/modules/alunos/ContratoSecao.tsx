@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Download, Send, Trash2 } from "lucide-react";
+import { Download, Send, Trash2, Link2 } from "lucide-react";
 import type { Contrato } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -39,6 +39,7 @@ export function ContratoSecao({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [linkCopiado, setLinkCopiado] = useState(false);
 
   const modalProps = {
     matriculaId,
@@ -76,6 +77,25 @@ export function ContratoSecao({
     router.refresh();
   }
 
+  async function copiarLinkAssinatura() {
+    if (!contrato) return;
+    setLoading(true);
+    const res = await fetch(`/api/contratos/${contrato.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gerarLink: true }),
+    });
+    setLoading(false);
+    if (!res.ok) return;
+    const atualizado = await res.json();
+    if (!atualizado.tokenAssinatura) return;
+    const url = `${window.location.origin}/assinar/${atualizado.tokenAssinatura}`;
+    await navigator.clipboard.writeText(url);
+    setLinkCopiado(true);
+    setTimeout(() => setLinkCopiado(false), 3000);
+    router.refresh();
+  }
+
   async function excluirContrato() {
     if (!contrato) return;
     if (!confirm("Excluir este contrato? Essa ação não pode ser desfeita.")) return;
@@ -102,6 +122,12 @@ export function ContratoSecao({
             <Badge variant={contrato.assinado ? "green" : "amber"}>
               {contrato.assinado ? "Assinado" : "Pendente de assinatura"}
             </Badge>
+            {contrato.assinado && contrato.nomeAssinante && (
+              <span className="text-xs text-cda-text3">
+                Por {contrato.nomeAssinante} (pelo link)
+                {contrato.assinadoEm && ` em ${formatarDataHora(contrato.assinadoEm)}`}
+              </span>
+            )}
             {contrato.dataEnvio && (
               <span className="text-xs text-cda-text3">
                 Enviado em {formatarDataHora(contrato.dataEnvio)}
@@ -133,6 +159,12 @@ export function ContratoSecao({
               <Button onClick={marcarEnviado} loading={loading} size="sm" variant="outline">
                 <Send className="h-3.5 w-3.5" />
                 Marcar como enviado
+              </Button>
+            )}
+            {!contrato.assinado && (
+              <Button onClick={copiarLinkAssinatura} loading={loading} size="sm" variant="outline">
+                <Link2 className="h-3.5 w-3.5" />
+                {linkCopiado ? "Link copiado!" : "Copiar link de assinatura"}
               </Button>
             )}
             <div className="mx-1 h-6 w-px bg-cda-border" />

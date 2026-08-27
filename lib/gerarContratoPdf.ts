@@ -19,6 +19,13 @@ export type DadosContrato = {
   dataMatricula: Date;
   diaVencimento: string;
   mesInicioVencimento: string;
+  /** Presente só depois que o responsável assina pelo link (ver app/assinar/[token]) —
+   * troca a linha de assinatura em branco por um carimbo com quem assinou e quando. */
+  assinatura?: {
+    nome: string;
+    cpf: string | null;
+    dataHora: Date;
+  } | null;
 };
 
 const CINZA = rgb(0x5a / 255, 0x6a / 255, 0x85 / 255);
@@ -132,13 +139,37 @@ export async function gerarContratoPdf(dados: DadosContrato): Promise<string> {
   garantirEspaco(70);
   linha(`Santa Maria - RS, ${formatarData(new Date())}.`, { espacoDepois: 40 });
 
-  garantirEspaco(60);
-  linha("_____________________________________          _____________________________________", { espacoDepois: 4 });
-  const xEsquerda = MARGEM + 60;
-  const xDireita = MARGEM + 300;
-  pagina.drawText("CONTRATANTE", { x: xEsquerda, y, size: 9, font: fonte, color: CINZA });
-  pagina.drawText("CONTRATADA", { x: xDireita, y, size: 9, font: fonte, color: CINZA });
-  y -= 24;
+  if (dados.assinatura) {
+    // Assinado pelo link — carimbo no lugar da linha em branco (ver app/assinar/[token]).
+    garantirEspaco(80);
+    pagina.drawRectangle({
+      x: MARGEM,
+      y: y - 66,
+      width: LARGURA - MARGEM * 2,
+      height: 66,
+      borderColor: rgb(0x16 / 255, 0xa3 / 255, 0x4a / 255),
+      borderWidth: 1,
+    });
+    pagina.drawText("ASSINADO ELETRONICAMENTE", { x: MARGEM + 10, y: y - 16, size: 10, font: fonteNegrito, color: rgb(0x15 / 255, 0x80 / 255, 0x3d / 255) });
+    pagina.drawText(`Nome: ${dados.assinatura.nome}`, { x: MARGEM + 10, y: y - 32, size: 9, font: fonte, color: PRETO });
+    pagina.drawText(`CPF: ${dados.assinatura.cpf ?? "não informado"}`, { x: MARGEM + 10, y: y - 46, size: 9, font: fonte, color: PRETO });
+    pagina.drawText(`Assinado em: ${formatarData(dados.assinatura.dataHora)} às ${dados.assinatura.dataHora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}`, {
+      x: MARGEM + 10,
+      y: y - 60,
+      size: 9,
+      font: fonte,
+      color: CINZA,
+    });
+    y -= 90;
+  } else {
+    garantirEspaco(60);
+    linha("_____________________________________          _____________________________________", { espacoDepois: 4 });
+    const xEsquerda = MARGEM + 60;
+    const xDireita = MARGEM + 300;
+    pagina.drawText("CONTRATANTE", { x: xEsquerda, y, size: 9, font: fonte, color: CINZA });
+    pagina.drawText("CONTRATADA", { x: xDireita, y, size: 9, font: fonte, color: CINZA });
+    y -= 24;
+  }
 
   const bytes = await pdf.save();
   const base64 = Buffer.from(bytes).toString("base64");

@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
   if (!matricula) return NextResponse.json({ error: "Matrícula não encontrada" }, { status: 404 });
 
   const responsavel = matricula.aluno.responsaveis[0];
-  const arquivo = await gerarContratoPdf({
+  const dadosContrato = {
     alunoNome: alunoNome || matricula.aluno.nome,
     alunoDataNascimento: alunoDataNascimento ? new Date(alunoDataNascimento) : matricula.aluno.dataNascimento,
     responsavelNome: responsavelNome || responsavel?.nome || "Não informado",
@@ -51,12 +51,31 @@ export async function POST(req: NextRequest) {
     dataMatricula: matricula.dataMatricula,
     diaVencimento: diaVencimento || "",
     mesInicioVencimento: mesInicioVencimento || "",
-  });
+  };
+  const arquivo = await gerarContratoPdf(dadosContrato);
+
+  // Guarda o retrato dos dados usados (não só o PDF pronto) — é o que permite
+  // regenerar o mesmo contrato com o carimbo de assinatura depois, pelo link
+  // público (app/assinar/[token]), sem re-derivar tudo do cadastro atual do
+  // aluno (que pode já ter mudado) nem perder dia/mês de vencimento.
+  const snapshot = {
+    alunoNomeSnapshot: dadosContrato.alunoNome,
+    alunoNascimentoSnapshot: dadosContrato.alunoDataNascimento,
+    responsavelNomeSnapshot: dadosContrato.responsavelNome,
+    responsavelCpfSnapshot: dadosContrato.responsavelCpf,
+    turmaNomeSnapshot: dadosContrato.turmaNome,
+    turnoLabelSnapshot: dadosContrato.turnoLabel,
+    anoLetivoSnapshot: dadosContrato.anoLetivo,
+    valorMensalidadeSnapshot: dadosContrato.valorMensalidade,
+    dataMatriculaSnapshot: dadosContrato.dataMatricula,
+    diaVencimentoSnapshot: dadosContrato.diaVencimento,
+    mesInicioVencimentoSnapshot: dadosContrato.mesInicioVencimento,
+  };
 
   const contrato = await prisma.contrato.upsert({
     where: { matriculaId },
-    create: { matriculaId, arquivo, assinado: false },
-    update: { arquivo },
+    create: { matriculaId, arquivo, assinado: false, ...snapshot },
+    update: { arquivo, ...snapshot },
   });
 
   await prisma.logAtividade.create({

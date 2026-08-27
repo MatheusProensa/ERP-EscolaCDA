@@ -273,6 +273,30 @@ model Contrato {
   assinado    Boolean   @default(false)
   dataEnvio   DateTime?
   createdAt   DateTime  @default(now())
+
+  /// Assinatura eletrônica simples por link (MP 2.200-2/2001) — sem certificado
+  /// ICP-Brasil, só registra consentimento + identificação de quem assinou.
+  tokenAssinatura String?   @unique
+  nomeAssinante   String?
+  cpfAssinante    String?
+  ipAssinatura    String?
+  assinadoEm      DateTime?
+
+  /// Retrato dos dados usados pra gerar o PDF (o que a tela de revisão deixa
+  /// editar) — sem isso, assinar pelo link teria que re-derivar tudo do
+  /// cadastro atual do aluno, que pode já ter mudado desde a geração e perderia
+  /// coisas como dia/mês de vencimento (não existem em outro lugar do banco).
+  alunoNomeSnapshot         String?
+  alunoNascimentoSnapshot   DateTime?
+  responsavelNomeSnapshot   String?
+  responsavelCpfSnapshot    String?
+  turmaNomeSnapshot         String?
+  turnoLabelSnapshot        String?
+  anoLetivoSnapshot         Int?
+  valorMensalidadeSnapshot  Float?
+  dataMatriculaSnapshot     DateTime?
+  diaVencimentoSnapshot     String?
+  mesInicioVencimentoSnapshot String?
 }
 
 /// NFS-e (nota fiscal de serviço) emitida via webservice ABRASF do ISS.net
