@@ -10,6 +10,7 @@ import { ContratoSecao } from "@/components/modules/alunos/ContratoSecao";
 import { MatriculaAcoes } from "@/components/modules/alunos/MatriculaAcoes";
 import { ResponsaveisSecao } from "@/components/modules/alunos/ResponsaveisSecao";
 import { NovaMatriculaModal } from "@/components/modules/alunos/NovaMatriculaModal";
+import { FichaMatriculaModal } from "@/components/modules/alunos/FichaMatriculaModal";
 import { ordenarTurmas } from "@/lib/utils";
 
 export default async function AlunoPerfilPage({ params }: { params: Promise<{ id: string }> }) {
@@ -19,6 +20,7 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
     where: { id },
     include: {
       responsaveis: true,
+      pessoasAutorizadas: true,
       matriculas: {
         include: { turma: true, contrato: true, anoLetivo: true },
         orderBy: { dataMatricula: "desc" },
@@ -43,6 +45,24 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
   );
   const turmaIdsDoAluno = new Set(matriculasAtivas.map((m) => m.turmaId));
 
+  function paraResponsavelFicha(parentesco: "Pai" | "Mãe") {
+    const r = aluno!.responsaveis.find((x) => x.parentesco.trim().toLowerCase() === parentesco.toLowerCase());
+    if (!r) return null;
+    return {
+      nome: r.nome,
+      rg: r.rg ?? "",
+      cpf: r.cpf ?? "",
+      email: r.email ?? "",
+      escolaridade: r.escolaridade ?? "",
+      profissao: r.profissao ?? "",
+      endereco: r.endereco ?? "",
+      cep: r.cep ?? "",
+      telefoneFixo: r.telefoneFixo ?? "",
+      telefoneComercial: r.telefoneComercial ?? "",
+      telefoneCelular: r.telefone ?? "",
+    };
+  }
+
   return (
     <div>
       <PageHeader
@@ -58,6 +78,28 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
               <FileDown className="h-4 w-4" />
               Baixar ficha PDF
             </Button>
+            {matriculaPrincipal && (
+              <FichaMatriculaModal
+                alunoId={aluno.id}
+                matriculaId={matriculaPrincipal.id}
+                sexoInicial={aluno.sexo ?? ""}
+                racaCorInicial={aluno.racaCor ?? ""}
+                autorizacaoImagemInicial={aluno.autorizacaoImagem}
+                temIrmaosInicial={aluno.temIrmaos ?? false}
+                idadesIrmaosInicial={aluno.idadesIrmaos ?? ""}
+                usaBicoInicial={aluno.usaBico ?? false}
+                usaMamadeiraInicial={aluno.usaMamadeira ?? false}
+                obsBicoMamadeiraInicial={aluno.obsBicoMamadeira ?? ""}
+                jaFrequentouEscolaInicial={aluno.jaFrequentouEscola ?? false}
+                duracaoEscolaAnteriorInicial={aluno.duracaoEscolaAnterior ?? ""}
+                rotinaSonoAlimentacaoInicial={aluno.rotinaSonoAlimentacao ?? ""}
+                brincadeirasPrediletasInicial={aluno.brincadeirasPrediletas ?? ""}
+                reacoesContrariadoInicial={aluno.reacoesContrariado ?? ""}
+                paiInicial={paraResponsavelFicha("Pai")}
+                maeInicial={paraResponsavelFicha("Mãe")}
+                pessoasAutorizadasInicial={aluno.pessoasAutorizadas.map((p) => ({ nome: p.nome, parentesco: p.parentesco }))}
+              />
+            )}
           </div>
         }
       />

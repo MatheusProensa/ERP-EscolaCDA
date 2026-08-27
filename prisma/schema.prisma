@@ -163,10 +163,23 @@ model Aluno {
   recursosAcessib String?
   nis             String?
 
-  matriculas   Matricula[]
-  responsaveis Responsavel[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  // Dados da Ficha de Matrícula (rotina/perfil da criança)
+  temIrmaos             Boolean?
+  idadesIrmaos          String?
+  usaBico               Boolean?
+  usaMamadeira          Boolean?
+  obsBicoMamadeira      String?
+  jaFrequentouEscola    Boolean?
+  duracaoEscolaAnterior String?
+  rotinaSonoAlimentacao String?
+  brincadeirasPrediletas String?
+  reacoesContrariado    String?
+
+  matriculas         Matricula[]
+  responsaveis       Responsavel[]
+  pessoasAutorizadas PessoaAutorizada[]
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   @@index([nome])
 }
@@ -191,14 +204,30 @@ enum Nacionalidade {
 }
 
 model Responsavel {
-  id         String  @id @default(cuid())
+  id                String  @id @default(cuid())
+  nome              String
+  parentesco        String
+  cpf               String?
+  telefone          String
+  telefoneFixo      String?
+  telefoneComercial String?
+  email             String?
+  rg                String?
+  escolaridade      String?
+  profissao         String?
+  endereco          String?
+  cep               String?
+  autorizado        Boolean @default(true)
+  aluno             Aluno   @relation(fields: [alunoId], references: [id])
+  alunoId           String
+}
+
+/// Pessoas além dos responsáveis já cadastrados que também podem buscar o aluno na escola.
+model PessoaAutorizada {
+  id         String @id @default(cuid())
   nome       String
   parentesco String
-  cpf        String?
-  telefone   String
-  email      String?
-  autorizado Boolean @default(true)
-  aluno      Aluno   @relation(fields: [alunoId], references: [id])
+  aluno      Aluno  @relation(fields: [alunoId], references: [id], onDelete: Cascade)
   alunoId    String
 }
 
