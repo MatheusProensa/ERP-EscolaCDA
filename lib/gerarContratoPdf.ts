@@ -120,7 +120,9 @@ export async function gerarContratoPdf(dados: DadosContrato): Promise<string> {
   linha(`CONTRATANTE (responsável): ${dados.responsavelNome}`, { espacoDepois: 3 });
   linha(`CPF do CONTRATANTE: ${dados.responsavelCpf ?? "não informado"}`, { espacoDepois: 3 });
   linha(`Data da matrícula: ${formatarData(dados.dataMatricula)}`, { espacoDepois: 3 });
-  linha(`Valor da mensalidade: ${formatarMoeda(dados.valorMensalidade)}`, { espacoDepois: 18 });
+  linha(`Valor da mensalidade: ${dados.valorMensalidade > 0 ? formatarMoeda(dados.valorMensalidade) : "a definir"}`, {
+    espacoDepois: 18,
+  });
 
   for (const c of montarClausulas(dados)) paragrafo(c);
 
