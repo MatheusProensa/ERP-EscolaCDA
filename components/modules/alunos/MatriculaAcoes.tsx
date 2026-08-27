@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeftRight, XCircle } from "lucide-react";
+import { ArrowLeftRight, XCircle, Trash2 } from "lucide-react";
 import type { SituacaoMatricula, Turma } from "@prisma/client";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -55,6 +55,21 @@ export function MatriculaAcoes({
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
       setError(data.error ?? "Não foi possível alterar a situação da matrícula.");
+      return;
+    }
+    router.refresh();
+  }
+
+  async function excluir() {
+    if (!confirm("Excluir esta matrícula de vez? Some o card de contrato dela desta página e não dá pra desfazer.")) return;
+    setError("");
+    setLoading(true);
+    const res = await fetch(`/api/matriculas/${matriculaId}`, { method: "DELETE" });
+    setLoading(false);
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error ?? "Não foi possível excluir a matrícula.");
       return;
     }
     router.refresh();
@@ -116,6 +131,17 @@ export function MatriculaAcoes({
           </option>
         ))}
       </Select>
+      {situacaoAtual !== "ATIVA" && (
+        <button
+          onClick={excluir}
+          disabled={loading}
+          title="Excluir matrícula"
+          aria-label="Excluir matrícula"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text3 hover:bg-cda-red/5 hover:text-cda-red disabled:opacity-50"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      )}
       {error && <p className="text-xs text-cda-red">{error}</p>}
 
       <Modal open={transferindo} onClose={() => setTransferindo(false)} title="Transferir de turma">

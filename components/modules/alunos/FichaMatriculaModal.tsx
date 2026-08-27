@@ -301,7 +301,13 @@ export function FichaMatriculaModal({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "ficha_matricula.pdf";
+    const nomeArquivo = alunoNome
+      .normalize("NFD")
+      .replace(new RegExp("[\\u0300-\\u036f]", "g"), "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    a.download = `ficha_matricula_${nomeArquivo}.pdf`;
     a.click();
     URL.revokeObjectURL(url);
     setOpen(false);

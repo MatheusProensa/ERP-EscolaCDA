@@ -70,3 +70,43 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return erroApi(err);
   }
 }
+
+// Exclui de vez uma matrícula ENCERRADA (cancelada/transferida/concluída) — é o
+// que tira aquele card "Contrato — Turma X" que fica preso na página do aluno
+// pra sempre depois de cancelar, já que só existia a opção de mudar a situação,
+// nunca de remover o registro. Matrícula ATIVA não pode ser excluída por aqui —
+// pra isso já existe "Cancelar matrícula".
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+
+  const { id } = await params;
+  const matricula = await prisma.matricula.findUnique({
+    where: { id },
+    include: { aluno: true, turma: true },
+  });
+  if (!matricula) return NextResponse.json({ error: "Matrícula não encontrada" }, { status: 404 });
+  if (matricula.situacao === "ATIVA") {
+    return NextResponse.json({ error: "Cancele a matrícula antes de excluí-la." }, { status: 400 });
+  }
+
+  try {
+    await prisma.$transaction([
+      prisma.contrato.deleteMany({ where: { matriculaId: id } }),
+      prisma.matricula.delete({ where: { id } }),
+    ]);
+
+    await prisma.logAtividade.create({
+      data: {
+        acao: `Matrícula excluída (${matricula.turma.nome}) - ${matricula.aluno.nome}`,
+        entidade: "Matricula",
+        entidadeId: id,
+        usuario: session.user.name ?? "Usuário",
+      },
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return erroApi(err);
+  }
+}

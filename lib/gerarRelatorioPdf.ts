@@ -12,20 +12,18 @@ export async function embarcarLogo(pdf: PDFDocument): Promise<PDFImage | null> {
   }
 }
 
-/** Desenha o badge branco com o logo no canto superior esquerdo do cabeçalho navy.
+/** Desenha o logo no canto superior esquerdo do cabeçalho navy. O PNG já tem
+ * fundo transparente e contorno branco embutido nas letras (dá contraste
+ * sozinho) — sem caixa branca atrás, que ficava com cara de botão colado.
  * `alturaPagina` porque nem toda página usa a mesma altura (ficha é retrato). */
 export function desenharLogo(pagina: PDFPage, logo: PDFImage | null, alturaPagina: number) {
   if (!logo) return;
-  const alturaLogo = 24;
+  const alturaLogo = 34;
   const escala = alturaLogo / logo.height;
   const larguraLogo = logo.width * escala;
-  const padding = 7;
-  const badgeW = larguraLogo + padding * 2;
-  const badgeH = alturaLogo + padding * 2;
   const x = MARGIN;
-  const y = alturaPagina - 12 - badgeH;
-  pagina.drawRectangle({ x, y, width: badgeW, height: badgeH, color: WHITE });
-  pagina.drawImage(logo, { x: x + padding, y: y + padding, width: larguraLogo, height: alturaLogo });
+  const y = alturaPagina - 16 - alturaLogo;
+  pagina.drawImage(logo, { x, y, width: larguraLogo, height: alturaLogo });
 }
 
 export const NAVY = rgb(0x0d / 255, 0x1f / 255, 0x4e / 255);

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, HelpCircle, MessageCircle, Menu } from "lucide-react";
+import { Search, MessageCircle, Menu } from "lucide-react";
 import { UserMenu } from "./UserMenu";
 import { NotificationBell } from "./NotificationBell";
 
@@ -36,9 +36,6 @@ export function Topbar({
       </div>
 
       <div className="flex shrink-0 items-center gap-1 sm:gap-2">
-        <button aria-label="Ajuda" className="hidden h-11 w-11 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cda-blue/40 sm:flex">
-          <HelpCircle className="h-[18px] w-[18px]" />
-        </button>
         <Link
           href="/chat"
           aria-label="Chat"
