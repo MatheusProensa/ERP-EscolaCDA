@@ -1,15 +1,18 @@
 import { formatarMoeda } from "@/lib/utils";
 
-/** O contrato distingue Integral/Contraturno/Tarde/Manhã, mas o schema só tem
+/** O contrato distingue Integral/Contraturno/Tarde, mas o schema só tem
  * Turma.turno = MANHA | TARDE — infere pelo nome da turma antes de cair pro
  * turno cru (ver nota no fim de lib/gerarContratoPdf.ts). Compartilhado entre
  * a API (valor inicial) e o modal de revisão (mesma lógica, cliente pode
- * trocar à mão se a turma real for diferente do que o nome sugere). */
+ * trocar à mão se a turma real for diferente do que o nome sugere).
+ * Observação: "Manhã" e "Contraturno" são a mesma coisa pra escola (aluno que
+ * só fica o turno da manhã é chamado de "Contraturno") — não existe um 4º
+ * rótulo "Manhã" separado. */
 export function turnoDoContrato(turmaNome: string, turno: "MANHA" | "TARDE"): DadosContratoTexto["turnoLabel"] {
   const nome = turmaNome.toLowerCase();
   if (nome.includes("integral")) return "Integral";
   if (nome.includes("contraturno")) return "Contraturno";
-  return turno === "MANHA" ? "Manhã" : "Tarde";
+  return turno === "MANHA" ? "Contraturno" : "Tarde";
 }
 
 export type DadosContratoTexto = {
@@ -18,7 +21,7 @@ export type DadosContratoTexto = {
   /** MANHA/TARDE (Turma.turno) — só um dos 3 turnos do contrato real (o outro,
    * "Integral", não existe como campo próprio ainda; ver nota no fim de
    * lib/gerarContratoPdf.ts). Quem chama já resolve pro rótulo certo. */
-  turnoLabel: "Manhã" | "Tarde" | "Integral" | "Contraturno";
+  turnoLabel: "Tarde" | "Integral" | "Contraturno";
 };
 
 /** Texto fixo do contrato — modelo real da escola (Guntzel & Proensa LTDA -

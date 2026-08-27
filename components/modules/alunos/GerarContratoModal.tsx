@@ -95,7 +95,6 @@ export function GerarContratoModal({
             <Input label="Data de nascimento" type="date" value={alunoNascimento} onChange={(e) => setAlunoNascimento(e.target.value)} />
             <Input label="Turma" value={turmaNome} disabled />
             <Select label="Turno do contrato" value={turno} onChange={(e) => setTurno(e.target.value as Turno)}>
-              <option value="Manhã">Manhã</option>
               <option value="Tarde">Tarde</option>
               <option value="Integral">Integral</option>
               <option value="Contraturno">Contraturno</option>

@@ -347,7 +347,6 @@ export function FichaMatriculaModal({
               <Celula label="Turno" peso={1.3}>
                 <ChipEscolha
                   opcoes={[
-                    { valor: "Manhã", label: "Manhã" },
                     { valor: "Tarde", label: "Tarde" },
                     { valor: "Integral", label: "Integral" },
                     { valor: "Contraturno", label: "Contraturno" },

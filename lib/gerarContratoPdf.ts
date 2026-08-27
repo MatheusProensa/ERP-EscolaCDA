@@ -11,7 +11,7 @@ export type DadosContrato = {
   /** MANHA/TARDE (Turma.turno) — só um dos 3 turnos do contrato real (o outro,
    * "Integral", não existe como campo próprio ainda; ver observação no fim do
    * arquivo). Passar aqui já resolvido pro rótulo certo evita import circular. */
-  turnoLabel: "Manhã" | "Tarde" | "Integral" | "Contraturno";
+  turnoLabel: "Tarde" | "Integral" | "Contraturno";
   anoLetivo: number;
   valorMensalidade: number;
   dataMatricula: Date;

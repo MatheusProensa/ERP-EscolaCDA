@@ -92,7 +92,10 @@ export async function gerarFichaMatriculaPdf(d: DadosFichaMatricula): Promise<st
   const fundo = await embarcarFundo(pdf);
 
   function desenharFundo(p: import("pdf-lib").PDFPage) {
-    if (fundo) p.drawImage(fundo, { x: 0, y: 0, width: LARGURA, height: ALTURA });
+    // O PNG do timbrado tem uma sobra de ~5px branca só na borda esquerda (artefato de quando foi
+    // exportado do Word) — desenha um pouco maior/deslocado à esquerda pra empurrar essa tira
+    // branca pra fora da página, sem distorcer o resto (a borda direita fica intacta).
+    if (fundo) p.drawImage(fundo, { x: -4, y: 0, width: LARGURA + 4, height: ALTURA });
   }
 
   let pagina = pdf.addPage([LARGURA, ALTURA]);
@@ -199,7 +202,7 @@ export async function gerarFichaMatriculaPdf(d: DadosFichaMatricula): Promise<st
     { label: "Data de ingresso/renovação", valor: formatarData(d.dataIngresso), peso: 1.4 },
     {
       label: "Turno",
-      valor: `${marca("Manhã", d.turnoLabel === "Manhã")} ${marca("Tarde", d.turnoLabel === "Tarde")} ${marca("Integral", d.turnoLabel === "Integral")} ${marca("Contraturno", d.turnoLabel === "Contraturno")}`,
+      valor: `${marca("Tarde", d.turnoLabel === "Tarde")} ${marca("Integral", d.turnoLabel === "Integral")} ${marca("Contraturno", d.turnoLabel === "Contraturno")}`,
       peso: 1.6,
     },
   ]);
