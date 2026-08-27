@@ -1,4 +1,4 @@
-import { UserPlus } from "lucide-react";
+import { UserPlus, FileSpreadsheet } from "lucide-react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
@@ -74,6 +74,10 @@ export default async function AlunosPage({
         action={
           <div className="flex flex-wrap items-center gap-2">
             <ExportButtons href="/api/relatorios/alunos" label="" params={{ turma, situacao, busca, censo }} />
+            <Button href="/alunos/importar" variant="outline">
+              <FileSpreadsheet className="h-4 w-4" />
+              Importar planilha
+            </Button>
             <Button href="/alunos/novo">
               <UserPlus className="h-4 w-4" />
               Novo aluno
