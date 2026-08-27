@@ -18,6 +18,7 @@ import {
   CalendarDays,
   MessageCircle,
   Receipt,
+  Barcode,
   History,
   X,
   type LucideIcon,
@@ -56,6 +57,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Ponto", href: "/ponto", icon: Clock },
       { label: "Notas Fiscais", href: "/notas-fiscais", icon: Receipt },
+      { label: "Boletos", href: "/boletos", icon: Barcode },
     ],
   },
   {

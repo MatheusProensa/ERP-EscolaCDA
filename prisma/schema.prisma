@@ -183,6 +183,7 @@ model Aluno {
   responsaveis       Responsavel[]
   pessoasAutorizadas PessoaAutorizada[]
   notasFiscais       NotaFiscal[]
+  boletos            Boleto[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -336,6 +337,42 @@ enum StatusNotaFiscal {
   EMITIDA
   ERRO
   CANCELADA
+}
+
+/// Boleto de mensalidade via API de Cobrança de Títulos do Banrisul — ver
+/// lib/banrisul.ts. Hoje a cobrança é feita por fora do sistema (Banrisul,
+/// manual); isso aqui é a estrutura pronta pra registrar o boleto direto pelo
+/// ERP quando o Convênio de Cobrança (Código de Beneficiário) da escola +
+/// credenciais da API estiverem configurados.
+model Boleto {
+  id             String       @id @default(cuid())
+  aluno          Aluno        @relation(fields: [alunoId], references: [id])
+  alunoId        String
+  /// "AAAA-MM" — mês de referência da mensalidade
+  competencia    String
+  valor          Float
+  vencimento     DateTime
+  status         StatusBoleto @default(PENDENTE)
+  nossoNumero    String?
+  linhaDigitavel String?
+  codigoBarras   String?
+  mensagemErro   String?
+  dataRegistro   DateTime?
+  usuario        String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([alunoId])
+  @@index([competencia])
+  @@index([status])
+}
+
+enum StatusBoleto {
+  PENDENTE
+  REGISTRADO
+  ERRO
+  PAGO
+  CANCELADO
 }
 
 model Funcionario {
