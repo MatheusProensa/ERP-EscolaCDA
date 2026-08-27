@@ -115,6 +115,16 @@ export default async function AlunosPage({
           <Button type="submit" variant="outline">
             Filtrar
           </Button>
+          <label className="flex items-center gap-2 text-sm text-cda-text2 sm:col-span-4">
+            <input
+              type="checkbox"
+              name="censo"
+              value="incompleto"
+              defaultChecked={censoIncompleto}
+              className="h-4 w-4 rounded border-cda-border"
+            />
+            Só alunos com dados incompletos pro censo
+          </label>
         </form>
       </Card>
 
