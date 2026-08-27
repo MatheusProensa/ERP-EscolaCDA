@@ -47,11 +47,21 @@ export function GerarContratoModal({
   const [responsavelCpf, setResponsavelCpf] = useState(responsavelCpfInicial);
   const [valorMensalidade, setValorMensalidade] = useState(String(valorMensalidadeInicial || ""));
   const [turno, setTurno] = useState<Turno>(turnoInicial);
+  // No modelo em papel são linhas em branco ("dia ____ ... mês de ____") — aqui viram campo,
+  // com um valor já sugerido pra não obrigar preencher toda vez.
+  const [diaVencimento, setDiaVencimento] = useState("05");
+  const [mesInicioVencimento, setMesInicioVencimento] = useState("");
 
   // Mesmo texto que vira o PDF (lib/contratoTexto, compartilhado com
   // lib/gerarContratoPdf) — a pré-visualização abaixo é exatamente o que sai
   // impresso, não uma aproximação.
-  const clausulas = montarClausulas({ anoLetivo, valorMensalidade: Number(valorMensalidade) || 0, turnoLabel: turno });
+  const clausulas = montarClausulas({
+    anoLetivo,
+    valorMensalidade: Number(valorMensalidade) || 0,
+    turnoLabel: turno,
+    diaVencimento,
+    mesInicioVencimento,
+  });
 
   async function gerar() {
     setLoading(true);
@@ -67,6 +77,8 @@ export function GerarContratoModal({
         responsavelCpf,
         valorMensalidade: Number(valorMensalidade) || 0,
         turnoLabel: turno,
+        diaVencimento,
+        mesInicioVencimento,
       }),
     });
     setLoading(false);
@@ -109,6 +121,22 @@ export function GerarContratoModal({
               value={valorMensalidade}
               onChange={(e) => setValorMensalidade(e.target.value)}
             />
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Dia do vencimento"
+                type="number"
+                min="1"
+                max="28"
+                value={diaVencimento}
+                onChange={(e) => setDiaVencimento(e.target.value)}
+              />
+              <Input
+                label="Mês de início da cobrança"
+                placeholder="ex.: setembro"
+                value={mesInicioVencimento}
+                onChange={(e) => setMesInicioVencimento(e.target.value)}
+              />
+            </div>
             {error && <p className="text-sm text-cda-red">{error}</p>}
             <div className="mt-2 flex justify-end gap-3">
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>

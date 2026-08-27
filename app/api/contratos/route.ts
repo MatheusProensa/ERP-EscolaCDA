@@ -12,7 +12,17 @@ export async function POST(req: NextRequest) {
   // Os campos abaixo, quando enviados, sobrescrevem o que veio do cadastro —
   // é a tela de revisão (GerarContratoModal) deixando corrigir um typo ou
   // valor sem precisar sair dali pra editar o cadastro do aluno primeiro.
-  const { matriculaId, alunoNome, alunoDataNascimento, responsavelNome, responsavelCpf, valorMensalidade, turnoLabel } = body;
+  const {
+    matriculaId,
+    alunoNome,
+    alunoDataNascimento,
+    responsavelNome,
+    responsavelCpf,
+    valorMensalidade,
+    turnoLabel,
+    diaVencimento,
+    mesInicioVencimento,
+  } = body;
   if (!matriculaId) {
     return NextResponse.json({ error: "matriculaId é obrigatório" }, { status: 400 });
   }
@@ -39,6 +49,8 @@ export async function POST(req: NextRequest) {
     anoLetivo: matricula.anoLetivo.ano,
     valorMensalidade: Number(valorMensalidade) || matricula.valorMensalidade || 0,
     dataMatricula: matricula.dataMatricula,
+    diaVencimento: diaVencimento || "",
+    mesInicioVencimento: mesInicioVencimento || "",
   });
 
   const contrato = await prisma.contrato.upsert({

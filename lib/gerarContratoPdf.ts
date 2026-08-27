@@ -17,6 +17,8 @@ export type DadosContrato = {
   anoLetivo: number;
   valorMensalidade: number;
   dataMatricula: Date;
+  diaVencimento: string;
+  mesInicioVencimento: string;
 };
 
 const CINZA = rgb(0x5a / 255, 0x6a / 255, 0x85 / 255);

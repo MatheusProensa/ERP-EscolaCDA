@@ -22,6 +22,12 @@ export type DadosContratoTexto = {
    * "Integral", não existe como campo próprio ainda; ver nota no fim de
    * lib/gerarContratoPdf.ts). Quem chama já resolve pro rótulo certo. */
   turnoLabel: "Tarde" | "Integral" | "Contraturno";
+  /** Dia do mês do vencimento (§2ª da Cláusula 11) — no modelo em papel é uma
+   * linha em branco ("dia ____"), aqui vira campo editável. */
+  diaVencimento: string;
+  /** Mês em que começa a cobrar a partir da 2ª parcela (§2ª da Cláusula 11) —
+   * mesma ideia, era uma linha em branco no papel. */
+  mesInicioVencimento: string;
 };
 
 /** A Cláusula 11ª só distingue 2 modalidades de cobrança — Integral ou
@@ -62,7 +68,7 @@ export function montarClausulas(d: DadosContratoTexto): string[] {
     `Parágrafo Único- A primeira parcela informada na cláusula 11º deste instrumento será cobrada no ato da matrícula e tem caráter de sinal, arras e princípio de pagamento, razão pela qual não será devolvida, no todo ou em parte no caso de desistência por parte do CONTRATANTE, sendo imprescindível sua quitação para celebração e concretização do presente Contrato.`,
     `CLÁUSULA 11ª: O valor da prestação dos serviços educacionais, correspondente ao turno contratado, será informado na Ficha de Matrícula e no quadro financeiro do presente contrato, podendo o CONTRATANTE efetuar o pagamento à vista ou em até 13 (treze) parcelas, conforme as condições financeiras estabelecidas pela CONTRATADA. O valor da prestação educacional não inclui o Serviço de Alimentação Escolar previsto na Cláusula 12ª. Mensalidade contratada: ${d.valorMensalidade > 0 ? formatarMoeda(d.valorMensalidade) : "a definir"}.`,
     `§1°– O presente contrato e os valores estipulados na cláusula anterior se referem à modalidade de atendimento indicada na Ficha de Matrícula: ${marcaModalidade("Integral")} Turno Integral Infantil    ${marcaModalidade("Reduzido")} Turno Reduzido Infantil.`,
-    `§2°- O vencimento a partir da segunda parcela será sempre no dia ____ de cada mês iniciando no mês de __________________ do corrente ano ou no primeiro dia útil subsequente, em virtude de feriados, sábados e domingos.`,
+    `§2°- O vencimento a partir da segunda parcela será sempre no dia ${d.diaVencimento || "____"} de cada mês iniciando no mês de ${d.mesInicioVencimento || "__________________"} do corrente ano ou no primeiro dia útil subsequente, em virtude de feriados, sábados e domingos.`,
     `§3°- O pagamento das parcelas mensais deverá ser efetuado através de boletos bancários enviados via agenda, não sendo aceito pagamento em espécie ou cheque.`,
     `CLÁUSULA 12ª: DO SERVIÇO DE ALIMENTAÇÃO ESCOLAR – O Serviço de Alimentação Escolar é contratado separadamente da prestação dos serviços educacionais e integra, de forma obrigatória, a modalidade de atendimento escolhida pelo CONTRATANTE, uma vez que a alimentação faz parte da rotina de permanência do aluno na escola. O serviço é prestado conforme cardápio elaborado e acompanhado pela Nutricionista responsável e compreende as refeições e lanches correspondentes ao turno frequentado pelo aluno.`,
     `Parágrafo 1º – Para o Turno Reduzido, o Serviço de Alimentação Escolar terá o valor de R$ 300,00 (trezentos reais) mensais e compreenderá 02 (dois) lanches diários, conforme o turno frequentado pelo aluno.`,
