@@ -125,14 +125,12 @@ export function MatriculaAcoes({
             <option value="" disabled>
               Selecione a turma de destino
             </option>
-            {turmasDisponiveis?.map((t) => {
-              const cheia = t.matriculados >= t.capacidade;
-              return (
-                <option key={t.id} value={t.id} disabled={cheia}>
-                  {t.nome} — {cheia ? "lotada" : `${t.capacidade - t.matriculados} vaga(s)`}
-                </option>
-              );
-            })}
+            {/* Controle de vagas desativado por enquanto — números de capacidade não são confiáveis ainda. */}
+            {turmasDisponiveis?.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nome}
+              </option>
+            ))}
           </Select>
           {error && <p className="text-sm text-cda-red">{error}</p>}
           <div className="flex justify-end gap-3">

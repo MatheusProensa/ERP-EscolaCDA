@@ -30,16 +30,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       return NextResponse.json({ error: "A turma de destino precisa ser do mesmo ano letivo" }, { status: 400 });
     }
 
-    const matriculados = await prisma.matricula.count({
-      where: { turmaId, situacao: "ATIVA" },
-    });
-    if (matriculados >= turmaDestino.capacidade) {
-      return NextResponse.json(
-        { error: `A turma ${turmaDestino.nome} já está com a capacidade cheia (${matriculados}/${turmaDestino.capacidade}).` },
-        { status: 400 }
-      );
-    }
-
+    // Controle de vagas por turma desativado por enquanto — os números de
+    // capacidade cadastrados não são confiáveis ainda.
     try {
       const matricula = await prisma.matricula.update({ where: { id }, data: { turmaId } });
 

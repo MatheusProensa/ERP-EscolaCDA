@@ -47,7 +47,6 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
   if (!turma) notFound();
 
   const matriculadosAtivos = turma.matriculas.filter((m) => m.situacao === "ATIVA").length;
-  const vagas = Math.max(0, turma.capacidade - matriculadosAtivos);
 
   const idsNaTurma = new Set(turma.matriculas.filter((m) => m.situacao === "ATIVA").map((m) => m.alunoId));
   const todosAlunos = await prisma.aluno.findMany({ select: { id: true, nome: true }, orderBy: { nome: "asc" } });
@@ -87,18 +86,8 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
           <p className="mt-1 text-xl font-bold text-cda-text">{matriculadosAtivos}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-xs text-cda-text3">Capacidade</p>
-          <p className="mt-1 text-xl font-bold text-cda-text">{turma.capacidade}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs text-cda-text3">Vagas disponíveis</p>
-          <p className="mt-1 text-xl font-bold text-cda-text">{vagas}</p>
-        </Card>
-        <Card className="p-4">
-          <p className="text-xs text-cda-text3">Situação</p>
-          <p className="mt-1">
-            <Badge variant={vagas > 0 ? "green" : "red"}>{vagas > 0 ? "Com vaga" : "Lotada"}</Badge>
-          </p>
+          <p className="text-xs text-cda-text3">Turno</p>
+          <p className="mt-1 text-xl font-bold text-cda-text">{turma.turno === "MANHA" ? "Manhã" : "Tarde"}</p>
         </Card>
       </div>
 

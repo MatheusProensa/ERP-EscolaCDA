@@ -1,4 +1,4 @@
-import { GraduationCap, Users, DoorOpen, School } from "lucide-react";
+import { GraduationCap, Users, Hourglass, School } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -19,7 +19,6 @@ export default async function AcademicoPage() {
     prisma.matricula.count({ where: { anoLetivoId: anoLetivo?.id, situacao: "ATIVA" } }),
     prisma.listaEspera.count(),
   ]);
-  const vagasDisponiveis = turmasRaw.reduce((acc, t) => acc + Math.max(0, t.capacidade - t._count.matriculas), 0);
   const regulares = ordenarTurmas(turmasRaw.filter((t) => t.turno === "TARDE"));
   const contraturno = ordenarTurmas(turmasRaw.filter((t) => t.turno === "MANHA"));
 
@@ -35,7 +34,7 @@ export default async function AcademicoPage() {
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <MetricCard icon={School} iconColor="#1A6FD8" value={turmasRaw.length} label="Turmas ativas" />
         <MetricCard icon={Users} iconColor="#16A34A" value={totalAlunos} label="Alunos matriculados" />
-        <MetricCard icon={DoorOpen} iconColor="#D97706" value={vagasDisponiveis} label="Vagas disponíveis" />
+        <MetricCard icon={Hourglass} iconColor="#D97706" value={totalListaEspera} label="Na lista de espera" />
         <MetricCard
           icon={GraduationCap}
           iconColor="#7C3AED"

@@ -58,14 +58,12 @@ export function NovaMatriculaModal({ alunoId, turmas }: { alunoId: string; turma
             <option value="" disabled>
               Selecione a turma
             </option>
-            {turmas.map((t) => {
-              const cheia = t.matriculados >= t.capacidade;
-              return (
-                <option key={t.id} value={t.id} disabled={cheia}>
-                  {t.nome} — {cheia ? "lotada" : `${t.capacidade - t.matriculados} vaga(s)`}
-                </option>
-              );
-            })}
+            {/* Controle de vagas desativado por enquanto — números de capacidade não são confiáveis ainda. */}
+            {turmas.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nome}
+              </option>
+            ))}
           </Select>
           <div className="flex flex-col gap-1">
             <Input label="Valor da mensalidade" name="valorMensalidade" type="number" step="0.01" min="0" defaultValue={450} />

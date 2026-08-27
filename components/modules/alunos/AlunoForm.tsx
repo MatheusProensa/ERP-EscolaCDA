@@ -159,14 +159,12 @@ export function AlunoForm({ turmas }: { turmas: TurmaComVagas[] }) {
             <option value="" disabled>
               Selecione a turma
             </option>
-            {turmas.map((t) => {
-              const cheia = t.matriculados >= t.capacidade;
-              return (
-                <option key={t.id} value={t.id} disabled={cheia}>
-                  {t.nome} — {cheia ? "lotada" : `${t.capacidade - t.matriculados} vaga(s)`}
-                </option>
-              );
-            })}
+            {/* Controle de vagas desativado por enquanto — números de capacidade não são confiáveis ainda. */}
+            {turmas.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nome}
+              </option>
+            ))}
           </Select>
           <Input
             label="Valor da mensalidade"

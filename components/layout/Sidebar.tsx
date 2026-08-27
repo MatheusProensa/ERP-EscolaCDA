@@ -17,6 +17,7 @@ import {
   FileText,
   CalendarDays,
   MessageCircle,
+  Receipt,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -47,7 +48,10 @@ const NAV_GROUPS: NavGroup[] = [
   },
   {
     label: "Financeiro",
-    items: [{ label: "Ponto", href: "/ponto", icon: Clock }],
+    items: [
+      { label: "Ponto", href: "/ponto", icon: Clock },
+      { label: "Notas Fiscais", href: "/notas-fiscais", icon: Receipt },
+    ],
   },
   {
     label: "Administrativo",

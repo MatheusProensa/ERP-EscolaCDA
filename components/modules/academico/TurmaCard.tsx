@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Pencil, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -31,9 +30,6 @@ export function TurmaCard({ id, nome, turno, capacidade, matriculados }: TurmaCa
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const ocupacao = capacidade > 0 ? matriculados / capacidade : 0;
-  const lotada = matriculados >= capacidade;
-  const corBarra = lotada ? "#DC2626" : ocupacao >= 0.8 ? "#D97706" : "#16A34A";
   const turnoStyle = TURNO_STYLE[turno];
 
   async function salvarEdicao(e: FormEvent<HTMLFormElement>) {
@@ -102,18 +98,10 @@ export function TurmaCard({ id, nome, turno, capacidade, matriculados }: TurmaCa
       </div>
 
       <p className="text-sm text-cda-text2">
-        {matriculados} / {capacidade} alunos
+        {matriculados} aluno{matriculados === 1 ? "" : "s"} matriculado{matriculados === 1 ? "" : "s"}
       </p>
 
-      <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-cda-bg">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${Math.min(100, ocupacao * 100)}%`, backgroundColor: corBarra }}
-        />
-      </div>
-
-      <div className="mt-3 flex items-center justify-between">
-        <Badge variant={lotada ? "red" : "green"}>{lotada ? "Lotada" : "Com vaga"}</Badge>
+      <div className="mt-3 flex items-center justify-end">
         <Link href={`/academico/turmas/${id}`} className={cn("text-sm font-medium text-cda-blue hover:underline")}>
           Ver alunos
         </Link>

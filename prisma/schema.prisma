@@ -178,6 +178,7 @@ model Aluno {
   matriculas         Matricula[]
   responsaveis       Responsavel[]
   pessoasAutorizadas PessoaAutorizada[]
+  notasFiscais       NotaFiscal[]
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
@@ -272,6 +273,41 @@ model Contrato {
   assinado    Boolean   @default(false)
   dataEnvio   DateTime?
   createdAt   DateTime  @default(now())
+}
+
+/// NFS-e (nota fiscal de serviço) emitida via webservice ABRASF do ISS.net
+/// (Prefeitura de Santa Maria) — ver lib/issnet.ts. A escola cobra a
+/// mensalidade por fora (Banrisul); isso aqui é só a obrigação fiscal de
+/// emitir nota do serviço prestado, independente de como foi cobrado.
+model NotaFiscal {
+  id                String           @id @default(cuid())
+  aluno             Aluno            @relation(fields: [alunoId], references: [id])
+  alunoId           String
+  /// "AAAA-MM" — mês de referência do serviço (não precisa ser o mês da emissão)
+  competencia       String
+  valorServico      Float
+  discriminacao     String
+  status            StatusNotaFiscal @default(PENDENTE)
+  numeroNota        String?
+  serieNota         String?
+  codigoVerificacao String?
+  protocolo         String?
+  mensagemErro      String?
+  dataEmissao       DateTime?
+  usuario           String
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  @@index([alunoId])
+  @@index([competencia])
+  @@index([status])
+}
+
+enum StatusNotaFiscal {
+  PENDENTE
+  EMITIDA
+  ERRO
+  CANCELADA
 }
 
 model Funcionario {

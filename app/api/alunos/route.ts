@@ -80,14 +80,8 @@ export async function POST(req: NextRequest) {
   const turma = await prisma.turma.findUnique({ where: { id: turmaId } });
   if (!turma) return NextResponse.json({ error: "Turma não encontrada" }, { status: 400 });
 
-  const matriculados = await prisma.matricula.count({ where: { turmaId, situacao: "ATIVA" } });
-  if (matriculados >= turma.capacidade) {
-    return NextResponse.json(
-      { error: `A turma ${turma.nome} já está com a capacidade cheia (${matriculados}/${turma.capacidade}).` },
-      { status: 400 }
-    );
-  }
-
+  // Controle de vagas por turma desativado por enquanto — os números de
+  // capacidade cadastrados não são confiáveis ainda.
   const valor = Number(valorMensalidade) || 450;
 
   try {
