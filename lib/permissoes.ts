@@ -10,6 +10,17 @@ export const ROLE_LABEL: Record<string, string> = {
   ADMINISTRATIVO: "Administrativo",
 };
 
+/** Cor do badge de perfil na tela de Usuários — dá pra reconhecer o setor de
+ * cada pessoa num relance, sem precisar ler o texto. */
+export const ROLE_BADGE_VARIANT: Record<string, "green" | "red" | "amber" | "blue" | "purple" | "gray"> = {
+  ADMIN: "purple",
+  DIRECAO: "blue",
+  SECRETARIA: "gray",
+  FINANCEIRO: "green",
+  PEDAGOGICO: "amber",
+  ADMINISTRATIVO: "gray",
+};
+
 export const GESTAO: RoleAtiva[] = ["ADMIN", "DIRECAO"];
 // Log de Atividades expõe quem mudou o quê no sistema inteiro — só o Admin (Matheus) vê,
 // nem Direção, a pedido explícito dele.
