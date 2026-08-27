@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeftRight, XCircle, Trash2 } from "lucide-react";
+import { ArrowLeftRight, XCircle, Trash2, Undo2 } from "lucide-react";
 import type { SituacaoMatricula, Turma } from "@prisma/client";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -53,11 +53,18 @@ export function MatriculaAcoes({
   const [error, setError] = useState("");
   const [transferindo, setTransferindo] = useState(false);
   const [novaTurmaId, setNovaTurmaId] = useState("");
+  // NOVO: depois de mudar a situação, dá pra desfazer com 1 clique por alguns segundos —
+  // sem precisar reabrir o <select> e lembrar qual era o valor antes.
+  const [desfazer, setDesfazer] = useState<SituacaoMatricula | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  async function alterar(novaSituacao: string) {
+  useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
+
+  async function alterar(novaSituacao: string, opts?: { semConfirmacao?: boolean }) {
     if (novaSituacao === situacaoAtual) return;
-    if (!confirm(CONFIRMA[novaSituacao as SituacaoMatricula])) return;
+    if (!opts?.semConfirmacao && !confirm(CONFIRMA[novaSituacao as SituacaoMatricula])) return;
 
+    const situacaoAnterior = situacaoAtual;
     setError("");
     setLoading(true);
     const res = await fetch(`/api/matriculas/${matriculaId}`, {
@@ -72,7 +79,17 @@ export function MatriculaAcoes({
       setError(data.error ?? "Não foi possível alterar a situação da matrícula.");
       return;
     }
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setDesfazer(situacaoAnterior);
+    timeoutRef.current = setTimeout(() => setDesfazer(null), 8000);
     router.refresh();
+  }
+
+  function desfazerAlteracao() {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (desfazer) alterar(desfazer, { semConfirmacao: true });
+    setDesfazer(null);
   }
 
   async function excluir() {
@@ -159,6 +176,15 @@ export function MatriculaAcoes({
         </button>
       )}
       {error && <p className="text-xs text-cda-red">{error}</p>}
+      {desfazer && (
+        <button
+          onClick={desfazerAlteracao}
+          className="flex h-8 items-center gap-1.5 rounded-lg border border-cda-blue/30 bg-cda-blue/5 px-2.5 text-xs font-medium text-cda-blue hover:bg-cda-blue/10"
+        >
+          <Undo2 className="h-3.5 w-3.5" />
+          Desfazer (voltar pra {SITUACAO_LABEL[desfazer]})
+        </button>
+      )}
 
       <Modal open={transferindo} onClose={() => setTransferindo(false)} title="Transferir de turma">
         <div className="flex flex-col gap-4">

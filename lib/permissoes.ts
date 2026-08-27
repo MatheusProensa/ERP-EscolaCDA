@@ -33,6 +33,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/notas-fiscais", roles: FINANCEIRO },
   { prefixo: "/documentos", roles: GESTAO },
   { prefixo: "/usuarios", roles: GESTAO },
+  { prefixo: "/log-atividades", roles: GESTAO },
 
   // APIs
   { prefixo: "/api/relatorios/alunos", roles: PEDAGOGICO },

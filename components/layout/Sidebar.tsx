@@ -18,6 +18,7 @@ import {
   CalendarDays,
   MessageCircle,
   Receipt,
+  History,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -65,6 +66,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Chaves", href: "/chaves", icon: KeyRound },
       { label: "Documentos", href: "/documentos", icon: FileText },
       { label: "Usuários", href: "/usuarios", icon: ShieldCheck },
+      { label: "Log de Atividades", href: "/log-atividades", icon: History },
     ],
   },
 ];

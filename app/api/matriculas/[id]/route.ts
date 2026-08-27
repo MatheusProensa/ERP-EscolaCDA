@@ -51,6 +51,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   try {
+    // Registra a situação ANTERIOR no log — antes só dizia "mudou pra X", sem contexto
+    // nenhum de onde veio; impossível saber depois se foi engano e o que desfazer.
+    const antes = await prisma.matricula.findUnique({ where: { id }, select: { situacao: true, aluno: { select: { nome: true } } } });
+    if (!antes) return NextResponse.json({ error: "Matrícula não encontrada" }, { status: 404 });
+
     const matricula = await prisma.matricula.update({
       where: { id },
       data: { situacao },
@@ -58,7 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     await prisma.logAtividade.create({
       data: {
-        acao: `Situação da matrícula alterada para ${situacao}`,
+        acao: `Situação da matrícula de ${antes.aluno.nome} alterada de ${antes.situacao} para ${situacao}`,
         entidade: "Matricula",
         entidadeId: id,
         usuario: session.user.name ?? "Usuário",
