@@ -6,9 +6,13 @@ export type Atalho = { label: string; href: string; icon: LucideIcon; color: str
 /** NOVO: atalhos em ícone pras páginas mais usadas de cada setor — poupa ir
  * catar na sidebar toda vez. Mesma cor/estilo de chip circular do MetricCard,
  * pra manter a linguagem visual do dashboard. */
-export function AtalhosRapidos({ itens }: { itens: Atalho[] }) {
+export function AtalhosRapidos({ itens, children }: { itens: Atalho[]; children?: React.ReactNode }) {
   return (
     <div className="mb-5 grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+      {/* NOVO: slot pra atalho que precisa de estado no client (ex.: abrir um modal
+          direto, em vez de só navegar) — o resto da lista continua vindo do
+          server component (DashboardAdmin) como dados simples (href/label/cor). */}
+      {children}
       {itens.map((a) => (
         <Link
           key={a.href}

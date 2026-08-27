@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Users, UserCog, Megaphone, MessageCircle } from "lucide-react";
+import { UserPlus, UserCog, MessageCircle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { contarAlunosAtivos } from "@/lib/alunos";
@@ -8,6 +8,7 @@ import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 import { MetricasGerais } from "@/components/modules/dashboard/MetricasGerais";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
 import { AtalhosRapidos } from "@/components/modules/dashboard/AtalhosRapidos";
+import { AtalhoNovoAviso } from "@/components/modules/dashboard/AtalhoNovoAviso";
 import { ProximosEventosWidget } from "@/components/modules/dashboard/ProximosEventosWidget";
 import { AtividadeRecenteWidget } from "@/components/modules/dashboard/AtividadeRecenteWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
@@ -33,14 +34,19 @@ export async function DashboardAdmin({ nome }: { nome: string }) {
     <div>
       <PageHeader title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`} subtitle="Visão geral da Escola CDA — todos os setores" />
 
+      {/* NOVO: Alunos/Funcionários viravam link pra tela que já tá na sidebar (zero
+          ganho) — agora vão direto pro cadastro. Mural virou ação de verdade (abre o
+          modal de novo aviso). Chat continua navegação simples: "nova mensagem"
+          exigiria escolher destinatário antes, não é uma ação de 1 clique só. */}
       <AtalhosRapidos
         itens={[
           { label: "Chat", href: "/chat", icon: MessageCircle, color: "#1A6FD8" },
-          { label: "Mural", href: "/mural", icon: Megaphone, color: "#16A34A" },
-          { label: "Alunos", href: "/alunos", icon: Users, color: "#D97706" },
-          { label: "Funcionários", href: "/funcionarios", icon: UserCog, color: "#7C3AED" },
+          { label: "Novo aluno", href: "/alunos/novo", icon: UserPlus, color: "#D97706" },
+          { label: "Novo funcionário", href: "/funcionarios/novo", icon: UserCog, color: "#7C3AED" },
         ]}
-      />
+      >
+        <AtalhoNovoAviso />
+      </AtalhosRapidos>
 
       <div className="mb-5">
         <MetricasGerais
