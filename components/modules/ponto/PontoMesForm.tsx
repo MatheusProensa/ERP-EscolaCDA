@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Plus, Trash2, Save, Loader2 } from "lucide-react";
+import { Plus, Trash2, Save, Loader2, ChevronLeft, ChevronRight, LayoutGrid, CalendarDays } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
@@ -59,6 +59,11 @@ export function PontoMesForm({
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
+  // NOVO: modo "por dia" — grade inteira de 16 colunas era hostil pra quem só
+  // lança o próprio ponto no dia a dia (professoras). Grade completa continua
+  // disponível como modo avançado, pra RH/Financeiro conferir o mês inteiro.
+  const [modo, setModo] = useState<"dia" | "grade">("dia");
+  const [diaIndex, setDiaIndex] = useState(0);
 
   const jornada = jornadaPrevistaMinutos ?? 0;
 
@@ -87,6 +92,7 @@ export function PontoMesForm({
         observacao: d.observacao ?? "",
       }));
       setLinhas(carregadas);
+      setDiaIndex(0);
       setCarregando(false);
     }
 
@@ -133,6 +139,24 @@ export function PontoMesForm({
 
   function removerLinha(i: number) {
     setLinhas((prev) => prev.filter((_, idx) => idx !== i));
+  }
+
+  function diaAnterior() {
+    setDiaIndex((i) => Math.max(0, i - 1));
+  }
+
+  function proximoDia() {
+    if (diaIndex < linhas.length - 1) {
+      setDiaIndex((i) => i + 1);
+    } else {
+      setDiaIndex(linhas.length);
+      adicionarDia();
+    }
+  }
+
+  function removerDiaAtual() {
+    removerLinha(diaIndex);
+    setDiaIndex((i) => Math.max(0, Math.min(i, linhas.length - 2)));
   }
 
   async function salvar() {
@@ -197,6 +221,167 @@ export function PontoMesForm({
         <ExportButtons href="/api/relatorios/ponto" params={{ funcionarioId, mes: String(mes), ano: String(ano) }} />
       </Card>
 
+      {/* NOVO: alterna entre lançar 1 dia por vez (guiado, pra quem não tá à vontade
+          com sistema) e a grade completa (16 colunas, pra RH/Financeiro conferir o
+          mês inteiro de uma vez) — mesmo dado, duas formas de editar. */}
+      <div className="flex gap-1 self-start rounded-lg border border-cda-border bg-white p-1">
+        <button
+          onClick={() => setModo("dia")}
+          className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+            modo === "dia" ? "bg-cda-blue text-white" : "text-cda-text2 hover:bg-cda-bg"
+          }`}
+        >
+          <CalendarDays className="h-3.5 w-3.5" />
+          Por dia
+        </button>
+        <button
+          onClick={() => setModo("grade")}
+          className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition-colors ${
+            modo === "grade" ? "bg-cda-blue text-white" : "text-cda-text2 hover:bg-cda-bg"
+          }`}
+        >
+          <LayoutGrid className="h-3.5 w-3.5" />
+          Grade completa
+        </button>
+      </div>
+
+      {modo === "dia" && !carregando && (
+        <Card className="p-5">
+          {linhas.length === 0 ? (
+            <div className="flex flex-col items-center gap-3 py-10 text-center">
+              <p className="text-sm text-cda-text3">Nenhum dia lançado neste mês ainda.</p>
+              <Button size="sm" onClick={adicionarDia}>
+                <Plus className="h-4 w-4" /> Lançar primeiro dia
+              </Button>
+            </div>
+          ) : (
+            (() => {
+              const l = linhas[diaIndex];
+              const dia = calculados.find((d) => d.data.toISOString().slice(0, 10) === l.data);
+              const dataFormatada = new Intl.DateTimeFormat("pt-BR", {
+                weekday: "long",
+                day: "2-digit",
+                month: "long",
+                timeZone: "UTC",
+              }).format(new Date(`${l.data}T00:00:00.000Z`));
+              return (
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <button
+                      onClick={diaAnterior}
+                      disabled={diaIndex === 0}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg disabled:opacity-30"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    <div className="text-center">
+                      <p className="text-sm font-semibold capitalize text-cda-text">{dataFormatada}</p>
+                      <p className="text-xs text-cda-text3">
+                        Dia {diaIndex + 1} de {linhas.length} lançados
+                      </p>
+                    </div>
+                    <button
+                      onClick={proximoDia}
+                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    {([
+                      ["entrada1", "saida1", "1º período"],
+                      ["entrada2", "saida2", "2º período"],
+                      ["entrada3", "saida3", "3º período"],
+                    ] as const).map(([campoEntrada, campoSaida, rotulo]) => (
+                      <div key={rotulo} className="flex flex-col gap-1.5 rounded-lg border border-cda-border p-3">
+                        <span className="text-xs font-medium text-cda-text2">{rotulo}</span>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="Entrada --:--"
+                            value={l[campoEntrada]}
+                            onChange={(e) => atualizarLinha(diaIndex, campoEntrada, e.target.value)}
+                            className="h-10 w-full rounded-md border border-cda-border px-2 text-center text-sm outline-none focus:border-cda-blue"
+                          />
+                          <span className="text-cda-text3">–</span>
+                          <input
+                            type="text"
+                            placeholder="Saída --:--"
+                            value={l[campoSaida]}
+                            onChange={(e) => atualizarLinha(diaIndex, campoSaida, e.target.value)}
+                            className="h-10 w-full rounded-md border border-cda-border px-2 text-center text-sm outline-none focus:border-cda-blue"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Select
+                      label="Ocorrência"
+                      value={l.ocorrencia}
+                      onChange={(e) => atualizarLinha(diaIndex, "ocorrencia", e.target.value)}
+                    >
+                      {OCORRENCIAS.map((o) => (
+                        <option key={o} value={o}>{OCORRENCIA_LABEL[o]}</option>
+                      ))}
+                    </Select>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-medium text-cda-text2">Observação</label>
+                      <input
+                        type="text"
+                        placeholder="reuniões, obs..."
+                        value={l.observacao}
+                        onChange={(e) => atualizarLinha(diaIndex, "observacao", e.target.value)}
+                        className="h-10 w-full rounded-lg border border-cda-border px-3 text-sm outline-none focus:border-cda-blue"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 border-t border-cda-border pt-4 sm:grid-cols-3 lg:grid-cols-6">
+                    <div>
+                      <p className="text-xs text-cda-text3">Previstas</p>
+                      <p className="text-sm font-medium text-cda-text">{dia ? minParaHora(dia.horasPrevistas) : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-cda-text3">Trabalhadas</p>
+                      <p className="text-sm font-medium text-cda-text">{dia ? minParaHora(dia.horasTrabalhadas) : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-cda-text3">Atraso/Falta</p>
+                      {dia && dia.atrasoFalta > 0 ? <Badge variant="red">{minParaHora(dia.atrasoFalta)}</Badge> : <p className="text-sm text-cda-text3">—</p>}
+                    </div>
+                    <div>
+                      <p className="text-xs text-cda-text3">Hora Extra</p>
+                      {dia && dia.horaExtra > 0 ? <Badge variant="green">{minParaHora(dia.horaExtra)}</Badge> : <p className="text-sm text-cda-text3">—</p>}
+                    </div>
+                    <div>
+                      <p className="text-xs text-cda-text3">Ad. Noturno</p>
+                      <p className="text-sm font-medium text-cda-text">{dia && dia.adicionalNoturno > 0 ? minParaHora(dia.adicionalNoturno) : "—"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-cda-text3">Saldo acumulado</p>
+                      <p className="text-sm font-medium text-cda-text">{dia ? minParaHora(dia.saldoAcumulado) : "—"}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={removerDiaAtual}
+                      className="flex items-center gap-1.5 text-xs font-medium text-cda-text3 hover:text-cda-red"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" /> Excluir este dia
+                    </button>
+                  </div>
+                </div>
+              );
+            })()
+          )}
+        </Card>
+      )}
+
+      {modo === "grade" && (
       <Card className="overflow-x-auto p-0">
         {carregando ? (
           <div className="flex items-center justify-center gap-2 p-10 text-sm text-cda-text3">
@@ -297,16 +482,21 @@ export function PontoMesForm({
           </table>
         )}
       </Card>
+      )}
 
       <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={adicionarDia}
-          className="border-cda-blue text-cda-blue hover:bg-cda-blue/5"
-        >
-          <Plus className="h-4 w-4" /> Adicionar dia
-        </Button>
+        {modo === "grade" ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={adicionarDia}
+            className="border-cda-blue text-cda-blue hover:bg-cda-blue/5"
+          >
+            <Plus className="h-4 w-4" /> Adicionar dia
+          </Button>
+        ) : (
+          <span />
+        )}
         <div className="flex items-center gap-3">
           {mensagem && <span className="text-xs text-cda-text2">{mensagem}</span>}
           <Button size="sm" onClick={salvar} loading={salvando}>
