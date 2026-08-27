@@ -35,7 +35,7 @@ export default async function DocumentosPage() {
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cda-red/15">
             <TriangleAlert className="h-5 w-5 text-cda-red" />
           </div>
-          <div>
+          <div className="min-w-0">
             <p className="text-sm font-semibold text-cda-text">
               {vencidos.length === 1 ? "1 documento vencido" : `${vencidos.length} documentos vencidos`}
             </p>
