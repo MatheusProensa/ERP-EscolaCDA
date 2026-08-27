@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, KeyRound, Copy, Check, History } from "lucide-react";
-import { Avatar } from "@/components/ui/Avatar";
+import { PhotoUpload } from "@/components/ui/PhotoUpload";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -19,6 +19,7 @@ type Usuario = {
   name: string;
   email: string;
   role: string;
+  foto?: string | null;
   createdAt: string | Date;
   pedidoResetSenhaEm?: string | Date | null;
 };
@@ -40,6 +41,7 @@ export function PerfilUsuarioClient({
   const [name, setName] = useState(usuario.name);
   const [email, setEmail] = useState(usuario.email);
   const [role, setRole] = useState(usuario.role);
+  const [foto, setFoto] = useState<string | null>(usuario.foto ?? null);
   const [salvando, setSalvando] = useState(false);
   const [erroSalvar, setErroSalvar] = useState("");
 
@@ -50,7 +52,8 @@ export function PerfilUsuarioClient({
   const [redefinindo, setRedefinindo] = useState(false);
   const [copiado, setCopiado] = useState(false);
 
-  const sujo = name.trim() !== usuario.name || email.trim() !== usuario.email || role !== usuario.role;
+  const sujo =
+    name.trim() !== usuario.name || email.trim() !== usuario.email || role !== usuario.role || foto !== (usuario.foto ?? null);
 
   const perfilInvalido = useMemo(
     () => !ROLES_ATIVAS.includes(usuario.role as (typeof ROLES_ATIVAS)[number]),
@@ -67,7 +70,7 @@ export function PerfilUsuarioClient({
     const res = await fetch(`/api/usuarios/${usuario.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), email: email.trim(), role }),
+      body: JSON.stringify({ name: name.trim(), email: email.trim(), role, foto }),
     });
     setSalvando(false);
     if (!res.ok) {
@@ -124,8 +127,8 @@ export function PerfilUsuarioClient({
     <div className="flex flex-col gap-5">
       <Card className="p-5">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-          <div className="flex flex-col items-center gap-2 sm:items-start">
-            <Avatar nome={usuario.name} size="xl" />
+          <div className="flex flex-col items-start gap-2">
+            <PhotoUpload value={foto} onChange={setFoto} nome={name || usuario.name} />
             <Badge variant={ROLE_BADGE_VARIANT[usuario.role] ?? "gray"}>
               {ROLE_LABEL[usuario.role] ?? usuario.role}
             </Badge>

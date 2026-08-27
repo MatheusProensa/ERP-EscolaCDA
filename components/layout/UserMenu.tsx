@@ -6,7 +6,7 @@ import { LogOut } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { ROLE_LABEL } from "@/lib/permissoes";
 
-export function UserMenu({ name, role }: { name: string; role: string }) {
+export function UserMenu({ name, role, foto }: { name: string; role: string; foto?: string | null }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -27,7 +27,7 @@ export function UserMenu({ name, role }: { name: string; role: string }) {
         aria-haspopup="menu"
         className="flex min-h-11 items-center gap-2.5 rounded-lg px-1.5 py-1 hover:bg-cda-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cda-blue/40"
       >
-        <Avatar nome={name} />
+        <Avatar nome={name} foto={foto} />
         <div className="hidden text-left sm:block">
           <div className="text-sm font-semibold text-cda-text leading-tight">{name}</div>
           <div className="text-xs text-cda-text3 leading-tight">

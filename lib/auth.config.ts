@@ -21,6 +21,7 @@ export const authConfig = {
       if (user) {
         token.role = user.role;
         token.permissoes = user.permissoes;
+        token.picture = user.image;
       }
       return token;
     },
@@ -28,6 +29,7 @@ export const authConfig = {
       session.user.id = token.sub!;
       session.user.role = token.role as string;
       session.user.permissoes = token.permissoes as PermissoesPorModulo | undefined;
+      session.user.image = token.picture;
       return session;
     },
   },

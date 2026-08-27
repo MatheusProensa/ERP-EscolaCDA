@@ -11,7 +11,7 @@ export default async function UsuariosPage() {
   const session = await auth();
   const usuarios = await prisma.user.findMany({
     orderBy: { name: "asc" },
-    select: { id: true, name: true, email: true, role: true, createdAt: true, pedidoResetSenhaEm: true },
+    select: { id: true, name: true, email: true, role: true, foto: true, createdAt: true, pedidoResetSenhaEm: true },
   });
   const pedidosPendentes = usuarios.filter((u) => u.pedidoResetSenhaEm).length;
 

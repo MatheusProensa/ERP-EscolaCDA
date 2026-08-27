@@ -19,6 +19,10 @@ model User {
   email              String         @unique
   password           String
   role               Role           @default(SECRETARIA)
+  /// Foto de perfil (JPEG em base64, redimensionado no navegador antes do
+  /// upload — ver components/ui/PhotoUpload.tsx). Vira o "image" padrão do
+  /// NextAuth na sessão.
+  foto               String?
   tentativasFalhas   Int            @default(0)
   bloqueadoAte       DateTime?
   /// Marcado quando o usuário pede "esqueci minha senha" na tela de login —

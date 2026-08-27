@@ -6,10 +6,12 @@ import { NotificationBell } from "./NotificationBell";
 export function Topbar({
   name,
   role,
+  foto,
   onMenuClick,
 }: {
   name: string;
   role: string;
+  foto?: string | null;
   onMenuClick: () => void;
 }) {
   return (
@@ -38,7 +40,7 @@ export function Topbar({
         </Link>
         <NotificationBell />
         <div className="mx-1 hidden h-6 w-px bg-cda-border sm:block" />
-        <UserMenu name={name} role={role} />
+        <UserMenu name={name} role={role} foto={foto} />
       </div>
     </header>
   );

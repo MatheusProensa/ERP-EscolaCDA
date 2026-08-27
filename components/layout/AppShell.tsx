@@ -14,12 +14,14 @@ export function AppShell({
   role,
   permissoes,
   name,
+  foto,
   children,
 }: {
   meId: string;
   role: string;
   permissoes?: PermissoesPorModulo;
   name: string;
+  foto?: string | null;
   children: React.ReactNode;
 }) {
   const [menuAberto, setMenuAberto] = useState(false);
@@ -33,7 +35,7 @@ export function AppShell({
       <div className="flex h-screen">
         <Sidebar meId={meId} role={role} permissoes={permissoes} open={menuAberto} onClose={() => setMenuAberto(false)} />
         <div className="flex min-w-0 flex-1 flex-col">
-          <Topbar name={name} role={role} onMenuClick={() => setMenuAberto(true)} />
+          <Topbar name={name} role={role} foto={foto} onMenuClick={() => setMenuAberto(true)} />
           <main className="flex-1 overflow-y-auto bg-cda-bg p-4 sm:p-5">
             {/* Troca de página é corte seco (sem fade) — a barra de progresso acima
                 (NavigationProgress) já dá o feedback imediato no clique. */}

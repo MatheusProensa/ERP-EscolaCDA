@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ROLES_ATIVAS } from "@/lib/permissoes";
 import { gerarSenhaAleatoria } from "@/lib/senha";
+import { validarUploadDataUri } from "@/lib/validarUpload";
 
 // Agora edita nome/email além do perfil — antes só dava pra trocar o perfil por
 // aqui, então as contas genéricas de seed ("Direção CDA" etc.) não tinham como
@@ -15,12 +16,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
-  const { role, name, email } = body;
+  const { role, name, email, foto } = body;
 
   const atual = await prisma.user.findUnique({ where: { id } });
   if (!atual) return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
 
-  const data: { role?: Role; name?: string; email?: string } = {};
+  const data: { role?: Role; name?: string; email?: string; foto?: string | null } = {};
 
   if (role !== undefined) {
     if (!ROLES_ATIVAS.includes(role)) return NextResponse.json({ error: "Perfil inválido" }, { status: 400 });
@@ -48,16 +49,27 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     data.email = emailLimpo;
   }
 
+  if (foto !== undefined) {
+    if (foto === null) {
+      data.foto = null;
+    } else {
+      const validacao = validarUploadDataUri(foto);
+      if (!validacao.ok) return NextResponse.json({ error: validacao.erro }, { status: 400 });
+      data.foto = foto;
+    }
+  }
+
   const usuario = await prisma.user.update({
     where: { id },
     data,
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, foto: true, createdAt: true },
   });
 
   const mudancas: string[] = [];
   if (data.name && data.name !== atual.name) mudancas.push(`nome de "${atual.name}" para "${data.name}"`);
   if (data.email && data.email !== atual.email) mudancas.push(`email de "${atual.email}" para "${data.email}"`);
   if (data.role && data.role !== atual.role) mudancas.push(`perfil de ${atual.role} para ${data.role}`);
+  if (foto !== undefined && foto !== atual.foto) mudancas.push(foto ? "foto atualizada" : "foto removida");
   if (mudancas.length > 0) {
     await prisma.logAtividade.create({
       data: {

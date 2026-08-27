@@ -10,6 +10,7 @@ export type UsuarioCardDados = {
   name: string;
   email: string;
   role: string;
+  foto?: string | null;
   createdAt: string | Date;
   pedidoResetSenhaEm?: string | Date | null;
 };
@@ -22,7 +23,7 @@ export function UsuarioCard({ usuario, souEu }: { usuario: UsuarioCardDados; sou
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-3">
-          <Avatar nome={usuario.name} size="lg" />
+          <Avatar nome={usuario.name} foto={usuario.foto} size="lg" />
           <div className="min-w-0">
             <p className="truncate font-semibold text-cda-text group-hover:text-cda-blue">
               {usuario.name}
