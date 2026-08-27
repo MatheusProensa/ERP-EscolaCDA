@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Pencil, UserX, UserCheck } from "lucide-react";
 import type { Funcionario } from "@prisma/client";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Avatar } from "@/components/ui/Avatar";
@@ -41,10 +41,11 @@ export function FuncionarioTable({
         <Th>Telefone</Th>
         <Th>Admissão</Th>
         <Th>Situação</Th>
+        <Th>{""}</Th>
       </TableHead>
       <TableBody>
         {funcionarios.length === 0 && (
-          <TableEmpty colSpan={mostrarSetor ? 6 : 5}>Nenhum funcionário encontrado.</TableEmpty>
+          <TableEmpty colSpan={mostrarSetor ? 7 : 6}>Nenhum funcionário encontrado.</TableEmpty>
         )}
         {funcionarios.map((f) => {
           const pendencias: string[] = [];
@@ -71,13 +72,26 @@ export function FuncionarioTable({
             <Td>{f.telefone ? formatarTelefone(f.telefone) : "—"}</Td>
             <Td>{formatarData(f.admissao)}</Td>
             <Td>
-              <button
-                onClick={() => alternarAtivo(f)}
-                disabled={loadingId === f.id}
-                className="disabled:opacity-50"
-              >
-                <Badge variant={f.ativo ? "green" : "gray"}>{f.ativo ? "Ativo" : "Inativo"}</Badge>
-              </button>
+              <Badge variant={f.ativo ? "green" : "gray"}>{f.ativo ? "Ativo" : "Inativo"}</Badge>
+            </Td>
+            <Td>
+              <div className="flex items-center gap-3">
+                <Link
+                  href={`/funcionarios/${f.id}/editar`}
+                  title="Editar"
+                  className="text-cda-text3 hover:text-cda-blue"
+                >
+                  <Pencil className="h-4 w-4" />
+                </Link>
+                <button
+                  onClick={() => alternarAtivo(f)}
+                  disabled={loadingId === f.id}
+                  title={f.ativo ? "Desativar (saiu da escola)" : "Reativar"}
+                  className="text-cda-text3 hover:text-cda-red disabled:opacity-50"
+                >
+                  {f.ativo ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                </button>
+              </div>
             </Td>
           </Tr>
           );
