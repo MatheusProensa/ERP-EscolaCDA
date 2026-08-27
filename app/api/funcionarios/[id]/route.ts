@@ -36,3 +36,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     return erroApi(err);
   }
 }
+
+export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+
+  const { id } = await params;
+  const funcionario = await prisma.funcionario.findUnique({ where: { id } });
+  if (!funcionario) return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
+
+  try {
+    // RegistroPonto e DocumentoFuncionario têm onDelete: Cascade — excluir o
+    // funcionário apaga junto o histórico de ponto e os documentos dele.
+    await prisma.funcionario.delete({ where: { id } });
+
+    await prisma.logAtividade.create({
+      data: {
+        acao: `Funcionário excluído - ${funcionario.nome}`,
+        entidade: "Funcionario",
+        entidadeId: id,
+        usuario: session.user.name ?? "Usuário",
+      },
+    });
+
+    return new NextResponse(null, { status: 204 });
+  } catch (err) {
+    return erroApi(err);
+  }
+}

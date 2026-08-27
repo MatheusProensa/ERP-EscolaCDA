@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, Pencil, UserX, UserCheck } from "lucide-react";
+import { AlertTriangle, Pencil, UserX, UserCheck, Trash2 } from "lucide-react";
 import type { Funcionario } from "@prisma/client";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Avatar } from "@/components/ui/Avatar";
@@ -29,6 +29,23 @@ export function FuncionarioTable({
       body: JSON.stringify({ ativo: !f.ativo }),
     });
     setLoadingId(null);
+    router.refresh();
+  }
+
+  async function excluir(f: Funcionario) {
+    if (
+      !confirm(
+        `Excluir ${f.nome} de vez? Isso apaga também o histórico de ponto e os documentos anexados dele — não dá pra desfazer. Se for só desligamento, considere usar "Desativar" em vez de excluir.`
+      )
+    )
+      return;
+    setLoadingId(f.id);
+    const res = await fetch(`/api/funcionarios/${f.id}`, { method: "DELETE" });
+    setLoadingId(null);
+    if (!res.ok) {
+      alert("Não foi possível excluir o funcionário.");
+      return;
+    }
     router.refresh();
   }
 
@@ -90,6 +107,14 @@ export function FuncionarioTable({
                   className="text-cda-text3 hover:text-cda-red disabled:opacity-50"
                 >
                   {f.ativo ? <UserX className="h-4 w-4" /> : <UserCheck className="h-4 w-4" />}
+                </button>
+                <button
+                  onClick={() => excluir(f)}
+                  disabled={loadingId === f.id}
+                  title="Excluir de vez"
+                  className="text-cda-text3 hover:text-cda-red disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             </Td>
