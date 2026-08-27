@@ -27,6 +27,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             ref={ref}
             id={inputId}
+            // NOVO: campos de data/hora combinam com a cor da marca no ícone/popup nativo
+            // (mesmo truque já usado no Select) — não dá pra ir muito além disso sem
+            // trocar o <input> nativo por um componente customizado inteiro.
+            style={props.type === "date" || props.type === "time" ? { accentColor: "var(--cda-blue)", colorScheme: "light" } : undefined}
             className={cn(
               "h-10 w-full rounded-lg border bg-white px-3 text-sm text-cda-text placeholder:text-cda-text3 outline-none transition-colors focus:border-cda-blue",
               !!icon && "pl-9",
