@@ -17,7 +17,9 @@ export default async function ChavesPage() {
       {chaves.length === 0 ? (
         <p className="py-10 text-center text-sm text-cda-text3">Nenhuma chave cadastrada ainda.</p>
       ) : (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        // NOVO: 3 colunas em telas médias (notebook) em vez de 4 — o nome da sala
+        // (ex.: "Contraturno V") ficava espremido e cortado ao lado do badge/botões.
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {chaves.map((chave) => (
             <ChaveCard key={chave.id} chave={chave} />
           ))}

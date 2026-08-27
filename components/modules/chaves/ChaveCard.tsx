@@ -100,7 +100,9 @@ export function ChaveCard({ chave }: { chave: Chave & { emprestimos: EmprestimoC
   return (
     <Card className="flex flex-col p-4">
       <div className="mb-2 flex items-center justify-between gap-2">
-        <p className="font-semibold text-cda-text">{chave.sala}</p>
+        <p className="min-w-0 truncate font-semibold text-cda-text" title={chave.sala}>
+          {chave.sala}
+        </p>
         <div className="flex shrink-0 items-center gap-1">
           <Badge variant={emprestimo ? "amber" : "green"}>{emprestimo ? "Emprestada" : "Disponível"}</Badge>
           <button
