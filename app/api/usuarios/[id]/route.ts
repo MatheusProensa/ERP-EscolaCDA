@@ -37,7 +37,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   const senha = gerarSenhaAleatoria();
   const hash = await bcrypt.hash(senha, 10);
 
-  await prisma.user.update({ where: { id }, data: { password: hash } });
+  // Limpa o pedido de "esqueci minha senha", se tinha um pendente — foi
+  // atendido agora.
+  await prisma.user.update({ where: { id }, data: { password: hash, pedidoResetSenhaEm: null } });
 
   return NextResponse.json({ senha });
 }

@@ -10,7 +10,7 @@ const { auth } = NextAuth(authConfig);
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
-  const isLoginPage = pathname.startsWith("/login");
+  const isLoginPage = pathname.startsWith("/login") || pathname.startsWith("/esqueci-senha");
   const isAuthApi = pathname.startsWith("/api/auth");
   const isApi = pathname.startsWith("/api");
   // Link público de assinatura de contrato (app/assinar/[token]) — o

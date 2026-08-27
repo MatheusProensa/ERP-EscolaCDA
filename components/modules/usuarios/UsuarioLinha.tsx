@@ -12,7 +12,14 @@ import { showToast } from "@/components/ui/Toast";
 import { formatarData } from "@/lib/utils";
 import { ROLES_ATIVAS, ROLE_LABEL } from "@/lib/permissoes";
 
-type Usuario = { id: string; name: string; email: string; role: string; createdAt: string | Date };
+type Usuario = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  createdAt: string | Date;
+  pedidoResetSenhaEm?: string | Date | null;
+};
 
 export function UsuarioLinha({ usuario, souEu }: { usuario: Usuario; souEu: boolean }) {
   const router = useRouter();
@@ -84,6 +91,11 @@ export function UsuarioLinha({ usuario, souEu }: { usuario: Usuario; souEu: bool
           <div>
             <div className="font-medium">
               {usuario.name} {souEu && <span className="text-xs text-cda-text3">(você)</span>}
+              {usuario.pedidoResetSenhaEm && (
+                <span className="ml-1.5 rounded-full bg-cda-amber/15 px-1.5 py-0.5 text-[10px] font-semibold text-cda-amber">
+                  pediu redefinição
+                </span>
+              )}
             </div>
             <div className="text-xs text-cda-text3">{usuario.email}</div>
           </div>

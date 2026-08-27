@@ -69,6 +69,9 @@ export function LoginForm() {
       <Button type="submit" loading={loading} className="mt-2 w-full">
         Entrar
       </Button>
+      <a href="/esqueci-senha" className="text-center text-sm text-cda-blue hover:underline">
+        Esqueci minha senha
+      </a>
     </form>
   );
 }

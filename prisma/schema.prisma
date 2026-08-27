@@ -21,6 +21,10 @@ model User {
   role               Role           @default(SECRETARIA)
   tentativasFalhas   Int            @default(0)
   bloqueadoAte       DateTime?
+  /// Marcado quando o usuário pede "esqueci minha senha" na tela de login —
+  /// sem envio de e-mail (não tem provedor configurado), um ADMIN/DIREÇÃO vê
+  /// o pedido na tela de Usuários e redefine manualmente (fluxo que já existia).
+  pedidoResetSenhaEm DateTime?
   createdAt          DateTime       @default(now())
   mensagensEnviadas  Mensagem[]     @relation("MensagensEnviadas")
   mensagensRecebidas Mensagem[]     @relation("MensagensRecebidas")
