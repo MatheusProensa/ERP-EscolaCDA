@@ -2,37 +2,55 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Download, Send, Trash2 } from "lucide-react";
+import { Download, Send, Trash2 } from "lucide-react";
 import type { Contrato } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { formatarDataHora } from "@/lib/utils";
+import { turnoDoContrato } from "@/lib/contratoTexto";
+import { GerarContratoModal } from "./GerarContratoModal";
 
 export function ContratoSecao({
   matriculaId,
   turmaNome,
+  turno,
   contrato,
+  anoLetivo,
+  alunoNome,
+  alunoDataNascimento,
+  responsavelNome,
+  responsavelCpf,
+  valorMensalidade,
   action,
 }: {
   matriculaId: string;
   turmaNome: string;
+  turno: "MANHA" | "TARDE";
   contrato: Contrato | null;
+  anoLetivo: number;
+  alunoNome: string;
+  /** yyyy-mm-dd */
+  alunoDataNascimento: string;
+  responsavelNome: string;
+  responsavelCpf: string;
+  valorMensalidade: number;
   action?: React.ReactNode;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  async function gerarContrato() {
-    setLoading(true);
-    await fetch("/api/contratos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ matriculaId }),
-    });
-    setLoading(false);
-    router.refresh();
-  }
+  const modalProps = {
+    matriculaId,
+    turmaNome,
+    alunoNomeInicial: alunoNome,
+    alunoNascimentoInicial: alunoDataNascimento,
+    responsavelNomeInicial: responsavelNome,
+    responsavelCpfInicial: responsavelCpf,
+    valorMensalidadeInicial: valorMensalidade,
+    turnoInicial: turnoDoContrato(turmaNome, turno),
+    anoLetivo,
+  };
 
   async function alternarAssinado() {
     if (!contrato) return;
@@ -76,10 +94,7 @@ export function ContratoSecao({
       {!contrato ? (
         <div className="flex items-center justify-between gap-3">
           <p className="text-sm text-cda-text2">Nenhum contrato gerado para esta matrícula ainda.</p>
-          <Button onClick={gerarContrato} loading={loading} size="sm">
-            <FileText className="h-3.5 w-3.5" />
-            Gerar contrato
-          </Button>
+          <GerarContratoModal {...modalProps} temContrato={false} />
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -121,13 +136,7 @@ export function ContratoSecao({
               </Button>
             )}
             <div className="mx-1 h-6 w-px bg-cda-border" />
-            <button
-              onClick={gerarContrato}
-              disabled={loading}
-              className="text-sm font-medium text-cda-blue hover:underline"
-            >
-              Gerar novamente
-            </button>
+            <GerarContratoModal {...modalProps} temContrato />
             <button
               onClick={excluirContrato}
               disabled={loading}

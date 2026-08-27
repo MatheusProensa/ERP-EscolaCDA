@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gerarContratoPdf } from "@/lib/gerarContratoPdf";
+import { turnoDoContrato } from "@/lib/contratoTexto";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const body = await req.json();
-  const { matriculaId } = body;
+  // Os campos abaixo, quando enviados, sobrescrevem o que veio do cadastro —
+  // é a tela de revisão (GerarContratoModal) deixando corrigir um typo ou
+  // valor sem precisar sair dali pra editar o cadastro do aluno primeiro.
+  const { matriculaId, alunoNome, alunoDataNascimento, responsavelNome, responsavelCpf, valorMensalidade, turnoLabel } = body;
   if (!matriculaId) {
     return NextResponse.json({ error: "matriculaId é obrigatório" }, { status: 400 });
   }
@@ -26,13 +30,14 @@ export async function POST(req: NextRequest) {
 
   const responsavel = matricula.aluno.responsaveis[0];
   const arquivo = await gerarContratoPdf({
-    alunoNome: matricula.aluno.nome,
-    alunoDataNascimento: matricula.aluno.dataNascimento,
-    responsavelNome: responsavel?.nome ?? "Não informado",
-    responsavelCpf: responsavel?.cpf ?? null,
+    alunoNome: alunoNome || matricula.aluno.nome,
+    alunoDataNascimento: alunoDataNascimento ? new Date(alunoDataNascimento) : matricula.aluno.dataNascimento,
+    responsavelNome: responsavelNome || responsavel?.nome || "Não informado",
+    responsavelCpf: responsavelCpf || responsavel?.cpf || null,
     turmaNome: matricula.turma.nome,
+    turnoLabel: turnoLabel || turnoDoContrato(matricula.turma.nome, matricula.turma.turno),
     anoLetivo: matricula.anoLetivo.ano,
-    valorMensalidade: matricula.valorMensalidade ?? 0,
+    valorMensalidade: Number(valorMensalidade) || matricula.valorMensalidade || 0,
     dataMatricula: matricula.dataMatricula,
   });
 

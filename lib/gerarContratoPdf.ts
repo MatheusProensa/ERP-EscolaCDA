@@ -1,5 +1,6 @@
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { formatarData, formatarMoeda } from "@/lib/utils";
+import { PDFDocument, StandardFonts, rgb, type PDFFont } from "pdf-lib";
+import { formatarData } from "@/lib/utils";
+import { montarClausulas } from "@/lib/contratoTexto";
 
 export type DadosContrato = {
   alunoNome: string;
@@ -7,6 +8,10 @@ export type DadosContrato = {
   responsavelNome: string;
   responsavelCpf: string | null;
   turmaNome: string;
+  /** MANHA/TARDE (Turma.turno) — só um dos 3 turnos do contrato real (o outro,
+   * "Integral", não existe como campo próprio ainda; ver observação no fim do
+   * arquivo). Passar aqui já resolvido pro rótulo certo evita import circular. */
+  turnoLabel: "Manhã" | "Tarde" | "Integral" | "Contraturno";
   anoLetivo: number;
   valorMensalidade: number;
   dataMatricula: Date;
@@ -14,92 +19,106 @@ export type DadosContrato = {
 
 const AZUL_NAVY = rgb(0x0d / 255, 0x1f / 255, 0x4e / 255);
 const CINZA = rgb(0x5a / 255, 0x6a / 255, 0x85 / 255);
+const PRETO = rgb(0, 0, 0);
+
+const LARGURA = 595;
+const ALTURA = 842; // A4
+const MARGEM = 56;
+const RODAPE = 40;
 
 export async function gerarContratoPdf(dados: DadosContrato): Promise<string> {
   const pdf = await PDFDocument.create();
-  const pagina = pdf.addPage([595, 842]); // A4
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteNegrito = await pdf.embedFont(StandardFonts.HelveticaBold);
 
-  const margem = 56;
-  let y = 780;
+  let pagina = pdf.addPage([LARGURA, ALTURA]);
+  let y = ALTURA - 56;
+
+  function novaPagina() {
+    pagina = pdf.addPage([LARGURA, ALTURA]);
+    y = ALTURA - 56;
+  }
+
+  function garantirEspaco(alturaNecessaria: number) {
+    if (y - alturaNecessaria < RODAPE) novaPagina();
+  }
 
   function linha(texto: string, opts?: { negrito?: boolean; tamanho?: number; cor?: ReturnType<typeof rgb>; espacoDepois?: number }) {
     const tamanho = opts?.tamanho ?? 10.5;
+    garantirEspaco(tamanho);
     pagina.drawText(texto, {
-      x: margem,
+      x: MARGEM,
       y,
       size: tamanho,
       font: opts?.negrito ? fonteNegrito : fonte,
-      color: opts?.cor ?? rgb(0, 0, 0),
+      color: opts?.cor ?? PRETO,
     });
     y -= tamanho + (opts?.espacoDepois ?? 8);
   }
 
-  function paragrafo(texto: string, tamanho = 10) {
-    const larguraMax = 595 - margem * 2;
+  function quebrarLinhas(texto: string, tamanho: number, fonteUsada: PDFFont): string[] {
+    const larguraMax = LARGURA - MARGEM * 2;
     const palavras = texto.split(" ");
+    const linhas: string[] = [];
     let atual = "";
     for (const palavra of palavras) {
       const teste = atual ? `${atual} ${palavra}` : palavra;
-      const largura = fonte.widthOfTextAtSize(teste, tamanho);
-      if (largura > larguraMax) {
-        pagina.drawText(atual, { x: margem, y, size: tamanho, font: fonte });
-        y -= tamanho + 4;
+      if (fonteUsada.widthOfTextAtSize(teste, tamanho) > larguraMax && atual) {
+        linhas.push(atual);
         atual = palavra;
       } else {
         atual = teste;
       }
     }
-    if (atual) {
-      pagina.drawText(atual, { x: margem, y, size: tamanho, font: fonte });
-      y -= tamanho + 4;
-    }
-    y -= 8;
+    if (atual) linhas.push(atual);
+    return linhas;
   }
 
+  function paragrafo(texto: string, opts?: { tamanho?: number; negrito?: boolean; justificado?: boolean }) {
+    const tamanho = opts?.tamanho ?? 10;
+    const fonteUsada = opts?.negrito ? fonteNegrito : fonte;
+    const linhas = quebrarLinhas(texto, tamanho, fonteUsada);
+    for (const l of linhas) {
+      garantirEspaco(tamanho);
+      pagina.drawText(l, { x: MARGEM, y, size: tamanho, font: fonteUsada });
+      y -= tamanho + 3;
+    }
+    y -= 9;
+  }
+
+  // Cabeçalho institucional (só primeira página)
   linha("ESCOLA CDA", { negrito: true, tamanho: 16, cor: AZUL_NAVY, espacoDepois: 2 });
   linha("Onde, há 15 anos, família e escola sonham juntas", { tamanho: 9, cor: CINZA, espacoDepois: 20 });
+  linha(`CONTRATO DE SERVIÇOS EDUCACIONAIS ${dados.anoLetivo}`, { negrito: true, tamanho: 12, espacoDepois: 16 });
 
-  linha("CONTRATO DE PRESTAÇÃO DE SERVIÇOS EDUCACIONAIS", { negrito: true, tamanho: 12, espacoDepois: 20 });
+  // Identificação (a "ficha de matrícula" do papel — aqui vem de dentro do sistema)
+  linha(`Aluno(a): ${dados.alunoNome}`, { espacoDepois: 3 });
+  linha(`Data de nascimento: ${formatarData(dados.alunoDataNascimento)}`, { espacoDepois: 3 });
+  linha(`Turma: ${dados.turmaNome}`, { espacoDepois: 3 });
+  linha(`CONTRATANTE (responsável): ${dados.responsavelNome}`, { espacoDepois: 3 });
+  linha(`CPF do CONTRATANTE: ${dados.responsavelCpf ?? "não informado"}`, { espacoDepois: 3 });
+  linha(`Data da matrícula: ${formatarData(dados.dataMatricula)}`, { espacoDepois: 18 });
 
-  linha(`Ano letivo: ${dados.anoLetivo}`, { espacoDepois: 4 });
-  linha(`Aluno(a): ${dados.alunoNome}`, { espacoDepois: 4 });
-  linha(`Data de nascimento: ${formatarData(dados.alunoDataNascimento)}`, { espacoDepois: 4 });
-  linha(`Turma: ${dados.turmaNome}`, { espacoDepois: 4 });
-  linha(`Responsável: ${dados.responsavelNome}`, { espacoDepois: 4 });
-  linha(`CPF do responsável: ${dados.responsavelCpf ?? "não informado"}`, { espacoDepois: 4 });
-  linha(`Data da matrícula: ${formatarData(dados.dataMatricula)}`, { espacoDepois: 4 });
-  linha(`Valor da mensalidade: ${formatarMoeda(dados.valorMensalidade)}`, { espacoDepois: 20 });
+  for (const c of montarClausulas(dados)) paragrafo(c);
 
-  linha("CLÁUSULAS", { negrito: true, tamanho: 11, espacoDepois: 10 });
+  y -= 20;
+  garantirEspaco(70);
+  linha(`Santa Maria - RS, ${formatarData(new Date())}.`, { espacoDepois: 40 });
 
-  paragrafo(
-    "1. DO OBJETO — O presente contrato tem por objeto a prestação de serviços educacionais pela ESCOLA CDA ao(à) aluno(a) acima identificado(a), referente ao ano letivo indicado."
-  );
-  paragrafo(
-    "2. DA MENSALIDADE — O responsável financeiro compromete-se a efetuar o pagamento da mensalidade escolar, no valor informado, até o dia 10 de cada mês, sujeito a reajuste anual conforme comunicado prévio da escola."
-  );
-  paragrafo(
-    "3. DA FREQUÊNCIA — O(A) aluno(a) deverá cumprir a carga horária e o calendário letivo estabelecidos pela escola, respeitando o regimento interno da instituição."
-  );
-  paragrafo(
-    "4. DA RESCISÃO — O presente contrato poderá ser rescindido a qualquer momento, mediante comunicação formal à secretaria, respeitando eventuais mensalidades já vencidas."
-  );
-  paragrafo(
-    "5. DO FORO — Fica eleito o foro da comarca de Santa Maria/RS para dirimir quaisquer dúvidas oriundas deste contrato."
-  );
-
-  y -= 30;
-  linha(`Santa Maria/RS, ${formatarData(new Date())}`, { espacoDepois: 40 });
-
-  linha("_____________________________________", { espacoDepois: 4 });
-  linha("Assinatura do(a) responsável", { tamanho: 9, cor: CINZA, espacoDepois: 24 });
-
-  linha("_____________________________________", { espacoDepois: 4 });
-  linha("Escola CDA", { tamanho: 9, cor: CINZA });
+  garantirEspaco(60);
+  linha("_____________________________________          _____________________________________", { espacoDepois: 4 });
+  const xEsquerda = MARGEM + 60;
+  const xDireita = MARGEM + 300;
+  pagina.drawText("CONTRATANTE", { x: xEsquerda, y, size: 9, font: fonte, color: CINZA });
+  pagina.drawText("CONTRATADA", { x: xDireita, y, size: 9, font: fonte, color: CINZA });
+  y -= 24;
 
   const bytes = await pdf.save();
   const base64 = Buffer.from(bytes).toString("base64");
   return `data:application/pdf;base64,${base64}`;
 }
+
+// NOTA: o contrato real distingue 3 turnos (Integral / Contraturno / Tarde),
+// mas o schema hoje só tem Turma.turno = MANHA | TARDE. Enquanto isso não for
+// modelado à parte, quem chama gerarContratoPdf() decide o turnoLabel (ex.:
+// pelo nome da turma conter "integral"/"contraturno"). Ver app/api/contratos/route.ts.

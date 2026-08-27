@@ -20,7 +20,7 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
     include: {
       responsaveis: true,
       matriculas: {
-        include: { turma: true, contrato: true },
+        include: { turma: true, contrato: true, anoLetivo: true },
         orderBy: { dataMatricula: "desc" },
       },
     },
@@ -77,7 +77,14 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
               key={m.id}
               matriculaId={m.id}
               turmaNome={m.turma.nome}
+              turno={m.turma.turno}
               contrato={m.contrato}
+              anoLetivo={m.anoLetivo.ano}
+              alunoNome={aluno.nome}
+              alunoDataNascimento={aluno.dataNascimento.toISOString().slice(0, 10)}
+              responsavelNome={aluno.responsaveis[0]?.nome ?? ""}
+              responsavelCpf={aluno.responsaveis[0]?.cpf ?? ""}
+              valorMensalidade={m.valorMensalidade ?? 0}
               action={
                 <MatriculaAcoes
                   matriculaId={m.id}
