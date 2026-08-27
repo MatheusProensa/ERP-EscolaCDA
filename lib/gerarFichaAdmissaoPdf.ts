@@ -103,7 +103,7 @@ export async function gerarFichaAdmissaoPdf(): Promise<string> {
   linhaCampos([{ label: "Horários — seg. a sex." }, { label: "Horários — sábado" }], 24);
   linhaCampos([
     { label: "Salário", valor: "(   ) Piso da categoria   (   ) Outro: R$" },
-    { label: "Vale transporte", valor: "(   ) Sim   (   ) Não   Quantos? ___/dia" },
+    { label: "Vale transporte", valor: "(   ) Não   (   ) Sim   Quantos? ___/dia" },
   ]);
   y -= 12;
 
@@ -118,7 +118,7 @@ export async function gerarFichaAdmissaoPdf(): Promise<string> {
   checklistItem("Certidão de Nascimento dos filhos e CPF dos dependentes (obrigatório)");
   checklistItem("Comprovante de Matrícula e Frequência Escolar dos filhos (maiores de 7 anos)");
   checklistItem("Carteira de Vacinação dos filhos (menores de 7 anos)");
-  checklistItem("**Professores — Certificado de Conclusão de Curso Superior e/ou Pós/Doutorado/Especialização");
+  checklistItem("**Professores — Certificado de Conclusão de Curso Superior e/ou Certificado de Pós, Doutorado ou Especialização");
 
   void RODAPE;
   const bytes = await pdf.save();

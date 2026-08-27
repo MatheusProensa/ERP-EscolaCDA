@@ -29,6 +29,9 @@ import { getSupabaseRealtimeClient } from "@/lib/supabaseRealtimeClient";
 type NavItem = { label: string; href: string; icon: LucideIcon };
 type NavGroup = { label: string; items: NavItem[] };
 
+// NOVO: de 7 grupos pra 4 — "Escola", "Direção" e "Sistema" só tinham 1 item cada,
+// só bagunçavam o menu. Aniversariantes foi pro Pedagógico, Documentos e Usuários
+// pro Administrativo.
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Principal",
@@ -44,6 +47,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Acadêmico", href: "/academico", icon: GraduationCap },
       { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
+      { label: "Aniversariantes", href: "/aniversariantes", icon: Cake },
     ],
   },
   {
@@ -59,19 +63,9 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Funcionários", href: "/funcionarios", icon: UserCog },
       { label: "Estoque", href: "/estoque", icon: Package },
       { label: "Chaves", href: "/chaves", icon: KeyRound },
+      { label: "Documentos", href: "/documentos", icon: FileText },
+      { label: "Usuários", href: "/usuarios", icon: ShieldCheck },
     ],
-  },
-  {
-    label: "Escola",
-    items: [{ label: "Aniversariantes", href: "/aniversariantes", icon: Cake }],
-  },
-  {
-    label: "Direção",
-    items: [{ label: "Documentos", href: "/documentos", icon: FileText }],
-  },
-  {
-    label: "Sistema",
-    items: [{ label: "Usuários", href: "/usuarios", icon: ShieldCheck }],
   },
 ];
 
