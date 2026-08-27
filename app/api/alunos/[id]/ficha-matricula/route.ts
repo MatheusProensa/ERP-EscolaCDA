@@ -32,6 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const {
     matriculaId,
     alunoCpf,
+    turnoLabel,
     sexo,
     racaCor,
     autorizacaoImagem,
@@ -51,6 +52,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   }: {
     matriculaId?: string;
     alunoCpf?: string;
+    turnoLabel?: string;
     sexo?: "M" | "F" | null;
     racaCor?: string | null;
     autorizacaoImagem?: boolean;
@@ -167,7 +169,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   const pdf = await gerarFichaMatriculaPdf({
     anoLetivo: matricula?.anoLetivo.ano ?? new Date().getFullYear(),
     dataIngresso: matricula?.dataMatricula ?? new Date(),
-    turnoLabel: matricula ? turnoDoContrato(matricula.turma.nome, matricula.turma.turno) : "Não informado",
+    turnoLabel:
+      turnoLabel || (matricula ? turnoDoContrato(matricula.turma.nome, matricula.turma.turno) : "Não informado"),
     alunoNome: alunoAtualizado.nome,
     alunoDataNascimento: alunoAtualizado.dataNascimento,
     alunoCpf: alunoAtualizado.cpf,

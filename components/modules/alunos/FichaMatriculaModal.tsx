@@ -240,6 +240,7 @@ export function FichaMatriculaModal({
   const [error, setError] = useState("");
 
   const [alunoCpf, setAlunoCpf] = useState(alunoCpfInicial);
+  const [turno, setTurno] = useState(turnoLabel);
   const [sexo, setSexo] = useState(sexoInicial);
   const [racaCor, setRacaCor] = useState(racaCorInicial);
   const [autorizacaoImagem, setAutorizacaoImagem] = useState(autorizacaoImagemInicial);
@@ -272,6 +273,7 @@ export function FichaMatriculaModal({
       body: JSON.stringify({
         matriculaId,
         alunoCpf,
+        turnoLabel: turno,
         sexo: sexo || null,
         racaCor: racaCor || null,
         autorizacaoImagem,
@@ -343,7 +345,16 @@ export function FichaMatriculaModal({
                 <Fixo>{dataIngressoLabel}</Fixo>
               </Celula>
               <Celula label="Turno" peso={1.3}>
-                <Fixo>{turnoLabel}</Fixo>
+                <ChipEscolha
+                  opcoes={[
+                    { valor: "Manhã", label: "Manhã" },
+                    { valor: "Tarde", label: "Tarde" },
+                    { valor: "Integral", label: "Integral" },
+                    { valor: "Contraturno", label: "Contraturno" },
+                  ]}
+                  valor={turno}
+                  onChange={setTurno}
+                />
               </Celula>
             </Linha>
             <Linha>
