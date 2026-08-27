@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Trash2, KeyRound, Copy, Check } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Select } from "@/components/ui/Select";
+import { Input } from "@/components/ui/Input";
 import { Tr, Td } from "@/components/ui/Table";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
@@ -28,22 +29,30 @@ export function UsuarioLinha({ usuario, souEu }: { usuario: Usuario; souEu: bool
   const [novaSenha, setNovaSenha] = useState<string | null>(null);
   const [redefinindo, setRedefinindo] = useState(false);
   const [copiado, setCopiado] = useState(false);
+  const [escolhendoSenha, setEscolhendoSenha] = useState(false);
+  const [senhaDigitada, setSenhaDigitada] = useState("");
+  const [erroSenha, setErroSenha] = useState("");
 
-  async function redefinirSenha() {
-    if (!confirm(`Gerar uma nova senha para ${usuario.name}? A senha atual deixará de funcionar.`)) return;
+  async function confirmarNovaSenha(senha: string) {
     setRedefinindo(true);
-    setError("");
-    const res = await fetch(`/api/usuarios/${usuario.id}`, { method: "POST" });
+    setErroSenha("");
+    const res = await fetch(`/api/usuarios/${usuario.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(senha ? { senha } : {}),
+    });
     setRedefinindo(false);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setError(data.error ?? "Não foi possível redefinir a senha.");
+      setErroSenha(data.error ?? "Não foi possível redefinir a senha.");
       return;
     }
     const data = await res.json();
+    setEscolhendoSenha(false);
+    setSenhaDigitada("");
     setNovaSenha(data.senha);
     // NOVO
-    showToast(`Nova senha gerada para ${usuario.name}.`);
+    showToast(`Nova senha definida para ${usuario.name}.`);
   }
 
   async function copiarSenha() {
@@ -123,7 +132,7 @@ export function UsuarioLinha({ usuario, souEu }: { usuario: Usuario; souEu: bool
       <Td className="text-right">
         <div className="flex items-center justify-end gap-1">
           <button
-            onClick={redefinirSenha}
+            onClick={() => setEscolhendoSenha(true)}
             disabled={redefinindo}
             aria-label="Redefinir senha"
             className="rounded-lg p-1.5 text-cda-text3 hover:bg-cda-blue/10 hover:text-cda-blue disabled:pointer-events-none disabled:opacity-30"
@@ -143,7 +152,43 @@ export function UsuarioLinha({ usuario, souEu }: { usuario: Usuario; souEu: bool
         </div>
       </Td>
 
-      <Modal open={!!novaSenha} onClose={() => setNovaSenha(null)} title="Nova senha gerada">
+      <Modal open={escolhendoSenha} onClose={() => setEscolhendoSenha(false)} title="Redefinir senha">
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-cda-text2">
+            Escolha a nova senha de <strong>{usuario.name}</strong>. A senha atual deixará de funcionar.
+          </p>
+          <Input
+            label="Nova senha"
+            value={senhaDigitada}
+            onChange={(e) => setSenhaDigitada(e.target.value)}
+            placeholder="mínimo 4 caracteres"
+            autoFocus
+          />
+          {erroSenha && <p className="text-sm text-cda-red">{erroSenha}</p>}
+          <div className="flex flex-wrap justify-end gap-3">
+            <Button type="button" variant="outline" onClick={() => setEscolhendoSenha(false)}>
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => confirmarNovaSenha("")}
+              loading={redefinindo}
+            >
+              Gerar automática
+            </Button>
+            <Button
+              onClick={() => confirmarNovaSenha(senhaDigitada)}
+              loading={redefinindo}
+              disabled={senhaDigitada.trim().length < 4}
+            >
+              Salvar senha
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      <Modal open={!!novaSenha} onClose={() => setNovaSenha(null)} title="Nova senha definida">
         <div className="flex flex-col gap-4">
           <p className="text-sm text-cda-text2">
             Compartilhe esta senha com <strong>{usuario.name}</strong> por um canal seguro (WhatsApp, presencial). Ela só

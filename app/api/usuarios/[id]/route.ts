@@ -29,12 +29,19 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json(usuario);
 }
 
-export async function POST(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { id } = await params;
-  const senha = gerarSenhaAleatoria();
+  // Deixa escolher a senha (senhaEscolhida) em vez de só gerar uma aleatória
+  // difícil de digitar/lembrar — se não vier nada, gera automática como antes.
+  const body = await req.json().catch(() => ({}));
+  const senhaEscolhida = typeof body?.senha === "string" ? body.senha.trim() : "";
+  if (senhaEscolhida && senhaEscolhida.length < 4) {
+    return NextResponse.json({ error: "A senha precisa ter pelo menos 4 caracteres." }, { status: 400 });
+  }
+  const senha = senhaEscolhida || gerarSenhaAleatoria();
   const hash = await bcrypt.hash(senha, 10);
 
   // Limpa o pedido de "esqueci minha senha", se tinha um pendente — foi

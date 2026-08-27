@@ -9,6 +9,24 @@ import { Badge } from "@/components/ui/Badge";
 import { formatarData } from "@/lib/utils";
 import { EditarDocumentoModal } from "./EditarDocumentoModal";
 
+// Chrome bloqueia a visualização de PDF ao navegar direto pra uma URL "data:" em
+// nova aba (mostra a página em branco, mesmo o arquivo estando correto) — só
+// funciona a partir de uma origem normal, então converte pra Blob antes de abrir.
+function abrirDocumento(link: string) {
+  if (!link.startsWith("data:")) {
+    window.open(link, "_blank", "noopener,noreferrer");
+    return;
+  }
+  const [header, base64] = link.split(",");
+  const mime = header.match(/data:(.*);base64/)?.[1] || "application/pdf";
+  const binario = atob(base64);
+  const bytes = new Uint8Array(binario.length);
+  for (let i = 0; i < binario.length; i++) bytes[i] = binario.charCodeAt(i);
+  const url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+  window.open(url, "_blank", "noopener,noreferrer");
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
+
 function statusValidade(validade: Date | null): { label: string; variant: "red" | "amber" | "green" } | null {
   if (!validade) return null;
   const hoje = new Date();
