@@ -166,10 +166,18 @@ export async function gerarContratoPdf(dados: DadosContrato): Promise<string> {
     linha("_____________________________________          _____________________________________", { espacoDepois: 4 });
     const xEsquerda = MARGEM + 60;
     const xDireita = MARGEM + 300;
-    pagina.drawText("CONTRATANTE", { x: xEsquerda, y, size: 9, font: fonte, color: CINZA });
-    pagina.drawText("CONTRATADA", { x: xDireita, y, size: 9, font: fonte, color: CINZA });
+    pagina.drawText("CONTRATANTE", { x: xEsquerda, y, size: 9, font: fonteNegrito, color: PRETO });
+    pagina.drawText("CONTRATADA", { x: xDireita, y, size: 9, font: fonteNegrito, color: PRETO });
     y -= 24;
   }
+
+  // Campo de testemunha — linha em branco pra assinatura + CPF, no final do contrato.
+  garantirEspaco(60);
+  y -= 10;
+  linha("_____________________________________________________________________", { espacoDepois: 4 });
+  pagina.drawText("TESTEMUNHA", { x: MARGEM, y, size: 9, font: fonteNegrito, color: PRETO });
+  pagina.drawText("CPF: _______________________________", { x: MARGEM + 220, y, size: 9, font: fonte, color: PRETO });
+  y -= 20;
 
   const bytes = await pdf.save();
   const base64 = Buffer.from(bytes).toString("base64");
