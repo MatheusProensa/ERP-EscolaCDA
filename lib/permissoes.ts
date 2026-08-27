@@ -23,7 +23,8 @@ export const ROLE_BADGE_VARIANT: Record<string, "green" | "red" | "amber" | "blu
 
 export const GESTAO: RoleAtiva[] = ["ADMIN", "DIRECAO"];
 // Log de Atividades expõe quem mudou o quê no sistema inteiro — só o Admin (Matheus) vê,
-// nem Direção, a pedido explícito dele.
+// nem Direção, a pedido explícito dele. Não é um módulo com permissão por pessoa: é
+// fixo, não aparece na tela de "Permissões por setor".
 const SOMENTE_ADMIN: RoleAtiva[] = ["ADMIN"];
 const FINANCEIRO: RoleAtiva[] = ["ADMIN", "DIRECAO", "FINANCEIRO"];
 const PEDAGOGICO: RoleAtiva[] = ["ADMIN", "DIRECAO", "PEDAGOGICO"];
@@ -31,9 +32,10 @@ const ADMINISTRATIVO: RoleAtiva[] = ["ADMIN", "DIRECAO", "ADMINISTRATIVO"];
 // Aniversariantes mistura alunos (Pedagógico) e funcionários (Administrativo).
 const ANIVERSARIANTES: RoleAtiva[] = ["ADMIN", "DIRECAO", "PEDAGOGICO", "ADMINISTRATIVO"];
 
-// Regras de acesso por prefixo de rota (páginas e APIs). A rota mais específica
-// (prefixo mais longo) que bater vence — por isso as rotas de /api/relatorios/*
-// aparecem antes de regras mais genéricas.
+// Regras de acesso por prefixo de rota (páginas e APIs) — o pacote padrão que
+// cada Role já libera. A rota mais específica (prefixo mais longo) que bater
+// vence — por isso as rotas de /api/relatorios/* aparecem antes de regras
+// mais genéricas.
 const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   // Páginas
   { prefixo: "/alunos", roles: PEDAGOGICO },
@@ -85,4 +87,73 @@ export function rotaPermitida(pathname: string, role: string): boolean {
   }
   if (!melhorRegra) return true;
   return (melhorRegra.roles as string[]).includes(role);
+}
+
+// ---------------------------------------------------------------------------
+// Permissão granular por pessoa/setor — sobrepõe o pacote padrão do Role
+// acima quando o Admin configurou algo específico pra aquela pessoa naquele
+// módulo (tela "Permissões por setor" em /usuarios/[id]). Guardado como
+// PermissaoUsuario no banco, embutido no token de sessão no login (não é
+// checado no banco a cada requisição — troca de permissão só vale depois
+// de um novo login, igual já acontece hoje com troca de Role).
+export type NivelPermissao = "NENHUM" | "VER" | "EDITAR";
+export type PermissoesPorModulo = Record<string, NivelPermissao>;
+
+/** Cada setor que aparece na tela de Permissões — chave usada tanto no banco
+ * quanto pra reconhecer a que módulo uma rota pertence. */
+export const MODULOS: { chave: string; label: string; prefixos: string[] }[] = [
+  { chave: "alunos", label: "Alunos", prefixos: ["/alunos", "/api/alunos", "/api/matriculas", "/api/lista-espera", "/api/responsaveis", "/api/contratos", "/api/relatorios/alunos", "/api/relatorios/chamada"] },
+  { chave: "academico", label: "Acadêmico", prefixos: ["/academico", "/api/turmas"] },
+  { chave: "cardapio", label: "Cardápio", prefixos: ["/cardapio", "/api/cardapio"] },
+  { chave: "aniversariantes", label: "Aniversariantes", prefixos: ["/aniversariantes", "/api/relatorios/aniversariantes"] },
+  { chave: "funcionarios", label: "Funcionários", prefixos: ["/funcionarios", "/api/funcionarios"] },
+  { chave: "estoque", label: "Estoque", prefixos: ["/estoque", "/api/estoque", "/api/relatorios/estoque"] },
+  { chave: "chaves", label: "Chaves", prefixos: ["/chaves", "/api/chaves"] },
+  { chave: "ponto", label: "Ponto", prefixos: ["/ponto", "/api/ponto", "/api/relatorios/ponto"] },
+  { chave: "notas-fiscais", label: "Notas Fiscais", prefixos: ["/notas-fiscais", "/api/notas-fiscais"] },
+  { chave: "boletos", label: "Boletos", prefixos: ["/boletos", "/api/boletos"] },
+  { chave: "documentos", label: "Documentos", prefixos: ["/documentos", "/api/documentos"] },
+  { chave: "usuarios", label: "Usuários", prefixos: ["/usuarios", "/api/usuarios", "/api/backup"] },
+];
+
+function moduloDaRota(pathname: string): string | null {
+  let melhor: { chave: string; prefixo: string } | null = null;
+  for (const modulo of MODULOS) {
+    for (const prefixo of modulo.prefixos) {
+      const bate = pathname === prefixo || pathname.startsWith(`${prefixo}/`);
+      if (bate && (!melhor || prefixo.length > melhor.prefixo.length)) {
+        melhor = { chave: modulo.chave, prefixo };
+      }
+    }
+  }
+  return melhor?.chave ?? null;
+}
+
+const METODOS_LEITURA = new Set(["GET", "HEAD", "OPTIONS"]);
+
+/** Versão da checagem de acesso que considera método HTTP + permissão
+ * granular por pessoa. Sem override pro módulo daquela rota, cai no
+ * pacote padrão do Role (rotaPermitida) — comportamento de sempre. */
+export function acessoPermitido(
+  pathname: string,
+  method: string,
+  role: string,
+  overrides?: PermissoesPorModulo
+): boolean {
+  const modulo = overrides ? moduloDaRota(pathname) : null;
+  const override = modulo ? overrides?.[modulo] : undefined;
+
+  if (override) {
+    if (override === "NENHUM") return false;
+    if (override === "VER") return METODOS_LEITURA.has(method.toUpperCase());
+    return true; // EDITAR
+  }
+
+  return rotaPermitida(pathname, role);
+}
+
+/** Pra filtrar itens do menu lateral — só precisa saber se a pessoa enxerga
+ * a página (GET), não se pode editar. */
+export function podeVerModulo(pathname: string, role: string, overrides?: PermissoesPorModulo): boolean {
+  return acessoPermitido(pathname, "GET", role, overrides);
 }

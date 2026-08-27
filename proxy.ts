@@ -1,7 +1,7 @@
 import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import { authConfig } from "@/lib/auth.config";
-import { rotaPermitida } from "@/lib/permissoes";
+import { acessoPermitido } from "@/lib/permissoes";
 
 // Usa só a config leve (sem Credentials/bcrypt/Prisma) — o middleware roda em
 // toda navegação e só precisa ler o JWT da sessão, não fazer login de verdade.
@@ -29,7 +29,8 @@ export default auth((req) => {
 
   if (isLoggedIn) {
     const role = req.auth!.user!.role as string;
-    if (!rotaPermitida(pathname, role)) {
+    const permissoes = req.auth!.user!.permissoes;
+    if (!acessoPermitido(pathname, req.method, role, permissoes)) {
       if (isApi) return NextResponse.json({ error: "Sem permissão para este setor" }, { status: 403 });
       return NextResponse.redirect(new URL("/dashboard", req.nextUrl));
     }

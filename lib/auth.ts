@@ -44,7 +44,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           await prisma.user.update({ where: { id: user.id }, data: { tentativasFalhas: 0, bloqueadoAte: null } });
         }
 
-        return { id: user.id, name: user.name, email: user.email, role: user.role };
+        const permissoesSalvas = await prisma.permissaoUsuario.findMany({ where: { userId: user.id } });
+        const permissoes = Object.fromEntries(permissoesSalvas.map((p) => [p.modulo, p.nivel]));
+
+        return { id: user.id, name: user.name, email: user.email, role: user.role, permissoes };
       },
     }),
   ],

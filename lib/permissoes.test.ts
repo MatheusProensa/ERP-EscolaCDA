@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { rotaPermitida } from "./permissoes";
+import { rotaPermitida, acessoPermitido } from "./permissoes";
 
 describe("rotaPermitida", () => {
   it("libera rota sem regra explícita pra qualquer usuário logado", () => {
@@ -51,5 +51,31 @@ describe("rotaPermitida", () => {
 
   it("role desconhecida (não cadastrada) nunca acessa rota restrita", () => {
     expect(rotaPermitida("/ponto", "ROLE_INEXISTENTE")).toBe(false);
+  });
+});
+
+describe("acessoPermitido (permissão granular por pessoa)", () => {
+  it("sem override, cai no comportamento padrão do Role", () => {
+    expect(acessoPermitido("/estoque", "GET", "PEDAGOGICO")).toBe(false);
+    expect(acessoPermitido("/estoque", "POST", "ADMINISTRATIVO")).toBe(true);
+  });
+
+  it("override NENHUM bloqueia mesmo quem o Role liberaria", () => {
+    expect(acessoPermitido("/estoque", "GET", "ADMINISTRATIVO", { estoque: "NENHUM" })).toBe(false);
+  });
+
+  it("override VER libera leitura mas bloqueia escrita", () => {
+    expect(acessoPermitido("/estoque", "GET", "ADMINISTRATIVO", { estoque: "VER" })).toBe(true);
+    expect(acessoPermitido("/api/estoque", "POST", "ADMINISTRATIVO", { estoque: "VER" })).toBe(false);
+    expect(acessoPermitido("/api/estoque/1", "DELETE", "ADMINISTRATIVO", { estoque: "VER" })).toBe(false);
+  });
+
+  it("override EDITAR libera até quem o Role bloquearia", () => {
+    expect(acessoPermitido("/estoque", "GET", "PEDAGOGICO", { estoque: "EDITAR" })).toBe(true);
+    expect(acessoPermitido("/api/estoque", "POST", "PEDAGOGICO", { estoque: "EDITAR" })).toBe(true);
+  });
+
+  it("override de um módulo não vaza pra outro", () => {
+    expect(acessoPermitido("/ponto", "GET", "PEDAGOGICO", { estoque: "EDITAR" })).toBe(false);
   });
 });

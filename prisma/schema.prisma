@@ -31,6 +31,28 @@ model User {
   notificacoes       Notificacao[]
   avisosMural        MuralAviso[]
   leiturasAvisos     AvisoLeitura[]
+  permissoes         PermissaoUsuario[]
+}
+
+/// Permissão granular por pessoa/setor — sobrepõe o pacote padrão do Role
+/// quando existe uma linha aqui pro (usuário, módulo). Sem linha = usa o
+/// que o Role já libera (comportamento de sempre). Ver lib/permissoes.ts.
+model PermissaoUsuario {
+  id        String         @id @default(cuid())
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  modulo    String
+  nivel     NivelPermissao
+  updatedAt DateTime       @updatedAt
+
+  @@unique([userId, modulo])
+  @@index([userId])
+}
+
+enum NivelPermissao {
+  NENHUM
+  VER
+  EDITAR
 }
 
 model Mensagem {

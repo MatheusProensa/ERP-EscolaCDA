@@ -1,4 +1,5 @@
 import type { NextAuthConfig } from "next-auth";
+import type { PermissoesPorModulo } from "@/lib/permissoes";
 
 /**
  * Config "leve" só com o essencial pra decodificar o JWT da sessão — sem
@@ -14,12 +15,19 @@ export const authConfig = {
   providers: [],
   callbacks: {
     jwt({ token, user }) {
-      if (user) token.role = user.role;
+      // Só roda no momento do login (quando `user` vem preenchido) — troca de
+      // Role/permissão feita depois só vale a partir do próximo login, igual
+      // já era pro Role antes disso existir.
+      if (user) {
+        token.role = user.role;
+        token.permissoes = user.permissoes;
+      }
       return token;
     },
     session({ session, token }) {
       session.user.id = token.sub!;
       session.user.role = token.role as string;
+      session.user.permissoes = token.permissoes as PermissoesPorModulo | undefined;
       return session;
     },
   },

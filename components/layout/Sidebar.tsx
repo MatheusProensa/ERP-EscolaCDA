@@ -24,7 +24,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { rotaPermitida } from "@/lib/permissoes";
+import { podeVerModulo, type PermissoesPorModulo } from "@/lib/permissoes";
 import { canalInbox } from "@/lib/chatCanais";
 import { getSupabaseRealtimeClient } from "@/lib/supabaseRealtimeClient";
 
@@ -76,11 +76,13 @@ const NAV_GROUPS: NavGroup[] = [
 export function Sidebar({
   meId,
   role,
+  permissoes,
   open,
   onClose,
 }: {
   meId: string;
   role: string;
+  permissoes?: PermissoesPorModulo;
   open: boolean;
   onClose: () => void;
 }) {
@@ -88,7 +90,7 @@ export function Sidebar({
   const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
   const grupos = NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => rotaPermitida(item.href, role)),
+    items: group.items.filter((item) => podeVerModulo(item.href, role, permissoes)),
   })).filter((group) => group.items.length > 0);
 
   useEffect(() => {
