@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { PerfilUsuarioClient } from "@/components/modules/usuarios/PerfilUsuarioClient";
 import { PermissoesUsuarioSecao } from "@/components/modules/usuarios/PermissoesUsuarioSecao";
+import { AtividadeUsuarioSecao } from "@/components/modules/usuarios/AtividadeUsuarioSecao";
 
 export default async function PerfilUsuarioPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -31,18 +32,14 @@ export default async function PerfilUsuarioPage({ params }: { params: Promise<{ 
         breadcrumb={[{ label: "Usuários", href: "/usuarios" }, { label: usuario.name }]}
       />
       <div className="flex flex-col gap-5">
-        <PerfilUsuarioClient
-          usuario={usuario}
-          souEu={usuario.id === session?.user.id}
-          podeVerAtividade={podeVerAtividade}
-          atividades={atividades}
-        />
+        <PerfilUsuarioClient usuario={usuario} souEu={usuario.id === session?.user.id} />
         <PermissoesUsuarioSecao
           usuarioId={usuario.id}
           usuarioNome={usuario.name}
           souEu={usuario.id === session?.user.id}
           permissoesSalvas={permissoes}
         />
+        {podeVerAtividade && <AtividadeUsuarioSecao atividades={atividades} />}
       </div>
     </div>
   );
