@@ -1,3 +1,8 @@
+/** Primeiro nome pra saudação do dashboard — "Matheus Proensa" -> "Matheus". */
+export function primeiroNome(nomeCompleto: string): string {
+  return nomeCompleto.trim().split(" ")[0] || nomeCompleto;
+}
+
 const ORDEM_TURMAS = [
   "Berçário I", "Berçário II", "Maternal I", "Maternal II",
   "Pré-escola I", "Pré-escola II", "1º Ano", "2º Ano", "3º Ano",

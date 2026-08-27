@@ -1,17 +1,19 @@
 import { Suspense } from "react";
-import { UserCog, TriangleAlert, KeyRound } from "lucide-react";
+import { UserCog, TriangleAlert, KeyRound, Megaphone, MessageCircle, Package } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Card } from "@/components/ui/Card";
 import { StatusEstoquePill } from "@/components/modules/estoque/EstoqueVisuais";
+import { AtalhosRapidos } from "@/components/modules/dashboard/AtalhosRapidos";
 import { ProximosEventosWidget } from "@/components/modules/dashboard/ProximosEventosWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 import { statusEstoque } from "@/lib/estoqueStatus";
+import { primeiroNome } from "@/lib/utils";
 
-export async function DashboardAdministrativo() {
+export async function DashboardAdministrativo({ nome }: { nome: string }) {
   const [funcionariosAtivos, itens, chavesEmprestadas] = await Promise.all([
     prisma.funcionario.count({ where: { ativo: true } }),
     prisma.itemEstoque.findMany({ orderBy: { nome: "asc" } }),
@@ -24,7 +26,16 @@ export async function DashboardAdministrativo() {
 
   return (
     <div>
-      <PageHeader title="Dashboard Administrativo" subtitle="Funcionários, estoque e chaves" />
+      <PageHeader title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`} subtitle="Funcionários, estoque e chaves" />
+
+      <AtalhosRapidos
+        itens={[
+          { label: "Chat", href: "/chat", icon: MessageCircle, color: "#1A6FD8" },
+          { label: "Mural", href: "/mural", icon: Megaphone, color: "#16A34A" },
+          { label: "Estoque", href: "/estoque", icon: Package, color: "#D97706" },
+          { label: "Chaves", href: "/chaves", icon: KeyRound, color: "#7C3AED" },
+        ]}
+      />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard icon={UserCog} iconColor="#1A6FD8" value={funcionariosAtivos} label="Funcionários ativos" />

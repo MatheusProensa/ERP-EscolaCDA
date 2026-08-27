@@ -6,10 +6,11 @@ import { DashboardAdministrativo } from "@/components/modules/dashboard/Dashboar
 export default async function DashboardPage() {
   const session = await auth();
   const role = session!.user.role;
+  const nome = session!.user.name ?? "";
 
   // FINANCEIRO não tem mais dashboard próprio — a escola não gerencia
   // mensalidade/pagamento dentro do sistema (usa o Banrisul pra isso).
-  if (role === "PEDAGOGICO") return <DashboardPedagogico />;
-  if (role === "ADMINISTRATIVO") return <DashboardAdministrativo />;
-  return <DashboardAdmin />;
+  if (role === "PEDAGOGICO") return <DashboardPedagogico nome={nome} />;
+  if (role === "ADMINISTRATIVO") return <DashboardAdministrativo nome={nome} />;
+  return <DashboardAdmin nome={nome} />;
 }

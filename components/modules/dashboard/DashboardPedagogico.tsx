@@ -1,16 +1,18 @@
 import { Suspense } from "react";
-import { Users, GraduationCap, Megaphone } from "lucide-react";
+import { Users, GraduationCap, Megaphone, MessageCircle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
+import { AtalhosRapidos } from "@/components/modules/dashboard/AtalhosRapidos";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { ProximosEventosWidget } from "@/components/modules/dashboard/ProximosEventosWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
+import { primeiroNome } from "@/lib/utils";
 
-export async function DashboardPedagogico() {
+export async function DashboardPedagogico({ nome }: { nome: string }) {
   const anoLetivo = await getAnoLetivoAtivo();
 
   const [totalAlunos, turmasAtivas, censoIncompleto, avisosFixados, logs] = await Promise.all([
@@ -28,7 +30,16 @@ export async function DashboardPedagogico() {
 
   return (
     <div>
-      <PageHeader title="Dashboard Pedagógico" subtitle="Alunos, turmas e censo escolar" />
+      <PageHeader title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`} subtitle="Alunos, turmas e censo escolar" />
+
+      <AtalhosRapidos
+        itens={[
+          { label: "Chat", href: "/chat", icon: MessageCircle, color: "#1A6FD8" },
+          { label: "Mural", href: "/mural", icon: Megaphone, color: "#16A34A" },
+          { label: "Acadêmico", href: "/academico", icon: GraduationCap, color: "#D97706" },
+          { label: "Alunos", href: "/alunos", icon: Users, color: "#7C3AED" },
+        ]}
+      />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <MetricCard icon={Users} iconColor="#1A6FD8" value={totalAlunos} label="Total de alunos" subtext="Matrículas ativas" />
