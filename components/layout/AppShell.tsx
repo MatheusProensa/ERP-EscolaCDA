@@ -36,13 +36,10 @@ export function AppShell({
                 (NavigationProgress) já dá o feedback imediato no clique. */}
             <ErrorBoundary key={pathname}>{children}</ErrorBoundary>
           </main>
-          {/* NOVO: rodapé institucional, presente em toda tela */}
-          <footer className="flex shrink-0 items-center justify-between gap-4 border-t border-cda-border bg-white px-5 py-2.5 text-xs text-cda-text3">
+          {/* Rodapé institucional, presente em toda tela — "Suporte"/"Termos de uso" foram
+              removidos daqui porque não iam pra lugar nenhum (não existe essa página ainda). */}
+          <footer className="flex shrink-0 items-center justify-center border-t border-cda-border bg-white px-5 py-2.5 text-xs text-cda-text3">
             <span>CDA ERP © {new Date().getFullYear()}. Todos os direitos reservados.</span>
-            <span className="flex gap-4">
-              <a href="#" className="hover:text-cda-blue">Suporte</a>
-              <a href="#" className="hover:text-cda-blue">Termos de uso</a>
-            </span>
           </footer>
         </div>
       </div>
