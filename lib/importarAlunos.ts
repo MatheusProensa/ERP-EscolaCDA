@@ -50,15 +50,64 @@ export function validarPlanilhaDataUri(dataUri: unknown): { ok: true; buffer: Bu
   return { ok: true, buffer };
 }
 
+/** Google Sheets, ao exportar pra .xlsx, embute fórmulas que o Excel não sabe
+ * computar (IMPORTRANGE, FILTER pra outra aba, etc.) sem valor em cache — mas
+ * deixa o último valor conhecido como fallback dentro de
+ * IFERROR(..., "valor") / IFERROR(..., 123.45). Extrai esse literal do fim
+ * da fórmula quando não há um `result` aproveitável. */
+function extrairFallbackFormula(formula: string): string | null {
+  const strMatch = formula.match(/,\s*"((?:[^"\\]|\\.)*)"\s*\)\s*$/);
+  if (strMatch) return strMatch[1].replace(/\\"/g, '"');
+  const numMatch = formula.match(/,\s*(-?\d+(?:\.\d+)?)\s*\)\s*$/);
+  if (numMatch) return numMatch[1];
+  return null;
+}
+
 function celulaParaTexto(valor: ExcelJS.CellValue): string {
   if (valor === null || valor === undefined) return "";
-  if (valor instanceof Date) return valor.toLocaleDateString("pt-BR");
+  if (valor instanceof Date) return isNaN(valor.getTime()) ? "" : valor.toLocaleDateString("pt-BR");
   if (typeof valor === "object") {
     if ("richText" in valor) return valor.richText.map((r) => r.text).join("");
-    if ("result" in valor) return String(valor.result ?? "");
+    if ("formula" in valor) {
+      const f = valor as { formula?: string; result?: ExcelJS.CellValue };
+      const resultadoInvalido =
+        f.result === null ||
+        f.result === undefined ||
+        (f.result instanceof Date && isNaN(f.result.getTime()));
+      if (!resultadoInvalido) return celulaParaTexto(f.result as ExcelJS.CellValue);
+      // Célula formatada como data mas cujo resultado real é outra coisa (texto) vira
+      // "Invalid Date" no ExcelJS — mesmo caso do result ausente/nulo: cai pro fallback.
+      return f.formula ? (extrairFallbackFormula(f.formula) ?? "") : "";
+    }
+    if ("result" in valor) return celulaParaTexto((valor as { result: ExcelJS.CellValue }).result);
     if ("text" in valor) return String((valor as { text: unknown }).text ?? "");
   }
   return String(valor).trim();
+}
+
+const ALIASES_TODOS = Object.values(CAMPOS_CONHECIDOS).flat() as string[];
+
+/** Muita planilha de escola tem 1-2 linhas de filtro/busca ("Pesquisar por...")
+ * antes do cabeçalho de verdade — em vez de assumir que é sempre a linha 1,
+ * varre as primeiras linhas e fica com a que mais parece um cabeçalho
+ * (mais células batendo com os nomes de campo conhecidos). */
+function encontrarLinhaCabecalho(planilha: ExcelJS.Worksheet): number {
+  const limite = Math.min(15, planilha.rowCount);
+  let melhorLinha = 1;
+  let melhorPontuacao = -1;
+  for (let i = 1; i <= limite; i++) {
+    const row = planilha.getRow(i);
+    let pontuacao = 0;
+    row.eachCell({ includeEmpty: false }, (cell) => {
+      const texto = normalizarTexto(celulaParaTexto(cell.value));
+      if (texto && ALIASES_TODOS.some((a) => texto === a || texto.includes(a))) pontuacao++;
+    });
+    if (pontuacao > melhorPontuacao) {
+      melhorPontuacao = pontuacao;
+      melhorLinha = i;
+    }
+  }
+  return melhorLinha;
 }
 
 export async function parsarPlanilha(buffer: Buffer): Promise<{ headers: string[]; linhas: Record<string, string>[] }> {
@@ -67,14 +116,15 @@ export async function parsarPlanilha(buffer: Buffer): Promise<{ headers: string[
   const planilha = workbook.worksheets[0];
   if (!planilha) return { headers: [], linhas: [] };
 
-  const headerRow = planilha.getRow(1);
+  const linhaCabecalho = encontrarLinhaCabecalho(planilha);
+  const headerRow = planilha.getRow(linhaCabecalho);
   const headers: string[] = [];
   headerRow.eachCell({ includeEmpty: true }, (cell, col) => {
     headers[col - 1] = celulaParaTexto(cell.value);
   });
 
   const linhas: Record<string, string>[] = [];
-  for (let i = 2; i <= planilha.rowCount; i++) {
+  for (let i = linhaCabecalho + 1; i <= planilha.rowCount; i++) {
     const row = planilha.getRow(i);
     if (row.cellCount === 0) continue;
     const linha: Record<string, string> = {};
