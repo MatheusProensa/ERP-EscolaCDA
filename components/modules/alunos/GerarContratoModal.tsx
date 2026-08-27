@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { montarClausulas, type DadosContratoTexto } from "@/lib/contratoTexto";
-import { formatarData } from "@/lib/utils";
+import { formatarData, formatarMoeda } from "@/lib/utils";
 
 type Turno = DadosContratoTexto["turnoLabel"];
 
@@ -85,7 +85,7 @@ export function GerarContratoModal({
         {temContrato ? "Gerar novamente" : "Gerar contrato"}
       </Button>
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Revisar e gerar contrato" className="max-w-5xl">
+      <Modal open={open} onClose={() => setOpen(false)} title="Revisar e gerar contrato" className="max-w-6xl">
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="flex flex-col gap-3">
             <p className="text-xs text-cda-text3">
@@ -122,30 +122,54 @@ export function GerarContratoModal({
 
           <div className="flex flex-col gap-2">
             <p className="text-xs font-medium text-cda-text2">Pré-visualização — exatamente como sai no PDF</p>
-            <div className="h-[600px] overflow-y-auto rounded-lg border border-cda-border bg-white p-4 text-[13px] leading-relaxed text-cda-text">
-              <p className="mb-0.5 text-base font-bold text-cda-navy">ESCOLA CDA</p>
-              <p className="mb-3 text-[11px] text-cda-text3">CONTRATO DE SERVIÇOS EDUCACIONAIS {anoLetivo}</p>
-              <p className="mb-1">
-                <span className="font-medium">Aluno(a):</span> {alunoNome || "—"}
-              </p>
-              <p className="mb-1">
-                <span className="font-medium">Data de nascimento:</span>{" "}
-                {alunoNascimento ? formatarData(new Date(`${alunoNascimento}T00:00:00`)) : "—"}
-              </p>
-              <p className="mb-1">
-                <span className="font-medium">Turma:</span> {turmaNome}
-              </p>
-              <p className="mb-1">
-                <span className="font-medium">CONTRATANTE:</span> {responsavelNome || "—"}
-              </p>
-              <p className="mb-3">
-                <span className="font-medium">CPF:</span> {responsavelCpf || "não informado"}
-              </p>
-              {clausulas.map((c, i) => (
-                <p key={i} className="mb-2.5 whitespace-pre-wrap">
-                  {c}
+            <div className="overflow-hidden rounded-xl border border-cda-border shadow-sm">
+              {/* Mesmo papel timbrado real usado na Ficha de Matrícula — é o mesmo documento oficial. */}
+              <div
+                className="w-full bg-white bg-no-repeat"
+                style={{
+                  paddingTop: "18.4%",
+                  backgroundImage: "url(/ficha-matricula-fundo.png)",
+                  backgroundSize: "100% auto",
+                  backgroundPosition: "top",
+                }}
+              />
+              <div className="h-[520px] overflow-y-auto bg-white p-4 text-[13px] leading-relaxed text-cda-text">
+                <p className="mb-3 text-[15px] font-bold text-cda-text">CONTRATO DE SERVIÇOS EDUCACIONAIS {anoLetivo}</p>
+                <p className="mb-1">
+                  <span className="font-medium">Aluno(a):</span> {alunoNome || "—"}
                 </p>
-              ))}
+                <p className="mb-1">
+                  <span className="font-medium">Data de nascimento:</span>{" "}
+                  {alunoNascimento ? formatarData(new Date(`${alunoNascimento}T00:00:00`)) : "—"}
+                </p>
+                <p className="mb-1">
+                  <span className="font-medium">Turma:</span> {turmaNome} ({turno})
+                </p>
+                <p className="mb-1">
+                  <span className="font-medium">CONTRATANTE:</span> {responsavelNome || "—"}
+                </p>
+                <p className="mb-1">
+                  <span className="font-medium">CPF:</span> {responsavelCpf || "não informado"}
+                </p>
+                <p className="mb-3">
+                  <span className="font-medium">Valor da mensalidade:</span>{" "}
+                  {Number(valorMensalidade) > 0 ? formatarMoeda(Number(valorMensalidade)) : "—"}
+                </p>
+                {clausulas.map((c, i) => (
+                  <p key={i} className="mb-2.5 whitespace-pre-wrap">
+                    {c}
+                  </p>
+                ))}
+              </div>
+              <div
+                className="w-full bg-white bg-no-repeat"
+                style={{
+                  paddingTop: "3.2%",
+                  backgroundImage: "url(/ficha-matricula-fundo.png)",
+                  backgroundSize: "100% auto",
+                  backgroundPosition: "bottom",
+                }}
+              />
             </div>
           </div>
         </div>
