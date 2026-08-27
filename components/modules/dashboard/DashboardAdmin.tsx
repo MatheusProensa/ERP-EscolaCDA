@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Users, UserCog, Megaphone, MessageCircle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
+import { contarAlunosAtivos } from "@/lib/alunos";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 import { MetricasGerais } from "@/components/modules/dashboard/MetricasGerais";
@@ -15,9 +16,7 @@ export async function DashboardAdmin({ nome }: { nome: string }) {
   const anoLetivo = await getAnoLetivoAtivo();
 
   const [totalAlunos, turmasAtivas, censoIncompleto] = await Promise.all([
-    prisma.matricula.count({
-      where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
-    }),
+    contarAlunosAtivos(anoLetivo?.id),
     prisma.turma.count({ where: { anoLetivoId: anoLetivo?.id } }),
     prisma.aluno.count({
       where: {

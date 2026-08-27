@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { Users, GraduationCap, Megaphone, MessageCircle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
+import { contarAlunosAtivos } from "@/lib/alunos";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
@@ -16,7 +17,7 @@ export async function DashboardPedagogico({ nome }: { nome: string }) {
   const anoLetivo = await getAnoLetivoAtivo();
 
   const [totalAlunos, turmasAtivas, censoIncompleto, avisosFixados, logs] = await Promise.all([
-    prisma.matricula.count({ where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id } }),
+    contarAlunosAtivos(anoLetivo?.id),
     prisma.turma.count({ where: { anoLetivoId: anoLetivo?.id } }),
     prisma.aluno.count({
       where: {

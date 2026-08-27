@@ -1,6 +1,7 @@
 import { GraduationCap, Users, School } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
+import { contarAlunosAtivos } from "@/lib/alunos";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { TurmaCard } from "@/components/modules/academico/TurmaCard";
@@ -16,7 +17,7 @@ export default async function AcademicoPage() {
       where: { anoLetivoId: anoLetivo?.id },
       include: { _count: { select: { matriculas: { where: { situacao: "ATIVA" } } } } },
     }),
-    prisma.matricula.count({ where: { anoLetivoId: anoLetivo?.id, situacao: "ATIVA" } }),
+    contarAlunosAtivos(anoLetivo?.id),
     prisma.listaEspera.count(),
   ]);
   const regulares = ordenarTurmas(turmasRaw.filter((t) => t.turno === "TARDE"));
