@@ -100,7 +100,14 @@ export function detectarColunas(headers: string[]): Record<CampoConhecido, strin
   for (const campo of Object.keys(CAMPOS_CONHECIDOS) as CampoConhecido[]) {
     const aliases: readonly string[] = CAMPOS_CONHECIDOS[campo];
     let achado = normalizados.find((h) => aliases.includes(h.norm));
-    if (!achado) achado = normalizados.find((h) => aliases.some((a) => h.norm.includes(a)));
+    if (!achado) {
+      // Várias colunas podem "conter" o alias (ex.: planilhas de escola costumam ter
+      // "Mensalidade" — a atual — e "Mensalidade 2027" — reajuste da renovação, lado a
+      // lado). Entre os candidatos, fica com o nome de coluna mais curto/mais parecido
+      // com o alias puro, não o primeiro que aparecer.
+      const candidatos = normalizados.filter((h) => aliases.some((a) => h.norm.includes(a)));
+      achado = candidatos.sort((a, b) => a.norm.length - b.norm.length)[0];
+    }
     resultado[campo] = achado?.original ?? null;
   }
   return resultado;
