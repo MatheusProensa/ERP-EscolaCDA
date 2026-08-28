@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -68,6 +68,7 @@ export function LoginForm() {
       {error && <p className="text-sm text-cda-red">{error}</p>}
       <Button type="submit" loading={loading} className="mt-2 w-full">
         Entrar
+        {!loading && <ArrowRight className="h-4 w-4" />}
       </Button>
       <a href="/esqueci-senha" className="text-center text-sm text-cda-blue hover:underline">
         Esqueci minha senha
