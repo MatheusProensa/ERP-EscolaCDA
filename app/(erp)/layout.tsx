@@ -19,7 +19,7 @@ export default async function ErpLayout({ children }: { children: React.ReactNod
       role={user.role}
       permissoes={user.permissoes}
       name={atual?.name ?? user.name ?? "Usuário"}
-      foto={atual?.foto ?? user.image}
+      foto={atual?.foto}
     >
       {children}
     </AppShell>

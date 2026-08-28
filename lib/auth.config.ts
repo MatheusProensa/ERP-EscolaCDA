@@ -21,7 +21,11 @@ export const authConfig = {
       if (user) {
         token.role = user.role;
         token.permissoes = user.permissoes;
-        token.picture = user.image;
+        // NÃO guarda a foto aqui — foto é base64 (20-30KB+), e isso ia direto pro
+        // cookie de sessão. Cookie grande demais faz o servidor recusar QUALQUER
+        // pedido depois ("Request Header Fields Too Large" — travou o login de
+        // quem tinha foto). Foto é buscada fresca do banco em quem precisa dela
+        // (app/(erp)/layout.tsx, tela de Chat), não fica no token/cookie.
       }
       return token;
     },
@@ -29,7 +33,6 @@ export const authConfig = {
       session.user.id = token.sub!;
       session.user.role = token.role as string;
       session.user.permissoes = token.permissoes as PermissoesPorModulo | undefined;
-      session.user.image = token.picture;
       return session;
     },
   },
