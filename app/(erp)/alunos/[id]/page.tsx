@@ -75,9 +75,12 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
               alunoId={aluno.id}
               turmas={turmasDisponiveis.filter((t) => !turmaIdsDoAluno.has(t.id))}
             />
+            {/* Não é a Ficha de Matrícula (essa é o FichaMatriculaModal logo abaixo) — é um
+                resumo do cadastro, mesmo formato dos Relatórios. Nome antigo ("Baixar ficha
+                PDF") confundia com o outro botão. */}
             <Button href={`/api/alunos/${aluno.id}/ficha`} variant="outline">
               <FileDown className="h-4 w-4" />
-              Baixar ficha PDF
+              Resumo do cadastro (PDF)
             </Button>
             {matriculaPrincipal && (
               <FichaMatriculaModal
