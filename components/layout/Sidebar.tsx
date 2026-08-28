@@ -135,14 +135,18 @@ export function Sidebar({
           open ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="flex items-center justify-between gap-2 px-5 py-5">
+        <div className="relative flex items-center justify-center gap-2 px-5 py-5">
           {/* Logo de verdade em vez do texto "CDA" solto + badge "ERP" — não
               era fiel ao logo real da escola. Usa o logo-cda.png (não o
               "semborda") porque esse tem bastante espaço vazio ao redor —
               numa altura pequena a marca em si ficava minúscula. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/logo-cda.png" alt="Escola CDA" className="h-9 w-auto" />
-          <button onClick={onClose} aria-label="Fechar menu" className="text-white/60 hover:text-white lg:hidden">
+          <button
+            onClick={onClose}
+            aria-label="Fechar menu"
+            className="absolute right-5 text-white/60 hover:text-white lg:hidden"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
