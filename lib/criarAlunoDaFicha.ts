@@ -34,11 +34,19 @@ export async function processarFichaArquivo(
     return { arquivo: nomeArquivo, status: "erro", motivo: "Faltou nome completo ou data de nascimento do aluno na ficha." };
   }
 
-  const existente = ficha.cpf
-    ? await prisma.aluno.findUnique({ where: { cpf: ficha.cpf } })
-    : await prisma.aluno.findFirst({
-        where: { nome: { equals: ficha.nome, mode: "insensitive" }, dataNascimento: new Date(ficha.dataNascimento) },
-      });
+  // Confere SEMPRE por nome+nascimento, além do CPF quando a ficha trouxer um —
+  // antes, quando vinha CPF, só olhava CPF e ignorava nome+nascimento; como a
+  // maioria dos alunos já cadastrados está sem CPF salvo, isso deixava passar
+  // aluno duplicado (foi exatamente o que causou 59 alunos repetidos numa
+  // importação em lote anterior).
+  const existente = await prisma.aluno.findFirst({
+    where: {
+      OR: [
+        ...(ficha.cpf ? [{ cpf: ficha.cpf }] : []),
+        { nome: { equals: ficha.nome, mode: "insensitive" as const }, dataNascimento: new Date(ficha.dataNascimento) },
+      ],
+    },
+  });
   if (existente) {
     return { arquivo: nomeArquivo, status: "pulado", motivo: `Já existe um aluno cadastrado (${existente.nome}).` };
   }
