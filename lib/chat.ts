@@ -8,6 +8,7 @@ export type ConversaResumo = {
   id: string;
   name: string;
   role: string;
+  foto: string | null;
   ultimaMensagem: string | null;
   ultimaEm: string | null;
   naoLidas: number;
@@ -17,7 +18,7 @@ export async function listarConversas(meId: string): Promise<ConversaResumo[]> {
   const [usuarios, mensagens, naoLidasPorRemetente] = await Promise.all([
     prisma.user.findMany({
       where: { id: { not: meId } },
-      select: { id: true, name: true, role: true },
+      select: { id: true, name: true, role: true, foto: true },
       orderBy: { name: "asc" },
     }),
     // Só serve pra achar a última mensagem de cada conversa (preview) — 100 é de
@@ -55,6 +56,7 @@ export async function listarConversas(meId: string): Promise<ConversaResumo[]> {
       id: u.id,
       name: u.name,
       role: u.role,
+      foto: u.foto,
       ultimaMensagem: info
         ? info.excluida
           ? "Mensagem apagada"

@@ -16,6 +16,7 @@ type Conversa = {
   id: string;
   name: string;
   role: string;
+  foto: string | null;
   ultimaMensagem: string | null;
   ultimaEm: string | null;
   naoLidas: number;
@@ -107,12 +108,14 @@ function mesclarMensagens(atual: Mensagem[], novas: Mensagem[]): Mensagem[] {
 export function ChatApp({
   meId,
   meNome,
+  meFoto,
   selecionadoInicial,
   conversasIniciais,
 }: {
   meId: string;
   /** NOVO: precisa do nome de quem está logado pra rotular o próprio balão de mensagem. */
   meNome: string;
+  meFoto?: string | null;
   selecionadoInicial?: string;
   conversasIniciais?: Conversa[];
 }) {
@@ -517,7 +520,7 @@ export function ChatApp({
               }`}
             >
               <div className="relative shrink-0">
-                <Avatar nome={c.name} size="md" />
+                <Avatar nome={c.name} foto={c.foto} size="md" />
                 {c.online && (
                   <span className="absolute -right-0.5 -bottom-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-cda-green" />
                 )}
@@ -564,7 +567,7 @@ export function ChatApp({
               {conversaAtual ? (
                 <>
                   <div className="relative">
-                    <Avatar nome={conversaAtual.name} size="sm" />
+                    <Avatar nome={conversaAtual.name} foto={conversaAtual.foto} size="sm" />
                     {conversaAtual.online && (
                       <span className="absolute -right-0.5 -bottom-0.5 h-2 w-2 rounded-full border-2 border-white bg-cda-green" />
                     )}
@@ -624,6 +627,7 @@ export function ChatApp({
                   const m = item.mensagem;
                   const minha = m.remetenteId === meId;
                   const nome = minha ? meNome : conversaAtual?.name ?? "";
+                  const foto = minha ? meFoto : conversaAtual?.foto;
                   const imagem = m.anexo?.startsWith("data:image") ?? false;
                   const editandoEssa = editandoMsgId === m.id;
 
@@ -633,7 +637,7 @@ export function ChatApp({
                       className={`group flex items-end gap-2 ${minha ? "flex-row-reverse" : ""} ${item.mostrarCabecalho ? "mt-2.5" : ""}`}
                     >
                       {item.mostrarCabecalho ? (
-                        <Avatar nome={nome} size="sm" />
+                        <Avatar nome={nome} foto={foto} size="sm" />
                       ) : (
                         <div className="w-7 shrink-0" />
                       )}
