@@ -16,6 +16,10 @@ const AZUL_BORDA = rgb(0x00 / 255, 0xaf / 255, 0xef / 255);
 const LARGURA = 595;
 const ALTURA = 842;
 const MARGEM = 54;
+// O timbrado novo (pedido do dono da escola, ago/2026) não tem mais o rodapé com
+// endereço/telefone/@ desenhado na própria imagem — esse texto é desenhado aqui por
+// cima do fundo agora, pra essa informação não sumir dos documentos.
+const TEXTO_RODAPE = "Educação Infantil e Ensino Fundamental  ·  R. José Manhago, 194 - Camobi, Santa Maria - RS  ·  (55) 3217-7947  ·  @escolacda.sm";
 const TOPO_CONTEUDO = ALTURA - 125;
 const RODAPE = 45;
 const LARGURA_UTIL = LARGURA - MARGEM * 2;
@@ -82,6 +86,9 @@ export async function gerarAvaliacaoEscritaPdf(): Promise<string> {
 
   function desenharFundo(p: PDFPage) {
     if (fundo) p.drawImage(fundo, { x: -4, y: 0, width: LARGURA + 4, height: ALTURA });
+    const tamanhoRodape = 7;
+    const larguraRodape = fonte.widthOfTextAtSize(TEXTO_RODAPE, tamanhoRodape);
+    p.drawText(TEXTO_RODAPE, { x: (LARGURA - larguraRodape) / 2, y: 24, size: tamanhoRodape, font: fonte, color: CINZA });
   }
 
   let pagina = pdf.addPage([LARGURA, ALTURA]);

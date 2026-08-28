@@ -66,6 +66,10 @@ const PRETO = rgb(0, 0, 0);
 const LARGURA = 595;
 const ALTURA = 842; // A4
 const MARGEM = 54;
+// O timbrado novo (pedido do dono da escola, ago/2026) não tem mais o rodapé com
+// endereço/telefone/@ desenhado na própria imagem — esse texto é desenhado aqui por
+// cima do fundo agora, pra essa informação não sumir dos documentos.
+const TEXTO_RODAPE = "Educação Infantil e Ensino Fundamental  ·  R. José Manhago, 194 - Camobi, Santa Maria - RS  ·  (55) 3217-7947  ·  @escolacda.sm";
 // O papel timbrado já tem a faixa do cabeçalho (logo) e o rodapé (endereço/telefone) desenhados
 // na imagem de fundo — o conteúdo precisa ficar dentro da área branca, sem sobrepor essas faixas.
 const TOPO_CONTEUDO = ALTURA - 125;
@@ -96,6 +100,9 @@ export async function gerarFichaMatriculaPdf(d: DadosFichaMatricula): Promise<st
     // exportado do Word) — desenha um pouco maior/deslocado à esquerda pra empurrar essa tira
     // branca pra fora da página, sem distorcer o resto (a borda direita fica intacta).
     if (fundo) p.drawImage(fundo, { x: -4, y: 0, width: LARGURA + 4, height: ALTURA });
+    const tamanhoRodape = 7;
+    const larguraRodape = fonte.widthOfTextAtSize(TEXTO_RODAPE, tamanhoRodape);
+    p.drawText(TEXTO_RODAPE, { x: (LARGURA - larguraRodape) / 2, y: 24, size: tamanhoRodape, font: fonte, color: CINZA });
   }
 
   let pagina = pdf.addPage([LARGURA, ALTURA]);
