@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { ROLES_ATIVAS } from "@/lib/permissoes";
 import { gerarSenhaAleatoria } from "@/lib/senha";
 import { validarUploadDataUri } from "@/lib/validarUpload";
+import { erroApi } from "@/lib/apiError";
 
 // Agora edita nome/email além do perfil — antes só dava pra trocar o perfil por
 // aqui, então as contas genéricas de seed ("Direção CDA" etc.) não tinham como
@@ -115,6 +116,32 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     return NextResponse.json({ error: "Você não pode excluir seu próprio usuário" }, { status: 400 });
   }
 
-  await prisma.user.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+  const alvo = await prisma.user.findUnique({ where: { id }, select: { name: true } });
+  if (!alvo) return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
+
+  try {
+    // Mensagem/Notificacao apontam pro User sem onDelete em cascata — excluir
+    // direto quebrava com erro de chave estrangeira pra qualquer conta que já
+    // mandou/recebeu mensagem no chat ou teve notificação (praticamente toda
+    // conta usada de verdade). Apaga esse rastro junto, dentro da mesma
+    // transação, antes de apagar o usuário.
+    await prisma.$transaction([
+      prisma.notificacao.deleteMany({ where: { usuarioId: id } }),
+      prisma.mensagem.deleteMany({ where: { OR: [{ remetenteId: id }, { destinatarioId: id }] } }),
+      prisma.user.delete({ where: { id } }),
+    ]);
+
+    await prisma.logAtividade.create({
+      data: {
+        acao: `Usuário excluído (${alvo.name})`,
+        entidade: "Usuario",
+        entidadeId: id,
+        usuario: session.user.name ?? "Usuário",
+      },
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    return erroApi(err);
+  }
 }

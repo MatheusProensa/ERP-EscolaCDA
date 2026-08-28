@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Eye, Ban, RotateCcw } from "lucide-react";
+import { Eye, Ban, RotateCcw } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { showToast } from "@/components/ui/Toast";
@@ -10,11 +10,14 @@ import { MODULOS, type NivelPermissao } from "@/lib/permissoes";
 
 type Nivel = NivelPermissao | "HERDAR";
 
+// Só dá pra RESTRINGIR aqui — nunca liberar um setor além do que o Perfil de
+// acesso já dá (senão essa tela vira um jeito de burlar o próprio perfil).
+// Por isso não tem opção de "editar": quem já edita pelo perfil continua
+// editando; essa tela só serve pra tirar acesso ou deixar só ver.
 const NIVEIS: { valor: Nivel; label: string; icon: typeof Eye; cor: string }[] = [
   { valor: "HERDAR", label: "Padrão do perfil", icon: RotateCcw, cor: "text-cda-text3" },
-  { valor: "NENHUM", label: "Sem acesso", icon: Ban, cor: "text-cda-red" },
   { valor: "VER", label: "Só visualizar", icon: Eye, cor: "text-cda-amber" },
-  { valor: "EDITAR", label: "Ver e editar", icon: ShieldCheck, cor: "text-cda-green" },
+  { valor: "NENHUM", label: "Sem acesso", icon: Ban, cor: "text-cda-red" },
 ];
 
 export function PermissoesUsuarioSecao({
@@ -72,8 +75,9 @@ export function PermissoesUsuarioSecao({
       }
     >
       <p className="border-b border-cda-border px-5 py-3 text-sm text-cda-text2">
-        Ajusta o que <strong>{usuarioNome}</strong> pode ver e editar em cada setor, além do que o perfil de acesso
-        dela já libera. Só vale a partir do próximo login dela no sistema.
+        Só serve pra <strong>restringir</strong>: tirar acesso de um setor que o perfil de <strong>{usuarioNome}</strong>{" "}
+        normalmente liberaria. Não dá pra liberar um setor que o perfil dela não dá. Só vale a partir do próximo
+        login dela no sistema.
       </p>
       <div className="flex flex-col divide-y divide-cda-border">
         {MODULOS.map((modulo) => (
