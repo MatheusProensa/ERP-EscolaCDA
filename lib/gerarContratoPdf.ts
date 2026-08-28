@@ -162,25 +162,40 @@ export async function gerarContratoPdf(dados: DadosContrato): Promise<string> {
     });
     y -= 90;
   } else {
+    // Duas linhas de assinatura desenhadas (não texto com "_____"): a largura de
+    // um monte de underscores varia com a fonte e nunca bate certinho com a
+    // largura útil da página — desenhando a régua direto, cada metade fica
+    // exatamente do mesmo tamanho e os rótulos centralizam certo embaixo.
     garantirEspaco(60);
-    linha("_____________________________________          _____________________________________", { espacoDepois: 4 });
-    const xEsquerda = MARGEM + 60;
-    const xDireita = MARGEM + 300;
-    pagina.drawText("CONTRATANTE", { x: xEsquerda, y, size: 9, font: fonteNegrito, color: PRETO });
-    pagina.drawText("CONTRATADA", { x: xDireita, y, size: 9, font: fonteNegrito, color: PRETO });
+    const larguraConteudo = LARGURA - MARGEM * 2;
+    const espacoEntreColunas = 24;
+    const larguraColuna = (larguraConteudo - espacoEntreColunas) / 2;
+    const xColuna1 = MARGEM;
+    const xColuna2 = MARGEM + larguraColuna + espacoEntreColunas;
+
+    pagina.drawLine({ start: { x: xColuna1, y }, end: { x: xColuna1 + larguraColuna, y }, thickness: 0.75, color: PRETO });
+    pagina.drawLine({ start: { x: xColuna2, y }, end: { x: xColuna2 + larguraColuna, y }, thickness: 0.75, color: PRETO });
+    y -= 16;
+
+    const larguraContratante = fonteNegrito.widthOfTextAtSize("CONTRATANTE", 9);
+    const larguraContratada = fonteNegrito.widthOfTextAtSize("CONTRATADA", 9);
+    pagina.drawText("CONTRATANTE", { x: xColuna1 + (larguraColuna - larguraContratante) / 2, y, size: 9, font: fonteNegrito, color: PRETO });
+    pagina.drawText("CONTRATADA", { x: xColuna2 + (larguraColuna - larguraContratada) / 2, y, size: 9, font: fonteNegrito, color: PRETO });
     y -= 24;
   }
 
   // Campo de testemunha — linha em branco pra assinatura + CPF, no final do contrato.
-  // "TESTEMUNHA" e o campo de CPF ficam centralizados cada um na sua metade da linha
-  // (mesma lógica de centralização usada na assinatura da Ficha de Matrícula).
+  // Mesma régua desenhada (não texto) da dupla acima, pra ficar com exatamente a
+  // mesma largura útil da página — "TESTEMUNHA" centralizado na metade esquerda,
+  // "CPF: ___" centralizado na metade direita.
   garantirEspaco(60);
   y -= 10;
-  const linhaTestemunha = "_____________________________________________________________________";
-  linha(linhaTestemunha, { espacoDepois: 4 });
+  const larguraConteudoTestemunha = LARGURA - MARGEM * 2;
+  pagina.drawLine({ start: { x: MARGEM, y }, end: { x: LARGURA - MARGEM, y }, thickness: 0.75, color: PRETO });
+  y -= 16;
+
+  const larguraMetadeTestemunha = larguraConteudoTestemunha / 2;
   const textoCpfTestemunha = "CPF: _______________________________";
-  const larguraLinhaTestemunha = fonte.widthOfTextAtSize(linhaTestemunha, 10.5);
-  const larguraMetadeTestemunha = larguraLinhaTestemunha / 2;
   const larguraTestemunha = fonteNegrito.widthOfTextAtSize("TESTEMUNHA", 9);
   const larguraCpfTestemunha = fonte.widthOfTextAtSize(textoCpfTestemunha, 9);
   pagina.drawText("TESTEMUNHA", {
