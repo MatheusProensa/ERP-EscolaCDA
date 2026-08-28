@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { GerenciarParticipantesModal } from "@/components/modules/ponto/GerenciarParticipantesModal";
 import { calcularMes, minParaHora, type RegistroPontoDia } from "@/lib/ponto";
@@ -18,12 +19,13 @@ const MESES = [
 export default async function PontoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string }>;
+  searchParams: Promise<{ mes?: string; ano?: string }>;
 }) {
-  const { mes } = await searchParams;
+  const { mes, ano: anoParam } = await searchParams;
   const hoje = new Date();
   const mesFiltro = mes ? Number(mes) : hoje.getUTCMonth() + 1;
-  const ano = hoje.getUTCFullYear();
+  const ano = anoParam ? Number(anoParam) : hoje.getUTCFullYear();
+  const anoAtual = hoje.getUTCFullYear();
 
   const todosFuncionarios = await prisma.funcionario.findMany({
     where: { ativo: true },
@@ -66,6 +68,24 @@ export default async function PontoPage({
           </div>
         }
       />
+
+      <Card className="mb-5 p-4">
+        <form className="flex flex-wrap items-end gap-3">
+          <Select label="Mês" name="mes" defaultValue={String(mesFiltro)} className="w-40">
+            {MESES.map((m, i) => (
+              <option key={m} value={i + 1}>{m}</option>
+            ))}
+          </Select>
+          <Select label="Ano" name="ano" defaultValue={String(ano)} className="w-28">
+            {[anoAtual - 1, anoAtual, anoAtual + 1].map((a) => (
+              <option key={a} value={a}>{a}</option>
+            ))}
+          </Select>
+          <Button type="submit" variant="outline">
+            Filtrar
+          </Button>
+        </form>
+      </Card>
 
       <Card>
         <Table>
