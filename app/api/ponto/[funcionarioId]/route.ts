@@ -1,16 +1,8 @@
-import { randomUUID } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { calcularMes, horaParaMin, type RegistroPontoDia } from "@/lib/ponto";
-
-function inicioMes(mes: number, ano: number) {
-  return new Date(Date.UTC(ano, mes - 1, 1));
-}
-function fimMes(mes: number, ano: number) {
-  return new Date(Date.UTC(ano, mes, 1));
-}
+import { calcularMes, type RegistroPontoDia } from "@/lib/ponto";
+import { inicioMes, fimMes, salvarRegistrosDoMes, type LinhaPonto } from "@/lib/pontoWrite";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ funcionarioId: string }> }) {
   const session = await auth();
@@ -63,19 +55,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   });
 }
 
-type LinhaEntrada = {
-  id?: string;
-  data: string;
-  entrada1?: string | null;
-  saida1?: string | null;
-  entrada2?: string | null;
-  saida2?: string | null;
-  entrada3?: string | null;
-  saida3?: string | null;
-  ocorrencia?: string;
-  observacao?: string | null;
-};
-
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ funcionarioId: string }> }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -84,65 +63,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   const body = await request.json();
   const mes = Number(body.mes);
   const ano = Number(body.ano);
-  const linhas: LinhaEntrada[] = body.registros ?? [];
+  const linhas: LinhaPonto[] = body.registros ?? [];
 
   const funcionario = await prisma.funcionario.findUnique({ where: { id: funcionarioId } });
   if (!funcionario) return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 404 });
 
-  const inicio = inicioMes(mes, ano);
-  const fim = fimMes(mes, ano);
-
-  const datasEnviadas = linhas.map((l) => new Date(`${l.data}T00:00:00.000Z`).getTime());
-
-  await prisma.$transaction(async (tx) => {
-    await tx.registroPonto.deleteMany({
-      where: {
-        funcionarioId,
-        data: { gte: inicio, lt: fim },
-        NOT: { data: { in: datasEnviadas.map((t) => new Date(t)) } },
-      },
-    });
-
-    // Upsert em lote (1 round-trip) em vez de um upsert por dia do mês (até 31
-    // round-trips sequenciais dentro da mesma transação) — era o principal
-    // motivo de "Salvar" na folha de ponto demorar visivelmente.
-    if (linhas.length > 0) {
-      const valores = linhas.map((linha) => {
-        const data = new Date(`${linha.data}T00:00:00.000Z`);
-        return Prisma.sql`(
-          ${randomUUID()},
-          ${funcionarioId},
-          ${data},
-          ${linha.entrada1 ? horaParaMin(linha.entrada1) : null},
-          ${linha.saida1 ? horaParaMin(linha.saida1) : null},
-          ${linha.entrada2 ? horaParaMin(linha.entrada2) : null},
-          ${linha.saida2 ? horaParaMin(linha.saida2) : null},
-          ${linha.entrada3 ? horaParaMin(linha.entrada3) : null},
-          ${linha.saida3 ? horaParaMin(linha.saida3) : null},
-          ${linha.ocorrencia ?? "NORMAL"}::"OcorrenciaPonto",
-          ${linha.observacao || null},
-          now(),
-          now()
-        )`;
-      });
-
-      await tx.$executeRaw`
-        INSERT INTO "RegistroPonto"
-          ("id", "funcionarioId", "data", "entrada1", "saida1", "entrada2", "saida2", "entrada3", "saida3", "ocorrencia", "observacao", "createdAt", "updatedAt")
-        VALUES ${Prisma.join(valores)}
-        ON CONFLICT ("funcionarioId", "data") DO UPDATE SET
-          "entrada1" = EXCLUDED."entrada1",
-          "saida1" = EXCLUDED."saida1",
-          "entrada2" = EXCLUDED."entrada2",
-          "saida2" = EXCLUDED."saida2",
-          "entrada3" = EXCLUDED."entrada3",
-          "saida3" = EXCLUDED."saida3",
-          "ocorrencia" = EXCLUDED."ocorrencia",
-          "observacao" = EXCLUDED."observacao",
-          "updatedAt" = now()
-      `;
-    }
-  });
+  // Upsert em lote (1 round-trip) em vez de um upsert por dia do mês (até 31
+  // round-trips sequenciais dentro da mesma transação) — era o principal
+  // motivo de "Salvar" na folha de ponto demorar visivelmente.
+  await salvarRegistrosDoMes(funcionarioId, mes, ano, linhas);
 
   return NextResponse.json({ ok: true });
 }
