@@ -45,6 +45,10 @@ function horaParaMinLocal(v: string): number | null {
   return hh * 60 + mm;
 }
 
+function ultimoDiaDoMes(mes: number, ano: number): number {
+  return new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+}
+
 export function PontoMesForm({
   funcionarioId,
   jornadaPrevistaMinutos,
@@ -122,8 +126,32 @@ export function PontoMesForm({
 
   const saldoFinal = calculados.length > 0 ? calculados[calculados.length - 1].saldoAcumulado : saldoInicial;
 
+  // NOVO: Grade completa mostra o mês inteiro (todo dia 1 a 28/30/31), não só os
+  // dias que já têm registro — antes um mês com 1 dia lançado só mostrava 1 linha,
+  // dava a impressão de que o resto "sumiu" (pedido de quem confere ponto/RH).
+  const todasAsDatas = useMemo(() => {
+    const total = ultimoDiaDoMes(mes, ano);
+    return Array.from({ length: total }, (_, i) => new Date(Date.UTC(ano, mes - 1, i + 1)).toISOString().slice(0, 10));
+  }, [mes, ano]);
+
   function atualizarLinha(i: number, campo: keyof Linha, valor: string) {
     setLinhas((prev) => prev.map((l, idx) => (idx === i ? { ...l, [campo]: valor } : l)));
+  }
+
+  // Dia do mês que ainda não tem linha em `linhas` (não foi lançado) — só vira
+  // uma linha de verdade (e só aí entra no PUT de salvar) quando a pessoa
+  // efetivamente digita algo nele. Até lá é só uma linha em branco na tela.
+  function atualizarLinhaPorData(data: string, campo: keyof Linha, valor: string) {
+    setLinhas((prev) => {
+      const idx = prev.findIndex((l) => l.data === data);
+      if (idx !== -1) return prev.map((l, i) => (i === idx ? { ...l, [campo]: valor } : l));
+      const nova = { ...linhaVazia(data), [campo]: valor };
+      return [...prev, nova].sort((a, b) => a.data.localeCompare(b.data));
+    });
+  }
+
+  function removerLinhaPorData(data: string) {
+    setLinhas((prev) => prev.filter((l) => l.data !== data));
   }
 
   function adicionarDia() {
@@ -400,32 +428,25 @@ export function PontoMesForm({
               </tr>
             </thead>
             <tbody>
-              {linhas.length === 0 && (
-                <tr>
-                  <td colSpan={16} className="px-3 py-8 text-center text-sm text-cda-text3">
-                    Nenhum dia lançado neste mês. Clique em &quot;Adicionar dia&quot; para começar.
-                  </td>
-                </tr>
-              )}
-              {linhas.map((l, i) => {
-                const dia = calculados.find((d) => d.data.toISOString().slice(0, 10) === l.data);
+              {/* Uma linha por dia do mês inteiro (não só os já lançados) — dia sem
+                  nada digitado é só visual até a pessoa começar a preencher; aí
+                  vira uma linha de verdade (atualizarLinhaPorData cria na hora). */}
+              {todasAsDatas.map((data) => {
+                const l = linhas.find((x) => x.data === data) ?? linhaVazia(data);
+                const lancado = linhas.some((x) => x.data === data);
+                const dia = calculados.find((d) => d.data.toISOString().slice(0, 10) === data);
+                const dataLabel = new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit", weekday: "short", timeZone: "UTC" })
+                  .format(new Date(`${data}T00:00:00.000Z`));
                 return (
-                  <tr key={i} className="border-b border-cda-border last:border-0">
-                    <td className="px-2 py-1.5">
-                      <input
-                        type="date"
-                        value={l.data}
-                        onChange={(e) => atualizarLinha(i, "data", e.target.value)}
-                        className="h-8 w-36 rounded-md border border-cda-border px-2 text-sm outline-none focus:border-cda-blue"
-                      />
-                    </td>
+                  <tr key={data} className={`border-b border-cda-border last:border-0 ${lancado ? "" : "bg-cda-bg/40"}`}>
+                    <td className="whitespace-nowrap px-3 py-1.5 text-sm capitalize text-cda-text2">{dataLabel}</td>
                     {(["entrada1", "saida1", "entrada2", "saida2", "entrada3", "saida3"] as const).map((campo) => (
                       <td key={campo} className="px-2 py-1.5">
                         <input
                           type="text"
                           placeholder="--:--"
                           value={l[campo]}
-                          onChange={(e) => atualizarLinha(i, campo, e.target.value)}
+                          onChange={(e) => atualizarLinhaPorData(data, campo, e.target.value)}
                           className="h-8 w-16 rounded-md border border-cda-border px-2 text-center text-sm outline-none focus:border-cda-blue"
                         />
                       </td>
@@ -433,7 +454,7 @@ export function PontoMesForm({
                     <td className="px-2 py-1.5">
                       <select
                         value={l.ocorrencia}
-                        onChange={(e) => atualizarLinha(i, "ocorrencia", e.target.value)}
+                        onChange={(e) => atualizarLinhaPorData(data, "ocorrencia", e.target.value)}
                         className="h-8 rounded-md border border-cda-border px-1.5 text-xs outline-none focus:border-cda-blue"
                       >
                         {OCORRENCIAS.map((o) => (
@@ -446,7 +467,7 @@ export function PontoMesForm({
                         type="text"
                         placeholder="reuniões, obs..."
                         value={l.observacao}
-                        onChange={(e) => atualizarLinha(i, "observacao", e.target.value)}
+                        onChange={(e) => atualizarLinhaPorData(data, "observacao", e.target.value)}
                         className="h-8 w-32 rounded-md border border-cda-border px-2 text-sm outline-none focus:border-cda-blue"
                       />
                     </td>
@@ -461,9 +482,11 @@ export function PontoMesForm({
                     <td className="px-3 py-1.5 text-sm text-cda-text2">{dia && dia.adicionalNoturno > 0 ? minParaHora(dia.adicionalNoturno) : "—"}</td>
                     <td className="px-3 py-1.5 text-sm font-medium text-cda-text">{dia ? minParaHora(dia.saldoAcumulado) : "—"}</td>
                     <td className="px-2 py-1.5">
-                      <button onClick={() => removerLinha(i)} className="text-cda-text3 hover:text-cda-red">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
+                      {lancado && (
+                        <button onClick={() => removerLinhaPorData(data)} className="text-cda-text3 hover:text-cda-red">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
@@ -475,18 +498,7 @@ export function PontoMesForm({
       )}
 
       <div className="flex items-center justify-between">
-        {modo === "grade" ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={adicionarDia}
-            className="border-cda-blue text-cda-blue hover:bg-cda-blue/5"
-          >
-            <Plus className="h-4 w-4" /> Adicionar dia
-          </Button>
-        ) : (
-          <span />
-        )}
+        <span />
         <div className="flex items-center gap-3">
           {mensagem && <span className="text-xs text-cda-text2">{mensagem}</span>}
           <Button size="sm" onClick={salvar} loading={salvando}>
