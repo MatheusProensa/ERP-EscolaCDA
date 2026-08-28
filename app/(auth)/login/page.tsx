@@ -27,7 +27,7 @@ export default function LoginPage() {
 
         <div className="relative flex flex-col gap-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-cda.png" alt="Escola CDA" className="h-auto w-64" />
+          <img src="/logo-cda-15anos.webp" alt="Escola CDA · 15 anos" className="h-auto w-64" />
           {/* Arte da campanha 2027 já traz "Escola CDA" no topo dela também — corta
               essa parte (o logo dos 15 anos ali em cima já cobre isso) e mostra só
               o "Fundamental para aprender e crescer", pra não repetir o mesmo
@@ -36,12 +36,12 @@ export default function LoginPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/campanha-fundamental.png" alt="Fundamental para aprender e crescer" className="-mt-[57px] w-64" />
           </div>
-          <p className="max-w-sm text-[15px] leading-relaxed text-white/70">
+          <p className="max-w-sm text-[15px] leading-relaxed text-white/80">
             O painel de gestão que organiza matrículas, turmas, ponto e comunicação da escola inteira num só lugar.
           </p>
         </div>
 
-        <p className="relative text-xs text-white/40">Painel de gestão · uso interno</p>
+        <p className="relative text-xs text-white/50">Painel de gestão · uso interno</p>
       </div>
 
       {/* Formulário */}
@@ -49,7 +49,7 @@ export default function LoginPage() {
         <div className="w-full max-w-sm">
           <div className="mb-8 flex flex-col items-center gap-3 text-center lg:hidden">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-cda.png" alt="Escola CDA" className="h-auto w-44" />
+            <img src="/logo-cda-15anos.webp" alt="Escola CDA · 15 anos" className="h-auto w-44" />
           </div>
 
           <div className="rounded-[14px] bg-cda-surface p-8 shadow-2xl shadow-black/20">
