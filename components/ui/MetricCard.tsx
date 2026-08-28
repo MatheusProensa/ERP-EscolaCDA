@@ -20,18 +20,37 @@ function Sparkline({ points, color }: { points: number[]; color: string }) {
   );
 }
 
-export type MetricTone = "neutral" | "success" | "warning" | "critical" | "danger";
+export type MetricTone =
+  | "neutral"
+  | "success"
+  | "warning"
+  | "critical"
+  | "danger"
+  | "cat1"
+  | "cat2"
+  | "cat3"
+  | "cat4"
+  | "cat5"
+  | "cat6";
 
 // NOVO (handoff de design, etapa 2.1): antes cada card recebia uma cor decorativa
 // por posição na grade (1º azul, 2º âmbar...) sem relação com o dado — e coincidia
-// com as cores que já significam "ok"/"problema" nos badges. Agora a cor só aparece
-// quando descreve de verdade um estado; o padrão é neutro.
+// com as cores que já significam "ok"/"problema" nos badges. Agora status (verde/
+// âmbar/vermelho) só aparece quando descreve de verdade um estado. As cores cat1-6
+// são categóricas (mesma paleta do Badge/avatares) — dão personalidade de volta pra
+// cards que não representam estado nenhum, sem reintroduzir a confusão com "ok/problema".
 const TONE_COLOR: Record<MetricTone, string> = {
   neutral: "var(--icon-neutral)",
   success: "var(--status-success)",
   warning: "var(--status-warning)",
   critical: "var(--status-critical)",
   danger: "var(--status-danger)",
+  cat1: "var(--cat-1-dot)",
+  cat2: "var(--cat-2-dot)",
+  cat3: "var(--cat-3-dot)",
+  cat4: "var(--cat-4-dot)",
+  cat5: "var(--cat-5-dot)",
+  cat6: "var(--cat-6-dot)",
 };
 
 export function MetricCard({
@@ -43,6 +62,7 @@ export function MetricCard({
   badge,
   badgeVariant = "gray",
   trend,
+  href,
 }: {
   icon: LucideIcon;
   tone?: MetricTone;
@@ -53,10 +73,14 @@ export function MetricCard({
   badgeVariant?: BadgeVariant;
   /** NOVO: até ~7 pontos para desenhar um sparkline sob o valor. */
   trend?: number[];
+  /** Card inteiro vira link — ex.: "Contratos pendentes" leva direto pra
+   * lista já filtrada, em vez de só informar o número. */
+  href?: string;
 }) {
   const cor = TONE_COLOR[tone];
   return (
     <Card
+      href={href}
       className="group relative flex flex-col items-center p-5 text-center transition-[transform,border-color,box-shadow] duration-500 ease-out hover:scale-[1.015] hover:[border-color:var(--metric-border)] hover:shadow-[0_4px_16px_-4px_var(--metric-border)]"
       style={{ ["--metric-border" as string]: `color-mix(in oklch, ${cor} 45%, transparent)` }}
     >

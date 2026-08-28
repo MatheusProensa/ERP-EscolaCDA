@@ -40,9 +40,9 @@ export async function DashboardAdmin({ nome }: { nome: string }) {
           exigiria escolher destinatário antes, não é uma ação de 1 clique só. */}
       <AtalhosRapidos
         itens={[
-          { label: "Chat", href: "/chat", icon: MessageCircle },
-          { label: "Novo aluno", href: "/alunos/novo", icon: UserPlus },
-          { label: "Novo funcionário", href: "/funcionarios/novo", icon: UserCog },
+          { label: "Chat", href: "/chat", icon: MessageCircle, tone: "cat2" },
+          { label: "Novo aluno", href: "/alunos/novo", icon: UserPlus, tone: "cat1" },
+          { label: "Novo funcionário", href: "/funcionarios/novo", icon: UserCog, tone: "cat5" },
         ]}
       >
         <AtalhoNovoAviso />

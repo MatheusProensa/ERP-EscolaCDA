@@ -35,17 +35,17 @@ export async function DashboardPedagogico({ nome }: { nome: string }) {
 
       <AtalhosRapidos
         itens={[
-          { label: "Chat", href: "/chat", icon: MessageCircle },
-          { label: "Mural", href: "/mural", icon: Megaphone },
-          { label: "Acadêmico", href: "/academico", icon: GraduationCap },
-          { label: "Alunos", href: "/alunos", icon: Users },
+          { label: "Chat", href: "/chat", icon: MessageCircle, tone: "cat2" },
+          { label: "Mural", href: "/mural", icon: Megaphone, tone: "cat4" },
+          { label: "Acadêmico", href: "/academico", icon: GraduationCap, tone: "cat3" },
+          { label: "Alunos", href: "/alunos", icon: Users, tone: "cat1" },
         ]}
       />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricCard icon={Users} tone="neutral" value={totalAlunos} label="Total de alunos" subtext="Matrículas ativas" />
-        <MetricCard icon={GraduationCap} tone="neutral" value={turmasAtivas} label="Turmas ativas" subtext="Ano letivo atual" />
-        <MetricCard icon={Megaphone} tone="neutral" value={avisosFixados} label="Avisos fixados" subtext="No mural" />
+        <MetricCard icon={Users} tone="cat1" value={totalAlunos} label="Total de alunos" subtext="Matrículas ativas" />
+        <MetricCard icon={GraduationCap} tone="cat3" value={turmasAtivas} label="Turmas ativas" subtext="Ano letivo atual" />
+        <MetricCard icon={Megaphone} tone="cat4" value={avisosFixados} label="Avisos fixados" subtext="No mural" />
       </div>
 
       <div className="mb-5">

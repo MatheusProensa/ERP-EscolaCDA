@@ -33,11 +33,11 @@ export default async function AcademicoPage() {
       />
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
-        <MetricCard icon={School} tone="neutral" value={turmasRaw.length} label="Turmas ativas" />
-        <MetricCard icon={Users} tone="neutral" value={totalAlunos} label="Alunos matriculados" />
+        <MetricCard icon={School} tone="cat3" value={turmasRaw.length} label="Turmas ativas" />
+        <MetricCard icon={Users} tone="cat1" value={totalAlunos} label="Alunos matriculados" />
         <MetricCard
           icon={GraduationCap}
-          tone="neutral"
+          tone="cat2"
           value={turmasRaw.length > 0 ? Math.round(totalAlunos / turmasRaw.length) : 0}
           label="Média de alunos/turma"
         />

@@ -6,10 +6,10 @@ import { Megaphone } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { NovoAvisoForm } from "@/components/modules/mural/NovoAvisoForm";
 
-/** Atalho "Novo aviso" do Dashboard — mesmo visual dos chips de AtalhosRapidos
- * (chip neutro, handoff de design etapa 2.3), mas abre o modal de criação
- * direto em vez de só navegar pro Mural (era exatamente o mesmo link que já
- * existe na sidebar, sem ganho nenhum). */
+/** Atalho "Novo aviso" do Dashboard — mesmo visual (e mesma cor categórica de
+ * "Mural") dos chips de AtalhosRapidos, mas abre o modal de criação direto em
+ * vez de só navegar pro Mural (era exatamente o mesmo link que já existe na
+ * sidebar, sem ganho nenhum). */
 export function AtalhoNovoAviso() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -20,8 +20,8 @@ export function AtalhoNovoAviso() {
         onClick={() => setOpen(true)}
         className="flex items-center justify-center gap-2.5 rounded-xl border border-cda-border bg-white px-4 py-3 text-sm font-medium text-cda-text shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md sm:justify-start"
       >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-icon-neutral-bg">
-          <Megaphone className="h-4 w-4 text-icon-neutral" strokeWidth={2.25} />
+        <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ backgroundColor: "var(--cat-4-bg)" }}>
+          <Megaphone className="h-4 w-4" style={{ color: "var(--cat-4-text)" }} strokeWidth={2.25} />
         </span>
         Novo aviso
       </button>

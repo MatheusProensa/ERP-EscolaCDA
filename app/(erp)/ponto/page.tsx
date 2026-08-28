@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { GerenciarParticipantesModal } from "@/components/modules/ponto/GerenciarParticipantesModal";
+import { JornadaPrevistaCell } from "@/components/modules/ponto/JornadaPrevistaCell";
 import { calcularMes, minParaHora, type RegistroPontoDia } from "@/lib/ponto";
 
 const MESES = [
@@ -112,7 +113,9 @@ export default async function PontoPage({
                   </Link>
                 </Td>
                 <Td>{f.cargo}</Td>
-                <Td>{f.jornadaPrevistaMinutos ? minParaHora(f.jornadaPrevistaMinutos) : "—"}</Td>
+                <Td>
+                  <JornadaPrevistaCell funcionarioId={f.id} minutosIniciais={f.jornadaPrevistaMinutos} />
+                </Td>
                 <Td>{registrosNoMes} dia(s)</Td>
                 <Td>
                   <Badge variant={saldoAtual < 0 ? "red" : saldoAtual > 0 ? "green" : "gray"}>

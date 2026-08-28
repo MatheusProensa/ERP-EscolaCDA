@@ -17,10 +17,11 @@ import type { SituacaoMatricula } from "@prisma/client";
 export default async function AlunosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ turma?: string; situacao?: string; busca?: string; censo?: string }>;
+  searchParams: Promise<{ turma?: string; situacao?: string; busca?: string; censo?: string; contrato?: string }>;
 }) {
-  const { turma, situacao, busca, censo } = await searchParams;
+  const { turma, situacao, busca, censo, contrato } = await searchParams;
   const censoIncompleto = censo === "incompleto";
+  const contratoPendente = contrato === "pendente";
 
   const totalListaEspera = await prisma.listaEspera.count();
   const anoLetivo = await getAnoLetivoAtivo();
@@ -31,6 +32,7 @@ export default async function AlunosPage({
       anoLetivoId: anoLetivo?.id,
       turmaId: turma || undefined,
       situacao: (situacao as SituacaoMatricula) || undefined,
+      contrato: contratoPendente ? { is: { assinado: false } } : undefined,
       aluno: {
         AND: [
           busca
@@ -73,7 +75,7 @@ export default async function AlunosPage({
         subtitle={`${matriculas.length} aluno(s) encontrado(s)`}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <ExportButtons href="/api/relatorios/alunos" label="" params={{ turma, situacao, busca, censo }} />
+            <ExportButtons href="/api/relatorios/alunos" label="" params={{ turma, situacao, busca, censo, contrato }} />
             <Button href="/alunos/importar" variant="outline">
               <FileSpreadsheet className="h-4 w-4" />
               Importar planilha
@@ -88,9 +90,10 @@ export default async function AlunosPage({
 
       <AcademicoTabs active="alunos" totalAlunos={matriculas.length} totalListaEspera={totalListaEspera} />
 
-      {censoIncompleto && (
-        <div className="mb-5 flex items-center gap-2">
-          <Badge variant="amber">Filtro: dados incompletos para o censo</Badge>
+      {(censoIncompleto || contratoPendente) && (
+        <div className="mb-5 flex flex-wrap items-center gap-2">
+          {censoIncompleto && <Badge variant="amber">Filtro: dados incompletos para o censo</Badge>}
+          {contratoPendente && <Badge variant="red">Filtro: contrato aguardando assinatura</Badge>}
           <Link href="/alunos" className="text-sm font-medium text-cda-blue hover:underline">
             Limpar filtro
           </Link>
@@ -128,6 +131,16 @@ export default async function AlunosPage({
               className="h-4 w-4 rounded border-cda-border"
             />
             Só alunos com dados incompletos pro censo
+          </label>
+          <label className="flex items-center gap-2 text-sm text-cda-text2 sm:col-span-4">
+            <input
+              type="checkbox"
+              name="contrato"
+              value="pendente"
+              defaultChecked={contratoPendente}
+              className="h-4 w-4 rounded border-cda-border"
+            />
+            Só alunos com contrato aguardando assinatura
           </label>
         </form>
       </Card>

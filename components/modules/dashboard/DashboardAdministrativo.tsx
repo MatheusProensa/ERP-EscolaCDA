@@ -30,15 +30,15 @@ export async function DashboardAdministrativo({ nome }: { nome: string }) {
 
       <AtalhosRapidos
         itens={[
-          { label: "Chat", href: "/chat", icon: MessageCircle },
-          { label: "Mural", href: "/mural", icon: Megaphone },
-          { label: "Estoque", href: "/estoque", icon: Package },
-          { label: "Chaves", href: "/chaves", icon: KeyRound },
+          { label: "Chat", href: "/chat", icon: MessageCircle, tone: "cat2" },
+          { label: "Mural", href: "/mural", icon: Megaphone, tone: "cat4" },
+          { label: "Estoque", href: "/estoque", icon: Package, tone: "cat6" },
+          { label: "Chaves", href: "/chaves", icon: KeyRound, tone: "cat3" },
         ]}
       />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricCard icon={UserCog} tone="neutral" value={funcionariosAtivos} label="Funcionários ativos" />
+        <MetricCard icon={UserCog} tone="cat5" value={funcionariosAtivos} label="Funcionários ativos" />
         <MetricCard
           icon={TriangleAlert}
           tone={criticos.length > 0 ? "danger" : "neutral"}
@@ -47,7 +47,7 @@ export async function DashboardAdministrativo({ nome }: { nome: string }) {
           badge={criticos.length > 0 ? "Atenção" : "Em dia"}
           badgeVariant={criticos.length > 0 ? "red" : "green"}
         />
-        <MetricCard icon={KeyRound} tone="neutral" value={chavesEmprestadas} label="Chaves emprestadas" subtext="Ainda não devolvidas" />
+        <MetricCard icon={KeyRound} tone="cat6" value={chavesEmprestadas} label="Chaves emprestadas" subtext="Ainda não devolvidas" />
       </div>
 
       <Card title="Estoque baixo">
