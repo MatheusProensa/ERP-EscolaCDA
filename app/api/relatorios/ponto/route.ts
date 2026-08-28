@@ -28,6 +28,10 @@ function fmtData(d: Date): string {
   return `${String(d.getUTCDate()).padStart(2, "0")}/${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
+function ultimoDiaDoMes(mes: number, ano: number): number {
+  return new Date(Date.UTC(ano, mes, 0)).getUTCDate();
+}
+
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -86,6 +90,32 @@ export async function GET(request: NextRequest) {
       "Banco de Horas": minParaHora(d.saldoAcumulado),
     }));
 
+    // No PDF (só nele — o CSV continua só com dia lançado, é dado pra planilha)
+    // o mês inteiro aparece, um dia por linha, mesmo os dias sem nada lançado —
+    // pedido de quem gera a folha pra imprimir/conferir: precisa ver o mês
+    // completo, não só os dias com registro.
+    const porData = new Map(linhas.map((l) => [l.Data, l]));
+    const linhasCompletas = [];
+    for (let dia = 1; dia <= ultimoDiaDoMes(mes, ano); dia++) {
+      const chave = fmtData(new Date(Date.UTC(ano, mes - 1, dia)));
+      linhasCompletas.push(
+        porData.get(chave) ?? {
+          Data: chave,
+          "Entrada 1": "—",
+          "Saída 1": "—",
+          "Entrada 2": "—",
+          "Saída 2": "—",
+          Ocorrência: "—",
+          Previstas: "—",
+          Trabalhadas: "—",
+          "Atraso/Falta": "—",
+          "Hora Extra": "—",
+          "Ad. Noturno": "—",
+          "Banco de Horas": "—",
+        }
+      );
+    }
+
     secoes.push({
       titulo: f.nome,
       subtitulo: `${f.cargo} · ${nomeMes}/${ano} · Saldo Banco de Horas: ${minParaHora(dias[dias.length - 1]?.saldoAcumulado ?? saldoInicial)}`,
@@ -103,7 +133,7 @@ export async function GET(request: NextRequest) {
         { chave: "Ad. Noturno", label: "Ad. Noturno", largura: 74 },
         { chave: "Banco de Horas", label: "Banco de Horas", largura: 92 },
       ],
-      linhas,
+      linhas: linhasCompletas,
     });
 
     for (const linha of linhas) {
