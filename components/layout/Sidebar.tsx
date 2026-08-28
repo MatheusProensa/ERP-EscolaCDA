@@ -137,9 +137,11 @@ export function Sidebar({
       >
         <div className="flex items-center justify-between gap-2 px-5 py-5">
           {/* Logo de verdade em vez do texto "CDA" solto + badge "ERP" — não
-              era fiel ao logo real da escola. */}
+              era fiel ao logo real da escola. Usa o logo-cda.png (não o
+              "semborda") porque esse tem bastante espaço vazio ao redor —
+              numa altura pequena a marca em si ficava minúscula. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-cda-15anos.webp" alt="Escola CDA" className="h-8 w-auto" />
+          <img src="/logo-cda.png" alt="Escola CDA" className="h-9 w-auto" />
           <button onClick={onClose} aria-label="Fechar menu" className="text-white/60 hover:text-white lg:hidden">
             <X className="h-5 w-5" />
           </button>
