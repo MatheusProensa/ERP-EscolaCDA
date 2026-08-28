@@ -97,7 +97,13 @@ export function GerarContratoModal({
 
   return (
     <>
-      <Button onClick={() => setOpen(true)} size="sm" variant={temContrato ? "outline" : undefined}>
+      <Button
+        onClick={() => setOpen(true)}
+        size="sm"
+        variant={temContrato ? "outline" : undefined}
+        title={temContrato ? "Gera um novo PDF e substitui o arquivo atual do contrato" : undefined}
+        className={temContrato ? "border-cda-amber/40 text-cda-amber hover:bg-cda-amber/5" : undefined}
+      >
         <FileText className="h-3.5 w-3.5" />
         {temContrato ? "Gerar novamente" : "Gerar contrato"}
       </Button>

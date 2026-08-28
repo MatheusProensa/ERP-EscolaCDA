@@ -141,11 +141,17 @@ export function ContratoSecao({
             )}
           </div>
 
+          {/* NOVO: antes todo botão secundário era branco/outline igual — dava pra
+              confundir "Baixar PDF" com "Gerar novamente" (que troca o arquivo) só
+              olhando. Agora cada grupo tem uma cor: cinza = ação segura/leitura,
+              azul = acompanhamento, roxo = compartilhar, âmbar = substitui o
+              arquivo atual (mais consequente), vermelho = apaga de vez. */}
           <div className="flex flex-wrap items-center gap-2">
             {contrato.arquivo && (
               <a
                 href={contrato.arquivo}
                 download={`contrato-${turmaNome}.pdf`}
+                title="Baixa o PDF atual do contrato, sem mudar nada"
                 className="flex h-10 items-center gap-1.5 rounded-lg border border-cda-border bg-white px-4 text-sm font-medium text-cda-text hover:bg-cda-bg"
               >
                 <Download className="h-4 w-4" />
@@ -162,13 +168,27 @@ export function ContratoSecao({
               </Button>
             )}
             {!contrato.dataEnvio && (
-              <Button onClick={marcarEnviado} loading={loading} size="sm" variant="outline">
+              <Button
+                onClick={marcarEnviado}
+                loading={loading}
+                size="sm"
+                variant="outline"
+                title="Só marca a data de envio — não muda o status de assinatura"
+                className="border-cda-blue/40 text-cda-blue hover:bg-cda-blue/5"
+              >
                 <Send className="h-3.5 w-3.5" />
                 Marcar como enviado
               </Button>
             )}
             {!contrato.assinado && (
-              <Button onClick={copiarLinkAssinatura} loading={loading} size="sm" variant="outline">
+              <Button
+                onClick={copiarLinkAssinatura}
+                loading={loading}
+                size="sm"
+                variant="outline"
+                title="Copia o link público de assinatura pra mandar pro responsável"
+                className="border-cda-purple/40 text-cda-purple hover:bg-cda-purple/5"
+              >
                 <Link2 className="h-3.5 w-3.5" />
                 {linkCopiado ? "Link copiado!" : "Copiar link de assinatura"}
               </Button>
@@ -178,11 +198,12 @@ export function ContratoSecao({
             <button
               onClick={excluirContrato}
               disabled={loading}
-              title="Excluir contrato"
+              title="Excluir contrato — apaga de vez, não dá pra desfazer"
               aria-label="Excluir contrato"
-              className="text-cda-text3 hover:text-cda-red disabled:opacity-50"
+              className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-cda-red hover:bg-cda-red/5 disabled:opacity-50"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-3.5 w-3.5" />
+              Excluir contrato
             </button>
           </div>
         </div>
