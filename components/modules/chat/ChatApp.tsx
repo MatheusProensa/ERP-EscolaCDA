@@ -505,7 +505,11 @@ export function ChatApp({
               onClick={() => selecionar(c.id)}
               onMouseEnter={() => prefetchConversa(c.id)}
               onTouchStart={() => prefetchConversa(c.id)}
-              className={`flex w-full items-center gap-3 border-b border-cda-border px-4 py-3 text-left transition-colors ${
+              // touch-manipulation: dentro de uma lista com scroll, o celular às vezes
+              // fica em dúvida se o toque é rolagem ou clique — sem isso, o primeiro
+              // toque só "arma" a decisão e é descartado, precisando de um segundo
+              // toque pra realmente abrir a conversa. Isso tira a ambiguidade.
+              className={`flex w-full touch-manipulation items-center gap-3 border-b border-cda-border px-4 py-3 text-left transition-colors ${
                 selecionado === c.id
                   ? "border-l-4 border-l-cda-blue bg-cda-blue/10"
                   : "border-l-4 border-l-transparent hover:bg-cda-bg"
