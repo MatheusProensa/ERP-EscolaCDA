@@ -424,23 +424,10 @@ async function main() {
   }
 
   console.log("Criando funcionários...");
-  const emailsUsados = new Set<string>();
-  function gerarEmail(nome: string): string {
-    const base = nome
-      .split(" ")[0]
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[^a-z]/g, "");
-    let email = `${base}@escolacda.com.br`;
-    let sufixo = 2;
-    while (emailsUsados.has(email)) {
-      email = `${base}${sufixo}@escolacda.com.br`;
-      sufixo++;
-    }
-    emailsUsados.add(email);
-    return email;
-  }
-
+  // Email fictício (nome@escolacda.com.br) foi removido daqui — gerava um
+  // endereço que parecia real mas não existia, e ficava exibido no perfil de
+  // cada funcionário como se fosse o contato de verdade. Fica em branco até
+  // alguém preencher o email real (ou nunca, se a pessoa não usa).
   for (let i = 0; i < NOMES_FUNCIONARIOS.length; i++) {
     const f = NOMES_FUNCIONARIOS[i];
     await prisma.funcionario.create({
@@ -450,7 +437,7 @@ async function main() {
         cargo: f.cargo,
         setor: f.setor,
         telefone: null,
-        email: gerarEmail(f.nome),
+        email: null,
         admissao: ADMISSAO_REAL[f.nome] ? new Date(ADMISSAO_REAL[f.nome]) : new Date(ANO - (1 + (i % 5)), i % 12, 1),
         ativo: true,
       },
