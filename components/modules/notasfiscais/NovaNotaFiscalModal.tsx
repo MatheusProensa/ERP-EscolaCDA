@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Receipt } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
+import { Combobox } from "@/components/ui/Combobox";
 import { Button } from "@/components/ui/Button";
 
 export function NovaNotaFiscalModal({ alunos }: { alunos: { id: string; nome: string }[] }) {
@@ -14,7 +14,7 @@ export function NovaNotaFiscalModal({ alunos }: { alunos: { id: string; nome: st
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [alunoId, setAlunoId] = useState("");
+  const [alunoId, setAlunoId] = useState<string | null>(null);
   const [competencia, setCompetencia] = useState(() => new Date().toISOString().slice(0, 7));
   const [valorServico, setValorServico] = useState("");
   const [discriminacao, setDiscriminacao] = useState("");
@@ -43,7 +43,7 @@ export function NovaNotaFiscalModal({ alunos }: { alunos: { id: string; nome: st
       return;
     }
     setOpen(false);
-    setAlunoId("");
+    setAlunoId(null);
     setValorServico("");
     setDiscriminacao("");
     router.refresh();
@@ -61,14 +61,17 @@ export function NovaNotaFiscalModal({ alunos }: { alunos: { id: string; nome: st
           <p className="text-sm text-cda-text2">
             Fica registrada mesmo se a emissão de verdade ainda não estiver ligada — dá pra tentar de novo depois.
           </p>
-          <Select label="Aluno" value={alunoId} onChange={(e) => setAlunoId(e.target.value)}>
-            <option value="">Selecione o aluno</option>
-            {alunos.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.nome}
-              </option>
-            ))}
-          </Select>
+          <Combobox
+            label="Aluno"
+            items={alunos}
+            value={alunoId}
+            onChange={setAlunoId}
+            getId={(a) => a.id}
+            getLabel={(a) => a.nome}
+            getAvatar={(a) => ({ nome: a.nome })}
+            placeholder="Selecione o aluno"
+            countNoun="alunos"
+          />
           <Input
             label="Competência (mês de referência)"
             type="month"

@@ -7,9 +7,9 @@ import type { Chave, EmprestimoChave } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { Combobox } from "@/components/ui/Combobox";
 import { IconButton } from "@/components/ui/IconButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { showToast } from "@/components/ui/Toast";
@@ -152,21 +152,18 @@ export function ChaveCard({
 
       <Modal open={open} onClose={() => setOpen(false)} title={`Retirar chave — ${chave.sala}`}>
         <form onSubmit={retirar} className="flex flex-col gap-4">
-          <Select
+          <Combobox
             label="Responsável pela retirada"
-            value={funcionarioId}
-            onChange={(e) => setFuncionarioId(e.target.value)}
+            items={funcionarios}
+            value={funcionarioId || null}
+            onChange={(id) => setFuncionarioId(id ?? "")}
+            getId={(f) => f.id}
+            getLabel={(f) => f.nome}
+            getAvatar={(f) => ({ nome: f.nome })}
+            placeholder="Selecione o funcionário"
+            countNoun="funcionários"
             required
-          >
-            <option value="" disabled>
-              Selecione o funcionário
-            </option>
-            {funcionarios.map((f) => (
-              <option key={f.id} value={f.id}>
-                {f.nome}
-              </option>
-            ))}
-          </Select>
+          />
           {error && <p className="text-sm text-cda-red">{error}</p>}
           <div className="flex justify-end gap-3">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>

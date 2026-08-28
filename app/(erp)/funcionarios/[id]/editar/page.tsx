@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { EditarFuncionarioForm } from "@/components/modules/funcionarios/EditarFuncionarioForm";
+import { FuncionarioForm } from "@/components/modules/funcionarios/FuncionarioForm";
 
 export default async function EditarFuncionarioPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -19,7 +19,7 @@ export default async function EditarFuncionarioPage({ params }: { params: Promis
           { label: "Editar" },
         ]}
       />
-      <EditarFuncionarioForm funcionario={funcionario} />
+      <FuncionarioForm funcionario={funcionario} />
     </div>
   );
 }

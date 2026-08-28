@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { UserPlus } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
-import { Select } from "@/components/ui/Select";
+import { Combobox } from "@/components/ui/Combobox";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
@@ -19,13 +19,14 @@ export function MatricularNaTurmaModal({
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [alunoId, setAlunoId] = useState<string | null>(null);
 
   async function matricular(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (!alunoId) return;
     setError("");
     setLoading(true);
     const fd = new FormData(e.currentTarget);
-    const alunoId = fd.get("alunoId");
     const res = await fetch(`/api/alunos/${alunoId}/matriculas`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -41,6 +42,7 @@ export function MatricularNaTurmaModal({
       return;
     }
     setOpen(false);
+    setAlunoId(null);
     router.refresh();
   }
 
@@ -55,16 +57,18 @@ export function MatricularNaTurmaModal({
 
       <Modal open={open} onClose={() => setOpen(false)} title="Matricular aluno nesta turma">
         <form onSubmit={matricular} className="flex flex-col gap-4">
-          <Select label="Aluno" name="alunoId" required defaultValue="">
-            <option value="" disabled>
-              Selecione um aluno já cadastrado
-            </option>
-            {alunosDisponiveis.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.nome}
-              </option>
-            ))}
-          </Select>
+          <Combobox
+            label="Aluno"
+            items={alunosDisponiveis}
+            value={alunoId}
+            onChange={setAlunoId}
+            getId={(a) => a.id}
+            getLabel={(a) => a.nome}
+            getAvatar={(a) => ({ nome: a.nome })}
+            placeholder="Selecione um aluno já cadastrado"
+            countNoun="alunos"
+            required
+          />
           <div className="flex flex-col gap-1">
             <Input label="Valor da mensalidade" name="valorMensalidade" type="number" step="0.01" min="0" defaultValue={450} />
             <p className="text-xs text-cda-text3">Só pra constar no contrato — a cobrança é feita fora do sistema.</p>
@@ -74,7 +78,7 @@ export function MatricularNaTurmaModal({
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
-            <Button type="submit" loading={loading}>
+            <Button type="submit" loading={loading} disabled={!alunoId}>
               Matricular
             </Button>
           </div>
