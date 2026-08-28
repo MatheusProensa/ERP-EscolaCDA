@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Camera, X } from "lucide-react";
+import { Button } from "./Button";
 import { corAvatar, iniciais } from "@/lib/utils";
 
 const TAMANHO_MAXIMO = 3 * 1024 * 1024; // 3MB — limite do arquivo ORIGINAL selecionado
@@ -88,23 +89,13 @@ export function PhotoUpload({
 
       <div className="flex flex-col gap-1.5">
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
-          >
-            <Camera className="h-3.5 w-3.5" />
+          <Button type="button" variant="outline" size="sm" icon={Camera} onClick={() => inputRef.current?.click()}>
             {value ? "Trocar foto" : "Adicionar foto"}
-          </button>
+          </Button>
           {value && (
-            <button
-              type="button"
-              onClick={() => onChange(null)}
-              className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-red hover:bg-cda-bg"
-            >
-              <X className="h-3.5 w-3.5" />
+            <Button type="button" variant="ghost" size="sm" icon={X} className="text-status-danger" onClick={() => onChange(null)}>
               Remover
-            </button>
+            </Button>
           )}
         </div>
         <span className="text-xs text-cda-text3">JPG ou PNG, até 3MB.</span>

@@ -6,6 +6,8 @@ import { Pin, PinOff, Trash2, Pencil } from "lucide-react";
 import type { MuralAviso } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { IconButton } from "@/components/ui/IconButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatarDataHora } from "@/lib/utils";
 import { ConfirmarLeituraButton } from "@/components/modules/dashboard/ConfirmarLeituraButton";
 import { EditarAvisoModal } from "./EditarAvisoModal";
@@ -24,6 +26,7 @@ export function AvisoCard({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [erro, setErro] = useState("");
 
   async function alternarFixado() {
@@ -38,7 +41,6 @@ export function AvisoCard({
   }
 
   async function excluir() {
-    if (!confirm("Excluir este aviso?")) return;
     setLoading(true);
     const res = await fetch(`/api/mural/${aviso.id}`, { method: "DELETE" });
     setLoading(false);
@@ -47,44 +49,37 @@ export function AvisoCard({
       setErro(data.error ?? "Não foi possível excluir.");
       return;
     }
+    setConfirmandoExclusao(false);
     router.refresh();
   }
 
   return (
-    <Card className={aviso.fixado ? "border-cda-yellow/60 p-5" : "p-5"}>
+    <Card className="p-5" emphasis={aviso.fixado ? "brand" : undefined}>
       <div className="mb-2 flex items-start justify-between gap-3">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-cda-text">{aviso.titulo}</h3>
-          {aviso.fixado && <Badge variant="amber">Fixado</Badge>}
+          {aviso.fixado && <Badge variant="warning">Fixado</Badge>}
         </div>
         <div className="flex shrink-0 items-center gap-1">
           {podeGerenciar && (
-            <button
-              onClick={() => setEditando(true)}
-              disabled={loading}
-              title="Editar"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg disabled:opacity-50"
-            >
-              <Pencil className="h-4 w-4" />
-            </button>
+            <IconButton icon={Pencil} label="Editar aviso" size="sm" disabled={loading} onClick={() => setEditando(true)} />
           )}
-          <button
-            onClick={alternarFixado}
+          <IconButton
+            icon={aviso.fixado ? PinOff : Pin}
+            label={aviso.fixado ? "Desafixar aviso" : "Fixar aviso"}
+            size="sm"
             disabled={loading}
-            title={aviso.fixado ? "Desafixar" : "Fixar"}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg disabled:opacity-50"
-          >
-            {aviso.fixado ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
-          </button>
+            onClick={alternarFixado}
+          />
           {podeGerenciar && (
-            <button
-              onClick={excluir}
+            <IconButton
+              icon={Trash2}
+              label="Excluir aviso"
+              variant="danger"
+              size="sm"
               disabled={loading}
-              title="Excluir"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
+              onClick={() => setConfirmandoExclusao(true)}
+            />
           )}
         </div>
       </div>
@@ -102,6 +97,15 @@ export function AvisoCard({
       )}
 
       <EditarAvisoModal aviso={editando ? aviso : null} onClose={() => setEditando(false)} />
+
+      <ConfirmDialog
+        open={confirmandoExclusao}
+        onClose={() => setConfirmandoExclusao(false)}
+        onConfirm={excluir}
+        title="Excluir este aviso?"
+        confirmLabel="Excluir aviso"
+        loading={loading}
+      />
     </Card>
   );
 }

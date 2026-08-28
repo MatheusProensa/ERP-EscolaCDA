@@ -98,14 +98,15 @@ export function cn(...classes: (string | false | null | undefined)[]): string {
   return classes.filter(Boolean).join(" ");
 }
 
+// Categórica (handoff de design, etapa 3.7): 6 tokens em vez de 7 hex soltos —
+// sai o vermelho, ninguém deve ter avatar "de erro" (cor exclusiva de estado).
 const CORES_AVATAR = [
-  "#1A6FD8",
-  "#16A34A",
-  "#D97706",
-  "#DC2626",
-  "#7C3AED",
-  "#0D9488",
-  "#DB2777",
+  "var(--cat-1-dot)",
+  "var(--cat-2-dot)",
+  "var(--cat-3-dot)",
+  "var(--cat-4-dot)",
+  "var(--cat-5-dot)",
+  "var(--cat-6-dot)",
 ];
 
 export function corAvatar(nome: string): string {

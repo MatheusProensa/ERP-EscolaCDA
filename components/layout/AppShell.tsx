@@ -38,8 +38,12 @@ export function AppShell({
           <Topbar name={name} role={role} foto={foto} onMenuClick={() => setMenuAberto(true)} />
           <main className="flex-1 overflow-y-auto bg-cda-bg p-4 sm:p-5">
             {/* Troca de página é corte seco (sem fade) — a barra de progresso acima
-                (NavigationProgress) já dá o feedback imediato no clique. */}
-            <ErrorBoundary key={pathname}>{children}</ErrorBoundary>
+                (NavigationProgress) já dá o feedback imediato no clique.
+                Largura máxima (handoff de design, etapa 4.8): em monitor grande a
+                tabela de alunos esticava além de 1800px sem ganho nenhum de leitura. */}
+            <div className="mx-auto max-w-[1360px]">
+              <ErrorBoundary key={pathname}>{children}</ErrorBoundary>
+            </div>
           </main>
           {/* Rodapé institucional, presente em toda tela — "Suporte"/"Termos de uso" foram
               removidos daqui porque não iam pra lugar nenhum (não existe essa página ainda). */}

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ItemEstoque, MovimentacaoEstoque } from "@prisma/client";
-import { cn } from "@/lib/utils";
+import { Tabs } from "@/components/ui/Tabs";
 import { VisaoGeralTab } from "./VisaoGeralTab";
 import { MateriaisTab } from "./MateriaisTab";
 import { MovimentacoesTab } from "./MovimentacoesTab";
@@ -10,10 +10,12 @@ import { MovimentacoesTab } from "./MovimentacoesTab";
 type MovimentacaoComItem = MovimentacaoEstoque & { item: ItemEstoque };
 type Aba = "visao-geral" | "materiais" | "movimentacoes";
 
-const ABAS: { valor: Aba; label: string }[] = [
-  { valor: "visao-geral", label: "Visão geral" },
-  { valor: "materiais", label: "Materiais" },
-  { valor: "movimentacoes", label: "Movimentações" },
+// Seções dentro da mesma página → <Tabs> (handoff de design, etapa 4.7),
+// extraído do padrão de sublinhado que esta tela já usava.
+const ABAS: { value: Aba; label: string }[] = [
+  { value: "visao-geral", label: "Visão geral" },
+  { value: "materiais", label: "Materiais" },
+  { value: "movimentacoes", label: "Movimentações" },
 ];
 
 export function EstoquePainel({
@@ -31,22 +33,7 @@ export function EstoquePainel({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-1 border-b border-cda-border">
-        {ABAS.map((a) => (
-          <button
-            key={a.valor}
-            onClick={() => setAba(a.valor)}
-            className={cn(
-              "border-b-2 px-3 py-2.5 text-sm font-medium transition-colors",
-              aba === a.valor
-                ? "border-cda-blue text-cda-blue"
-                : "border-transparent text-cda-text3 hover:text-cda-text2"
-            )}
-          >
-            {a.label}
-          </button>
-        ))}
-      </div>
+      <Tabs tabs={ABAS} value={aba} onChange={setAba} />
 
       {aba === "visao-geral" && (
         <VisaoGeralTab

@@ -67,7 +67,7 @@ export default async function FuncionariosPage({
           <Card
             key={grupo.setor}
             title={grupo.setor}
-            action={<Badge variant="blue">{grupo.itens.length}</Badge>}
+            action={<Badge variant="count">{grupo.itens.length}</Badge>}
           >
             <FuncionarioTable funcionarios={grupo.itens} mostrarSetor={false} />
           </Card>

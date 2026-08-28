@@ -1,4 +1,6 @@
 import { cn } from "@/lib/utils";
+import type { LucideIcon } from "lucide-react";
+import { EmptyState } from "./EmptyState";
 
 export function Table({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
@@ -20,6 +22,11 @@ export function TableHead({ children }: { children: React.ReactNode }) {
 
 export function Th({ children, className }: { children: React.ReactNode; className?: string }) {
   return <th className={cn("px-4 py-3 font-medium", className)}>{children}</th>;
+}
+
+/** Cabeçalho da coluna de ações: largura mínima, sem rótulo (handoff etapa 4.9). */
+export function ThActions() {
+  return <th className="w-px px-4 py-3" />;
 }
 
 export function TableBody({ children }: { children: React.ReactNode }) {
@@ -67,11 +74,33 @@ export function Td({ children, className }: { children: React.ReactNode; classNa
   return <td className={cn("px-4 py-3 text-cda-text", className)}>{children}</td>;
 }
 
-export function TableEmpty({ colSpan, children }: { colSpan: number; children: React.ReactNode }) {
+/** Célula de ações: um único espaçamento para todas as tabelas do sistema
+ * (handoff etapa 4.9) — antes cada tabela usava um gap diferente. */
+export function TdActions({ children }: { children: React.ReactNode }) {
+  return (
+    <td className="px-4 py-3">
+      <div className="flex items-center justify-end gap-0.5">{children}</div>
+    </td>
+  );
+}
+
+export function TableEmpty({
+  colSpan,
+  children,
+  icon,
+  subtitle,
+  action,
+}: {
+  colSpan: number;
+  children: React.ReactNode;
+  icon?: LucideIcon;
+  subtitle?: string;
+  action?: React.ReactNode;
+}) {
   return (
     <tr>
-      <td colSpan={colSpan} className="px-4 py-10 text-center text-sm text-cda-text3">
-        {children}
+      <td colSpan={colSpan} className="p-0">
+        <EmptyState icon={icon} title={String(children)} subtitle={subtitle} action={action} />
       </td>
     </tr>
   );

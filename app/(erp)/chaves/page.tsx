@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { ChaveCard } from "@/components/modules/chaves/ChaveCard";
 import { NovaChaveModal } from "@/components/modules/chaves/NovaChaveModal";
 
@@ -18,7 +20,9 @@ export default async function ChavesPage() {
       <PageHeader title="Chaves" subtitle="Controle de retirada e devolução de salas" action={<NovaChaveModal />} />
 
       {chaves.length === 0 ? (
-        <p className="py-10 text-center text-sm text-cda-text3">Nenhuma chave cadastrada ainda.</p>
+        <Card className="p-0">
+          <EmptyState title="Nenhuma chave cadastrada ainda." />
+        </Card>
       ) : (
         // NOVO: 3 colunas em telas médias (notebook) em vez de 4 — o nome da sala
         // (ex.: "Contraturno V") ficava espremido e cortado ao lado do badge/botões.

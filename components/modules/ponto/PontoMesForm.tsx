@@ -7,6 +7,7 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { ExportButtons } from "@/components/ui/ExportButtons";
+import { IconButton } from "@/components/ui/IconButton";
 import { calcularMes, minParaHora, OCORRENCIA_LABEL, type RegistroPontoDia } from "@/lib/ponto";
 
 const MESES = [
@@ -267,25 +268,14 @@ export function PontoMesForm({
               return (
                 <div className="flex flex-col gap-5">
                   <div className="flex items-center justify-between gap-3">
-                    <button
-                      onClick={diaAnterior}
-                      disabled={diaIndex === 0}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg disabled:opacity-30"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </button>
+                    <IconButton icon={ChevronLeft} label="Dia anterior" bordered disabled={diaIndex === 0} onClick={diaAnterior} />
                     <div className="text-center">
                       <p className="text-sm font-semibold capitalize text-cda-text">{dataFormatada}</p>
                       <p className="text-xs text-cda-text3">
                         Dia {diaIndex + 1} de {linhas.length} lançados
                       </p>
                     </div>
-                    <button
-                      onClick={proximoDia}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
+                    <IconButton icon={ChevronRight} label="Próximo dia" bordered onClick={proximoDia} />
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">

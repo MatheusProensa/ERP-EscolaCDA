@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Avatar } from "@/components/ui/Avatar";
+import { IconButton } from "@/components/ui/IconButton";
 import { showToast } from "@/components/ui/Toast";
 import {
   CATEGORIAS_EVENTO,
@@ -183,13 +184,7 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
       <Card className="flex flex-col gap-3.5 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => mudarMes(-1)}
-              aria-label="Mês anterior"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
+            <IconButton icon={ChevronLeft} label="Mês anterior" bordered onClick={() => mudarMes(-1)} />
             <Select value={mes} onChange={(e) => setMes(Number(e.target.value))} className="w-[130px]">
               {MESES.map((m, i) => (
                 <option key={m} value={i + 1}>{m}</option>
@@ -200,13 +195,7 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
                 <option key={a} value={a}>{a}</option>
               ))}
             </Select>
-            <button
-              onClick={() => mudarMes(1)}
-              aria-label="Próximo mês"
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+            <IconButton icon={ChevronRight} label="Próximo mês" bordered onClick={() => mudarMes(1)} />
           </div>
 
           {podeEditar && (

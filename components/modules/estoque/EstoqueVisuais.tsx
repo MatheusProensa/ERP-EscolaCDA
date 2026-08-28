@@ -1,27 +1,25 @@
 import * as Icons from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
 import { statusEstoque, STATUS_ESTOQUE_INFO, categoriaVisual, type StatusEstoque } from "@/lib/estoqueStatus";
 
 export function StatusEstoquePill({ status }: { status: StatusEstoque }) {
   const info = STATUS_ESTOQUE_INFO[status];
   return (
-    <span
-      className="inline-flex items-center gap-1 whitespace-nowrap rounded-md px-2 py-0.5 text-xs font-semibold"
-      style={{ backgroundColor: info.tint, color: info.cor }}
-    >
-      <Icons.TriangleAlert className="h-3 w-3" style={{ display: status === "ok" ? "none" : undefined }} />
+    <Badge variant={info.variant}>
+      {status !== "ok" && <Icons.TriangleAlert className="h-3 w-3" />}
       {info.label}
-    </span>
+    </Badge>
   );
 }
 
 export function CategoriaCell({ categoria }: { categoria: string }) {
-  const { icone, cor } = categoriaVisual(categoria);
+  const { icone, bg, cor } = categoriaVisual(categoria);
   const Icone = (Icons as unknown as Record<string, Icons.LucideIcon>)[icone] ?? Icons.Package;
   return (
     <span className="inline-flex items-center gap-2">
       <span
         className="flex h-5 w-5 items-center justify-center rounded"
-        style={{ backgroundColor: `${cor}22`, color: cor }}
+        style={{ backgroundColor: bg, color: cor }}
       >
         <Icone className="h-3 w-3" />
       </span>

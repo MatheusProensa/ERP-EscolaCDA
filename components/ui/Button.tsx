@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { Loader2 } from "lucide-react";
+import { Loader2, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import type { ButtonHTMLAttributes } from "react";
 
@@ -26,6 +26,8 @@ type BaseProps = {
   size?: Size;
   loading?: boolean;
   disabled?: boolean;
+  /** Ícone à esquerda do rótulo. Passar o ícone em children também continua funcionando. */
+  icon?: LucideIcon;
   className?: string;
   children: React.ReactNode;
 };
@@ -40,10 +42,10 @@ type LinkButtonProps = BaseProps & {
 };
 
 function baseClasses(variant: Variant, size: Size, className?: string) {
+  // Etapa 4.9 do handoff: o :focus-visible global (globals.css) já cobre o anel
+  // de foco de teclado — a redeclaração local aqui era redundante.
   return cn(
-    // NOVO: focus-visible:ring-2 — diagnóstico de UX apontou falta de indicador de foco
-    // de teclado em botões (maior ganho de acessibilidade, menor esforço).
-    "inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cda-blue/40 focus-visible:ring-offset-2",
+    "inline-flex items-center justify-center rounded-lg font-medium transition-colors disabled:opacity-50 disabled:pointer-events-none",
     VARIANT_CLASSES[variant],
     SIZE_CLASSES[size],
     className
@@ -54,16 +56,25 @@ export function Button({
   variant = "primary",
   size = "md",
   loading,
+  icon: Icon,
   className,
   children,
   disabled,
   href,
   ...props
 }: ButtonProps | LinkButtonProps) {
+  const inner = (
+    <>
+      {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+      {!loading && Icon && <Icon className="h-4 w-4" />}
+      {children}
+    </>
+  );
+
   if (href) {
     return (
       <Link href={href} className={baseClasses(variant, size, className)}>
-        {children}
+        {inner}
       </Link>
     );
   }
@@ -74,8 +85,7 @@ export function Button({
       disabled={disabled || loading}
       {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
     >
-      {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-      {children}
+      {inner}
     </button>
   );
 }

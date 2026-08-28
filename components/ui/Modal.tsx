@@ -4,6 +4,7 @@ import { X } from "lucide-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
+import { IconButton } from "./IconButton";
 
 export function Modal({
   open,
@@ -52,13 +53,7 @@ export function Modal({
         {title && (
           <div className="flex items-center justify-between border-b border-cda-border px-5 py-4">
             <h3 className="text-sm font-semibold text-cda-text">{title}</h3>
-            <button
-              onClick={onClose}
-              aria-label="Fechar"
-              className="rounded-md p-1 text-cda-text3 hover:bg-cda-bg hover:text-cda-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cda-blue/40"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <IconButton icon={X} label="Fechar" size="sm" onClick={onClose} />
           </div>
         )}
         <div className="p-5">{children}</div>

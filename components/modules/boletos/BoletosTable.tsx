@@ -4,8 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RotateCw, Trash2 } from "lucide-react";
 import type { StatusBoleto } from "@prisma/client";
-import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
+import { Table, TableHead, Th, ThActions, TableBody, Tr, Td, TdActions, TableEmpty } from "@/components/ui/Table";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
+import { IconButton } from "@/components/ui/IconButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { showToast } from "@/components/ui/Toast";
 import { formatarData, formatarMoeda } from "@/lib/utils";
 
 const STATUS_LABEL: Record<StatusBoleto, string> = {
@@ -46,6 +49,7 @@ function formatarCompetencia(c: string) {
 export function BoletosTable({ boletos }: { boletos: BoletoLinha[] }) {
   const router = useRouter();
   const [carregando, setCarregando] = useState<string | null>(null);
+  const [excluindo, setExcluindo] = useState<string | null>(null);
 
   async function reemitir(id: string) {
     setCarregando(id);
@@ -53,22 +57,22 @@ export function BoletosTable({ boletos }: { boletos: BoletoLinha[] }) {
     setCarregando(null);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error ?? "Não foi possível tentar de novo.");
+      showToast(data.error ?? "Não foi possível tentar de novo.", "error");
       return;
     }
     router.refresh();
   }
 
   async function excluir(id: string) {
-    if (!confirm("Excluir esse registro de boleto?")) return;
     setCarregando(id);
     const res = await fetch(`/api/boletos/${id}`, { method: "DELETE" });
     setCarregando(null);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error ?? "Não foi possível excluir.");
+      showToast(data.error ?? "Não foi possível excluir.", "error");
       return;
     }
+    setExcluindo(null);
     router.refresh();
   }
 
@@ -80,7 +84,7 @@ export function BoletosTable({ boletos }: { boletos: BoletoLinha[] }) {
         <Th>Valor</Th>
         <Th>Vencimento</Th>
         <Th>Status</Th>
-        <Th>{""}</Th>
+        <ThActions />
       </TableHead>
       <TableBody>
         {boletos.length === 0 && <TableEmpty colSpan={6}>Nenhum boleto lançado ainda.</TableEmpty>}
@@ -103,33 +107,39 @@ export function BoletosTable({ boletos }: { boletos: BoletoLinha[] }) {
                 )}
               </div>
             </Td>
-            <Td>
-              <div className="flex items-center gap-3">
-                {b.status !== "REGISTRADO" && b.status !== "PAGO" && (
-                  <button
-                    onClick={() => reemitir(b.id)}
-                    disabled={carregando === b.id}
-                    title="Tentar registrar de novo"
-                    className="text-cda-text3 hover:text-cda-blue disabled:opacity-50"
-                  >
-                    <RotateCw className="h-4 w-4" />
-                  </button>
-                )}
-                {b.status !== "REGISTRADO" && b.status !== "PAGO" && (
-                  <button
-                    onClick={() => excluir(b.id)}
-                    disabled={carregando === b.id}
-                    title="Excluir"
-                    className="text-cda-text3 hover:text-cda-red disabled:opacity-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </Td>
+            <TdActions>
+              {b.status !== "REGISTRADO" && b.status !== "PAGO" && (
+                <IconButton
+                  icon={RotateCw}
+                  label="Tentar registrar de novo"
+                  size="sm"
+                  disabled={carregando === b.id}
+                  onClick={() => reemitir(b.id)}
+                />
+              )}
+              {b.status !== "REGISTRADO" && b.status !== "PAGO" && (
+                <IconButton
+                  icon={Trash2}
+                  label="Excluir boleto"
+                  size="sm"
+                  variant="danger"
+                  disabled={carregando === b.id}
+                  onClick={() => setExcluindo(b.id)}
+                />
+              )}
+            </TdActions>
           </Tr>
         ))}
       </TableBody>
+
+      <ConfirmDialog
+        open={excluindo !== null}
+        onClose={() => setExcluindo(null)}
+        onConfirm={() => excluindo && excluir(excluindo)}
+        title="Excluir esse registro de boleto?"
+        confirmLabel="Excluir"
+        loading={carregando === excluindo}
+      />
     </Table>
   );
 }

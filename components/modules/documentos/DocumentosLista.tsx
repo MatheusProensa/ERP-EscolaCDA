@@ -6,6 +6,8 @@ import { ExternalLink, Trash2, Pencil, FileText, TriangleAlert } from "lucide-re
 import type { DocumentoInstitucional } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { IconButton } from "@/components/ui/IconButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatarData } from "@/lib/utils";
 import { EditarDocumentoModal } from "./EditarDocumentoModal";
 
@@ -39,13 +41,14 @@ function statusValidade(validade: Date | null): { label: string; variant: "red" 
 export function DocumentosLista({ grupos }: { grupos: { categoria: string; itens: DocumentoInstitucional[] }[] }) {
   const router = useRouter();
   const [removendoId, setRemovendoId] = useState<string | null>(null);
+  const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
   const [editando, setEditando] = useState<DocumentoInstitucional | null>(null);
 
   async function handleRemover(id: string) {
-    if (!confirm("Remover este documento da lista? O arquivo continua no Drive.")) return;
     setRemovendoId(id);
     await fetch(`/api/documentos/${id}`, { method: "DELETE" });
     setRemovendoId(null);
+    setConfirmandoId(null);
     router.refresh();
   }
 
@@ -77,26 +80,16 @@ export function DocumentosLista({ grupos }: { grupos: { categoria: string; itens
                         {status.label}
                       </Badge>
                     )}
-                    <button
-                      onClick={() => abrirDocumento(doc.link)}
-                      aria-label="Abrir documento"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setEditando(doc)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => handleRemover(doc.id)}
+                    <IconButton icon={ExternalLink} label="Abrir documento" size="sm" onClick={() => abrirDocumento(doc.link)} />
+                    <IconButton icon={Pencil} label="Editar documento" size="sm" onClick={() => setEditando(doc)} />
+                    <IconButton
+                      icon={Trash2}
+                      label="Remover documento"
+                      variant="danger"
+                      size="sm"
                       disabled={removendoId === doc.id}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                      onClick={() => setConfirmandoId(doc.id)}
+                    />
                   </div>
                 </div>
               );
@@ -106,6 +99,16 @@ export function DocumentosLista({ grupos }: { grupos: { categoria: string; itens
       ))}
 
       <EditarDocumentoModal documento={editando} onClose={() => setEditando(null)} />
+
+      <ConfirmDialog
+        open={confirmandoId !== null}
+        onClose={() => setConfirmandoId(null)}
+        onConfirm={() => confirmandoId && handleRemover(confirmandoId)}
+        title="Remover este documento da lista?"
+        consequence="O arquivo continua no Drive — só sai da lista aqui do sistema."
+        confirmLabel="Remover"
+        loading={removendoId !== null}
+      />
     </div>
   );
 }

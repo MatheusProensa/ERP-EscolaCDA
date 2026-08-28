@@ -1,4 +1,5 @@
 import { Download, FileText } from "lucide-react";
+import { Button } from "./Button";
 
 type Params = Record<string, string | undefined>;
 
@@ -18,20 +19,12 @@ export function ExportButtons({ href, label = "Exportar", params }: { href: stri
   return (
     <div className="flex items-center gap-2">
       {label && <span className="hidden text-xs font-medium text-cda-text3 sm:inline">{label}</span>}
-      <a
-        href={montarUrl(href, params)}
-        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 text-xs font-medium text-cda-text hover:bg-cda-bg"
-      >
-        <Download className="h-3.5 w-3.5" />
+      <Button variant="outline" size="sm" icon={Download} href={montarUrl(href, params)}>
         CSV
-      </a>
-      <a
-        href={montarUrl(href, params, "pdf")}
-        className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 text-xs font-medium text-cda-text hover:bg-cda-bg"
-      >
-        <FileText className="h-3.5 w-3.5" />
+      </Button>
+      <Button variant="outline" size="sm" icon={FileText} href={montarUrl(href, params, "pdf")}>
         PDF
-      </a>
+      </Button>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -6,6 +5,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { formatarDataHora } from "@/lib/utils";
 import type { BadgeVariant } from "@/components/ui/Badge";
 
@@ -25,15 +25,17 @@ const ENTIDADE_LABEL: Record<string, string> = {
   ListaEspera: "Lista de Espera",
 };
 
+// Categórica (handoff de design, etapa 3.2): tipo de registro não é estado —
+// sai o verde de "Boleto" e o vermelho de "Lista de Espera".
 const ENTIDADE_VARIANT: Record<string, BadgeVariant> = {
-  Aluno: "blue",
-  Matricula: "teal",
-  Contrato: "purple",
-  Funcionario: "amber",
-  Usuario: "gray",
-  Boleto: "green",
-  NotaFiscal: "pink",
-  ListaEspera: "red",
+  Aluno: "cat1",
+  Matricula: "cat2",
+  Contrato: "cat3",
+  NotaFiscal: "cat4",
+  Funcionario: "cat5",
+  Usuario: "cat6",
+  Boleto: "cat1",
+  ListaEspera: "cat5",
 };
 
 export default async function LogAtividadesPage({
@@ -98,7 +100,7 @@ export default async function LogAtividadesPage({
 
       <Card>
         {logs.length === 0 ? (
-          <p className="py-10 text-center text-sm text-cda-text3">Nenhuma atividade encontrada.</p>
+          <EmptyState title="Nenhuma atividade encontrada." />
         ) : (
           <div className="flex flex-col divide-y divide-cda-border">
             {logs.map((log) => (
@@ -109,7 +111,7 @@ export default async function LogAtividadesPage({
                     {log.usuario} · {formatarDataHora(log.createdAt)}
                   </p>
                 </div>
-                <Badge variant={ENTIDADE_VARIANT[log.entidade] ?? "gray"}>{ENTIDADE_LABEL[log.entidade] ?? log.entidade}</Badge>
+                <Badge variant={ENTIDADE_VARIANT[log.entidade] ?? "neutral"}>{ENTIDADE_LABEL[log.entidade] ?? log.entidade}</Badge>
               </div>
             ))}
           </div>
@@ -123,14 +125,14 @@ export default async function LogAtividadesPage({
           </span>
           <div className="flex gap-2">
             {paginaAtual > 1 && (
-              <Link href={paginaHref(paginaAtual - 1)} className="rounded-lg border border-cda-border bg-white px-3 py-1.5 hover:bg-cda-bg">
+              <Button href={paginaHref(paginaAtual - 1)} variant="outline" size="sm">
                 Anterior
-              </Link>
+              </Button>
             )}
             {paginaAtual < totalPaginas && (
-              <Link href={paginaHref(paginaAtual + 1)} className="rounded-lg border border-cda-border bg-white px-3 py-1.5 hover:bg-cda-bg">
+              <Button href={paginaHref(paginaAtual + 1)} variant="outline" size="sm">
                 Próxima
-              </Link>
+              </Button>
             )}
           </div>
         </div>

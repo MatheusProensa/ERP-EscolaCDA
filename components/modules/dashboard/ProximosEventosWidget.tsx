@@ -2,6 +2,7 @@ import Link from "next/link";
 import { CalendarDays } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { corCategoria, MESES } from "@/lib/calendario";
 
 export async function ProximosEventosWidget() {
@@ -29,9 +30,7 @@ export async function ProximosEventosWidget() {
       }
     >
       <div className="flex flex-col divide-y divide-cda-border">
-        {eventos.length === 0 && (
-          <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhum evento agendado.</p>
-        )}
+        {eventos.length === 0 && <EmptyState title="Nenhum evento agendado." />}
         {eventos.map((evento) => {
           const cor = corCategoria(evento.categoria);
           const dia = evento.data.getUTCDate();

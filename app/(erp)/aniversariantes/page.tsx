@@ -8,6 +8,8 @@ import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/component
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Select";
+import { Button } from "@/components/ui/Button";
+import { Alert } from "@/components/ui/Alert";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 
 const MESES = [
@@ -114,19 +116,18 @@ export default async function AniversariantesPage({
       />
 
       {hojeTodos.length > 0 && (
-        <Card className="mb-5 flex items-center gap-4 border-cda-yellow bg-cda-yellow/10 p-5">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cda-yellow/30">
-            <Cake className="h-5 w-5 text-cda-navy" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-cda-text">
-              {hojeTodos.length === 1
-                ? `Hoje é aniversário de ${hojeTodos[0].nome}!`
-                : `Hoje é aniversário de ${hojeTodos.length} pessoas!`}
-            </p>
-            <p className="text-xs text-cda-text2">{hojeTodos.map((a) => a.nome).join(", ")}</p>
-          </div>
-        </Card>
+        <Alert
+          tone="brand"
+          icon={Cake}
+          title={
+            hojeTodos.length === 1
+              ? `Hoje é aniversário de ${hojeTodos[0].nome}!`
+              : `Hoje é aniversário de ${hojeTodos.length} pessoas!`
+          }
+          className="mb-5"
+        >
+          {hojeTodos.map((a) => a.nome).join(", ")}
+        </Alert>
       )}
 
       <Card className="mb-5 p-4">
@@ -138,12 +139,9 @@ export default async function AniversariantesPage({
               </option>
             ))}
           </Select>
-          <button
-            type="submit"
-            className="h-10 rounded-lg border border-cda-border bg-white px-4 text-sm font-medium text-cda-text hover:bg-cda-bg"
-          >
+          <Button type="submit" variant="outline">
             Filtrar
-          </button>
+          </Button>
         </form>
       </Card>
 
@@ -185,7 +183,7 @@ function ListaAniversariantes({
   mesFiltro: number;
 }) {
   return (
-    <Card title={titulo} action={<Badge variant="blue">{pessoas.length}</Badge>}>
+    <Card title={titulo} action={<Badge variant="count">{pessoas.length}</Badge>}>
       <Table>
         <TableHead>
           <Th>Nome</Th>

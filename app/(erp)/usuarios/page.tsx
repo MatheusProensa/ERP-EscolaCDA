@@ -1,9 +1,10 @@
-import { Download } from "lucide-react";
+import { Download, KeyRound } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { Alert } from "@/components/ui/Alert";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { NovoUsuarioModal } from "@/components/modules/usuarios/NovoUsuarioModal";
 import { UsuarioCard } from "@/components/modules/usuarios/UsuarioCard";
 
@@ -32,17 +33,22 @@ export default async function UsuariosPage() {
       />
 
       {pedidosPendentes > 0 && (
-        <div className="mb-5 flex items-center gap-2 rounded-[10px] border border-cda-amber/30 bg-cda-amber/5 p-4">
-          <Badge variant="amber">{pedidosPendentes}</Badge>
-          <p className="text-sm text-cda-text2">
-            {pedidosPendentes === 1 ? "pessoa pediu" : "pessoas pediram"} redefinição de senha — marcadas abaixo com{" "}
-            <span className="inline-flex items-center align-middle text-cda-amber">🔑</span>.
-          </p>
-        </div>
+        <Alert
+          tone="warning"
+          icon={KeyRound}
+          title={
+            pedidosPendentes === 1
+              ? "1 pessoa pediu redefinição de senha"
+              : `${pedidosPendentes} pessoas pediram redefinição de senha`
+          }
+          className="mb-5"
+        >
+          Marcadas abaixo com o ícone de chave.
+        </Alert>
       )}
 
       {usuarios.length === 0 ? (
-        <p className="py-10 text-center text-sm text-cda-text3">Nenhum usuário cadastrado.</p>
+        <EmptyState title="Nenhum usuário cadastrado." />
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {usuarios.map((usuario) => (

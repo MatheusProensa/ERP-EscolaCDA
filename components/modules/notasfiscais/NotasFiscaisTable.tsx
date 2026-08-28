@@ -4,8 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { RotateCw, Trash2 } from "lucide-react";
 import type { StatusNotaFiscal } from "@prisma/client";
-import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
+import { Table, TableHead, Th, ThActions, TableBody, Tr, Td, TdActions, TableEmpty } from "@/components/ui/Table";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
+import { IconButton } from "@/components/ui/IconButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { showToast } from "@/components/ui/Toast";
 import { formatarData, formatarMoeda } from "@/lib/utils";
 
 const STATUS_LABEL: Record<StatusNotaFiscal, string> = {
@@ -44,6 +47,7 @@ function formatarCompetencia(c: string) {
 export function NotasFiscaisTable({ notas }: { notas: NotaFiscalLinha[] }) {
   const router = useRouter();
   const [carregando, setCarregando] = useState<string | null>(null);
+  const [excluindo, setExcluindo] = useState<string | null>(null);
 
   async function reemitir(id: string) {
     setCarregando(id);
@@ -51,22 +55,22 @@ export function NotasFiscaisTable({ notas }: { notas: NotaFiscalLinha[] }) {
     setCarregando(null);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error ?? "Não foi possível tentar de novo.");
+      showToast(data.error ?? "Não foi possível tentar de novo.", "error");
       return;
     }
     router.refresh();
   }
 
   async function excluir(id: string) {
-    if (!confirm("Excluir esse registro de nota fiscal?")) return;
     setCarregando(id);
     const res = await fetch(`/api/notas-fiscais/${id}`, { method: "DELETE" });
     setCarregando(null);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error ?? "Não foi possível excluir.");
+      showToast(data.error ?? "Não foi possível excluir.", "error");
       return;
     }
+    setExcluindo(null);
     router.refresh();
   }
 
@@ -77,7 +81,7 @@ export function NotasFiscaisTable({ notas }: { notas: NotaFiscalLinha[] }) {
         <Th>Competência</Th>
         <Th>Valor</Th>
         <Th>Status</Th>
-        <Th>{""}</Th>
+        <ThActions />
       </TableHead>
       <TableBody>
         {notas.length === 0 && <TableEmpty colSpan={5}>Nenhuma nota fiscal lançada ainda.</TableEmpty>}
@@ -99,33 +103,39 @@ export function NotasFiscaisTable({ notas }: { notas: NotaFiscalLinha[] }) {
                 )}
               </div>
             </Td>
-            <Td>
-              <div className="flex items-center gap-3">
-                {n.status !== "EMITIDA" && (
-                  <button
-                    onClick={() => reemitir(n.id)}
-                    disabled={carregando === n.id}
-                    title="Tentar emitir de novo"
-                    className="text-cda-text3 hover:text-cda-blue disabled:opacity-50"
-                  >
-                    <RotateCw className="h-4 w-4" />
-                  </button>
-                )}
-                {n.status !== "EMITIDA" && (
-                  <button
-                    onClick={() => excluir(n.id)}
-                    disabled={carregando === n.id}
-                    title="Excluir"
-                    className="text-cda-text3 hover:text-cda-red disabled:opacity-50"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </Td>
+            <TdActions>
+              {n.status !== "EMITIDA" && (
+                <IconButton
+                  icon={RotateCw}
+                  label="Tentar emitir de novo"
+                  size="sm"
+                  disabled={carregando === n.id}
+                  onClick={() => reemitir(n.id)}
+                />
+              )}
+              {n.status !== "EMITIDA" && (
+                <IconButton
+                  icon={Trash2}
+                  label="Excluir nota fiscal"
+                  size="sm"
+                  variant="danger"
+                  disabled={carregando === n.id}
+                  onClick={() => setExcluindo(n.id)}
+                />
+              )}
+            </TdActions>
           </Tr>
         ))}
       </TableBody>
+
+      <ConfirmDialog
+        open={excluindo !== null}
+        onClose={() => setExcluindo(null)}
+        onConfirm={() => excluindo && excluir(excluindo)}
+        title="Excluir esse registro de nota fiscal?"
+        confirmLabel="Excluir"
+        loading={carregando === excluindo}
+      />
     </Table>
   );
 }

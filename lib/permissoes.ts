@@ -11,14 +11,15 @@ export const ROLE_LABEL: Record<string, string> = {
 };
 
 /** Cor do badge de perfil na tela de Usuários — dá pra reconhecer o setor de
- * cada pessoa num relance, sem precisar ler o texto. */
-export const ROLE_BADGE_VARIANT: Record<string, "green" | "red" | "amber" | "blue" | "purple" | "gray"> = {
-  ADMIN: "purple",
-  DIRECAO: "blue",
-  SECRETARIA: "gray",
-  FINANCEIRO: "green",
-  PEDAGOGICO: "amber",
-  ADMINISTRATIVO: "gray",
+ * cada pessoa num relance, sem precisar ler o texto. Categórica (handoff de
+ * design, etapa 3.8): papel de acesso é categoria, não estado. */
+export const ROLE_BADGE_VARIANT: Record<string, "cat1" | "cat2" | "cat3" | "cat4" | "cat5" | "cat6"> = {
+  ADMIN: "cat3",
+  DIRECAO: "cat1",
+  SECRETARIA: "cat6",
+  FINANCEIRO: "cat2",
+  PEDAGOGICO: "cat5",
+  ADMINISTRATIVO: "cat6",
 };
 
 export const GESTAO: RoleAtiva[] = ["ADMIN", "DIRECAO"];

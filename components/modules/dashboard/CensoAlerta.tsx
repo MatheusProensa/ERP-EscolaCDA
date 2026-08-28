@@ -1,31 +1,24 @@
 import { ClipboardList } from "lucide-react";
-import { Card } from "@/components/ui/Card";
+import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 
-/**
- * Redesenhado: era um card compacto com badge inline; agora é o mesmo padrão
- * de "banner de atenção" usado no resto do sistema (título em negrito + texto
- * + botão de ação à direita), pra não competir visualmente com os MetricCards
- * acima nem parecer um elemento solto.
- */
+/** Um dos cinco banners de atenção do sistema — unificado no <Alert> (handoff
+ * de design, etapa 4.3): mesmo formato de CensoAlerta, aniversariantes,
+ * documentos, usuários e boletos/notas fiscais. */
 export function CensoAlerta({ quantidade }: { quantidade: number }) {
   if (quantidade === 0) return null;
   return (
-    <Card className="flex flex-col items-start gap-3.5 border-cda-critical/30 bg-cda-critical/[0.06] p-4 sm:flex-row sm:items-center">
-      <div className="flex items-start gap-3.5">
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-cda-critical/[0.18]">
-          <ClipboardList className="h-4 w-4 text-cda-critical" />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-cda-text">Alerta importante</p>
-          <p className="text-sm text-cda-text2">
-            {quantidade} aluno(s) com dados incompletos para o censo escolar (sexo, raça/cor ou nome da mãe).
-          </p>
-        </div>
-      </div>
-      <Button href="/alunos?censo=incompleto" variant="secondary" className="w-full shrink-0 sm:w-auto">
-        Resolver pendências
-      </Button>
-    </Card>
+    <Alert
+      tone="critical"
+      icon={ClipboardList}
+      title="Alerta importante"
+      action={
+        <Button href="/alunos?censo=incompleto" variant="secondary" className="w-full shrink-0 sm:w-auto">
+          Resolver pendências
+        </Button>
+      }
+    >
+      {quantidade} aluno(s) com dados incompletos para o censo escolar (sexo, raça/cor ou nome da mãe).
+    </Alert>
   );
 }

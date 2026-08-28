@@ -34,7 +34,8 @@ export function PageHeader({
           </div>
         )}
         <h1 className="text-2xl font-bold text-cda-text">{title}</h1>
-        {subtitle && <p className="mt-1 text-base text-cda-text2">{subtitle}</p>}
+        {/* Etapa 4.9 do handoff: text-base tinha o mesmo tamanho do corpo, hierarquia fraca */}
+        {subtitle && <p className="mt-1 text-sm text-cda-text2">{subtitle}</p>}
       </div>
       {action && <div className="flex flex-wrap items-center gap-2 sm:shrink-0">{action}</div>}
     </div>

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { IconButton } from "@/components/ui/IconButton";
 import { CardapioDiaCard } from "@/components/modules/cardapio/CardapioDiaCard";
 
 function inicioDaSemana(data: Date): Date {
@@ -45,18 +45,18 @@ export default async function CardapioPage({
         subtitle={`Semana de ${segunda.toLocaleDateString("pt-BR", { timeZone: "UTC" })} a ${sexta.toLocaleDateString("pt-BR", { timeZone: "UTC" })}`}
         action={
           <div className="flex gap-2">
-            <Link
+            <IconButton
+              icon={ChevronLeft}
+              label="Semana anterior"
+              bordered
               href={`/cardapio?semana=${semanaAnterior.toISOString().slice(0, 10)}`}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border bg-white text-cda-text hover:bg-cda-bg"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Link>
-            <Link
+            />
+            <IconButton
+              icon={ChevronRight}
+              label="Próxima semana"
+              bordered
               href={`/cardapio?semana=${semanaSeguinte.toISOString().slice(0, 10)}`}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border bg-white text-cda-text hover:bg-cda-bg"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Link>
+            />
           </div>
         }
       />

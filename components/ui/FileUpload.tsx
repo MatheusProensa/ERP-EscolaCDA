@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Paperclip } from "lucide-react";
+import { Button } from "./Button";
 
 export function FileUpload({
   onSelect,
@@ -36,15 +37,9 @@ export function FileUpload({
 
   return (
     <div>
-      <button
-        type="button"
-        disabled={disabled}
-        onClick={() => inputRef.current?.click()}
-        className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg disabled:opacity-50"
-      >
-        <Paperclip className="h-3.5 w-3.5" />
+      <Button type="button" variant="outline" size="sm" icon={Paperclip} disabled={disabled} onClick={() => inputRef.current?.click()}>
         {label}
-      </button>
+      </Button>
       {erro && <p className="mt-1 text-xs text-cda-red">{erro}</p>}
       <input
         ref={inputRef}

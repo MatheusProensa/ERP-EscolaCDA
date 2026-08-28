@@ -9,6 +9,10 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { IconButton } from "@/components/ui/IconButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Badge, type BadgeVariant } from "@/components/ui/Badge";
+import { showToast } from "@/components/ui/Toast";
 import { cn } from "@/lib/utils";
 
 export interface TurmaCardProps {
@@ -19,14 +23,18 @@ export interface TurmaCardProps {
   matriculados: number;
 }
 
-const TURNO_STYLE = {
-  TARDE: { label: "Tarde", bg: "#EBF4FF", text: "#1A6FD8" },
-  MANHA: { label: "Manhã", bg: "#EEEDFE", text: "#3C3489" },
+// Categórica (handoff de design, etapa 3.4): turno é categoria, não estado —
+// o #3C3489/#EEEDFE de Manhã saem do sistema, não existiam em nenhum outro lugar.
+const TURNO_STYLE: Record<TurmaCardProps["turno"], { label: string; variant: BadgeVariant }> = {
+  TARDE: { label: "Tarde", variant: "cat1" },
+  MANHA: { label: "Manhã", variant: "cat3" },
 };
 
 export function TurmaCard({ id, nome, turno, capacidade, matriculados }: TurmaCardProps) {
   const router = useRouter();
   const [editando, setEditando] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -59,13 +67,15 @@ export function TurmaCard({ id, nome, turno, capacidade, matriculados }: TurmaCa
   }
 
   async function excluir() {
-    if (!confirm(`Excluir a turma "${nome}"?`)) return;
+    setExcluindo(true);
     const res = await fetch(`/api/turmas/${id}`, { method: "DELETE" });
+    setExcluindo(false);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error ?? "Não foi possível excluir.");
+      showToast(data.error ?? "Não foi possível excluir.", "error");
       return;
     }
+    setConfirmandoExclusao(false);
     router.refresh();
   }
 
@@ -74,26 +84,9 @@ export function TurmaCard({ id, nome, turno, capacidade, matriculados }: TurmaCa
       <div className="mb-2 flex items-start justify-between gap-2">
         <p className="font-semibold text-cda-text">{nome}</p>
         <div className="flex shrink-0 items-center gap-1">
-          <span
-            className="rounded-full px-2.5 py-0.5 text-xs font-medium"
-            style={{ backgroundColor: turnoStyle.bg, color: turnoStyle.text }}
-          >
-            {turnoStyle.label}
-          </span>
-          <button
-            onClick={() => setEditando(true)}
-            title="Editar"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg hover:text-cda-text"
-          >
-            <Pencil className="h-[18px] w-[18px]" />
-          </button>
-          <button
-            onClick={excluir}
-            title="Excluir"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg hover:text-cda-red"
-          >
-            <Trash2 className="h-[18px] w-[18px]" />
-          </button>
+          <Badge variant={turnoStyle.variant}>{turnoStyle.label}</Badge>
+          <IconButton icon={Pencil} label="Editar turma" onClick={() => setEditando(true)} />
+          <IconButton icon={Trash2} label="Excluir turma" variant="danger" onClick={() => setConfirmandoExclusao(true)} />
         </div>
       </div>
 
@@ -126,6 +119,15 @@ export function TurmaCard({ id, nome, turno, capacidade, matriculados }: TurmaCa
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmandoExclusao}
+        onClose={() => setConfirmandoExclusao(false)}
+        onConfirm={excluir}
+        title={`Excluir a turma "${nome}"?`}
+        confirmLabel="Excluir turma"
+        loading={excluindo}
+      />
     </Card>
   );
 }

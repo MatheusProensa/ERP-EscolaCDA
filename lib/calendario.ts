@@ -9,17 +9,27 @@ export const CATEGORIAS_EVENTO = [
 
 export type CategoriaEvento = (typeof CATEGORIAS_EVENTO)[number];
 
+/**
+ * Paleta CATEGÓRICA (--cat-N-*): sem verde e sem vermelho, para que nenhuma
+ * categoria de evento seja lida como estado (handoff de design, etapa 3.3).
+ * As mesmas variáveis alimentam as etiquetas de tipo no Log de Atividades, o
+ * turno da turma e a categoria de material no Estoque. Organização Interna,
+ * Eventos, Marketing e Datas Comemorativas mantêm o mesmo matiz de antes —
+ * Reuniões deixa de ser verde e Recesso/Feriado deixa de ser vermelho.
+ */
 export const COR_CATEGORIA: Record<string, { bg: string; text: string; dot: string }> = {
-  "Organização Interna": { bg: "#FDF1E0", text: "#B5670C", dot: "#F5A524" },
-  "Eventos e Atividades": { bg: "#E6F0FD", text: "#1A6FD8", dot: "#1A6FD8" },
-  Marketing: { bg: "#F3E8FD", text: "#7C3AED", dot: "#7C3AED" },
-  Reuniões: { bg: "#E5F7EE", text: "#16A34A", dot: "#16A34A" },
-  "Datas Comemorativas": { bg: "#FCE7F3", text: "#DB2777", dot: "#DB2777" },
-  "Recesso/Feriado": { bg: "#FDE8E8", text: "#DC2626", dot: "#DC2626" },
+  "Organização Interna": { bg: "var(--cat-5-bg)", text: "var(--cat-5-text)", dot: "var(--cat-5-dot)" },
+  "Eventos e Atividades": { bg: "var(--cat-1-bg)", text: "var(--cat-1-text)", dot: "var(--cat-1-dot)" },
+  Marketing: { bg: "var(--cat-3-bg)", text: "var(--cat-3-text)", dot: "var(--cat-3-dot)" },
+  Reuniões: { bg: "var(--cat-2-bg)", text: "var(--cat-2-text)", dot: "var(--cat-2-dot)" },
+  "Datas Comemorativas": { bg: "var(--cat-4-bg)", text: "var(--cat-4-text)", dot: "var(--cat-4-dot)" },
+  "Recesso/Feriado": { bg: "var(--cat-6-bg)", text: "var(--cat-6-text)", dot: "var(--cat-6-dot)" },
 };
 
+const FALLBACK_CATEGORIA = { bg: "var(--cat-6-bg)", text: "var(--cat-6-text)", dot: "var(--cat-6-dot)" };
+
 export function corCategoria(categoria: string) {
-  return COR_CATEGORIA[categoria] ?? { bg: "#F1F3F7", text: "#5A6A85", dot: "#9AAABE" };
+  return COR_CATEGORIA[categoria] ?? FALLBACK_CATEGORIA;
 }
 
 export const MESES = [

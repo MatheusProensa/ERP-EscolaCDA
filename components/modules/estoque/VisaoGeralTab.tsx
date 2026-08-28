@@ -3,17 +3,11 @@ import type { ItemEstoque, MovimentacaoEstoque } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
+import { Badge } from "@/components/ui/Badge";
 import { StatusEstoquePill } from "./EstoqueVisuais";
-import { statusEstoque } from "@/lib/estoqueStatus";
+import { statusEstoque, MOV_INFO } from "@/lib/estoqueStatus";
 
 type MovimentacaoComItem = MovimentacaoEstoque & { item: ItemEstoque };
-
-const TIPO_LABEL: Record<string, { label: string; bg: string; cor: string }> = {
-  ENTRADA: { label: "Entrada", bg: "#16A34A1A", cor: "#16A34A" },
-  SAIDA: { label: "Saída", bg: "#D977061A", cor: "#D97706" },
-  AJUSTE: { label: "Ajuste", bg: "#1A6FD81A", cor: "#1A6FD8" },
-  ESTORNO: { label: "Estorno", bg: "#6B72801A", cor: "#6B7280" },
-};
 
 export function VisaoGeralTab({
   itens,
@@ -59,7 +53,7 @@ export function VisaoGeralTab({
               <Th>Situação</Th>
             </TableHead>
             <TableBody>
-              {criticos.length === 0 && <TableEmpty colSpan={3}>Nenhum item abaixo do mínimo 🎉</TableEmpty>}
+              {criticos.length === 0 && <TableEmpty colSpan={3}>Nenhum item abaixo do mínimo</TableEmpty>}
               {criticos.slice(0, 6).map((item) => (
                 <Tr key={item.id}>
                   <Td className="font-medium">{item.nome}</Td>
@@ -96,12 +90,7 @@ export function VisaoGeralTab({
               {movimentacoesRecentes.slice(0, 6).map((mov) => (
                 <Tr key={mov.id}>
                   <Td>
-                    <span
-                      className="rounded-md px-2 py-0.5 text-xs font-semibold"
-                      style={{ backgroundColor: TIPO_LABEL[mov.tipo].bg, color: TIPO_LABEL[mov.tipo].cor }}
-                    >
-                      {TIPO_LABEL[mov.tipo].label}
-                    </span>
+                    <Badge variant={MOV_INFO[mov.tipo].variant}>{MOV_INFO[mov.tipo].label}</Badge>
                   </Td>
                   <Td>{mov.item.nome}</Td>
                   <Td className="text-right">{mov.quantidade}</Td>

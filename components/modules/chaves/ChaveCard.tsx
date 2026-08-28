@@ -10,6 +10,8 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { IconButton } from "@/components/ui/IconButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { showToast } from "@/components/ui/Toast";
 import { formatarDataHora } from "@/lib/utils";
 
@@ -23,6 +25,8 @@ export function ChaveCard({
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [editando, setEditando] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [funcionarioId, setFuncionarioId] = useState("");
@@ -51,14 +55,15 @@ export function ChaveCard({
   }
 
   async function excluir() {
-    if (!confirm(`Excluir a chave "${chave.sala}"?`)) return;
-    setError("");
+    setExcluindo(true);
     const res = await fetch(`/api/chaves/${chave.id}`, { method: "DELETE" });
+    setExcluindo(false);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error ?? "Não foi possível excluir.");
+      showToast(data.error ?? "Não foi possível excluir.", "error");
       return;
     }
+    setConfirmandoExclusao(false);
     router.refresh();
   }
 
@@ -120,22 +125,8 @@ export function ChaveCard({
       <div className="mb-2 flex items-center justify-between gap-2">
         <Badge variant={emprestimo ? "amber" : "green"}>{emprestimo ? "Emprestada" : "Disponível"}</Badge>
         <div className="flex shrink-0 items-center gap-1">
-          <button
-            onClick={() => setEditando(true)}
-            title="Editar"
-            aria-label="Editar chave"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg hover:text-cda-text"
-          >
-            <Pencil className="h-[18px] w-[18px]" />
-          </button>
-          <button
-            onClick={excluir}
-            title="Excluir"
-            aria-label="Excluir chave"
-            className="flex h-9 w-9 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg hover:text-cda-red"
-          >
-            <Trash2 className="h-[18px] w-[18px]" />
-          </button>
+          <IconButton icon={Pencil} label="Editar chave" onClick={() => setEditando(true)} />
+          <IconButton icon={Trash2} label="Excluir chave" variant="danger" onClick={() => setConfirmandoExclusao(true)} />
         </div>
       </div>
 
@@ -202,6 +193,15 @@ export function ChaveCard({
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmandoExclusao}
+        onClose={() => setConfirmandoExclusao(false)}
+        onConfirm={excluir}
+        title={`Excluir a chave "${chave.sala}"?`}
+        confirmLabel="Excluir chave"
+        loading={excluindo}
+      />
     </Card>
   );
 }

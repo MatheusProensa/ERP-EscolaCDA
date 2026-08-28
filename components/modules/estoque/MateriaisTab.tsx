@@ -6,6 +6,7 @@ import { Search, Download, FileText } from "lucide-react";
 import type { ItemEstoque } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Segmented } from "@/components/ui/Segmented";
 import { StockBar, StatusEstoquePill, CategoriaCell } from "./EstoqueVisuais";
@@ -67,20 +68,12 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
           ]}
         />
         <div className="flex-1" />
-        <a
-          href={hrefBase}
-          className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
-        >
-          <Download className="h-3.5 w-3.5" />
+        <Button variant="outline" size="sm" icon={Download} href={hrefBase}>
           CSV
-        </a>
-        <a
-          href={hrefPdf}
-          className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 py-1.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
-        >
-          <FileText className="h-3.5 w-3.5" />
+        </Button>
+        <Button variant="outline" size="sm" icon={FileText} href={hrefPdf}>
           PDF
-        </a>
+        </Button>
       </div>
 
       <Card>

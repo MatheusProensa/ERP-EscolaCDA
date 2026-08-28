@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { formatarDataHora } from "@/lib/utils";
 import { ConfirmarLeituraButton } from "@/components/modules/dashboard/ConfirmarLeituraButton";
 
@@ -44,9 +45,7 @@ export async function MuralWidget() {
       }
     >
       <div className="flex flex-col divide-y divide-cda-border">
-        {avisos.length === 0 && (
-          <p className="px-5 py-6 text-center text-sm text-cda-text3">Nenhum aviso publicado ainda.</p>
-        )}
+        {avisos.length === 0 && <EmptyState title="Nenhum aviso publicado ainda." />}
         {avisos.map((aviso) => (
           <div key={aviso.id} className="flex items-start gap-3 p-4">
             <Avatar nome={aviso.autor} size="lg" />

@@ -5,6 +5,7 @@ import { flushSync } from "react-dom";
 import { Send, FileText, ArrowLeft, Search, Check, CheckCheck, Clock, AlertCircle, Pencil, Trash2, X as XIcon } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { FileUpload } from "@/components/ui/FileUpload";
+import { IconButton } from "@/components/ui/IconButton";
 import { EmojiPicker } from "@/components/modules/chat/EmojiPicker";
 import { ROLE_LABEL } from "@/lib/permissoes";
 import { formatarDataHora } from "@/lib/utils";
@@ -625,22 +626,8 @@ export function ChatApp({
                       )}
                       {minha && !m.excluida && !editandoEssa && !m.enviando && !m.falhouEnvio && (
                         <div className="mb-1 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                          <button
-                            onClick={() => iniciarEdicao(m)}
-                            title="Editar mensagem"
-                            aria-label="Editar mensagem"
-                            className="flex h-6 w-6 items-center justify-center rounded-full text-cda-text3 hover:bg-white hover:text-cda-blue"
-                          >
-                            <Pencil className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={() => excluirMensagem(m.id)}
-                            title="Apagar mensagem"
-                            aria-label="Apagar mensagem"
-                            className="flex h-6 w-6 items-center justify-center rounded-full text-cda-text3 hover:bg-white hover:text-cda-red"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
+                          <IconButton icon={Pencil} label="Editar mensagem" size="sm" onClick={() => iniciarEdicao(m)} />
+                          <IconButton icon={Trash2} label="Apagar mensagem" size="sm" variant="danger" onClick={() => excluirMensagem(m.id)} />
                         </div>
                       )}
                       <div className={`flex max-w-[70%] flex-col ${minha ? "items-end" : "items-start"}`}>

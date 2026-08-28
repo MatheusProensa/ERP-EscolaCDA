@@ -3,21 +3,16 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Undo2, Search } from "lucide-react";
-import type { ItemEstoque, MovimentacaoEstoque, TipoMov } from "@prisma/client";
+import type { ItemEstoque, MovimentacaoEstoque } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
+import { Badge } from "@/components/ui/Badge";
+import { MOV_INFO } from "@/lib/estoqueStatus";
 import { formatarDataHora } from "@/lib/utils";
 
 type MovimentacaoComItem = MovimentacaoEstoque & { item: ItemEstoque };
-
-const TIPO_STYLE: Record<TipoMov, { label: string; bg: string; cor: string; sinal: string }> = {
-  ENTRADA: { label: "Entrada", bg: "#16A34A1A", cor: "#16A34A", sinal: "+" },
-  SAIDA: { label: "Saída", bg: "#D977061A", cor: "#D97706", sinal: "-" },
-  AJUSTE: { label: "Ajuste", bg: "#1A6FD81A", cor: "#1A6FD8", sinal: "" },
-  ESTORNO: { label: "Estorno", bg: "#6B72801A", cor: "#6B7280", sinal: "" },
-};
 
 export function MovimentacoesTab({ movimentacoes: movimentacoesIniciais }: { movimentacoes: MovimentacaoComItem[] }) {
   const router = useRouter();
@@ -112,17 +107,12 @@ export function MovimentacoesTab({ movimentacoes: movimentacoesIniciais }: { mov
           <TableBody>
             {filtradas.length === 0 && <TableEmpty colSpan={8}>Nenhuma movimentação registrada.</TableEmpty>}
             {filtradas.map((mov) => {
-              const estilo = TIPO_STYLE[mov.tipo];
+              const estilo = MOV_INFO[mov.tipo];
               const podeEstornar = !mov.anulada && mov.tipo !== "ESTORNO";
               return (
                 <Tr key={mov.id} className={mov.anulada ? "opacity-50" : ""}>
                   <Td>
-                    <span
-                      className="rounded-md px-2 py-0.5 text-xs font-semibold"
-                      style={{ backgroundColor: estilo.bg, color: estilo.cor }}
-                    >
-                      {estilo.label}
-                    </span>
+                    <Badge variant={estilo.variant}>{estilo.label}</Badge>
                     {mov.anulada && <span className="ml-1.5 text-xs text-cda-text3">(anulada)</span>}
                   </Td>
                   <Td className="font-medium">{mov.item.nome}</Td>

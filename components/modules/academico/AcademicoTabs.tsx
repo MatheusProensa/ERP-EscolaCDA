@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { Segmented } from "@/components/ui/Segmented";
 
 /**
  * Abas "Turmas" / "Alunos" / "Lista de espera" no topo das páginas do módulo
@@ -8,6 +7,9 @@ import { cn } from "@/lib/utils";
  * regras de permissão (`lib/permissoes.ts`) que já existem pra cada rota.
  * Ficam de fora da Sidebar (que só lista "Acadêmico") pra não duplicar duas
  * entradas ativas ao mesmo tempo quando se está numa sub-rota.
+ *
+ * Rotas irmãs do mesmo módulo → <Segmented> (handoff de design, etapa 4.7),
+ * em vez de reimplementar o mesmo visual à mão.
  */
 export function AcademicoTabs({
   active,
@@ -20,33 +22,16 @@ export function AcademicoTabs({
   totalAlunos?: number;
   totalListaEspera?: number;
 }) {
-  const tabs = [
-    { key: "turmas" as const, label: "Turmas", href: "/academico", count: totalTurmas },
-    { key: "alunos" as const, label: "Alunos", href: "/alunos", count: totalAlunos },
-    { key: "lista-espera" as const, label: "Lista de espera", href: "/academico/lista-espera", count: totalListaEspera },
-  ];
-
   return (
-    <div className="mb-5 inline-flex items-center gap-0.5 rounded-lg border border-cda-border bg-cda-bg p-0.5">
-      {tabs.map((tab) => (
-        <Link
-          key={tab.key}
-          href={tab.href}
-          className={cn(
-            "flex h-8 items-center gap-1.5 rounded-md px-3 text-sm font-semibold transition-colors",
-            active === tab.key
-              ? "bg-white text-cda-text shadow-sm"
-              : "text-cda-text3 hover:text-cda-text2"
-          )}
-        >
-          {tab.label}
-          {tab.count !== undefined && (
-            <span className={cn("text-xs", active === tab.key ? "text-cda-text2" : "text-cda-text3")}>
-              {tab.count}
-            </span>
-          )}
-        </Link>
-      ))}
+    <div className="mb-5">
+      <Segmented
+        value={active}
+        options={[
+          { value: "turmas", label: "Turmas", href: "/academico", count: totalTurmas },
+          { value: "alunos", label: "Alunos", href: "/alunos", count: totalAlunos },
+          { value: "lista-espera", label: "Lista de espera", href: "/academico/lista-espera", count: totalListaEspera },
+        ]}
+      />
     </div>
   );
 }
