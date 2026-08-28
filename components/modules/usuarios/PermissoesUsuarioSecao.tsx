@@ -19,9 +19,9 @@ type Nivel = NivelPermissao | "HERDAR";
 // não precisar perguntar o que cada botão faz — pedido explícito do dono do
 // sistema, que vai passar isso pra pessoas sem tanta prática de tecnologia.
 const NIVEIS: { valor: Nivel; label: string; icon: typeof Eye; cor: string }[] = [
-  { valor: "HERDAR", label: "Acesso normal", icon: RotateCcw, cor: "text-cda-text3" },
-  { valor: "VER", label: "Só consulta, não edita", icon: Eye, cor: "text-cda-amber" },
-  { valor: "NENHUM", label: "Bloqueado, não vê", icon: Ban, cor: "text-cda-red" },
+  { valor: "HERDAR", label: "Ler e editar", icon: RotateCcw, cor: "text-cda-text3" },
+  { valor: "VER", label: "Só visualizar", icon: Eye, cor: "text-cda-amber" },
+  { valor: "NENHUM", label: "Sem acesso", icon: Ban, cor: "text-cda-red" },
 ];
 
 export function PermissoesUsuarioSecao({
