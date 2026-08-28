@@ -37,7 +37,11 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
     where: { id },
     include: {
       anoLetivo: true,
+      // Só matrícula ATIVA aparece aqui — trancada/cancelada/transferida/concluída
+      // são histórico, não "quem tá na turma hoje" (ex.: aluno que saiu de tarde
+      // pro Contraturno não deve continuar poluindo a lista da turma de tarde).
       matriculas: {
+        where: { situacao: "ATIVA" },
         include: { aluno: true },
         orderBy: { aluno: { nome: "asc" } },
       },
