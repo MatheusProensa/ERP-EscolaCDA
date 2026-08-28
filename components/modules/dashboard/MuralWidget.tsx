@@ -8,6 +8,7 @@ import { Avatar } from "@/components/ui/Avatar";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatarDataHora } from "@/lib/utils";
 import { ConfirmarLeituraButton } from "@/components/modules/dashboard/ConfirmarLeituraButton";
+import { AtalhoNovoAviso } from "@/components/modules/dashboard/AtalhoNovoAviso";
 
 export async function MuralWidget() {
   const session = await auth();
@@ -39,9 +40,12 @@ export async function MuralWidget() {
         </span>
       }
       action={
-        <Link href="/mural" className="text-sm font-medium text-cda-blue hover:underline">
-          Ver mural
-        </Link>
+        <div className="flex items-center gap-3">
+          <AtalhoNovoAviso />
+          <Link href="/mural" className="text-sm font-medium text-cda-blue hover:underline">
+            Ver mural
+          </Link>
+        </div>
       }
     >
       <div className="flex flex-col divide-y divide-cda-border">

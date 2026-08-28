@@ -2,29 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Megaphone } from "lucide-react";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { NovoAvisoForm } from "@/components/modules/mural/NovoAvisoForm";
 
-/** Atalho "Novo aviso" do Dashboard — mesmo visual (e mesma cor categórica de
- * "Mural") dos chips de AtalhosRapidos, mas abre o modal de criação direto em
- * vez de só navegar pro Mural (era exatamente o mesmo link que já existe na
- * sidebar, sem ganho nenhum). */
+/** Botão "Novo aviso" — vive no action do card do Mural (Dashboard), do lado
+ * de "Ver mural". Antes era um atalho grande e separado junto de Chat/Novo
+ * aluno/Novo funcionário — o dono do sistema achou que isso duplicava a
+ * navegação (Chat já tem ícone próprio na topbar) e misturava ações raras
+ * (matricular aluno) com o que se usa toda hora. Ficou só este, junto do
+ * conteúdo que ele afeta. */
 export function AtalhoNovoAviso() {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center justify-center gap-2.5 rounded-xl border border-cda-border bg-white px-4 py-3 text-sm font-medium text-cda-text shadow-sm transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5 hover:shadow-md sm:justify-start"
-      >
-        <span className="flex h-8 w-8 items-center justify-center rounded-full" style={{ backgroundColor: "var(--cat-4-bg)" }}>
-          <Megaphone className="h-4 w-4" style={{ color: "var(--cat-4-text)" }} strokeWidth={2.25} />
-        </span>
+      <Button size="sm" variant="ghost" onClick={() => setOpen(true)}>
+        <Plus className="h-3.5 w-3.5" />
         Novo aviso
-      </button>
+      </Button>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Novo aviso">
         <NovoAvisoForm

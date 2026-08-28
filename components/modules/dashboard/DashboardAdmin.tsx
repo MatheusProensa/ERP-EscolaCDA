@@ -1,5 +1,4 @@
 import { Suspense } from "react";
-import { UserPlus, UserCog, MessageCircle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { contarAlunosAtivos } from "@/lib/alunos";
@@ -7,8 +6,6 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 import { MetricasGerais } from "@/components/modules/dashboard/MetricasGerais";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
-import { AtalhosRapidos } from "@/components/modules/dashboard/AtalhosRapidos";
-import { AtalhoNovoAviso } from "@/components/modules/dashboard/AtalhoNovoAviso";
 import { ProximosEventosWidget } from "@/components/modules/dashboard/ProximosEventosWidget";
 import { AtividadeRecenteWidget } from "@/components/modules/dashboard/AtividadeRecenteWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
@@ -34,20 +31,10 @@ export async function DashboardAdmin({ nome }: { nome: string }) {
     <div>
       <PageHeader title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`} subtitle="Visão geral da Escola CDA — todos os setores" />
 
-      {/* NOVO: Alunos/Funcionários viravam link pra tela que já tá na sidebar (zero
-          ganho) — agora vão direto pro cadastro. Mural virou ação de verdade (abre o
-          modal de novo aviso). Chat continua navegação simples: "nova mensagem"
-          exigiria escolher destinatário antes, não é uma ação de 1 clique só. */}
-      <AtalhosRapidos
-        itens={[
-          { label: "Chat", href: "/chat", icon: MessageCircle, tone: "cat2" },
-          { label: "Novo aluno", href: "/alunos/novo", icon: UserPlus, tone: "cat1" },
-          { label: "Novo funcionário", href: "/funcionarios/novo", icon: UserCog, tone: "cat5" },
-        ]}
-      >
-        <AtalhoNovoAviso />
-      </AtalhosRapidos>
-
+      {/* Atalhos (Chat/Novo aluno/Novo funcionário) removidos — duplicavam a
+          navegação (Chat já tem ícone na topbar) e misturavam ações raras
+          (matricular aluno) com o que se usa toda hora. "Novo aviso" migrou pro
+          action do card do Mural, ali embaixo. */}
       <div className="mb-5">
         <MetricasGerais
           totalAlunos={totalAlunos}
