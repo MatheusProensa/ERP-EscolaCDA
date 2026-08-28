@@ -35,17 +35,17 @@ export async function DashboardPedagogico({ nome }: { nome: string }) {
 
       <AtalhosRapidos
         itens={[
-          { label: "Chat", href: "/chat", icon: MessageCircle, color: "#1A6FD8" },
-          { label: "Mural", href: "/mural", icon: Megaphone, color: "#16A34A" },
-          { label: "Acadêmico", href: "/academico", icon: GraduationCap, color: "#D97706" },
-          { label: "Alunos", href: "/alunos", icon: Users, color: "#7C3AED" },
+          { label: "Chat", href: "/chat", icon: MessageCircle },
+          { label: "Mural", href: "/mural", icon: Megaphone },
+          { label: "Acadêmico", href: "/academico", icon: GraduationCap },
+          { label: "Alunos", href: "/alunos", icon: Users },
         ]}
       />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricCard icon={Users} iconColor="#1A6FD8" value={totalAlunos} label="Total de alunos" subtext="Matrículas ativas" />
-        <MetricCard icon={GraduationCap} iconColor="#D97706" value={turmasAtivas} label="Turmas ativas" subtext="Ano letivo atual" />
-        <MetricCard icon={Megaphone} iconColor="#16A34A" value={avisosFixados} label="Avisos fixados" subtext="No mural" />
+        <MetricCard icon={Users} tone="neutral" value={totalAlunos} label="Total de alunos" subtext="Matrículas ativas" />
+        <MetricCard icon={GraduationCap} tone="neutral" value={turmasAtivas} label="Turmas ativas" subtext="Ano letivo atual" />
+        <MetricCard icon={Megaphone} tone="neutral" value={avisosFixados} label="Avisos fixados" subtext="No mural" />
       </div>
 
       <div className="mb-5">

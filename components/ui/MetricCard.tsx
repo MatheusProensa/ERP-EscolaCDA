@@ -20,9 +20,23 @@ function Sparkline({ points, color }: { points: number[]; color: string }) {
   );
 }
 
+export type MetricTone = "neutral" | "success" | "warning" | "critical" | "danger";
+
+// NOVO (handoff de design, etapa 2.1): antes cada card recebia uma cor decorativa
+// por posição na grade (1º azul, 2º âmbar...) sem relação com o dado — e coincidia
+// com as cores que já significam "ok"/"problema" nos badges. Agora a cor só aparece
+// quando descreve de verdade um estado; o padrão é neutro.
+const TONE_COLOR: Record<MetricTone, string> = {
+  neutral: "var(--icon-neutral)",
+  success: "var(--status-success)",
+  warning: "var(--status-warning)",
+  critical: "var(--status-critical)",
+  danger: "var(--status-danger)",
+};
+
 export function MetricCard({
   icon: Icon,
-  iconColor = "#1A6FD8",
+  tone = "neutral",
   value,
   label,
   subtext,
@@ -31,7 +45,7 @@ export function MetricCard({
   trend,
 }: {
   icon: LucideIcon;
-  iconColor?: string;
+  tone?: MetricTone;
   value: React.ReactNode;
   label: string;
   subtext?: string;
@@ -40,10 +54,11 @@ export function MetricCard({
   /** NOVO: até ~7 pontos para desenhar um sparkline sob o valor. */
   trend?: number[];
 }) {
+  const cor = TONE_COLOR[tone];
   return (
     <Card
       className="group relative flex flex-col items-center p-5 text-center transition-[transform,border-color,box-shadow] duration-500 ease-out hover:scale-[1.015] hover:[border-color:var(--metric-border)] hover:shadow-[0_4px_16px_-4px_var(--metric-border)]"
-      style={{ ["--metric-border" as string]: `color-mix(in oklch, ${iconColor} 45%, transparent)` }}
+      style={{ ["--metric-border" as string]: `color-mix(in oklch, ${cor} 45%, transparent)` }}
     >
       {/* NOVO: badge agora é um selinho encostado no canto do círculo do ícone
           (position: absolute), em vez de ficar ao lado — assim o ícone continua
@@ -54,17 +69,17 @@ export function MetricCard({
         </Badge>
       )}
       <div className="relative mb-4">
-        {/* NOVO: chip circular com anel + sombra suave na cor do ícone, em vez do
+        {/* NOVO: chip circular com anel + sombra suave na cor do tom, em vez do
             quadrado com tinta chapada — visual mais rico/"premium". */}
         <div
           className="flex h-12 w-12 items-center justify-center rounded-full border transition-transform duration-500 ease-out group-hover:scale-110"
           style={{
-            backgroundColor: `color-mix(in oklch, ${iconColor} 14%, white)`,
-            borderColor: `color-mix(in oklch, ${iconColor} 22%, transparent)`,
-            boxShadow: `0 2px 8px color-mix(in oklch, ${iconColor} 18%, transparent)`,
+            backgroundColor: `color-mix(in oklch, ${cor} 14%, white)`,
+            borderColor: `color-mix(in oklch, ${cor} 22%, transparent)`,
+            boxShadow: `0 2px 8px color-mix(in oklch, ${cor} 18%, transparent)`,
           }}
         >
-          <Icon className="h-[22px] w-[22px]" style={{ color: iconColor }} strokeWidth={2.25} />
+          <Icon className="h-[22px] w-[22px]" style={{ color: cor }} strokeWidth={2.25} />
         </div>
       </div>
       <div className="text-2xl font-bold text-cda-text">{value}</div>
@@ -72,7 +87,7 @@ export function MetricCard({
       {subtext && <div className="mt-0.5 text-xs text-cda-text3">{subtext}</div>}
       {trend && (
         <div className="mt-3 w-full">
-          <Sparkline points={trend} color={iconColor} />
+          <Sparkline points={trend} color={cor} />
         </div>
       )}
     </Card>

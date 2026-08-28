@@ -30,24 +30,24 @@ export async function DashboardAdministrativo({ nome }: { nome: string }) {
 
       <AtalhosRapidos
         itens={[
-          { label: "Chat", href: "/chat", icon: MessageCircle, color: "#1A6FD8" },
-          { label: "Mural", href: "/mural", icon: Megaphone, color: "#16A34A" },
-          { label: "Estoque", href: "/estoque", icon: Package, color: "#D97706" },
-          { label: "Chaves", href: "/chaves", icon: KeyRound, color: "#7C3AED" },
+          { label: "Chat", href: "/chat", icon: MessageCircle },
+          { label: "Mural", href: "/mural", icon: Megaphone },
+          { label: "Estoque", href: "/estoque", icon: Package },
+          { label: "Chaves", href: "/chaves", icon: KeyRound },
         ]}
       />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricCard icon={UserCog} iconColor="#1A6FD8" value={funcionariosAtivos} label="Funcionários ativos" />
+        <MetricCard icon={UserCog} tone="neutral" value={funcionariosAtivos} label="Funcionários ativos" />
         <MetricCard
           icon={TriangleAlert}
-          iconColor="#DC2626"
+          tone={criticos.length > 0 ? "danger" : "neutral"}
           value={criticos.length}
           label="Itens críticos no estoque"
           badge={criticos.length > 0 ? "Atenção" : "Em dia"}
           badgeVariant={criticos.length > 0 ? "red" : "green"}
         />
-        <MetricCard icon={KeyRound} iconColor="#D97706" value={chavesEmprestadas} label="Chaves emprestadas" subtext="Ainda não devolvidas" />
+        <MetricCard icon={KeyRound} tone="neutral" value={chavesEmprestadas} label="Chaves emprestadas" subtext="Ainda não devolvidas" />
       </div>
 
       <Card title="Estoque baixo">

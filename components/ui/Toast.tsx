@@ -6,9 +6,9 @@ import { CheckCircle2, XCircle, Info, X } from "lucide-react";
 type Variant = "success" | "error" | "info";
 
 const VARIANT: Record<Variant, { Icon: typeof CheckCircle2; color: string }> = {
-  success: { Icon: CheckCircle2, color: "#16A34A" },
-  error: { Icon: XCircle, color: "#DC2626" },
-  info: { Icon: Info, color: "#1A6FD8" },
+  success: { Icon: CheckCircle2, color: "var(--status-success)" },
+  error: { Icon: XCircle, color: "var(--status-danger)" },
+  info: { Icon: Info, color: "var(--status-info)" },
 };
 
 type ToastItem = { id: number; message: string; variant: Variant };

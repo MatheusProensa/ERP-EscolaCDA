@@ -20,6 +20,86 @@
   --cda-pink: #db2777;
   /* NOVO — anel de foco de teclado, usado no @layer base abaixo */
   --cda-focus-ring: 0 0 0 3px rgb(26 111 216 / 35%);
+
+  /* ============================================================================
+     Etapa 1 do handoff de design (Claude Design) — camada de tokens semânticos.
+     Alias por papel em cima dos valores base acima — nenhum valor novo de
+     paleta, exceto --icon-neutral/--icon-neutral-bg (mistura do navy com o
+     fundo). Ver Downloads/handoff/README.md e PLANO.md.
+     ============================================================================ */
+
+  /* ---- superfície e marca ---- */
+  --surface-app: var(--cda-bg);
+  --surface-card: var(--cda-surface);
+  --surface-nav: var(--cda-navy);
+  --surface-overlay: rgb(13 31 78 / 40%);
+
+  --action-primary: var(--cda-blue);      /* botão primário, link, nav ativo, foco, aba ativa */
+  --action-danger: var(--cda-red);
+  --action-ghost-hover: var(--cda-bg);
+  --accent-brand: var(--cda-yellow);     /* institucional em destaque */
+
+  --text-heading: var(--cda-text);
+  --text-body: var(--cda-text2);
+  --text-muted: var(--cda-text3);
+  --text-on-nav: #ffffff;
+  --text-on-nav-muted: rgb(255 255 255 / 65%);
+  --text-on-nav-faint: rgb(255 255 255 / 35%);
+  --text-link: var(--cda-blue);
+
+  --border-default: var(--cda-border);
+  --border-focus: var(--cda-blue);
+  --border-danger: var(--cda-red);
+
+  /* ---- estado: EXCLUSIVOS de estado, nunca decorativos ---- */
+  --status-success: var(--cda-green);    /* ativa, disponível, normal, pago, assinado, entrada */
+  --status-warning: var(--cda-amber);   /* trancada, atenção, emprestada, saída, fixado */
+  --status-critical: var(--cda-critical); /* estoque crítico */
+  --status-danger: var(--cda-red);      /* cancelada, zerada, vencida, erro, destrutivo */
+  --status-info: var(--cda-blue);       /* concluída, informativo — só texto/badge */
+
+  /* ---- neutro para ícone decorativo: resolve o Dashboard ---- */
+  --icon-neutral: #4a5b7d;
+  --icon-neutral-bg: #e7edf7;
+
+  /* ---- categórica: 6 matizes, SEM verde e SEM vermelho ----
+     cat-1/3/4/5 são os mesmos valores que lib/calendario.ts já usa hoje. */
+  --cat-1-dot: #1a6fd8;  --cat-1-bg: #e6f0fd;  --cat-1-text: #1a6fd8;
+  --cat-2-dot: #0d9488;  --cat-2-bg: #e0f5f2;  --cat-2-text: #0b7a70;
+  --cat-3-dot: #7c3aed;  --cat-3-bg: #f3e8fd;  --cat-3-text: #7c3aed;
+  --cat-4-dot: #db2777;  --cat-4-bg: #fce7f3;  --cat-4-text: #be1e63;
+  --cat-5-dot: #f5a524;  --cat-5-bg: #fdf1e0;  --cat-5-text: #b5670c;
+  --cat-6-dot: #5a6a85;  --cat-6-bg: #f1f3f7;  --cat-6-text: #4a5b7d;
+
+  /* ---- espaçamento e dimensão: hoje decorados à mão em cada tela ---- */
+  --pad-card: 20px;
+  --pad-card-tight: 16px;
+  --pad-card-header: 16px 20px;
+  --pad-table-cell: 12px 16px;
+  --gap-card-grid: 20px;
+  --gap-field: 16px;
+  --gap-label-control: 6px;
+  --mb-page-header: 24px;
+
+  --size-sidebar: 216px;
+  --size-topbar: 56px;
+  --size-control: 40px;
+  --size-control-sm: 32px;
+  --size-icon-btn: 36px;
+  --size-touch: 44px;
+
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-control: 8px;
+  --radius-card: 10px;
+  --radius-tile: 12px;
+  --radius-pill: 9999px;
+
+  /* ---- movimento: já em uso, apenas nomeado ---- */
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 500ms;
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
 }
 
 @theme inline {
@@ -39,6 +119,33 @@
   --color-cda-purple: var(--cda-purple);
   --color-cda-teal: var(--cda-teal);
   --color-cda-pink: var(--cda-pink);
+
+  /* Etapa 1 do handoff — expõe os tokens semânticos como utilitário Tailwind
+     (ex.: bg-surface-app, text-status-danger). */
+  --color-surface-app: var(--surface-app);
+  --color-surface-card: var(--surface-card);
+  --color-surface-nav: var(--surface-nav);
+  --color-action-primary: var(--action-primary);
+  --color-action-danger: var(--action-danger);
+  --color-accent-brand: var(--accent-brand);
+  --color-text-heading: var(--text-heading);
+  --color-text-body: var(--text-body);
+  --color-text-muted: var(--text-muted);
+  --color-border-default: var(--border-default);
+  --color-status-success: var(--status-success);
+  --color-status-warning: var(--status-warning);
+  --color-status-critical: var(--status-critical);
+  --color-status-danger: var(--status-danger);
+  --color-status-info: var(--status-info);
+  --color-icon-neutral: var(--icon-neutral);
+  --color-icon-neutral-bg: var(--icon-neutral-bg);
+  --color-cat-1: var(--cat-1-dot);
+  --color-cat-2: var(--cat-2-dot);
+  --color-cat-3: var(--cat-3-dot);
+  --color-cat-4: var(--cat-4-dot);
+  --color-cat-5: var(--cat-5-dot);
+  --color-cat-6: var(--cat-6-dot);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

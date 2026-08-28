@@ -19,7 +19,7 @@ export function MetricasGerais({
     <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
       <MetricCard
         icon={Users}
-        iconColor="#1A6FD8"
+        tone="neutral"
         value={totalAlunos}
         label="Total de alunos"
         subtext="Matrículas ativas"
@@ -29,7 +29,7 @@ export function MetricasGerais({
       />
       <MetricCard
         icon={GraduationCap}
-        iconColor="#D97706"
+        tone="neutral"
         value={turmasAtivas}
         label="Turmas ativas"
         subtext="Ano letivo atual"
@@ -37,14 +37,14 @@ export function MetricasGerais({
       />
       <MetricCard
         icon={UserCog}
-        iconColor="#7C3AED"
+        tone="neutral"
         value={funcionariosAtivos}
         label="Funcionários ativos"
         subtext="Quadro atual"
       />
       <MetricCard
         icon={FileSignature}
-        iconColor={contratosPendentes > 0 ? "#DC2626" : "#16A34A"}
+        tone={contratosPendentes > 0 ? "danger" : "success"}
         value={contratosPendentes}
         label="Contratos pendentes"
         subtext="Aguardando assinatura"

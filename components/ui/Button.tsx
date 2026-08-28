@@ -3,11 +3,14 @@ import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import type { ButtonHTMLAttributes } from "react";
 
-type Variant = "primary" | "ghost" | "danger" | "outline";
+type Variant = "primary" | "secondary" | "ghost" | "danger" | "outline";
 type Size = "sm" | "md";
 
 const VARIANT_CLASSES: Record<Variant, string> = {
   primary: "bg-cda-blue text-white hover:bg-cda-blue/90",
+  // NOVO: variante navy — antes cada tela que precisava disso forçava
+  // className="bg-cda-navy hover:bg-cda-navy/90" no Button (handoff 2.5).
+  secondary: "bg-surface-nav text-white hover:bg-surface-nav/90",
   ghost: "bg-transparent text-cda-text2 hover:bg-cda-bg",
   danger: "bg-cda-red text-white hover:bg-cda-red/90",
   outline: "bg-white text-cda-text border border-cda-border hover:bg-cda-bg",

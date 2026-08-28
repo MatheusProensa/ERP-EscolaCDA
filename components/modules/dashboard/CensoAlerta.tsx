@@ -23,7 +23,7 @@ export function CensoAlerta({ quantidade }: { quantidade: number }) {
           </p>
         </div>
       </div>
-      <Button href="/alunos?censo=incompleto" className="w-full shrink-0 bg-cda-navy hover:bg-cda-navy/90 sm:w-auto">
+      <Button href="/alunos?censo=incompleto" variant="secondary" className="w-full shrink-0 sm:w-auto">
         Resolver pendências
       </Button>
     </Card>
