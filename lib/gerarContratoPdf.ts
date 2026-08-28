@@ -172,11 +172,31 @@ export async function gerarContratoPdf(dados: DadosContrato): Promise<string> {
   }
 
   // Campo de testemunha — linha em branco pra assinatura + CPF, no final do contrato.
+  // "TESTEMUNHA" e o campo de CPF ficam centralizados cada um na sua metade da linha
+  // (mesma lógica de centralização usada na assinatura da Ficha de Matrícula).
   garantirEspaco(60);
   y -= 10;
-  linha("_____________________________________________________________________", { espacoDepois: 4 });
-  pagina.drawText("TESTEMUNHA", { x: MARGEM, y, size: 9, font: fonteNegrito, color: PRETO });
-  pagina.drawText("CPF: _______________________________", { x: MARGEM + 220, y, size: 9, font: fonte, color: PRETO });
+  const linhaTestemunha = "_____________________________________________________________________";
+  linha(linhaTestemunha, { espacoDepois: 4 });
+  const textoCpfTestemunha = "CPF: _______________________________";
+  const larguraLinhaTestemunha = fonte.widthOfTextAtSize(linhaTestemunha, 10.5);
+  const larguraMetadeTestemunha = larguraLinhaTestemunha / 2;
+  const larguraTestemunha = fonteNegrito.widthOfTextAtSize("TESTEMUNHA", 9);
+  const larguraCpfTestemunha = fonte.widthOfTextAtSize(textoCpfTestemunha, 9);
+  pagina.drawText("TESTEMUNHA", {
+    x: MARGEM + (larguraMetadeTestemunha - larguraTestemunha) / 2,
+    y,
+    size: 9,
+    font: fonteNegrito,
+    color: PRETO,
+  });
+  pagina.drawText(textoCpfTestemunha, {
+    x: MARGEM + larguraMetadeTestemunha + (larguraMetadeTestemunha - larguraCpfTestemunha) / 2,
+    y,
+    size: 9,
+    font: fonte,
+    color: PRETO,
+  });
   y -= 20;
 
   const bytes = await pdf.save();
