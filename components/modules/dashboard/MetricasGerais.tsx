@@ -28,6 +28,7 @@ export function MetricasGerais({
         // NOVO: sparkline decorativo — troque por uma série real (ex.: total de
         // matrículas ativas nos últimos 7 dias) quando houver o dado histórico.
         trend={[8, 12, 10, 14, 13, 16, 18]}
+        href="/alunos"
       />
       <MetricCard
         icon={GraduationCap}
@@ -36,6 +37,7 @@ export function MetricasGerais({
         label="Turmas ativas"
         subtext="Ano letivo atual"
         trend={[12, 12, 13, 13, 14, 14, 14]}
+        href="/academico/turmas"
       />
       <MetricCard
         icon={UserCog}
@@ -43,6 +45,7 @@ export function MetricasGerais({
         value={funcionariosAtivos}
         label="Funcionários ativos"
         subtext="Quadro atual"
+        href="/funcionarios"
       />
       <MetricCard
         icon={FileSignature}
