@@ -79,7 +79,11 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-11 z-50 w-80 rounded-lg border border-cda-border bg-white shadow-lg">
+        // No celular vira painel fixo quase full-width (não ancorado no botão) —
+        // com w-80 fixo o painel nascia grudado na direita do sino e estourava
+        // pra fora da tela pela esquerda em telas estreitas. Do sm: pra cima
+        // volta a ser o dropdown ancorado de sempre.
+        <div className="fixed inset-x-3 top-14 z-50 rounded-lg border border-cda-border bg-white shadow-lg sm:absolute sm:inset-x-auto sm:right-0 sm:top-11 sm:w-80">
           <div className="border-b border-cda-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wide text-cda-text3">
             Notificações
           </div>
