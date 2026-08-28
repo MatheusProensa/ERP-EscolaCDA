@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { flushSync } from "react-dom";
-import { Send, FileText, ArrowLeft, Search, Check, CheckCheck, Clock, AlertCircle, Pencil, Trash2, X as XIcon } from "lucide-react";
+import { Send, FileText, ArrowLeft, Search, Check, CheckCheck, Clock, AlertCircle, Pencil, Trash2, X as XIcon, Loader2 } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { IconButton } from "@/components/ui/IconButton";
@@ -577,6 +577,14 @@ export function ChatApp({
 
             <div className="flex-1 overflow-y-auto px-4 py-4">
               <div className="mx-auto flex w-full max-w-2xl flex-col gap-0.5">
+                {/* NOVO: antes ficava em branco, sem nenhum aviso, enquanto buscava as
+                    mensagens da conversa recém-clicada — parecia que o clique não tinha
+                    funcionado (alguém achava que precisava clicar de novo). */}
+                {trocandoConversa && (
+                  <div className="flex flex-1 items-center justify-center py-10 text-cda-text3">
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  </div>
+                )}
                 {erroMensagens && !trocandoConversa && (
                   <div className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-cda-red/10 px-3 py-2 text-xs text-cda-red">
                     Não foi possível carregar as mensagens.
