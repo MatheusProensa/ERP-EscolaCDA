@@ -191,38 +191,24 @@ export async function gerarContratoPdf(dados: DadosContrato): Promise<string> {
     y -= 24;
   }
 
-  // Campo de testemunha — linha em branco pra assinatura + CPF, no final do contrato.
-  // Mesma régua desenhada (não texto) da dupla acima, pra ficar com exatamente a
-  // mesma largura útil da página — "TESTEMUNHA" centralizado na metade esquerda,
-  // "CPF:" + linha de preenchimento na metade direita.
-  garantirEspaco(60);
+  // Campo de testemunha — linha em branco pra assinatura, no final do contrato.
+  // Mesma régua desenhada (não texto) e mesmo layout da dupla CONTRATANTE/CONTRATADA
+  // acima (linha cheia + rótulo centralizado embaixo) — sem CPF, a pedido do dono
+  // do sistema (ficava um campo de formulário estranho ali, tirou).
+  garantirEspaco(50);
   y -= 10;
   const larguraConteudoTestemunha = LARGURA - MARGEM * 2;
   pagina.drawLine({ start: { x: MARGEM, y }, end: { x: LARGURA - MARGEM, y }, thickness: 0.75, color: PRETO });
   y -= 16;
 
-  const larguraMetadeTestemunha = larguraConteudoTestemunha / 2;
   const larguraTestemunha = fonteNegrito.widthOfTextAtSize("TESTEMUNHA", 9);
   pagina.drawText("TESTEMUNHA", {
-    x: MARGEM + (larguraMetadeTestemunha - larguraTestemunha) / 2,
+    x: MARGEM + (larguraConteudoTestemunha - larguraTestemunha) / 2,
     y,
     size: 9,
     font: fonteNegrito,
     color: PRETO,
   });
-
-  // CPF: rótulo + linha desenhada (não "CPF: ____" como texto corrido) — mesma
-  // ideia da régua de assinatura acima, só que menor e com um rótulo do lado,
-  // pra virar um campo de formulário de verdade em vez de um bloco de texto
-  // solto tentando se equilibrar centralizado na metade da página.
-  const xMetadeDireita = MARGEM + larguraMetadeTestemunha;
-  const insetCpf = 8;
-  const rotuloCpf = "CPF:";
-  const larguraRotuloCpf = fonte.widthOfTextAtSize(rotuloCpf, 9);
-  const xLinhaCpf = xMetadeDireita + insetCpf + larguraRotuloCpf + 5;
-  const xFimLinhaCpf = MARGEM + larguraConteudoTestemunha - insetCpf;
-  pagina.drawText(rotuloCpf, { x: xMetadeDireita + insetCpf, y, size: 9, font: fonte, color: PRETO });
-  pagina.drawLine({ start: { x: xLinhaCpf, y: y - 1 }, end: { x: xFimLinhaCpf, y: y - 1 }, thickness: 0.6, color: PRETO });
   y -= 20;
 
   const bytes = await pdf.save();
