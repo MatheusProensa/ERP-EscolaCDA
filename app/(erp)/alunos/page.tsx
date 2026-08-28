@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { AlunoTable } from "@/components/modules/alunos/AlunoTable";
+import { ImportarFichaModal } from "@/components/modules/alunos/ImportarFichaModal";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
 import { ordenarTurmas } from "@/lib/utils";
@@ -80,6 +81,7 @@ export default async function AlunosPage({
               <FileSpreadsheet className="h-4 w-4" />
               Importar planilha
             </Button>
+            <ImportarFichaModal turmas={turmas.map((t) => ({ id: t.id, nome: t.nome }))} />
             <Button href="/alunos/novo">
               <UserPlus className="h-4 w-4" />
               Novo aluno
