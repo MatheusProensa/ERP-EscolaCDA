@@ -38,5 +38,9 @@ export default auth((req) => {
 });
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  // Faltava excluir arquivo estático solto na raiz de public/ (ex.: logo-cda.png,
+  // ficha-matricula-fundo.png) — sem login, esse pedido caía no redirect pro
+  // /login como qualquer outra rota, então a própria tela de login não
+  // conseguia carregar o logo (pedia login pra ver a imagem do... login).
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|svg|webp|ico)$).*)"],
 };
