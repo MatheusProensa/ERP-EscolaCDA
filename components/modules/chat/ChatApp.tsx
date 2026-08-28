@@ -769,7 +769,10 @@ export function ChatApp({
                   </div>
                 )}
                 <div className="flex items-center gap-2">
-                  <div className="flex flex-1 items-center gap-1 rounded-full border border-cda-border bg-cda-bg px-1.5">
+                  {/* min-w-0: sem isso, um <div> flex-1 não encolhe abaixo da largura
+                      natural do conteúdo (botões + texto do input) — no celular isso
+                      empurrava o botão de enviar pra fora da tela. */}
+                  <div className="flex min-w-0 flex-1 items-center gap-1 rounded-full border border-cda-border bg-cda-bg px-1.5">
                     <FileUpload maxSizeMB={3} label="" onSelect={(dados, nome) => setAnexo({ dados, nome })} />
                     <EmojiPicker onSelect={(emoji) => setTexto((t) => t + emoji)} />
                     <input
@@ -778,7 +781,7 @@ export function ChatApp({
                       onChange={(e) => setTexto(e.target.value)}
                       placeholder="Escreva uma mensagem..."
                       aria-label="Escreva uma mensagem"
-                      className="h-9 flex-1 border-none bg-transparent px-1 text-sm text-cda-text outline-none"
+                      className="h-9 min-w-0 flex-1 border-none bg-transparent px-1 text-sm text-cda-text outline-none"
                     />
                   </div>
                   <button

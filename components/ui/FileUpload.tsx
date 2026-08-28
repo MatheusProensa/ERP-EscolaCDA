@@ -37,9 +37,25 @@ export function FileUpload({
 
   return (
     <div>
-      <Button type="button" variant="outline" size="sm" icon={Paperclip} disabled={disabled} onClick={() => inputRef.current?.click()}>
-        {label}
-      </Button>
+      {label ? (
+        <Button type="button" variant="outline" size="sm" icon={Paperclip} disabled={disabled} onClick={() => inputRef.current?.click()}>
+          {label}
+        </Button>
+      ) : (
+        // Sem rótulo (ex.: barra de anexo do Chat) — botão circular igual ao de
+        // emoji ao lado, não o pill com borda/padding de texto (era mais largo
+        // que precisava, empurrava o resto da barra pra fora da tela no celular).
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={() => inputRef.current?.click()}
+          aria-label="Anexar arquivo"
+          title="Anexar arquivo"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-cda-text3 hover:bg-white hover:text-cda-text2 disabled:opacity-50"
+        >
+          <Paperclip className="h-4 w-4" />
+        </button>
+      )}
       {erro && <p className="mt-1 text-xs text-cda-red">{erro}</p>}
       <input
         ref={inputRef}
