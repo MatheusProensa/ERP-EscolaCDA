@@ -133,6 +133,21 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     upsertResponsavel(mae ?? null, "Mãe"),
   ]);
 
+  // O endereço mora no Responsável (é dele o dado), mas o cadastro do aluno tem
+  // campo de endereço próprio (usado em relatórios/ficha) — sem isso, ficava
+  // preenchido aqui na Ficha de Matrícula e "Não informado" no cadastro, mesma
+  // informação em dois lugares divergindo. Só copia se o aluno ainda não tiver
+  // o dele (não sobrescreve algo que já foi digitado direto no cadastro).
+  if (!aluno.endereco) {
+    const comEndereco = (paiSalvo?.endereco ? paiSalvo : maeSalvo?.endereco ? maeSalvo : null);
+    if (comEndereco?.endereco) {
+      await prisma.aluno.update({
+        where: { id },
+        data: { endereco: comEndereco.endereco, cidade: aluno.cidade ?? "Santa Maria", cep: comEndereco.cep ?? undefined },
+      });
+    }
+  }
+
   if (Array.isArray(pessoasAutorizadas)) {
     await prisma.pessoaAutorizada.deleteMany({ where: { alunoId: id } });
     const validas = pessoasAutorizadas.filter((p) => p.nome?.trim());
