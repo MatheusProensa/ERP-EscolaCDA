@@ -136,12 +136,10 @@ export function Sidebar({
         )}
       >
         <div className="flex items-center justify-between gap-2 px-5 py-5">
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-extrabold tracking-tight text-white">CDA</span>
-            <span className="rounded-full bg-cda-yellow px-2 py-0.5 text-[10px] font-bold text-cda-navy">
-              ERP
-            </span>
-          </div>
+          {/* Logo de verdade em vez do texto "CDA" solto + badge "ERP" — não
+              era fiel ao logo real da escola. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/logo-cda-15anos.webp" alt="Escola CDA" className="h-8 w-auto" />
           <button onClick={onClose} aria-label="Fechar menu" className="text-white/60 hover:text-white lg:hidden">
             <X className="h-5 w-5" />
           </button>
