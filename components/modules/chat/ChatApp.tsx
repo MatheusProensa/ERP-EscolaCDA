@@ -354,15 +354,16 @@ export function ChatApp({
   }, [mensagens]);
 
   function selecionar(userId: string) {
-    // flushSync força o React a aplicar isso na tela imediatamente, no mesmo
-    // clique — sem esperar o agendamento normal de render, que em telas mais
-    // lentas podia deixar cabeçalho/lista aparentemente "atrasados" por um
-    // instante até o próximo clique/evento forçar um novo render.
+    // ACHADO (depuração ao vivo, ago/2026): era isso que causava precisar clicar
+    // 2x pra abrir/trocar de conversa. O clique em si sempre funcionou (confirmado
+    // capturando os eventos reais do navegador) — o problema era o
+    // window.history.replaceState logo abaixo: o Next.js intercepta QUALQUER
+    // chamada de replaceState (não só a dele mesmo), e como essa rota é um
+    // catch-all dinâmico (/chat/[[...userId]]), ele reagia disparando um
+    // re-render que desfazia a seleção que acabou de ser aplicada — só o
+    // clique seguinte "vencia" a corrida. Tirar a URL sincronizada resolve;
+    // custo é só não atualizar a URL da aba ao trocar de conversa.
     flushSync(() => setSelecionado(userId));
-    // Atualiza a URL sem navegação do Next (evita re-render do Server Component
-    // e um novo round-trip de listarConversas a cada troca de conversa — o
-    // ChatApp já é autossuficiente e gerencia os dados via polling próprio).
-    window.history.replaceState(null, "", `/chat/${userId}`);
   }
 
   async function enviar(e: FormEvent) {
