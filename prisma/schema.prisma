@@ -404,7 +404,9 @@ enum StatusBoleto {
 model Funcionario {
   id                     String                 @id @default(cuid())
   nome                   String
-  cpf                    String                 @unique
+  // Opcional de propósito: melhor sem CPF do que com um fictício (era gerado
+  // automaticamente no cadastro inicial — corrigido a pedido do dono do sistema).
+  cpf                    String?                @unique
   cargo                  String
   setor                  String
   telefone               String?

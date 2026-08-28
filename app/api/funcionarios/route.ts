@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const { nome, cpf, cargo, setor, telefone, email, admissao, dataNascimento, jornadaPrevista, participaPonto } = body;
 
-  if (!nome || !cpf || !cargo || !setor || !admissao) {
+  if (!nome || !cargo || !setor || !admissao) {
     return NextResponse.json({ error: "Campos obrigatórios ausentes" }, { status: 400 });
   }
 
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     const funcionario = await prisma.funcionario.create({
       data: {
         nome,
-        cpf,
+        cpf: cpf || null,
         cargo,
         setor,
         telefone: telefone || null,

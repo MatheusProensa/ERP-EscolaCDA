@@ -424,16 +424,16 @@ async function main() {
   }
 
   console.log("Criando funcionários...");
-  // Email fictício (nome@escolacda.com.br) foi removido daqui — gerava um
-  // endereço que parecia real mas não existia, e ficava exibido no perfil de
-  // cada funcionário como se fosse o contato de verdade. Fica em branco até
-  // alguém preencher o email real (ou nunca, se a pessoa não usa).
+  // Email e CPF fictícios (gerados automaticamente) foram removidos daqui —
+  // pareciam reais mas não eram, e ficavam exibidos no perfil de cada
+  // funcionário como se fossem o dado de verdade. Ficam em branco até alguém
+  // preencher o valor real (CPF virou campo opcional no schema por causa disso).
   for (let i = 0; i < NOMES_FUNCIONARIOS.length; i++) {
     const f = NOMES_FUNCIONARIOS[i];
     await prisma.funcionario.create({
       data: {
         nome: f.nome,
-        cpf: gerarCPF(1000 + i),
+        cpf: null,
         cargo: f.cargo,
         setor: f.setor,
         telefone: null,

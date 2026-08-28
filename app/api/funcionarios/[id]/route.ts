@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         ativo: typeof ativo === "boolean" ? ativo : undefined,
         participaPonto: typeof participaPonto === "boolean" ? participaPonto : undefined,
         nome: nome || undefined,
-        cpf: cpf || undefined,
+        cpf: cpf !== undefined ? cpf || null : undefined,
         cargo: cargo || undefined,
         setor: setor || undefined,
         telefone: telefone !== undefined ? telefone || null : undefined,

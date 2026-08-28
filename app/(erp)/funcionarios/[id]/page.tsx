@@ -46,7 +46,7 @@ export default async function FuncionarioPerfilPage({ params }: { params: Promis
             </p>
 
             <div className="mt-4 grid grid-cols-1 gap-x-6 gap-y-3 text-sm sm:grid-cols-2">
-              <InfoItem icon={Briefcase} label="CPF" value={formatarCPF(funcionario.cpf)} />
+              <InfoItem icon={Briefcase} label="CPF" value={funcionario.cpf ? formatarCPF(funcionario.cpf) : "Não informado"} />
               <InfoItem icon={Calendar} label="Admissão" value={formatarData(funcionario.admissao)} />
               <InfoItem
                 icon={Cake}

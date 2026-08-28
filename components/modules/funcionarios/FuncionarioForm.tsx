@@ -64,9 +64,8 @@ export function FuncionarioForm({ funcionario }: { funcionario?: Funcionario }) 
           <Input
             label="CPF"
             name="cpf"
-            required
-            defaultValue={funcionario ? formatarCPF(funcionario.cpf) : undefined}
-            placeholder="000.000.000-00"
+            defaultValue={funcionario?.cpf ? formatarCPF(funcionario.cpf) : ""}
+            placeholder="000.000.000-00 (deixe em branco se não souber)"
           />
           <Input label="Cargo" name="cargo" required defaultValue={funcionario?.cargo} placeholder="Professora" />
           <Select label="Setor" name="setor" required defaultValue={funcionario?.setor ?? ""}>
