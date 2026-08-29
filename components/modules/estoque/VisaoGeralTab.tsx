@@ -1,4 +1,4 @@
-import { Boxes, ArrowDownToLine, ArrowUpFromLine, TriangleAlert } from "lucide-react";
+import { Boxes, ArrowDownToLine, ArrowUpFromLine, TriangleAlert, CircleCheck } from "lucide-react";
 import type { ItemEstoque, MovimentacaoEstoque } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { MetricCard } from "@/components/ui/MetricCard";
@@ -34,7 +34,13 @@ export function VisaoGeralTab({
         <MetricCard icon={Boxes} tone="cat6" label="Itens cadastrados" value={itens.length} subtext="No catálogo" />
         <MetricCard icon={ArrowDownToLine} tone="success" label="Entradas (mês)" value={entradasMes} subtext="Unidades recebidas" />
         <MetricCard icon={ArrowUpFromLine} tone="warning" label="Saídas (mês)" value={saidasMes} subtext="Unidades retiradas" />
-        <MetricCard icon={TriangleAlert} tone={criticos.length > 0 ? "danger" : "neutral"} label="Itens críticos" value={criticos.length} subtext="Precisam de atenção" />
+        <MetricCard
+          icon={criticos.length > 0 ? TriangleAlert : CircleCheck}
+          tone={criticos.length > 0 ? "danger" : "success"}
+          label="Itens críticos"
+          value={criticos.length}
+          subtext="Precisam de atenção"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

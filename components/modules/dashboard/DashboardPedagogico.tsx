@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { Users, GraduationCap, Megaphone, MessageCircle } from "lucide-react";
+import { Users, GraduationCap, Megaphone } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { contarAlunosAtivos } from "@/lib/alunos";
@@ -33,9 +33,10 @@ export async function DashboardPedagogico({ nome }: { nome: string }) {
     <div>
       <PageHeader title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`} subtitle="Alunos, turmas e censo escolar" />
 
+      {/* Chat tirado daqui — já tem ícone próprio na topbar, mesma revisão feita
+          no dashboard do Admin (era triplo: topbar + sidebar + atalho aqui). */}
       <AtalhosRapidos
         itens={[
-          { label: "Chat", href: "/chat", icon: MessageCircle, tone: "cat2" },
           { label: "Mural", href: "/mural", icon: Megaphone, tone: "cat4" },
           { label: "Acadêmico", href: "/academico", icon: GraduationCap, tone: "cat3" },
           { label: "Alunos", href: "/alunos", icon: Users, tone: "cat1" },
