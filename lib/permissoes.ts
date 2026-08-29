@@ -133,25 +133,25 @@ function moduloDaRota(pathname: string): string | null {
 const METODOS_LEITURA = new Set(["GET", "HEAD", "OPTIONS"]);
 
 /** Versão da checagem de acesso que considera método HTTP + permissão
- * granular por pessoa. O override só RESTRINGE — nunca libera um setor que o
- * pacote padrão do Role já não desse pra essa pessoa (senão viraria um jeito
- * de burlar o próprio Role, o que não faz sentido). Sem override pro módulo
- * daquela rota, cai no pacote padrão do Role (rotaPermitida) de sempre. */
+ * granular por pessoa. Pedido explícito do dono do sistema: a grade decide de
+ * verdade — pode tanto restringir quanto liberar um setor que o Role da
+ * pessoa normalmente não desse, sem o Role "atrapalhar" essa escolha. Sem
+ * override pro módulo daquela rota, cai no pacote padrão do Role
+ * (rotaPermitida) de sempre. */
 export function acessoPermitido(
   pathname: string,
   method: string,
   role: string,
   overrides?: PermissoesPorModulo
 ): boolean {
-  const baseAcesso = rotaPermitida(pathname, role);
-  if (!baseAcesso) return false;
-
   const modulo = overrides ? moduloDaRota(pathname) : null;
   const override = modulo ? overrides?.[modulo] : undefined;
 
   if (override === "NENHUM") return false;
   if (override === "VER") return METODOS_LEITURA.has(method.toUpperCase());
-  return true; // HERDAR, EDITAR (mantido só por compatibilidade com registros antigos) ou sem override
+  if (override === "EDITAR") return true;
+
+  return rotaPermitida(pathname, role);
 }
 
 /** Pra filtrar itens do menu lateral — só precisa saber se a pessoa enxerga

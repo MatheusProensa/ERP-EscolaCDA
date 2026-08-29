@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Ban, RotateCcw, ChevronDown } from "lucide-react";
+import { Eye, Ban, RotateCcw, ShieldCheck, ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -11,15 +11,13 @@ import { MODULOS, type NivelPermissao } from "@/lib/permissoes";
 
 type Nivel = NivelPermissao | "HERDAR";
 
-// Só dá pra RESTRINGIR aqui — nunca liberar um setor além do que o Perfil de
-// acesso já dá (senão essa tela vira um jeito de burlar o próprio perfil).
-// Por isso não tem opção de "editar": quem já edita pelo perfil continua
-// editando; essa tela só serve pra tirar acesso ou deixar só ver.
-// Rótulos descrevem o EFEITO direto (não o nome técnico), pra quem for mexer
-// não precisar perguntar o que cada botão faz — pedido explícito do dono do
-// sistema, que vai passar isso pra pessoas sem tanta prática de tecnologia.
+// Pedido explícito do dono do sistema: essa grade decide de verdade, pra
+// qualquer setor — pode liberar algo que o Perfil de acesso da pessoa não
+// daria por padrão, não só restringir. "Padrão do perfil" é a única opção
+// que ainda depende do Perfil; as outras três valem por conta própria.
 const NIVEIS: { valor: Nivel; label: string; icon: typeof Eye; cor: string }[] = [
-  { valor: "HERDAR", label: "Ler e editar", icon: RotateCcw, cor: "text-cda-text3" },
+  { valor: "HERDAR", label: "Padrão do perfil", icon: RotateCcw, cor: "text-cda-text3" },
+  { valor: "EDITAR", label: "Ler e editar", icon: ShieldCheck, cor: "text-cda-green" },
   { valor: "VER", label: "Só visualizar", icon: Eye, cor: "text-cda-amber" },
   { valor: "NENHUM", label: "Sem acesso", icon: Ban, cor: "text-cda-red" },
 ];
@@ -41,10 +39,10 @@ export function PermissoesUsuarioSecao({
   );
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
-  const restricoesAtivas = Object.values(permissoesSalvas).filter((v) => v !== "HERDAR").length;
-  // Só abre sozinho se já tem alguma restrição configurada — quem nunca mexeu
-  // aqui não precisa nem ver que essa opção existe.
-  const [aberto, setAberto] = useState(restricoesAtivas > 0);
+  const personalizacoesAtivas = Object.values(permissoesSalvas).filter((v) => v !== "HERDAR").length;
+  // Só abre sozinho se já tem algo configurado — quem nunca mexeu aqui não
+  // precisa nem ver que essa opção existe.
+  const [aberto, setAberto] = useState(personalizacoesAtivas > 0);
 
   const sujo = useMemo(
     () => MODULOS.some((m) => valores[m.chave] !== ((permissoesSalvas[m.chave] as Nivel) ?? "HERDAR")),
@@ -81,8 +79,8 @@ export function PermissoesUsuarioSecao({
         className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
       >
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-cda-text">Restringir acesso a algum setor (opcional)</h3>
-          {restricoesAtivas > 0 && <Badge variant="amber">{restricoesAtivas} setor(es) restrito(s)</Badge>}
+          <h3 className="text-sm font-semibold text-cda-text">Acesso por setor (avançado)</h3>
+          {personalizacoesAtivas > 0 && <Badge variant="amber">{personalizacoesAtivas} setor(es) personalizado(s)</Badge>}
         </div>
         <ChevronDown className={`h-4 w-4 shrink-0 text-cda-text3 transition-transform ${aberto ? "rotate-180" : ""}`} />
       </button>
@@ -91,8 +89,8 @@ export function PermissoesUsuarioSecao({
         <>
           <p className="border-y border-cda-border px-5 py-3 text-sm text-cda-text2">
             A maioria das pessoas não precisa mexer aqui — o <strong>Perfil de acesso</strong> lá em cima já libera o
-            que cada uma pode ver. Use isto só pra tirar acesso de <strong>{usuarioNome}</strong> a um setor
-            específico, como exceção.
+            que cada uma pode ver. Use isto pra ajustar <strong>{usuarioNome}</strong> setor por setor, liberando ou
+            tirando acesso, sem depender do Perfil dela.
           </p>
           <div className="flex flex-col divide-y divide-cda-border">
             {MODULOS.map((modulo) => (
