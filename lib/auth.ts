@@ -47,7 +47,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const permissoesSalvas = await prisma.permissaoUsuario.findMany({ where: { userId: user.id } });
         const permissoes = Object.fromEntries(permissoesSalvas.map((p) => [p.modulo, p.nivel]));
 
-        return { id: user.id, name: user.name, email: user.email, role: user.role, image: user.foto, permissoes };
+        // Não devolve a foto aqui (image: user.foto) — ela é base64 e ia parar no
+        // cookie de sessão (ver lib/auth.config.ts pro motivo completo). Foto de
+        // cada um é buscada fresca do banco onde precisa aparecer.
+        return { id: user.id, name: user.name, email: user.email, role: user.role, permissoes };
       },
     }),
   ],

@@ -21,12 +21,15 @@ export const authConfig = {
       if (user) {
         token.role = user.role;
         token.permissoes = user.permissoes;
-        // NÃO guarda a foto aqui — foto é base64 (20-30KB+), e isso ia direto pro
-        // cookie de sessão. Cookie grande demais faz o servidor recusar QUALQUER
-        // pedido depois ("Request Header Fields Too Large" — travou o login de
-        // quem tinha foto). Foto é buscada fresca do banco em quem precisa dela
-        // (app/(erp)/layout.tsx, tela de Chat), não fica no token/cookie.
       }
+      // O NextAuth guarda "picture" no token SOZINHO, antes mesmo desse callback
+      // rodar (pega direto do que authorize() devolveu) — não bastava só não
+      // atribuir de novo aqui, tinha que apagar de propósito. É a foto em base64
+      // (20-30KB+) inteira indo pro cookie de sessão, e cookie grande demais faz
+      // o servidor recusar QUALQUER pedido depois, até o de logar de novo
+      // ("Request Header Fields Too Large"). Foto é buscada fresca do banco em
+      // quem precisa dela (app/(erp)/layout.tsx, tela de Chat), não no token.
+      delete token.picture;
       return token;
     },
     session({ session, token }) {
