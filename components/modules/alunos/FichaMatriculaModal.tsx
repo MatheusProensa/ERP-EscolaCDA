@@ -41,9 +41,18 @@ const RESPONSAVEL_VAZIO: Responsavel = {
 const BORDA = "border-[#8fd8f5]";
 const DIVISORIA = "divide-[#8fd8f5]";
 
-/** Uma linha da "grade" da ficha real — mesma ideia da tabela do papel: caixas coladas, borda azul clarinha. */
+/** Uma linha da "grade" da ficha real — mesma ideia da tabela do papel: caixas coladas, borda azul clarinha.
+ * No celular empilha (cada campo numa linha só) em vez de espremer 2-3 colunas lado a lado — era o que
+ * deixava tudo bagunçado (rótulo quebrando em cima do valor, CPF cortado). Empilhado usa risco horizontal
+ * entre os campos; lado a lado (sm: pra cima) volta a usar o risco vertical de sempre. */
 function Linha({ children }: { children: React.ReactNode }) {
-  return <div className={`flex divide-x ${DIVISORIA} ${BORDA} border-x border-b first:border-t`}>{children}</div>;
+  return (
+    <div
+      className={`flex flex-col divide-y sm:flex-row sm:divide-x sm:divide-y-0 ${DIVISORIA} ${BORDA} border-x border-b first:border-t`}
+    >
+      {children}
+    </div>
+  );
 }
 
 /** Uma célula: rótulo em cima (igual etiqueta de formulário), valor embaixo — editável ou não.

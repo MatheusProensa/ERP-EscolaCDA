@@ -118,7 +118,7 @@ export function ContratoSecao({
   return (
     <Card title={`Contrato — ${turmaNome}`} action={action} className="p-5">
       {!contrato ? (
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-cda-text2">Nenhum contrato gerado para esta matrícula ainda.</p>
           <GerarContratoModal {...modalProps} temContrato={false} />
         </div>

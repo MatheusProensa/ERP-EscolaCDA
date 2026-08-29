@@ -37,7 +37,10 @@ export function Card({
   const conteudo = (
     <>
       {(title || action) && (
-        <div className="flex items-center justify-between gap-3 border-b border-cda-border px-5 py-4">
+        // No celular empilha (título em cima, ações embaixo, cada uma na sua
+        // largura) em vez de espremer os dois na mesma linha — era o que
+        // deixava o cabeçalho bagunçado quando a ação tinha vários botões.
+        <div className="flex flex-col items-start gap-3 border-b border-cda-border px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
           {title && <h3 className="text-sm font-semibold text-cda-text">{title}</h3>}
           {action}
         </div>
