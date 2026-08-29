@@ -25,6 +25,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Formato inválido" }, { status: 400 });
   }
 
+  // O front manda o objeto inteiro (não só o que mudou) — pra saber se a
+  // pessoa está de fato TENTANDO mudar a própria permissão de Usuários (e
+  // barrar isso), precisa comparar com o que já tá salvo, não só olhar o
+  // valor mandado (senão rejeitava até salvar outro setor sem mexer nesse).
+  const permissaoUsuariosAtual = id === session.user.id
+    ? await prisma.permissaoUsuario.findUnique({ where: { userId_modulo: { userId: id, modulo: "usuarios" } } })
+    : null;
+  const nivelUsuariosAtual = permissaoUsuariosAtual?.nivel ?? "HERDAR";
+
   const entradas = Object.entries(permissoes as Record<string, string>);
   for (const [chave, nivel] of entradas) {
     if (!CHAVES_VALIDAS.has(chave)) return NextResponse.json({ error: `Módulo desconhecido: ${chave}` }, { status: 400 });
@@ -33,7 +42,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
     // Ninguém mexe na própria permissão de Usuários — evita se trancar fora
     // da própria tela de permissões sem ter como voltar atrás.
-    if (id === session.user.id && chave === "usuarios" && nivel !== "HERDAR") {
+    if (id === session.user.id && chave === "usuarios" && nivel !== nivelUsuariosAtual) {
       return NextResponse.json({ error: "Você não pode alterar sua própria permissão em Usuários" }, { status: 400 });
     }
   }

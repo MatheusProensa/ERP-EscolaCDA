@@ -133,23 +133,28 @@ function moduloDaRota(pathname: string): string | null {
 const METODOS_LEITURA = new Set(["GET", "HEAD", "OPTIONS"]);
 
 /** Versão da checagem de acesso que considera método HTTP + permissão
- * granular por pessoa. Pedido explícito do dono do sistema: a grade decide de
- * verdade — pode tanto restringir quanto liberar um setor que o Role da
- * pessoa normalmente não desse, sem o Role "atrapalhar" essa escolha. Sem
- * override pro módulo daquela rota, cai no pacote padrão do Role
- * (rotaPermitida) de sempre. */
+ * granular por pessoa. Pedido explícito do dono do sistema (ago/2026): pros
+ * setores que aparecem na grade (MODULOS), o Perfil/Role NÃO decide mais nada
+ * — só a grade. Sem marcação nenhuma pra esse setor = sem acesso, ponto,
+ * mesmo que o Perfil dela normalmente desse. ADMIN continua vendo tudo
+ * (senão ninguém consegue nem abrir a tela de Usuários pra configurar a
+ * grade de mais ninguém). Rota que não é nenhum dos setores da grade
+ * (Dashboard, Calendário, Mural, Chat, Log de Atividades...) continua pelo
+ * pacote do Role de sempre — essas nunca fizeram parte da grade. */
 export function acessoPermitido(
   pathname: string,
   method: string,
   role: string,
   overrides?: PermissoesPorModulo
 ): boolean {
-  const modulo = overrides ? moduloDaRota(pathname) : null;
-  const override = modulo ? overrides?.[modulo] : undefined;
+  if (role === "ADMIN") return true;
 
-  if (override === "NENHUM") return false;
-  if (override === "VER") return METODOS_LEITURA.has(method.toUpperCase());
-  if (override === "EDITAR") return true;
+  const modulo = moduloDaRota(pathname);
+  if (modulo) {
+    const override = overrides?.[modulo];
+    if (override === "VER") return METODOS_LEITURA.has(method.toUpperCase());
+    return override === "EDITAR"; // só EDITAR libera; NENHUM, HERDAR ou sem marcação = sem acesso
+  }
 
   return rotaPermitida(pathname, role);
 }

@@ -132,7 +132,7 @@ export function PerfilUsuarioClient({
           <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
             <Input label="Nome" value={name} onChange={(e) => setName(e.target.value)} />
             <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <Select label="Perfil de acesso" value={role} onChange={(e) => setRole(e.target.value)} disabled={souEu}>
+            <Select label="Setor" value={role} onChange={(e) => setRole(e.target.value)} disabled={souEu}>
               {perfilInvalido && <option value={usuario.role}>{ROLE_LABEL[usuario.role] ?? usuario.role}</option>}
               {ROLES_ATIVAS.map((r) => (
                 <option key={r} value={r}>
@@ -141,7 +141,7 @@ export function PerfilUsuarioClient({
               ))}
             </Select>
             {souEu && (
-              <p className="self-end text-xs text-cda-text3">Você não pode trocar seu próprio perfil de acesso.</p>
+              <p className="self-end text-xs text-cda-text3">Você não pode trocar seu próprio setor.</p>
             )}
 
             {erroSalvar && <p className="sm:col-span-2 text-sm text-cda-red">{erroSalvar}</p>}

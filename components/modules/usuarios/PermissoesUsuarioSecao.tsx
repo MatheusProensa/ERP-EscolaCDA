@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Eye, Ban, RotateCcw, ShieldCheck, ChevronDown } from "lucide-react";
+import { Eye, Ban, ShieldCheck, ChevronDown } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -11,12 +11,11 @@ import { MODULOS, type NivelPermissao } from "@/lib/permissoes";
 
 type Nivel = NivelPermissao | "HERDAR";
 
-// Pedido explícito do dono do sistema: essa grade decide de verdade, pra
-// qualquer setor — pode liberar algo que o Perfil de acesso da pessoa não
-// daria por padrão, não só restringir. "Padrão do perfil" é a única opção
-// que ainda depende do Perfil; as outras três valem por conta própria.
+// Pedido explícito do dono do sistema (ago/2026): o Perfil de acesso não
+// decide mais nada sozinho pra esses setores — só essa grade, setor por
+// setor, pessoa por pessoa. Sem marcação = sem acesso; por isso não tem mais
+// opção de "usar o padrão do perfil".
 const NIVEIS: { valor: Nivel; label: string; icon: typeof Eye; cor: string }[] = [
-  { valor: "HERDAR", label: "Padrão do perfil", icon: RotateCcw, cor: "text-cda-text3" },
   { valor: "EDITAR", label: "Ler e editar", icon: ShieldCheck, cor: "text-cda-green" },
   { valor: "VER", label: "Só visualizar", icon: Eye, cor: "text-cda-amber" },
   { valor: "NENHUM", label: "Sem acesso", icon: Ban, cor: "text-cda-red" },
@@ -35,17 +34,18 @@ export function PermissoesUsuarioSecao({
 }) {
   const router = useRouter();
   const [valores, setValores] = useState<Record<string, Nivel>>(() =>
-    Object.fromEntries(MODULOS.map((m) => [m.chave, (permissoesSalvas[m.chave] as Nivel) ?? "HERDAR"]))
+    Object.fromEntries(MODULOS.map((m) => [m.chave, (permissoesSalvas[m.chave] as Nivel) ?? "NENHUM"]))
   );
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
-  const personalizacoesAtivas = Object.values(permissoesSalvas).filter((v) => v !== "HERDAR").length;
-  // Só abre sozinho se já tem algo configurado — quem nunca mexeu aqui não
-  // precisa nem ver que essa opção existe.
-  const [aberto, setAberto] = useState(personalizacoesAtivas > 0);
+  const liberados = Object.values(permissoesSalvas).filter((v) => v === "EDITAR" || v === "VER").length;
+  // Isso aqui decide de verdade o que a pessoa acessa (não é mais um extra
+  // opcional) — fica aberto por padrão pra não esconder que alguém sem nada
+  // marcado não vê setor nenhum.
+  const [aberto, setAberto] = useState(true);
 
   const sujo = useMemo(
-    () => MODULOS.some((m) => valores[m.chave] !== ((permissoesSalvas[m.chave] as Nivel) ?? "HERDAR")),
+    () => MODULOS.some((m) => valores[m.chave] !== ((permissoesSalvas[m.chave] as Nivel) ?? "NENHUM")),
     [valores, permissoesSalvas]
   );
 
@@ -79,8 +79,10 @@ export function PermissoesUsuarioSecao({
         className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
       >
         <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-cda-text">Acesso por setor (avançado)</h3>
-          {personalizacoesAtivas > 0 && <Badge variant="amber">{personalizacoesAtivas} setor(es) personalizado(s)</Badge>}
+          <h3 className="text-sm font-semibold text-cda-text">Acesso por setor</h3>
+          <Badge variant={liberados > 0 ? "green" : "red"}>
+            {liberados > 0 ? `${liberados} setor(es) liberado(s)` : "Nenhum setor liberado"}
+          </Badge>
         </div>
         <ChevronDown className={`h-4 w-4 shrink-0 text-cda-text3 transition-transform ${aberto ? "rotate-180" : ""}`} />
       </button>
@@ -88,9 +90,8 @@ export function PermissoesUsuarioSecao({
       {aberto && (
         <>
           <p className="border-y border-cda-border px-5 py-3 text-sm text-cda-text2">
-            A maioria das pessoas não precisa mexer aqui — o <strong>Perfil de acesso</strong> lá em cima já libera o
-            que cada uma pode ver. Use isto pra ajustar <strong>{usuarioNome}</strong> setor por setor, liberando ou
-            tirando acesso, sem depender do Perfil dela.
+            É isto aqui que decide o que <strong>{usuarioNome}</strong> vê e edita — o Setor lá em cima é só uma
+            etiqueta, não libera nada sozinho. Setor sem marcação fica sem acesso.
           </p>
           <div className="flex flex-col divide-y divide-cda-border">
             {MODULOS.map((modulo) => (
@@ -99,7 +100,10 @@ export function PermissoesUsuarioSecao({
                 <div className="flex flex-wrap gap-1.5">
                   {NIVEIS.map(({ valor, label, icon: Icon, cor }) => {
                     const ativo = valores[modulo.chave] === valor;
-                    const bloqueadoAutoUsuarios = souEu && modulo.chave === "usuarios" && valor !== "HERDAR";
+                    // Ninguém mexe na própria permissão de Usuários — evita se trancar
+                    // fora dessa tela sem ter como voltar atrás (ADMIN escapa disso,
+                    // sempre vê tudo, mas Direção/outros com acesso a Usuários não).
+                    const bloqueadoAutoUsuarios = souEu && modulo.chave === "usuarios";
                     return (
                       <button
                         key={valor}

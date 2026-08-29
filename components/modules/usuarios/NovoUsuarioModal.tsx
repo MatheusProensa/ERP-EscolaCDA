@@ -56,7 +56,7 @@ export function NovoUsuarioModal() {
           <Input label="Nome" name="name" required placeholder="Nome completo" />
           <Input label="Email" name="email" type="email" required placeholder="nome@escolacda.com.br" />
           <Input label="Senha" name="password" type="password" required minLength={6} placeholder="Mínimo 6 caracteres" />
-          <Select label="Perfil de acesso" name="role" required defaultValue="">
+          <Select label="Setor" name="role" required defaultValue="">
             <option value="" disabled>
               Selecione...
             </option>
