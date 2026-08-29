@@ -634,7 +634,11 @@ export function ChatApp({
                   return (
                     <div
                       key={item.key}
-                      className={`group flex items-end gap-2 ${minha ? "flex-row-reverse" : ""} ${item.mostrarCabecalho ? "mt-2.5" : ""}`}
+                      // "flex-row-reverse" só inverte a ORDEM (avatar depois do balão) — sem
+                      // "justify-end" a linha inteira ficava encostada na esquerda, igual a
+                      // mensagem do outro lado, mesma coisa que ficar tudo "no meio da tela"
+                      // em vez da minha mensagem grudar na direita como em qualquer chat.
+                      className={`group flex items-end gap-2 ${minha ? "flex-row-reverse justify-end" : ""} ${item.mostrarCabecalho ? "mt-2.5" : ""}`}
                     >
                       {item.mostrarCabecalho ? (
                         <Avatar nome={nome} foto={foto} size="sm" />
