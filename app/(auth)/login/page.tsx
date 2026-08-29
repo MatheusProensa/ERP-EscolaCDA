@@ -62,7 +62,10 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <p className="relative text-xs text-white/40">© {new Date().getFullYear()} Escola CDA. Todos os direitos reservados.</p>
+        <div className="relative flex flex-col gap-0.5">
+          <p className="text-xs text-white/40">© {new Date().getFullYear()} Escola CDA. Todos os direitos reservados.</p>
+          <p className="text-xs text-white/30">Desenvolvido por Matheus Proensa</p>
+        </div>
       </div>
 
       {/* Formulário */}
@@ -88,6 +91,7 @@ export default function LoginPage() {
             <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
             Seus dados estão protegidos — ambiente seguro e confiável.
           </p>
+          <p className="mt-2 text-center text-xs text-cda-text3/70">Desenvolvido por Matheus Proensa</p>
         </div>
       </div>
     </div>
