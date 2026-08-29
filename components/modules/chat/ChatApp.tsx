@@ -634,11 +634,11 @@ export function ChatApp({
                   return (
                     <div
                       key={item.key}
-                      // "flex-row-reverse" só inverte a ORDEM (avatar depois do balão) — sem
-                      // "justify-end" a linha inteira ficava encostada na esquerda, igual a
-                      // mensagem do outro lado, mesma coisa que ficar tudo "no meio da tela"
-                      // em vez da minha mensagem grudar na direita como em qualquer chat.
-                      className={`group flex items-end gap-2 ${minha ? "flex-row-reverse justify-end" : ""} ${item.mostrarCabecalho ? "mt-2.5" : ""}`}
+                      // Com "flex-row-reverse", o eixo principal também inverte — "start" passa
+                      // a ser a DIREITA da tela, não a esquerda. Por isso é "justify-start" aqui
+                      // (testei ao vivo: "justify-end" empurrava pro lado errado, balão ficava
+                      // solto no meio/esquerda com o avatar sozinho lá na direita).
+                      className={`group flex items-end gap-2 ${minha ? "flex-row-reverse justify-start" : ""} ${item.mostrarCabecalho ? "mt-2.5" : ""}`}
                     >
                       {item.mostrarCabecalho ? (
                         <Avatar nome={nome} foto={foto} size="sm" />
@@ -646,7 +646,12 @@ export function ChatApp({
                         <div className="w-7 shrink-0" />
                       )}
                       {minha && !m.excluida && !editandoEssa && !m.enviando && !m.falhouEnvio && (
-                        <div className="mb-1 flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                        // ACHADO (medição ao vivo): "opacity-0" sozinho continua ocupando o
+                        // espaço no layout mesmo escondido — era isso que empurrava o balão
+                        // pra longe da borda direita (parecia "grudado no meio da tela"). Com
+                        // "w-0 overflow-hidden" ele some de verdade em repouso e só ganha
+                        // largura no hover.
+                        <div className="mb-1 flex w-0 items-center gap-1 overflow-hidden opacity-0 transition-opacity group-hover:w-auto group-hover:opacity-100">
                           <IconButton icon={Pencil} label="Editar mensagem" size="sm" onClick={() => iniciarEdicao(m)} />
                           <IconButton icon={Trash2} label="Apagar mensagem" size="sm" variant="danger" onClick={() => excluirMensagem(m.id)} />
                         </div>
