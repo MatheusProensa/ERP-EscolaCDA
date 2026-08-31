@@ -37,6 +37,7 @@ export default async function PerfilUsuarioPage({ params }: { params: Promise<{ 
           usuarioId={usuario.id}
           usuarioNome={usuario.name}
           souEu={usuario.id === session?.user.id}
+          role={usuario.role}
           permissoesSalvas={permissoes}
         />
         {podeVerAtividade && <AtividadeUsuarioSecao atividades={atividades} />}

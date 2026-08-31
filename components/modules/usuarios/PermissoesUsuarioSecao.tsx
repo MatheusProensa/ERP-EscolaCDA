@@ -25,11 +25,13 @@ export function PermissoesUsuarioSecao({
   usuarioId,
   usuarioNome,
   souEu,
+  role,
   permissoesSalvas,
 }: {
   usuarioId: string;
   usuarioNome: string;
   souEu: boolean;
+  role: string;
   permissoesSalvas: Record<string, string>;
 }) {
   const router = useRouter();
@@ -69,6 +71,25 @@ export function PermissoesUsuarioSecao({
     }
     showToast(`Permissões de ${usuarioNome} atualizadas.`);
     router.refresh();
+  }
+
+  // ADMIN sempre vê e edita tudo (bypass fixo em lib/permissoes.ts) — a grade
+  // não vale nada pra esse papel, então mostrar tudo em "Sem acesso" (nível
+  // salvo real, já que nunca é preciso marcar nada pra um ADMIN) só confundia
+  // ("mostrou que eu não tenho acesso, mas eu posso tudo mesmo" — relatado
+  // pelo dono do sistema, ago/2026).
+  if (role === "ADMIN") {
+    return (
+      <Card>
+        <div className="flex items-center gap-2 px-5 py-4">
+          <h3 className="text-sm font-semibold text-cda-text">Acesso por setor</h3>
+          <Badge variant="green">Acesso total</Badge>
+        </div>
+        <p className="border-t border-cda-border px-5 py-3 text-sm text-cda-text2">
+          <strong>{usuarioNome}</strong> é Admin — tem acesso completo a todos os setores, essa grade não se aplica.
+        </p>
+      </Card>
+    );
   }
 
   return (
