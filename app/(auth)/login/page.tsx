@@ -62,10 +62,7 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <div className="relative flex flex-col gap-0.5">
-          <p className="text-xs text-white/40">© {new Date().getFullYear()} Escola CDA. Todos os direitos reservados.</p>
-          <p className="text-xs text-white/30">Desenvolvido por Matheus Proensa</p>
-        </div>
+        <p className="relative text-xs text-white/40">© {new Date().getFullYear()} Escola CDA. Todos os direitos reservados.</p>
       </div>
 
       {/* Formulário */}
