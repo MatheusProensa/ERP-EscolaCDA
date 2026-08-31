@@ -89,7 +89,7 @@ export async function GET() {
     mensagens,
   };
 
-  const nomeArquivo = `backup-cda-${new Date().toISOString().slice(0, 10)}.json`;
+  const nomeArquivo = `Backup Escola CDA - ${new Date().toLocaleDateString("pt-BR").replace(/\//g, "-")}.json`;
   return new NextResponse(JSON.stringify(backup), {
     headers: {
       "Content-Type": "application/json",
