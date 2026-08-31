@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gerarFichaMatriculaPdf } from "@/lib/gerarFichaMatriculaPdf";
-import { respostaPDF } from "@/lib/gerarRelatorioPdf";
+import { respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { turnoDoContrato } from "@/lib/contratoTexto";
 import { RACA_COR_LABEL } from "@/lib/censo";
 
@@ -237,6 +237,5 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     pessoasAutorizadas: alunoAtualizado.pessoasAutorizadas.map((p) => ({ nome: p.nome, parentesco: p.parentesco })),
   });
 
-  const nomeArquivo = aluno.nome.toLowerCase().replace(/[^a-z0-9]+/g, "_");
-  return respostaPDF(pdf, `ficha_matricula_${nomeArquivo}.pdf`);
+  return respostaPDF(pdf, nomeArquivoPdf("Ficha de Matricula", alunoAtualizado.nome));
 }

@@ -65,6 +65,8 @@ export async function gerarRelatorioPdf({
   linhas: Record<string, string>[];
 }): Promise<string> {
   const pdf = await PDFDocument.create();
+  pdf.setTitle(`${titulo} — Escola CDA`);
+  pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
@@ -213,6 +215,8 @@ export async function gerarRelatorioPdfMultiSecao({
   secoes: SecaoRelatorio[];
 }): Promise<string> {
   const pdf = await PDFDocument.create();
+  pdf.setTitle(`${titulo} — Escola CDA`);
+  pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
@@ -348,6 +352,8 @@ export async function gerarRelatorioPdfSecoesEmpilhadas({
   secoes: SecaoRelatorio[];
 }): Promise<string> {
   const pdf = await PDFDocument.create();
+  pdf.setTitle(`${titulo} — Escola CDA`);
+  pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
@@ -482,6 +488,8 @@ export async function gerarFichaPdf({
   secoes: SecaoFicha[];
 }): Promise<string> {
   const pdf = await PDFDocument.create();
+  pdf.setTitle(`${titulo}${subtitulo ? ` — ${subtitulo}` : ""} — Escola CDA`);
+  pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
@@ -561,13 +569,25 @@ export async function gerarFichaPdf({
   return `data:application/pdf;base64,${base64}`;
 }
 
+/** Nome "profissional" pra baixar: "Nome Do Documento - Alguma Coisa.pdf", sem
+ * embromation tipo "ficha_matricula_joao_silva.pdf" — é a primeira coisa que a
+ * pessoa vê na pasta de Downloads, tem que dar pra saber o que é sem abrir. */
+export function nomeArquivoPdf(...partes: (string | number | null | undefined)[]): string {
+  const texto = partes.filter(Boolean).join(" - ");
+  return `${texto}.pdf`;
+}
+
 export function respostaPDF(dataUri: string, nomeArquivo: string): Response {
   const base64 = dataUri.split(",")[1] ?? dataUri;
   const bytes = Buffer.from(base64, "base64");
+  // Acento no nome do arquivo quebra em navegador/servidor mais antigo se for só
+  // "filename=" cru — manda os dois: um "filename" sem acento (fallback) e o
+  // "filename*" com o nome de verdade, codificado (é o jeito certo, RFC 5987).
+  const semAcento = nomeArquivo.normalize("NFD").replace(/[̀-ͯ]/g, "");
   return new Response(bytes, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="${nomeArquivo}"`,
+      "Content-Disposition": `attachment; filename="${semAcento}"; filename*=UTF-8''${encodeURIComponent(nomeArquivo)}`,
     },
   });
 }

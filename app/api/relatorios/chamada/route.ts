@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { gerarRelatorioPdf, respostaPDF, type ColunaRelatorio } from "@/lib/gerarRelatorioPdf";
+import { gerarRelatorioPdf, respostaPDF, nomeArquivoPdf, type ColunaRelatorio } from "@/lib/gerarRelatorioPdf";
 
 const COLUNAS: ColunaRelatorio[] = [
   { chave: "nome", label: "Aluno", largura: 260 },
@@ -32,5 +32,5 @@ export async function GET(request: NextRequest) {
     linhas,
   });
 
-  return respostaPDF(dataUri, `chamada-${turma.nome.toLowerCase().replace(/\s+/g, "-")}.pdf`);
+  return respostaPDF(dataUri, nomeArquivoPdf("Lista de Chamada", turma.nome, hoje.replace(/\//g, "-")));
 }

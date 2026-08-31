@@ -38,6 +38,9 @@ export async function gerarCalendarioPdf({
   eventosPorMes: Map<string, EventoLevePdf[]>;
 }): Promise<string> {
   const pdf = await PDFDocument.create();
+  const primeiroMes = meses[0];
+  pdf.setTitle(`Calendário — ${MESES[primeiroMes.mes - 1]} ${primeiroMes.ano} — Escola CDA`);
+  pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);

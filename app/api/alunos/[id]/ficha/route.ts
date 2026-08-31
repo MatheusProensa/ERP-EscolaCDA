@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { gerarFichaPdf, respostaPDF, type SecaoFicha } from "@/lib/gerarRelatorioPdf";
+import { gerarFichaPdf, respostaPDF, nomeArquivoPdf, type SecaoFicha } from "@/lib/gerarRelatorioPdf";
 import { formatarCPF, formatarData, formatarTelefone } from "@/lib/utils";
 
 const SITUACAO_LABEL: Record<string, string> = {
@@ -109,6 +109,5 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
     secoes,
   });
 
-  const nomeArquivo = aluno.nome.toLowerCase().replace(/[^a-z0-9]+/g, "_");
-  return respostaPDF(pdf, `ficha_${nomeArquivo}.pdf`);
+  return respostaPDF(pdf, nomeArquivoPdf("Ficha do Aluno", aluno.nome));
 }

@@ -91,6 +91,8 @@ type Coluna = { label: string; valor: string; peso?: number };
 
 export async function gerarFichaMatriculaPdf(d: DadosFichaMatricula): Promise<string> {
   const pdf = await PDFDocument.create();
+  pdf.setTitle(`Ficha de Matrícula — ${d.alunoNome} — Escola CDA`);
+  pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteNegrito = await pdf.embedFont(StandardFonts.HelveticaBold);
   const fundo = await embarcarFundo(pdf);

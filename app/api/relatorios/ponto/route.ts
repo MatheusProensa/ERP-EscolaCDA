@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paraCSV, respostaCSV } from "@/lib/csv";
-import { gerarRelatorioPdfMultiSecao, respostaPDF, type SecaoRelatorio } from "@/lib/gerarRelatorioPdf";
+import { gerarRelatorioPdfMultiSecao, respostaPDF, nomeArquivoPdf, type SecaoRelatorio } from "@/lib/gerarRelatorioPdf";
 import { calcularMes, minParaHora, OCORRENCIA_LABEL, type RegistroPontoDia } from "@/lib/ponto";
 
 function inicioMes(mes: number, ano: number) {
@@ -141,16 +141,14 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  const dataGerado = new Date().toISOString().slice(0, 10);
-
   if (params.get("formato") === "pdf") {
     const pdf = await gerarRelatorioPdfMultiSecao({ titulo: `Ponto — ${nomeMes}/${ano}`, secoes });
-    return respostaPDF(pdf, `ponto_${nomeMes.toLowerCase()}_${ano}_${dataGerado}.pdf`);
+    return respostaPDF(pdf, nomeArquivoPdf("Relatorio de Ponto", `${nomeMes} ${ano}`));
   }
 
   const csv = paraCSV(linhasCSV, [
     "Funcionário", "Data", "Entrada 1", "Saída 1", "Entrada 2", "Saída 2", "Ocorrência",
     "Horas Previstas", "Horas Trabalhadas", "Atraso/Falta", "Hora Extra", "Adicional Noturno", "Saldo Banco de Horas",
   ]);
-  return respostaCSV(csv, `ponto_${nomeMes.toLowerCase()}_${ano}_${dataGerado}.csv`);
+  return respostaCSV(csv, `Relatorio de Ponto - ${nomeMes} ${ano}.csv`);
 }

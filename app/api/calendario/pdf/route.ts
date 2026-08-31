@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gerarCalendarioPdf, type EventoLevePdf } from "@/lib/gerarCalendarioPdf";
-import { respostaPDF } from "@/lib/gerarRelatorioPdf";
+import { respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { MESES } from "@/lib/calendario";
 
 export async function GET(req: NextRequest) {
@@ -46,8 +46,8 @@ export async function GET(req: NextRequest) {
 
   const nomeArquivo =
     quantidade === 1
-      ? `calendario-${MESES[mes - 1].toLowerCase()}-${ano}.pdf`
-      : `calendario-${MESES[mes - 1].toLowerCase()}-${ano}-a-${MESES[ultimoMes.mes - 1].toLowerCase()}-${ultimoMes.ano}.pdf`;
+      ? nomeArquivoPdf("Calendario", `${MESES[mes - 1]} ${ano}`)
+      : nomeArquivoPdf("Calendario", `${MESES[mes - 1]} ${ano} a ${MESES[ultimoMes.mes - 1]} ${ultimoMes.ano}`);
 
   return respostaPDF(dataUri, nomeArquivo);
 }

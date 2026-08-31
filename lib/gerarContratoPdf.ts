@@ -56,6 +56,8 @@ async function embarcarFundo(pdf: PDFDocument): Promise<PDFImage | null> {
 
 export async function gerarContratoPdf(dados: DadosContrato): Promise<string> {
   const pdf = await PDFDocument.create();
+  pdf.setTitle(`Contrato — ${dados.alunoNome} — Escola CDA`);
+  pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteNegrito = await pdf.embedFont(StandardFonts.HelveticaBold);
   const fundo = await embarcarFundo(pdf);

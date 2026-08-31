@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { paraCSV, respostaCSV } from "@/lib/csv";
-import { gerarRelatorioPdf, respostaPDF } from "@/lib/gerarRelatorioPdf";
+import { gerarRelatorioPdf, respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { formatarData, formatarTelefone } from "@/lib/utils";
 import type { SituacaoMatricula } from "@prisma/client";
 
@@ -69,8 +69,8 @@ export async function GET(request: NextRequest) {
       ? `${linhas.length} aluno(s) — ${filtrosAplicados.join(" · ")}`
       : `${linhas.length} aluno(s) cadastrado(s)`;
 
-  const data = new Date().toISOString().slice(0, 10);
-  const sufixoArquivo = filtrosAplicados.length > 0 ? "_filtrado" : "";
+  const data = new Date().toLocaleDateString("pt-BR").replace(/\//g, "-");
+  const sufixoArquivo = filtrosAplicados.length > 0 ? "Filtrado" : "";
 
   if (params.get("formato") === "pdf") {
     const pdf = await gerarRelatorioPdf({
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
       ],
       linhas,
     });
-    return respostaPDF(pdf, `historico_alunos${sufixoArquivo}_${data}.pdf`);
+    return respostaPDF(pdf, nomeArquivoPdf("Historico de Alunos", sufixoArquivo, data));
   }
 
   const csv = paraCSV(linhas, [
@@ -102,5 +102,5 @@ export async function GET(request: NextRequest) {
     "Cidade",
   ]);
 
-  return respostaCSV(csv, `historico_alunos${sufixoArquivo}_${data}.csv`);
+  return respostaCSV(csv, [`Historico de Alunos`, sufixoArquivo, data].filter(Boolean).join(" - ") + ".csv");
 }

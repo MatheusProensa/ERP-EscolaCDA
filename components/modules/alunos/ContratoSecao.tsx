@@ -150,7 +150,7 @@ export function ContratoSecao({
             {contrato.arquivo && (
               <a
                 href={contrato.arquivo}
-                download={`contrato-${turmaNome}.pdf`}
+                download={`Contrato - ${alunoNome}.pdf`}
                 title="Baixa o PDF atual do contrato, sem mudar nada"
                 className="flex h-10 items-center gap-1.5 rounded-lg border border-cda-border bg-white px-4 text-sm font-medium text-cda-text hover:bg-cda-bg"
               >

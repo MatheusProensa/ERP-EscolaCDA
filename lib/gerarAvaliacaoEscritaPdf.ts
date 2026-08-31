@@ -80,6 +80,10 @@ async function embarcarFundo(pdf: PDFDocument): Promise<PDFImage | null> {
 
 export async function gerarAvaliacaoEscritaPdf(): Promise<string> {
   const pdf = await PDFDocument.create();
+  // Mesmo motivo do gerarFichaAdmissaoPdf.ts: nome de verdade no metadado /Title
+  // do PDF, pra não virar um nome de arquivo tipo UUID quando salvo pelo navegador.
+  pdf.setTitle("Avaliação Escrita — Processo Seletivo (Monitora) — Escola CDA");
+  pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteNegrito = await pdf.embedFont(StandardFonts.HelveticaBold);
   const fundo = await embarcarFundo(pdf);

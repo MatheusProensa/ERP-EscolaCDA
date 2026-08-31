@@ -57,7 +57,7 @@ export function AssinarContratoForm({
         {arquivo && (
           <a
             href={arquivo}
-            download="contrato-assinado.pdf"
+            download={`Contrato Assinado - ${nomeAssinante ?? "Escola CDA"}.pdf`}
             className="flex h-10 items-center gap-2 rounded-lg border border-cda-border bg-white px-4 text-sm font-medium text-cda-text hover:bg-cda-bg"
           >
             <Download className="h-4 w-4" />

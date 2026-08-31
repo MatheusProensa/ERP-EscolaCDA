@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paraCSV, respostaCSV } from "@/lib/csv";
-import { gerarRelatorioPdf, respostaPDF } from "@/lib/gerarRelatorioPdf";
+import { gerarRelatorioPdf, respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { statusEstoque, STATUS_ESTOQUE_INFO, type StatusEstoque } from "@/lib/estoqueStatus";
 
 export async function GET(request: NextRequest) {
@@ -39,8 +39,8 @@ export async function GET(request: NextRequest) {
       ? `${linhas.length} item(ns) — ${filtrosAplicados.join(" · ")}`
       : `${linhas.length} item(ns) cadastrado(s)`;
 
-  const data = new Date().toISOString().slice(0, 10);
-  const sufixoArquivo = filtrosAplicados.length > 0 ? "_filtrado" : "";
+  const data = new Date().toLocaleDateString("pt-BR").replace(/\//g, "-");
+  const sufixoArquivo = filtrosAplicados.length > 0 ? "Filtrado" : "";
 
   if (params.get("formato") === "pdf") {
     const pdf = await gerarRelatorioPdf({
@@ -56,9 +56,9 @@ export async function GET(request: NextRequest) {
       ],
       linhas: linhas.map((l) => ({ ...l, Quantidade: String(l.Quantidade), Minimo: String(l.Minimo) })),
     });
-    return respostaPDF(pdf, `estoque${sufixoArquivo}_${data}.pdf`);
+    return respostaPDF(pdf, nomeArquivoPdf("Relatorio de Estoque", sufixoArquivo, data));
   }
 
   const csv = paraCSV(linhas, ["Item", "Categoria", "Unidade", "Quantidade", "Minimo", "Situacao"]);
-  return respostaCSV(csv, `estoque${sufixoArquivo}_${data}.csv`);
+  return respostaCSV(csv, [`Relatorio de Estoque`, sufixoArquivo, data].filter(Boolean).join(" - ") + ".csv");
 }

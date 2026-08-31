@@ -35,6 +35,12 @@ async function embarcarFundo(pdf: PDFDocument): Promise<PDFImage | null> {
 
 export async function gerarFichaAdmissaoPdf(): Promise<string> {
   const pdf = await PDFDocument.create();
+  // Nome de verdade dentro do PDF (metadado /Title) — sem isso, quando a pessoa
+  // abre o PDF (é um data: URI, sem nome de arquivo/URL de origem) e tenta salvar
+  // pelo visualizador do navegador, ele inventa um nome tipo UUID em vez de usar
+  // algo que identifique o documento.
+  pdf.setTitle("Ficha para Admissão de Funcionário — Escola CDA");
+  pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteNegrito = await pdf.embedFont(StandardFonts.HelveticaBold);
   const fundo = await embarcarFundo(pdf);

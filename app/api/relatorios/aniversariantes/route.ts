@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { paraCSV, respostaCSV } from "@/lib/csv";
-import { gerarRelatorioPdfSecoesEmpilhadas, respostaPDF } from "@/lib/gerarRelatorioPdf";
+import { gerarRelatorioPdfSecoesEmpilhadas, respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -69,8 +69,6 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => a.dia - b.dia)
     .map(({ dia: _dia, ...linha }) => linha);
 
-  const data = new Date().toISOString().slice(0, 10);
-
   if (params.get("formato") === "pdf") {
     const colunasAluno = [
       { chave: "Nome", label: "Nome", largura: 240 },
@@ -102,10 +100,10 @@ export async function GET(request: NextRequest) {
         },
       ],
     });
-    return respostaPDF(pdf, `aniversariantes_${nomeMes.toLowerCase()}_${data}.pdf`);
+    return respostaPDF(pdf, nomeArquivoPdf("Aniversariantes", `${nomeMes} ${anoAtual}`));
   }
 
   const aniversariantes = [...aniversariantesAlunos, ...aniversariantesFuncionarios];
   const csv = paraCSV(aniversariantes, ["Tipo", "Nome", "Detalhe", "Data", "Completa"]);
-  return respostaCSV(csv, `aniversariantes_${nomeMes.toLowerCase()}_${data}.csv`);
+  return respostaCSV(csv, `Aniversariantes - ${nomeMes} ${anoAtual}.csv`);
 }
