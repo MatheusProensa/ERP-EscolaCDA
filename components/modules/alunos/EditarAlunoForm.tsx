@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { PhotoUpload } from "@/components/ui/PhotoUpload";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatarCPF } from "@/lib/utils";
 import { CensoCampos } from "./CensoCampos";
 
@@ -21,9 +22,9 @@ export function EditarAlunoForm({ aluno }: { aluno: Aluno }) {
   const [foto, setFoto] = useState<string | null>(aluno.foto);
   const [nome, setNome] = useState(aluno.nome);
   const [excluindo, setExcluindo] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
 
   async function excluirAluno() {
-    if (!confirm(`Excluir o cadastro de ${aluno.nome}? Essa ação não pode ser desfeita.`)) return;
     setExcluindo(true);
     const res = await fetch(`/api/alunos/${aluno.id}`, { method: "DELETE" });
     setExcluindo(false);
@@ -32,6 +33,7 @@ export function EditarAlunoForm({ aluno }: { aluno: Aluno }) {
       setError(data.error ?? "Não foi possível excluir o cadastro.");
       return;
     }
+    setConfirmandoExclusao(false);
     router.push("/alunos");
     router.refresh();
   }
@@ -194,7 +196,7 @@ export function EditarAlunoForm({ aluno }: { aluno: Aluno }) {
       {error && <p className="text-sm text-cda-red">{error}</p>}
 
       <div className="flex items-center justify-between gap-3">
-        <Button type="button" variant="ghost" onClick={excluirAluno} loading={excluindo} className="text-cda-red hover:bg-cda-red/10">
+        <Button type="button" variant="ghost" onClick={() => setConfirmandoExclusao(true)} loading={excluindo} className="text-cda-red hover:bg-cda-red/10">
           Excluir cadastro
         </Button>
         <div className="flex gap-3">
@@ -206,6 +208,16 @@ export function EditarAlunoForm({ aluno }: { aluno: Aluno }) {
           </Button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmandoExclusao}
+        onClose={() => setConfirmandoExclusao(false)}
+        onConfirm={excluirAluno}
+        title={`Excluir o cadastro de ${aluno.nome}?`}
+        consequence="Essa ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        loading={excluindo}
+      />
     </form>
   );
 }

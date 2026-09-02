@@ -6,6 +6,8 @@ import { Trash2 } from "lucide-react";
 import type { StatusListaEspera } from "@prisma/client";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Select } from "@/components/ui/Select";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { showToast } from "@/components/ui/Toast";
 import { formatarData, formatarTelefone } from "@/lib/utils";
 
 const STATUS_LABEL: Record<StatusListaEspera, string> = {
@@ -29,24 +31,37 @@ export type ItemListaEspera = {
 export function ListaEsperaTable({ itens }: { itens: ItemListaEspera[] }) {
   const router = useRouter();
   const [carregando, setCarregando] = useState<string | null>(null);
+  const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
 
   async function alterarStatus(id: string, status: string) {
     setCarregando(id);
-    await fetch(`/api/lista-espera/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    setCarregando(null);
-    router.refresh();
+    try {
+      const res = await fetch(`/api/lista-espera/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error();
+      router.refresh();
+    } catch {
+      showToast("Não foi possível atualizar o status. Tente de novo.", "error");
+    } finally {
+      setCarregando(null);
+    }
   }
 
   async function excluir(id: string) {
-    if (!confirm("Remover da lista de espera?")) return;
     setCarregando(id);
-    await fetch(`/api/lista-espera/${id}`, { method: "DELETE" });
-    setCarregando(null);
-    router.refresh();
+    try {
+      const res = await fetch(`/api/lista-espera/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setConfirmandoId(null);
+      router.refresh();
+    } catch {
+      showToast("Não foi possível remover. Tente de novo.", "error");
+    } finally {
+      setCarregando(null);
+    }
   }
 
   return (
@@ -86,7 +101,7 @@ export function ListaEsperaTable({ itens }: { itens: ItemListaEspera[] }) {
             </Td>
             <Td>
               <button
-                onClick={() => excluir(item.id)}
+                onClick={() => setConfirmandoId(item.id)}
                 disabled={carregando === item.id}
                 title="Remover"
                 className="text-cda-text3 hover:text-cda-red disabled:opacity-50"
@@ -97,6 +112,15 @@ export function ListaEsperaTable({ itens }: { itens: ItemListaEspera[] }) {
           </Tr>
         ))}
       </TableBody>
+      <ConfirmDialog
+        open={confirmandoId !== null}
+        onClose={() => setConfirmandoId(null)}
+        onConfirm={() => confirmandoId && excluir(confirmandoId)}
+        title="Remover da lista de espera?"
+        consequence="Essa ação não pode ser desfeita."
+        confirmLabel="Remover"
+        loading={carregando !== null}
+      />
     </Table>
   );
 }

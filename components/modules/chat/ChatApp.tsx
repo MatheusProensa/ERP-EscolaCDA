@@ -6,6 +6,8 @@ import { Send, FileText, ArrowLeft, Search, Check, CheckCheck, Clock, AlertCircl
 import { Avatar } from "@/components/ui/Avatar";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { IconButton } from "@/components/ui/IconButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { showToast } from "@/components/ui/Toast";
 import { EmojiPicker } from "@/components/modules/chat/EmojiPicker";
 import { ROLE_LABEL } from "@/lib/permissoes";
 import { formatarDataHora } from "@/lib/utils";
@@ -133,6 +135,8 @@ export function ChatApp({
   const [editandoMsgId, setEditandoMsgId] = useState<string | null>(null);
   const [textoEdicao, setTextoEdicao] = useState("");
   const [salvandoEdicao, setSalvandoEdicao] = useState(false);
+  const [mensagemParaExcluir, setMensagemParaExcluir] = useState<string | null>(null);
+  const [excluindoMensagem, setExcluindoMensagem] = useState(false);
   const fimRef = useRef<HTMLDivElement>(null);
   const ultimaMensagemEmRef = useRef<string | null>(null);
   const buscandoConversasRef = useRef(false);
@@ -458,11 +462,17 @@ export function ChatApp({
   }
 
   async function excluirMensagem(id: string) {
-    if (!confirm('Apagar esta mensagem? Vira "Mensagem apagada" pro destinatário também.')) return;
-    const res = await fetch(`/api/chat/mensagem/${id}`, { method: "DELETE" });
-    if (res.ok) {
+    setExcluindoMensagem(true);
+    try {
+      const res = await fetch(`/api/chat/mensagem/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
       const atualizada = await res.json();
       setMensagens((atual) => atual.map((m) => (m.id === atualizada.id ? atualizada : m)));
+      setMensagemParaExcluir(null);
+    } catch {
+      showToast("Não foi possível apagar a mensagem.", "error");
+    } finally {
+      setExcluindoMensagem(false);
     }
   }
 
@@ -653,7 +663,7 @@ export function ChatApp({
                         // largura no hover.
                         <div className="mb-1 flex w-0 items-center gap-1 overflow-hidden opacity-0 transition-opacity group-hover:w-auto group-hover:opacity-100">
                           <IconButton icon={Pencil} label="Editar mensagem" size="sm" onClick={() => iniciarEdicao(m)} />
-                          <IconButton icon={Trash2} label="Apagar mensagem" size="sm" variant="danger" onClick={() => excluirMensagem(m.id)} />
+                          <IconButton icon={Trash2} label="Apagar mensagem" size="sm" variant="danger" onClick={() => setMensagemParaExcluir(m.id)} />
                         </div>
                       )}
                       <div className={`flex max-w-[70%] flex-col ${minha ? "items-end" : "items-start"}`}>
@@ -816,6 +826,16 @@ export function ChatApp({
           </>
         )}
       </div>
+
+      <ConfirmDialog
+        open={mensagemParaExcluir !== null}
+        onClose={() => setMensagemParaExcluir(null)}
+        onConfirm={() => mensagemParaExcluir && excluirMensagem(mensagemParaExcluir)}
+        title="Apagar esta mensagem?"
+        consequence='Vira "Mensagem apagada" pro destinatário também.'
+        confirmLabel="Apagar"
+        loading={excluindoMensagem}
+      />
     </div>
   );
 }

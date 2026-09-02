@@ -7,6 +7,7 @@ import type { DocumentoFuncionario } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { FileUpload } from "@/components/ui/FileUpload";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatarDataHora } from "@/lib/utils";
 
 const TIPOS_DOCUMENTO = [
@@ -31,6 +32,7 @@ export function DocumentosFuncionario({
   const [tipo, setTipo] = useState(TIPOS_DOCUMENTO[0]);
   const [enviando, setEnviando] = useState(false);
   const [removendoId, setRemovendoId] = useState<string | null>(null);
+  const [docParaRemover, setDocParaRemover] = useState<string | null>(null);
   const [error, setError] = useState("");
 
   async function handleUpload(arquivo: string, nomeArquivo: string) {
@@ -51,7 +53,6 @@ export function DocumentosFuncionario({
   }
 
   async function handleRemover(docId: string) {
-    if (!confirm("Remover este documento?")) return;
     setError("");
     setRemovendoId(docId);
     const res = await fetch(`/api/funcionarios/${funcionarioId}/documentos/${docId}`, { method: "DELETE" });
@@ -61,6 +62,7 @@ export function DocumentosFuncionario({
       setError("Não foi possível remover o documento.");
       return;
     }
+    setDocParaRemover(null);
     router.refresh();
   }
 
@@ -92,7 +94,7 @@ export function DocumentosFuncionario({
                 <Download className="h-4 w-4" />
               </a>
               <button
-                onClick={() => handleRemover(doc.id)}
+                onClick={() => setDocParaRemover(doc.id)}
                 disabled={removendoId === doc.id}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
               >
@@ -116,6 +118,15 @@ export function DocumentosFuncionario({
         <FileUpload onSelect={handleUpload} disabled={enviando} />
       </div>
       {error && <p className="px-5 pb-4 text-sm text-cda-red">{error}</p>}
+
+      <ConfirmDialog
+        open={docParaRemover !== null}
+        onClose={() => setDocParaRemover(null)}
+        onConfirm={() => docParaRemover && handleRemover(docParaRemover)}
+        title="Remover este documento?"
+        confirmLabel="Remover"
+        loading={removendoId !== null}
+      />
     </Card>
   );
 }

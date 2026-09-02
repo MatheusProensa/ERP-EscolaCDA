@@ -7,6 +7,7 @@ import type { SituacaoMatricula, Turma } from "@prisma/client";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const SITUACAO_LABEL: Record<SituacaoMatricula, string> = {
   ATIVA: "Ativa",
@@ -56,13 +57,14 @@ export function MatriculaAcoes({
   // NOVO: depois de mudar a situação, dá pra desfazer com 1 clique por alguns segundos —
   // sem precisar reabrir o <select> e lembrar qual era o valor antes.
   const [desfazer, setDesfazer] = useState<SituacaoMatricula | null>(null);
+  const [pendente, setPendente] = useState<SituacaoMatricula | null>(null);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }, []);
 
-  async function alterar(novaSituacao: string, opts?: { semConfirmacao?: boolean }) {
+  async function alterar(novaSituacao: string) {
     if (novaSituacao === situacaoAtual) return;
-    if (!opts?.semConfirmacao && !confirm(CONFIRMA[novaSituacao as SituacaoMatricula])) return;
 
     const situacaoAnterior = situacaoAtual;
     setError("");
@@ -83,17 +85,17 @@ export function MatriculaAcoes({
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     setDesfazer(situacaoAnterior);
     timeoutRef.current = setTimeout(() => setDesfazer(null), 8000);
+    setPendente(null);
     router.refresh();
   }
 
   function desfazerAlteracao() {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (desfazer) alterar(desfazer, { semConfirmacao: true });
+    if (desfazer) alterar(desfazer);
     setDesfazer(null);
   }
 
   async function excluir() {
-    if (!confirm("Excluir esta matrícula de vez? Some o card de contrato dela desta página e não dá pra desfazer.")) return;
     setError("");
     setLoading(true);
     const res = await fetch(`/api/matriculas/${matriculaId}`, { method: "DELETE" });
@@ -104,6 +106,7 @@ export function MatriculaAcoes({
       setError(data.error ?? "Não foi possível excluir a matrícula.");
       return;
     }
+    setConfirmandoExclusao(false);
     router.refresh();
   }
 
@@ -142,7 +145,7 @@ export function MatriculaAcoes({
       )}
       {situacaoAtual === "ATIVA" && (
         <button
-          onClick={() => alterar("CANCELADA")}
+          onClick={() => setPendente("CANCELADA")}
           disabled={loading}
           title="Cancelar matrícula"
           className="flex h-8 items-center gap-1.5 rounded-lg border border-cda-border bg-white px-2.5 text-xs font-medium text-cda-red hover:bg-cda-red/5 disabled:opacity-50"
@@ -155,7 +158,7 @@ export function MatriculaAcoes({
         label="Situação da matrícula"
         value={situacaoAtual}
         disabled={loading}
-        onChange={(e) => alterar(e.target.value)}
+        onChange={(e) => setPendente(e.target.value as SituacaoMatricula)}
         className={`h-8 w-40 text-xs font-medium ${SITUACAO_COR[situacaoAtual]}`}
       >
         {Object.entries(SITUACAO_LABEL).map(([valor, label]) => (
@@ -166,7 +169,7 @@ export function MatriculaAcoes({
       </Select>
       {situacaoAtual !== "ATIVA" && (
         <button
-          onClick={excluir}
+          onClick={() => setConfirmandoExclusao(true)}
           disabled={loading}
           title="Excluir matrícula"
           aria-label="Excluir matrícula"
@@ -211,6 +214,26 @@ export function MatriculaAcoes({
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={pendente !== null}
+        onClose={() => setPendente(null)}
+        onConfirm={() => pendente && alterar(pendente)}
+        title={SITUACAO_LABEL[pendente ?? situacaoAtual]}
+        consequence={pendente ? CONFIRMA[pendente] : undefined}
+        confirmLabel="Confirmar"
+        confirmVariant="primary"
+        loading={loading}
+      />
+      <ConfirmDialog
+        open={confirmandoExclusao}
+        onClose={() => setConfirmandoExclusao(false)}
+        onConfirm={excluir}
+        title="Excluir esta matrícula de vez?"
+        consequence="Some o card de contrato dela desta página e não dá pra desfazer."
+        confirmLabel="Excluir"
+        loading={loading}
+      />
     </div>
   );
 }

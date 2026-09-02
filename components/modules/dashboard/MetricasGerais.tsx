@@ -25,9 +25,6 @@ export function MetricasGerais({
         value={totalAlunos}
         label="Total de alunos"
         subtext="Matrículas ativas"
-        // NOVO: sparkline decorativo — troque por uma série real (ex.: total de
-        // matrículas ativas nos últimos 7 dias) quando houver o dado histórico.
-        trend={[8, 12, 10, 14, 13, 16, 18]}
         href="/alunos"
       />
       <MetricCard
@@ -36,7 +33,6 @@ export function MetricasGerais({
         value={turmasAtivas}
         label="Turmas ativas"
         subtext="Ano letivo atual"
-        trend={[12, 12, 13, 13, 14, 14, 14]}
         href="/academico/turmas"
       />
       <MetricCard

@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Avatar } from "@/components/ui/Avatar";
 import { IconButton } from "@/components/ui/IconButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { showToast } from "@/components/ui/Toast";
 import {
   CATEGORIAS_EVENTO,
@@ -39,6 +40,7 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
   const [carregando, setCarregando] = useState(true);
   const [modal, setModal] = useState<{ aberto: boolean; evento?: Evento; dataPadrao?: string }>({ aberto: false });
   const [salvando, setSalvando] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [erro, setErro] = useState("");
 
   const grade = useMemo(() => gerarGradeMes(ano, mes), [ano, mes]);
@@ -166,10 +168,10 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
 
   async function excluir() {
     if (!modal.evento) return;
-    if (!confirm(`Remover o evento "${modal.evento.titulo}"?`)) return;
     setSalvando(true);
     await fetch(`/api/eventos/${modal.evento.id}`, { method: "DELETE" });
     setSalvando(false);
+    setConfirmandoExclusao(false);
     setModal({ aberto: false });
     showToast("Evento removido.", "info");
     const r = await fetch(`/api/eventos?mes=${mes}&ano=${ano}`);
@@ -348,7 +350,7 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
           {erro && <p className="text-sm text-cda-red">{erro}</p>}
           <div className="flex items-center justify-between gap-3">
             {modal.evento ? (
-              <Button type="button" variant="danger" size="sm" onClick={excluir} loading={salvando}>
+              <Button type="button" variant="danger" size="sm" onClick={() => setConfirmandoExclusao(true)} loading={salvando}>
                 Excluir
               </Button>
             ) : (
@@ -365,6 +367,15 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmandoExclusao}
+        onClose={() => setConfirmandoExclusao(false)}
+        onConfirm={excluir}
+        title={`Remover o evento "${modal.evento?.titulo}"?`}
+        confirmLabel="Remover"
+        loading={salvando}
+      />
     </div>
   );
 }

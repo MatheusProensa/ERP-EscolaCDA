@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Segmented } from "@/components/ui/Segmented";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { showToast } from "@/components/ui/Toast";
 import { StockBar, StatusEstoquePill, CategoriaCell } from "./EstoqueVisuais";
 import { ItemMenu } from "./ItemMenu";
 import { MovimentacaoModal } from "./MovimentacaoModal";
@@ -23,14 +25,18 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
   const [itemMovimentacao, setItemMovimentacao] = useState<{ item: ItemEstoque; tipo: "ENTRADA" | "SAIDA" } | null>(null);
   const [itemEditar, setItemEditar] = useState<ItemEstoque | null>(null);
   const [itemAjuste, setItemAjuste] = useState<ItemEstoque | null>(null);
+  const [itemExcluir, setItemExcluir] = useState<ItemEstoque | null>(null);
+  const [excluindo, setExcluindo] = useState(false);
 
   async function excluirItem(item: ItemEstoque) {
-    if (!confirm(`Excluir "${item.nome}" do estoque? O histórico de movimentações também será removido.`)) return;
+    setExcluindo(true);
     const res = await fetch(`/api/estoque/${item.id}`, { method: "DELETE" });
+    setExcluindo(false);
     if (!res.ok) {
-      alert("Não foi possível excluir o item.");
+      showToast("Não foi possível excluir o item.", "error");
       return;
     }
+    setItemExcluir(null);
     router.refresh();
   }
 
@@ -119,7 +125,7 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
                       onSaida={() => setItemMovimentacao({ item, tipo: "SAIDA" })}
                       onAjuste={() => setItemAjuste(item)}
                       onEditar={() => setItemEditar(item)}
-                      onExcluir={() => excluirItem(item)}
+                      onExcluir={() => setItemExcluir(item)}
                     />
                   </div>
                 </Td>
@@ -137,6 +143,15 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
       />
       <EditarItemModal item={itemEditar} onClose={() => setItemEditar(null)} />
       <AjusteEstoqueModal item={itemAjuste} onClose={() => setItemAjuste(null)} />
+      <ConfirmDialog
+        open={itemExcluir !== null}
+        onClose={() => setItemExcluir(null)}
+        onConfirm={() => itemExcluir && excluirItem(itemExcluir)}
+        title={`Excluir "${itemExcluir?.nome}" do estoque?`}
+        consequence="O histórico de movimentações também será removido."
+        confirmLabel="Excluir"
+        loading={excluindo}
+      />
     </div>
   );
 }

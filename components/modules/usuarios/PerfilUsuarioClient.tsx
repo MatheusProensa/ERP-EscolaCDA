@@ -10,6 +10,7 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { showToast } from "@/components/ui/Toast";
 import { formatarData } from "@/lib/utils";
 import { ROLES_ATIVAS, ROLE_LABEL, ROLE_BADGE_VARIANT } from "@/lib/permissoes";
@@ -45,6 +46,8 @@ export function PerfilUsuarioClient({
   const [erroSenha, setErroSenha] = useState("");
   const [redefinindo, setRedefinindo] = useState(false);
   const [copiado, setCopiado] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
 
   const sujo =
     name.trim() !== usuario.name || email.trim() !== usuario.email || role !== usuario.role || foto !== (usuario.foto ?? null);
@@ -106,13 +109,15 @@ export function PerfilUsuarioClient({
   }
 
   async function excluir() {
-    if (!confirm(`Excluir o acesso de ${usuario.name}? Não tem como desfazer.`)) return;
+    setExcluindo(true);
     const res = await fetch(`/api/usuarios/${usuario.id}`, { method: "DELETE" });
+    setExcluindo(false);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error ?? "Não foi possível excluir o usuário.");
+      showToast(data.error ?? "Não foi possível excluir o usuário.", "error");
       return;
     }
+    setConfirmandoExclusao(false);
     router.push("/usuarios");
     router.refresh();
   }
@@ -159,13 +164,13 @@ export function PerfilUsuarioClient({
               </button>
               {usuario.pedidoResetSenhaEm && <Badge variant="amber">Pediu redefinição</Badge>}
               <button
-                onClick={excluir}
-                disabled={souEu}
+                onClick={() => setConfirmandoExclusao(true)}
+                disabled={souEu || excluindo}
                 title={souEu ? "Você não pode excluir seu próprio usuário" : "Excluir usuário"}
                 className="ml-auto flex h-10 items-center gap-1.5 rounded-lg px-3 text-sm font-medium text-cda-text3 hover:bg-cda-red/10 hover:text-cda-red disabled:pointer-events-none disabled:opacity-30"
               >
                 <Trash2 className="h-4 w-4" />
-                Excluir
+                {excluindo ? "Excluindo..." : "Excluir"}
               </button>
             </div>
           </div>
@@ -225,6 +230,16 @@ export function PerfilUsuarioClient({
           </div>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmandoExclusao}
+        onClose={() => setConfirmandoExclusao(false)}
+        onConfirm={excluir}
+        title={`Excluir o acesso de ${usuario.name}?`}
+        consequence="Não tem como desfazer."
+        confirmLabel="Excluir"
+        loading={excluindo}
+      />
     </div>
   );
 }

@@ -6,6 +6,7 @@ import type { ItemEstoque } from "@prisma/client";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { showToast } from "@/components/ui/Toast";
 
 export function EditarItemModal({ item, onClose }: { item: ItemEstoque | null; onClose: () => void }) {
   const router = useRouter();
@@ -16,21 +17,27 @@ export function EditarItemModal({ item, onClose }: { item: ItemEstoque | null; o
     if (!item) return;
     setLoading(true);
     const fd = new FormData(e.currentTarget);
-    await fetch(`/api/estoque/${item.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        nome: fd.get("nome"),
-        categoria: fd.get("categoria"),
-        unidade: fd.get("unidade"),
-        minimo: fd.get("minimo"),
-        localizacao: fd.get("localizacao"),
-        fornecedor: fd.get("fornecedor"),
-      }),
-    });
-    setLoading(false);
-    onClose();
-    router.refresh();
+    try {
+      const res = await fetch(`/api/estoque/${item.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nome: fd.get("nome"),
+          categoria: fd.get("categoria"),
+          unidade: fd.get("unidade"),
+          minimo: fd.get("minimo"),
+          localizacao: fd.get("localizacao"),
+          fornecedor: fd.get("fornecedor"),
+        }),
+      });
+      if (!res.ok) throw new Error();
+      onClose();
+      router.refresh();
+    } catch {
+      showToast("Não foi possível salvar o item. Tente de novo.", "error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

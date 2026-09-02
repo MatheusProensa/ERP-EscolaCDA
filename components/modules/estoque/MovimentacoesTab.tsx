@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Badge } from "@/components/ui/Badge";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { showToast } from "@/components/ui/Toast";
 import { MOV_INFO } from "@/lib/estoqueStatus";
 import { formatarDataHora } from "@/lib/utils";
 
@@ -20,6 +22,7 @@ export function MovimentacoesTab({ movimentacoes: movimentacoesIniciais }: { mov
   const [busca, setBusca] = useState("");
   const [tipoFiltro, setTipoFiltro] = useState("");
   const [estornandoId, setEstornandoId] = useState<string | null>(null);
+  const [movParaEstornar, setMovParaEstornar] = useState<MovimentacaoComItem | null>(null);
   // A página só traz as 100 mais recentes — "temMais" indica se dá pra buscar um
   // lote mais antigo ainda (movimentação é um log que só cresce com o tempo).
   const [temMais, setTemMais] = useState(movimentacoesIniciais.length === 100);
@@ -43,7 +46,6 @@ export function MovimentacoesTab({ movimentacoes: movimentacoesIniciais }: { mov
   }
 
   async function estornar(mov: MovimentacaoComItem) {
-    if (!confirm(`Estornar esta movimentação de "${mov.item.nome}"? O saldo do item volta ao estado anterior.`)) return;
     setEstornandoId(mov.id);
     const res = await fetch(`/api/estoque/movimentacoes/${mov.id}/estornar`, {
       method: "POST",
@@ -53,9 +55,10 @@ export function MovimentacoesTab({ movimentacoes: movimentacoesIniciais }: { mov
     setEstornandoId(null);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      alert(data.error ?? "Não foi possível estornar a movimentação.");
+      showToast(data.error ?? "Não foi possível estornar a movimentação.", "error");
       return;
     }
+    setMovParaEstornar(null);
     router.refresh();
   }
 
@@ -127,7 +130,7 @@ export function MovimentacoesTab({ movimentacoes: movimentacoesIniciais }: { mov
                   <Td>
                     {podeEstornar && (
                       <button
-                        onClick={() => estornar(mov)}
+                        onClick={() => setMovParaEstornar(mov)}
                         disabled={estornandoId === mov.id}
                         title="Estornar movimentação"
                         className="text-cda-text3 hover:text-cda-red disabled:opacity-50"
@@ -153,6 +156,17 @@ export function MovimentacoesTab({ movimentacoes: movimentacoesIniciais }: { mov
           </div>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={movParaEstornar !== null}
+        onClose={() => setMovParaEstornar(null)}
+        onConfirm={() => movParaEstornar && estornar(movParaEstornar)}
+        title={`Estornar esta movimentação de "${movParaEstornar?.item.nome}"?`}
+        consequence="O saldo do item volta ao estado anterior."
+        confirmLabel="Estornar"
+        confirmVariant="primary"
+        loading={estornandoId !== null}
+      />
     </div>
   );
 }

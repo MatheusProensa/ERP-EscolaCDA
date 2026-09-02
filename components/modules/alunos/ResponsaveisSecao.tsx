@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { showToast } from "@/components/ui/Toast";
 import { formatarTelefone } from "@/lib/utils";
 
 function CamposResponsavel({ responsavel }: { responsavel?: Responsavel }) {
@@ -47,6 +49,7 @@ export function ResponsaveisSecao({ alunoId, responsaveis }: { alunoId: string; 
   const [editando, setEditando] = useState<Responsavel | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [excluindoId, setExcluindoId] = useState<string | null>(null);
 
   function lerPayload(fd: FormData) {
     return {
@@ -99,14 +102,14 @@ export function ResponsaveisSecao({ alunoId, responsaveis }: { alunoId: string; 
   }
 
   async function excluir(id: string) {
-    if (!confirm("Excluir este responsável?")) return;
     setLoading(true);
     const res = await fetch(`/api/responsaveis/${id}`, { method: "DELETE" });
     setLoading(false);
     if (!res.ok) {
-      alert("Não foi possível excluir.");
+      showToast("Não foi possível excluir.", "error");
       return;
     }
+    setExcluindoId(null);
     router.refresh();
   }
 
@@ -125,7 +128,7 @@ export function ResponsaveisSecao({ alunoId, responsaveis }: { alunoId: string; 
                 <button onClick={() => setEditando(r)} title="Editar" className="text-cda-text3 hover:text-cda-blue">
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
-                <button onClick={() => excluir(r.id)} title="Excluir" className="text-cda-text3 hover:text-cda-red">
+                <button onClick={() => setExcluindoId(r.id)} title="Excluir" className="text-cda-text3 hover:text-cda-red">
                   <Trash2 className="h-3.5 w-3.5" />
                 </button>
               </div>
@@ -178,6 +181,15 @@ export function ResponsaveisSecao({ alunoId, responsaveis }: { alunoId: string; 
           </form>
         )}
       </Modal>
+
+      <ConfirmDialog
+        open={excluindoId !== null}
+        onClose={() => setExcluindoId(null)}
+        onConfirm={() => excluindoId && excluir(excluindoId)}
+        title="Excluir este responsável?"
+        confirmLabel="Excluir"
+        loading={loading}
+      />
     </Card>
   );
 }

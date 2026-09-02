@@ -39,6 +39,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Aluno, competência e valor do serviço são obrigatórios" }, { status: 400 });
   }
 
+  const valorServicoNum = Number(valorServico);
+  if (!Number.isFinite(valorServicoNum) || valorServicoNum <= 0) {
+    return NextResponse.json({ error: "Valor do serviço precisa ser um número maior que zero" }, { status: 400 });
+  }
+
   const aluno = await prisma.aluno.findUnique({
     where: { id: alunoId },
     include: { responsaveis: true },
@@ -52,7 +57,7 @@ export async function POST(req: NextRequest) {
       data: {
         alunoId,
         competencia,
-        valorServico: Number(valorServico),
+        valorServico: valorServicoNum,
         discriminacao: discriminacao || `Prestação de serviços educacionais — referente a ${competencia}`,
         usuario: session.user.name ?? "Usuário",
       },

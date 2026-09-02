@@ -7,6 +7,8 @@ import type { Contrato } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { showToast } from "@/components/ui/Toast";
 import { formatarDataHora } from "@/lib/utils";
 import { turnoDoContrato } from "@/lib/contratoTexto";
 import { GerarContratoModal } from "./GerarContratoModal";
@@ -40,6 +42,8 @@ export function ContratoSecao({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [linkCopiado, setLinkCopiado] = useState(false);
+  const [confirmandoAssinatura, setConfirmandoAssinatura] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
 
   const modalProps = {
     matriculaId,
@@ -55,20 +59,21 @@ export function ContratoSecao({
 
   async function alternarAssinado() {
     if (!contrato) return;
-    // NOVO: confirma antes de marcar/desmarcar — é um botão de 1 clique só que decide o
-    // status legal do contrato, sem aviso nenhum até aqui.
-    const confirmacao = contrato.assinado
-      ? "Marcar este contrato como pendente de novo? Ele volta a aparecer como não assinado."
-      : "Marcar este contrato como assinado? Use só depois que a assinatura (física ou pelo link) realmente aconteceu.";
-    if (!confirm(confirmacao)) return;
     setLoading(true);
-    await fetch(`/api/contratos/${contrato.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ assinado: !contrato.assinado }),
-    });
-    setLoading(false);
-    router.refresh();
+    try {
+      const res = await fetch(`/api/contratos/${contrato.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assinado: !contrato.assinado }),
+      });
+      if (!res.ok) throw new Error();
+      setConfirmandoAssinatura(false);
+      router.refresh();
+    } catch {
+      showToast("Não foi possível atualizar o contrato. Tente de novo.", "error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function marcarEnviado() {
@@ -104,15 +109,17 @@ export function ContratoSecao({
 
   async function excluirContrato() {
     if (!contrato) return;
-    if (!confirm("Excluir este contrato? Essa ação não pode ser desfeita.")) return;
     setLoading(true);
-    const res = await fetch(`/api/contratos/${contrato.id}`, { method: "DELETE" });
-    setLoading(false);
-    if (!res.ok) {
-      alert("Não foi possível excluir o contrato.");
-      return;
+    try {
+      const res = await fetch(`/api/contratos/${contrato.id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setConfirmandoExclusao(false);
+      router.refresh();
+    } catch {
+      showToast("Não foi possível excluir o contrato.", "error");
+    } finally {
+      setLoading(false);
     }
-    router.refresh();
   }
 
   return (
@@ -159,11 +166,11 @@ export function ContratoSecao({
               </a>
             )}
             {!contrato.assinado ? (
-              <Button onClick={alternarAssinado} loading={loading} size="sm" className="bg-cda-green hover:bg-cda-green/90">
+              <Button onClick={() => setConfirmandoAssinatura(true)} loading={loading} size="sm" className="bg-cda-green hover:bg-cda-green/90">
                 Marcar como assinado
               </Button>
             ) : (
-              <Button onClick={alternarAssinado} loading={loading} size="sm" variant="outline">
+              <Button onClick={() => setConfirmandoAssinatura(true)} loading={loading} size="sm" variant="outline">
                 Marcar como pendente
               </Button>
             )}
@@ -196,7 +203,7 @@ export function ContratoSecao({
             <div className="mx-1 h-6 w-px bg-cda-border" />
             <GerarContratoModal {...modalProps} temContrato />
             <button
-              onClick={excluirContrato}
+              onClick={() => setConfirmandoExclusao(true)}
               disabled={loading}
               title="Excluir contrato — apaga de vez, não dá pra desfazer"
               aria-label="Excluir contrato"
@@ -207,6 +214,34 @@ export function ContratoSecao({
             </button>
           </div>
         </div>
+      )}
+
+      {contrato && (
+        <>
+          <ConfirmDialog
+            open={confirmandoAssinatura}
+            onClose={() => setConfirmandoAssinatura(false)}
+            onConfirm={alternarAssinado}
+            title={contrato.assinado ? "Marcar como pendente de novo?" : "Marcar como assinado?"}
+            consequence={
+              contrato.assinado
+                ? "Ele volta a aparecer como não assinado."
+                : "Use só depois que a assinatura (física ou pelo link) realmente aconteceu."
+            }
+            confirmLabel={contrato.assinado ? "Marcar como pendente" : "Marcar como assinado"}
+            confirmVariant="primary"
+            loading={loading}
+          />
+          <ConfirmDialog
+            open={confirmandoExclusao}
+            onClose={() => setConfirmandoExclusao(false)}
+            onConfirm={excluirContrato}
+            title="Excluir este contrato?"
+            consequence="Essa ação não pode ser desfeita."
+            confirmLabel="Excluir"
+            loading={loading}
+          />
+        </>
       )}
     </Card>
   );

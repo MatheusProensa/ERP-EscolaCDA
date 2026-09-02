@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { CheckCircle2, Mail } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
+import { showToast } from "@/components/ui/Toast";
 
 export function EsqueciSenhaForm() {
   const [loading, setLoading] = useState(false);
@@ -13,13 +14,22 @@ export function EsqueciSenhaForm() {
     e.preventDefault();
     setLoading(true);
     const fd = new FormData(e.currentTarget);
-    await fetch("/api/auth/esqueci-senha", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: fd.get("email") }),
-    });
-    setLoading(false);
-    setEnviado(true);
+    try {
+      // A resposta é sempre a mesma exista ou não a conta (evita expor quais
+      // e-mails têm cadastro) — só um erro de rede/servidor de verdade deve
+      // impedir a tela de "pedido registrado".
+      const res = await fetch("/api/auth/esqueci-senha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: fd.get("email") }),
+      });
+      if (!res.ok) throw new Error();
+      setEnviado(true);
+    } catch {
+      showToast("Não foi possível registrar o pedido agora. Tente de novo.", "error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   if (enviado) {

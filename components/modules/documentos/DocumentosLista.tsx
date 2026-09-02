@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { IconButton } from "@/components/ui/IconButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { showToast } from "@/components/ui/Toast";
 import { formatarData } from "@/lib/utils";
 import { EditarDocumentoModal } from "./EditarDocumentoModal";
 
@@ -46,10 +47,16 @@ export function DocumentosLista({ grupos }: { grupos: { categoria: string; itens
 
   async function handleRemover(id: string) {
     setRemovendoId(id);
-    await fetch(`/api/documentos/${id}`, { method: "DELETE" });
-    setRemovendoId(null);
-    setConfirmandoId(null);
-    router.refresh();
+    try {
+      const res = await fetch(`/api/documentos/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error();
+      setConfirmandoId(null);
+      router.refresh();
+    } catch {
+      showToast("Não foi possível remover o documento. Tente de novo.", "error");
+    } finally {
+      setRemovendoId(null);
+    }
   }
 
   return (

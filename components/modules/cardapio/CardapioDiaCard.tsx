@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 const DIAS_SEMANA = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
@@ -16,6 +17,7 @@ export function CardapioDiaCard({ data, cardapio }: { data: Date; cardapio: Card
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [confirmandoRemocao, setConfirmandoRemocao] = useState(false);
 
   const dataISO = data.toISOString().slice(0, 10);
   const label = `${DIAS_SEMANA[data.getUTCDay()]}, ${data.toLocaleDateString("pt-BR", { timeZone: "UTC" })}`;
@@ -53,7 +55,6 @@ export function CardapioDiaCard({ data, cardapio }: { data: Date; cardapio: Card
 
   async function remover() {
     if (!cardapio) return;
-    if (!confirm("Remover o cardápio deste dia?")) return;
     setError("");
     setLoading(true);
     const res = await fetch(`/api/cardapio/${cardapio.id}`, { method: "DELETE" });
@@ -65,6 +66,7 @@ export function CardapioDiaCard({ data, cardapio }: { data: Date; cardapio: Card
       return;
     }
 
+    setConfirmandoRemocao(false);
     router.refresh();
   }
 
@@ -123,7 +125,7 @@ export function CardapioDiaCard({ data, cardapio }: { data: Date; cardapio: Card
         </button>
         {cardapio && (
           <button
-            onClick={remover}
+            onClick={() => setConfirmandoRemocao(true)}
             disabled={loading}
             className="flex items-center gap-1.5 rounded-lg border border-cda-border px-3 py-1.5 text-xs font-medium text-cda-red hover:bg-cda-bg disabled:opacity-50"
           >
@@ -168,6 +170,15 @@ export function CardapioDiaCard({ data, cardapio }: { data: Date; cardapio: Card
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={confirmandoRemocao}
+        onClose={() => setConfirmandoRemocao(false)}
+        onConfirm={remover}
+        title="Remover o cardápio deste dia?"
+        confirmLabel="Remover"
+        loading={loading}
+      />
     </Card>
   );
 }
