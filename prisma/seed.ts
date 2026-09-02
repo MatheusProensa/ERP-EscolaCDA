@@ -135,8 +135,8 @@ const ALUNOS_REAIS: { nome: string; nascimento: string; turmas: (keyof typeof CO
   { nome: "Rafael Costa Fagundes de Oliveira", nascimento: "2021-08-02", turmas: ["PREI"] },
   // Nome corrigido para "Mateus Hister de Macedo" conforme Diário Escola (print do
   // Berçário I, 2026-09-02) — o calendário de aniversariantes trazia "Martin" como nome do
-  // meio, provavelmente confundido com o colega de turma "Martin Menegon Pinheiro". Não é o
-  // mesmo aluno que "Martin Hister de Macedo" (Pré-escola II, nascido 2020) logo abaixo.
+  // meio, provavelmente confundido com o colega de turma "Martin Menegon Pinheiro". É irmão
+  // de "Martin Hister de Macedo" (Pré-escola II, nascido 2020) logo abaixo — confirmado.
   { nome: "Mateus Hister de Macedo", nascimento: "2025-08-16", turmas: ["BI"] },
   { nome: "Rafael do Carmo Hunhoff", nascimento: "2022-08-30", turmas: ["MII"] },
   // Setembro
