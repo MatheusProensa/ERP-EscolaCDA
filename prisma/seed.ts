@@ -56,6 +56,8 @@ const CODIGO_TURMA: Record<string, string> = {
   "3ANO": "3º Ano",
   CTI: "Contraturno I",
   CTII: "Contraturno II",
+  CTIII: "Contraturno III",
+  CTIV: "Contraturno IV",
 };
 
 // Alunos reais, extraídos do calendário de aniversariantes 2026 da Escola CDA (nome,
@@ -71,17 +73,17 @@ const ALUNOS_REAIS: { nome: string; nascimento: string; turmas: (keyof typeof CO
   { nome: "Benício Rodrigues Aires", nascimento: "2022-01-17", turmas: ["PREI"] },
   { nome: "Allan Souza Carvalho", nascimento: "2024-01-19", turmas: ["MI"] },
   { nome: "Alice Loures Lazzari", nascimento: "2018-01-20", turmas: ["3ANO"] },
-  { nome: "Maythê Mehy Santos Silva", nascimento: "2020-01-25", turmas: ["1ANO"] },
+  { nome: "Maythê Mehy Santos Silva", nascimento: "2020-01-25", turmas: ["1ANO", "CTIV"] },
   { nome: "Camillo Tolotti Vargas", nascimento: "2020-01-26", turmas: ["1ANO"] },
   { nome: "Marina Sabino Ineu", nascimento: "2025-01-26", turmas: ["BII"] },
   { nome: "Theodoro Böhmer Pothin", nascimento: "2018-01-29", turmas: ["3ANO"] },
   // Fevereiro
-  { nome: "Mathias Pippi Wentzel", nascimento: "2024-02-06", turmas: ["MI"] },
-  { nome: "Isabela Morcelli Alves", nascimento: "2025-02-08", turmas: ["BII"] },
+  { nome: "Mathias Pippi Wentzel", nascimento: "2024-02-06", turmas: ["MI", "CTII"] },
+  { nome: "Isabela Morcelli Alves", nascimento: "2025-02-08", turmas: ["BII", "CTI"] },
   { nome: "Matteo Tolotti Vargas", nascimento: "2023-02-11", turmas: ["MII"] },
-  { nome: "Arthur Magalhães Lippert", nascimento: "2019-02-14", turmas: ["2ANO"] },
-  { nome: "Veronica Rossato Lima", nascimento: "2023-02-21", turmas: ["MII"] },
-  { nome: "Aurora Balbinot Azzi", nascimento: "2023-02-25", turmas: ["CTII"] },
+  { nome: "Arthur Magalhães Lippert", nascimento: "2019-02-14", turmas: ["2ANO", "CTIV"] },
+  { nome: "Verônica Rossato Lima", nascimento: "2023-02-21", turmas: ["MII", "CTIII"] },
+  { nome: "Aurora Balbinot Azzi", nascimento: "2023-02-25", turmas: ["CTIII"] },
   { nome: "Laís Colpo", nascimento: "2026-02-26", turmas: ["BI"] },
   { nome: "Luísa Colpo", nascimento: "2026-02-26", turmas: ["BI"] },
   // Março
@@ -91,57 +93,63 @@ const ALUNOS_REAIS: { nome: string; nascimento: string; turmas: (keyof typeof CO
   { nome: "Valentina Badke Negrini", nascimento: "2022-03-09", turmas: ["PREI"] },
   { nome: "Luana Wonsick Dall'Agnol", nascimento: "2025-03-09", turmas: ["BII"] },
   { nome: "Luca Batista Querino", nascimento: "2025-03-09", turmas: ["BII"] },
-  { nome: "Antonella Tonetto Bertagnoll", nascimento: "2022-03-10", turmas: ["PREI"] },
+  { nome: "Antonella Tonetto Bertagnolli", nascimento: "2022-03-10", turmas: ["PREI"] },
   { nome: "Elisa Hernandez Arboleda", nascimento: "2022-03-13", turmas: ["PREI"] },
-  { nome: "Miguel Pinaffo Fidelis", nascimento: "2024-03-21", turmas: ["MI"] },
+  { nome: "Miguel Pinaffo Fidelis", nascimento: "2024-03-21", turmas: ["MI", "CTII"] },
   { nome: "Júlia Maffini Bortoluzzi", nascimento: "2019-03-27", turmas: ["2ANO"] },
   { nome: "Vicente Pozebon Trauer", nascimento: "2018-03-28", turmas: ["3ANO"] },
   // Abril
-  { nome: "Joaquim Farencena Sarturi", nascimento: "2019-04-13", turmas: ["1ANO"] },
+  { nome: "Joaquim Farencena Sarturi", nascimento: "2019-04-13", turmas: ["1ANO", "CTIV"] },
   { nome: "Gabriel Stangherlin Marchesan", nascimento: "2020-04-14", turmas: ["PREII"] },
-  { nome: "Lucas Alves Fiorin", nascimento: "2020-04-15", turmas: ["PREII"] },
+  { nome: "Lucas Alves Fiorin", nascimento: "2020-04-15", turmas: ["PREII", "CTIII"] },
   { nome: "Mercedita Janke Salgado", nascimento: "2021-04-17", turmas: ["PREI"] },
   { nome: "Elisa Prade Limana", nascimento: "2020-04-20", turmas: ["PREII"] },
   { nome: "Marco Antônio Raddatz Perlin", nascimento: "2022-04-28", turmas: ["MII"] },
   // Maio
   { nome: "Alice Nascimento da Rocha", nascimento: "2017-05-05", turmas: ["3ANO"] },
   { nome: "Matheus Borges Moro", nascimento: "2020-05-07", turmas: ["PREII"] },
-  { nome: "Elisa de Fátima Gomes Camargo", nascimento: "2021-05-13", turmas: ["PREI"] },
-  { nome: "Otto Pohl Bredow", nascimento: "2020-05-15", turmas: ["PREII"] },
-  { nome: "Pedro Antônio Caetano da Silva Corcini", nascimento: "2023-05-20", turmas: ["MI"] },
+  { nome: "Elisa de Fátima Gomes Camargo", nascimento: "2021-05-13", turmas: ["PREI", "CTIII"] },
+  { nome: "Otto Pohl Bredow", nascimento: "2020-05-15", turmas: ["PREII", "CTIII"] },
+  { nome: "Pedro Antônio Caetano da Silva Corcini", nascimento: "2023-05-20", turmas: ["MI", "CTII"] },
   // Junho
   { nome: "Estela Negrini Carloto", nascimento: "2022-06-01", turmas: ["MII"] },
   { nome: "Luiza Lopes Kemel", nascimento: "2017-06-01", turmas: ["3ANO"] },
-  { nome: "Bento Bertolin da Silveira", nascimento: "2023-06-02", turmas: ["CTII"] },
-  { nome: "Olívia Avelar Tarouco", nascimento: "2025-06-03", turmas: ["BI"] },
-  { nome: "Martín Aires Giacomeli", nascimento: "2023-06-20", turmas: ["MI"] },
-  { nome: "Joaquim Inácio Benini Bragagnolo", nascimento: "2023-06-22", turmas: ["CTII"] },
+  { nome: "Bento Bertolin da Silveira", nascimento: "2023-06-02", turmas: ["MI", "CTII"] },
+  { nome: "Olívia Avelar Tarouco", nascimento: "2025-06-03", turmas: ["BI", "CTI"] },
+  { nome: "Martín Aires Giacomeli", nascimento: "2023-06-20", turmas: ["MI", "CTII"] },
+  { nome: "Joaquim Inácio Benini Bragagnolo", nascimento: "2023-06-22", turmas: ["MI", "CTII"] },
   { nome: "Miguel Pereira Machado", nascimento: "2023-06-26", turmas: ["MI"] },
-  { nome: "Maria Helena Alberton de Lima", nascimento: "2022-06-30", turmas: ["CTII"] },
+  { nome: "Maria Helena Alberton de Lima", nascimento: "2022-06-30", turmas: ["CTIII"] },
   // Julho
   { nome: "Davi Loures Lazzari", nascimento: "2020-07-02", turmas: ["PREII"] },
-  { nome: "Ana Beatriz de Brito Pedrosa", nascimento: "2017-07-08", turmas: ["3ANO"] },
-  { nome: "Eduardo Alves Fiorin", nascimento: "2023-07-10", turmas: ["MI"] },
-  { nome: "Joaquim Della Flora Carrillo", nascimento: "2024-07-10", turmas: ["BII"] },
-  { nome: "Melissa Pinaffo Fidelis", nascimento: "2021-07-11", turmas: ["PREI"] },
+  { nome: "Ana Beatriz de Brito Pedrosa Vasconcelos", nascimento: "2017-07-08", turmas: ["3ANO", "CTIV"] },
+  { nome: "Eduardo Alves Fiorin", nascimento: "2023-07-10", turmas: ["MI", "CTII"] },
+  { nome: "Joaquim Della Flora Carrillo", nascimento: "2024-07-10", turmas: ["BII", "CTI"] },
+  { nome: "Melissa Pinaffo Fidelis", nascimento: "2021-07-11", turmas: ["PREI", "CTIII"] },
   { nome: "Matteo Puchale Bressa", nascimento: "2024-07-11", turmas: ["BII"] },
   { nome: "Milena Raddatz Perlin", nascimento: "2018-07-17", turmas: ["2ANO"] },
   { nome: "Elisa Fighera Cargnelutti", nascimento: "2020-07-22", turmas: ["PREII"] },
   { nome: "Enrico Costa Quispe", nascimento: "2018-07-25", turmas: ["2ANO"] },
-  { nome: "Bernardo Uhlmann Thewes", nascimento: "2025-07-27", turmas: ["BI"] },
+  { nome: "Bernardo Uhlmann Thewes", nascimento: "2025-07-27", turmas: ["BI", "CTI"] },
   // Agosto
   { nome: "Rafael Costa Fagundes de Oliveira", nascimento: "2021-08-02", turmas: ["PREI"] },
+  // ATENÇÃO: o Diário Escola mostra um único aluno "Mateus Hister de Macedo" no Berçário I —
+  // nome diferente dos dois "Macedo" abaixo (este e o de setembro). Pode ser um terceiro
+  // irmão, ou os nomes/turmas destes dois se embaralharam ao montar a lista. Confirmar com
+  // a escola antes de mexer.
   { nome: "Mateus Martin de Macedo", nascimento: "2025-08-16", turmas: ["BI"] },
   { nome: "Rafael do Carmo Hunhoff", nascimento: "2022-08-30", turmas: ["MII"] },
   // Setembro
   { nome: "Davi Menezes Gass", nascimento: "2019-09-03", turmas: ["1ANO"] },
-  { nome: "Théo Souza Munhoz", nascimento: "2022-09-03", turmas: ["MII"] },
+  { nome: "Théo Souza Munhoz", nascimento: "2022-09-03", turmas: ["MII", "CTIII"] },
   { nome: "Martin Hister de Macedo", nascimento: "2020-09-10", turmas: ["PREII"] },
-  { nome: "Alisson Reisdorfer Macedo", nascimento: "2021-09-15", turmas: ["PREI"] },
+  { nome: "Alisson Reisdorfer Macedo", nascimento: "2021-09-15", turmas: ["PREI", "CTIII"] },
   { nome: "Mathias Lagomarsino Beux", nascimento: "2021-09-21", turmas: ["PREI"] },
-  { nome: "Luisa dos Santos Pacheco", nascimento: "2022-09-21", turmas: ["CTII"] },
-  { nome: "Maria Antônia Machado Wallau", nascimento: "2023-09-25", turmas: ["CTII"] },
-  { nome: "Helena Fátima Cossetin Rosso", nascimento: "2024-09-30", turmas: ["BII"] },
+  { nome: "Luisa dos Santos Pacheco", nascimento: "2022-09-21", turmas: ["CTIII"] },
+  // Contraturno removido: não aparece em nenhuma das listas de Contraturno I-IV do Diário
+  // Escola conferidas em 2026-09 — CTII do seed antigo não batia. Confirmar com a escola.
+  { nome: "Maria Antônia Machado Wallau", nascimento: "2023-09-25", turmas: ["MI"] },
+  { nome: "Helena Fátima Cossetin Rosso", nascimento: "2024-09-30", turmas: ["BII", "CTI"] },
   // Outubro
   { nome: "Fernando Soares Oliveira Krug", nascimento: "2021-10-04", turmas: ["PREI"] },
   { nome: "Maria Manoela Souza Papalia", nascimento: "2020-10-07", turmas: ["PREII"] },
@@ -153,24 +161,36 @@ const ALUNOS_REAIS: { nome: string; nascimento: string; turmas: (keyof typeof CO
   { nome: "Luca Alberton de Lima", nascimento: "2024-10-22", turmas: ["CTI"] },
   { nome: "Bernardo Mascarenhas da Silva", nascimento: "2018-10-22", turmas: ["2ANO"] },
   { nome: "Ornella da Conceição Carvalho", nascimento: "2020-10-26", turmas: ["PREII"] },
-  { nome: "Mariah Ramos Busanello", nascimento: "2019-10-31", turmas: ["1ANO"] },
+  { nome: "Mariah Ramos Busanello", nascimento: "2019-10-31", turmas: ["1ANO", "CTIV"] },
   // Novembro
-  { nome: "Isabela Neujahr Ceolin", nascimento: "2017-11-09", turmas: ["3ANO"] },
+  { nome: "Isabela Neujahr Ceolin", nascimento: "2017-11-09", turmas: ["3ANO", "CTIV"] },
   { nome: "Giovanna Zambon Zimermann", nascimento: "2018-11-23", turmas: ["2ANO"] },
   // Dezembro
-  { nome: "Théo Muller Eloi", nascimento: "2021-12-03", turmas: ["PREI"] },
+  { nome: "Théo Muller Elói", nascimento: "2021-12-03", turmas: ["PREI", "CTIII"] },
   { nome: "Livia Sabino Ineu", nascimento: "2020-12-05", turmas: ["PREII"] },
   { nome: "Martin Menegon Pinheiro", nascimento: "2025-12-10", turmas: ["BI", "CTI"] },
   { nome: "Isis Plentz Alves", nascimento: "2023-12-11", turmas: ["MI"] },
   { nome: "Helena Tonetto Bertagnolli", nascimento: "2023-12-13", turmas: ["MI"] },
   { nome: "Melissa Trindade Kemerich", nascimento: "2023-12-18", turmas: ["MI"] },
-  { nome: "Maria Luísa Schmidt Calegari", nascimento: "2019-12-19", turmas: ["1ANO"] },
+  { nome: "Maria Luísa Schmidt Calegari", nascimento: "2019-12-19", turmas: ["1ANO", "CTIV"] },
   { nome: "Arthur da Silveira Frank", nascimento: "2019-12-22", turmas: ["1ANO"] },
   { nome: "Maria Cecília Granzotto de Oliveira", nascimento: "2022-12-27", turmas: ["MII"] },
   { nome: "Gonçalo Nascimento Tomazetti Balconi", nascimento: "2018-12-28", turmas: ["2ANO"] },
   { nome: "Kauã Cirolini Cardoso", nascimento: "2021-12-28", turmas: ["PREI"] },
   { nome: "Samuel da Rosa de Souza", nascimento: "2020-12-29", turmas: ["PREII"] },
   { nome: "Augusto Flores Prado", nascimento: "2023-12-31", turmas: ["MI"] },
+
+  // TODO: alunos confirmados como matriculados no Diário Escola (app.diarioescola.com.br,
+  // conferido em 2026-09-02) mas que ainda não têm data de nascimento cadastrada em lugar
+  // nenhum — não dá pra inventar dado de criança real. Preencher "nascimento" e mover pra
+  // cima (mantendo a ordem cronológica) assim que a data chegar:
+  // { nome: "Mathias Figueredo Cassamalli", nascimento: "????-??-??", turmas: ["1ANO"] },
+  // { nome: "Vinícius Cardoso da Avilla", nascimento: "????-??-??", turmas: ["CTIV"] },
+  // { nome: "Lara Rizzetti Rutzig", nascimento: "????-??-??", turmas: ["BI", "CTI"] },
+  // { nome: "Antônia Brondani Karsburg", nascimento: "????-??-??", turmas: ["CTI"] }, // turma base não confirmada
+  // { nome: "Conrado Minello de Almeida", nascimento: "????-??-??", turmas: ["CTI"] }, // turma base não confirmada
+  // { nome: "Eduardo Santin", nascimento: "????-??-??", turmas: ["CTI"] }, // turma base não confirmada
+  // { nome: "Gustavo Gomes Barasuol", nascimento: "????-??-??", turmas: ["PREI", "CTIII"] },
 ];
 
 // Equipe real da Escola CDA, cruzando as figurinhas da Copa 2026 com o calendário de
@@ -266,7 +286,7 @@ function gerarTelefone(seed: number): string {
 const SEXO_POR_PRIMEIRO_NOME: Record<string, "M" | "F"> = {
   Alice: "F", Rafaela: "F", Antonia: "F", Luísa: "F", Benício: "M", Allan: "M", Maythê: "F",
   Camillo: "M", Marina: "F", Theodoro: "M", Mathias: "M", Isabela: "F", Matteo: "M", Arthur: "M",
-  Veronica: "F", Aurora: "F", Laís: "F", Théo: "M", Laura: "F", Luara: "F", Valentina: "F",
+  Verônica: "F", Aurora: "F", Laís: "F", Théo: "M", Laura: "F", Luara: "F", Valentina: "F",
   Luana: "F", Luca: "M", Antonella: "F", Elisa: "F", Miguel: "M", Júlia: "F", Vicente: "M",
   Joaquim: "M", Gabriel: "M", Lucas: "M", Mercedita: "F", Marco: "M", Matheus: "M", Otto: "M",
   Pedro: "M", Estela: "F", Luiza: "F", Bento: "M", Olívia: "F", Martín: "M", Maria: "F",
