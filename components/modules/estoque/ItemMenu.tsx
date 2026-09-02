@@ -62,6 +62,8 @@ export function ItemMenu({
       <button
         ref={btnRef}
         onClick={toggle}
+        title="Mais ações"
+        aria-label="Mais ações"
         className="flex h-7 w-7 items-center justify-center rounded-md text-cda-text3 hover:bg-cda-bg hover:text-cda-text"
       >
         <MoreHorizontal className="h-4 w-4" />

@@ -4,31 +4,15 @@ import { AlertTriangle, ClipboardList } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { Badge, type BadgeVariant } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { MatricularNaTurmaModal } from "@/components/modules/academico/MatricularNaTurmaModal";
-import type { SituacaoMatricula } from "@prisma/client";
+import { SITUACAO_MATRICULA } from "@/lib/statusVisual";
 
 const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã — Contraturno", TARDE: "Tarde — Ensino regular" };
-
-const SITUACAO_VARIANT: Record<SituacaoMatricula, BadgeVariant> = {
-  ATIVA: "green",
-  TRANCADA: "amber",
-  CANCELADA: "red",
-  TRANSFERIDA: "gray",
-  CONCLUIDA: "blue",
-};
-
-const SITUACAO_LABEL: Record<SituacaoMatricula, string> = {
-  ATIVA: "Ativa",
-  TRANCADA: "Trancada",
-  CANCELADA: "Cancelada",
-  TRANSFERIDA: "Transferida",
-  CONCLUIDA: "Concluída",
-};
 
 export default async function TurmaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -115,7 +99,7 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
                     </Link>
                   </Td>
                   <Td>
-                    <Badge variant={SITUACAO_VARIANT[m.situacao]}>{SITUACAO_LABEL[m.situacao]}</Badge>
+                    <Badge variant={SITUACAO_MATRICULA[m.situacao].variant}>{SITUACAO_MATRICULA[m.situacao].label}</Badge>
                   </Td>
                 </Tr>
               );

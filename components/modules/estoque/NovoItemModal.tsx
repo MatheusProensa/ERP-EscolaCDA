@@ -56,7 +56,7 @@ export function NovoItemModal() {
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input label="Nome" name="nome" required placeholder="Papel A4" />
           <Input label="Categoria" name="categoria" required placeholder="Material Escolar" />
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <Input label="Unidade" name="unidade" required placeholder="un" />
             <Input label="Quantidade inicial" name="quantidade" type="number" defaultValue="0" />
             <Input label="Mínimo" name="minimo" type="number" defaultValue="5" />

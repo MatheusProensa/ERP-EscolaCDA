@@ -57,6 +57,15 @@ export function formatarMoeda(valor: number): string {
   return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+/** "2026-08" -> "ago/2026". Estava duplicada, letra por letra, em BoletosTable
+ * e NotasFiscaisTable (achado da auditoria ago/2026). */
+export function formatarCompetencia(competencia: string): string {
+  const [ano, mes] = competencia.split("-");
+  const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
+  const idx = Number(mes) - 1;
+  return idx >= 0 && idx < 12 ? `${MESES[idx]}/${ano}` : competencia;
+}
+
 export function formatarData(data: Date | string): string {
   const d = typeof data === "string" ? new Date(data) : data;
   return d.toLocaleDateString("pt-BR", { timeZone: "UTC" });

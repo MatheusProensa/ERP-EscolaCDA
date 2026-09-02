@@ -122,9 +122,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   try {
     await prisma.$transaction(async (tx) => {
-      for (const m of aluno.matriculas) {
-        if (m.contrato) await tx.contrato.delete({ where: { id: m.contrato.id } });
-      }
+      const contratoIds = aluno.matriculas.map((m) => m.contrato?.id).filter((id): id is string => !!id);
+      if (contratoIds.length > 0) await tx.contrato.deleteMany({ where: { id: { in: contratoIds } } });
       await tx.matricula.deleteMany({ where: { alunoId: id } });
       await tx.responsavel.deleteMany({ where: { alunoId: id } });
       await tx.aluno.delete({ where: { id } });

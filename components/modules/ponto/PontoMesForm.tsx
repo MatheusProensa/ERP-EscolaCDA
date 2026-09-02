@@ -483,7 +483,12 @@ export function PontoMesForm({
                     <td className="px-3 py-1.5 text-sm font-medium text-cda-text">{dia ? minParaHora(dia.saldoAcumulado) : "—"}</td>
                     <td className="px-2 py-1.5">
                       {lancado && (
-                        <button onClick={() => removerLinhaPorData(data)} className="text-cda-text3 hover:text-cda-red">
+                        <button
+                          onClick={() => removerLinhaPorData(data)}
+                          title="Remover lançamento deste dia"
+                          aria-label="Remover lançamento deste dia"
+                          className="text-cda-text3 hover:text-cda-red"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       )}

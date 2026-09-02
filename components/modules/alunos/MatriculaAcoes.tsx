@@ -8,14 +8,11 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { SITUACAO_MATRICULA } from "@/lib/statusVisual";
 
-const SITUACAO_LABEL: Record<SituacaoMatricula, string> = {
-  ATIVA: "Ativa",
-  TRANCADA: "Trancada",
-  CANCELADA: "Cancelada",
-  TRANSFERIDA: "Transferida",
-  CONCLUIDA: "Concluída",
-};
+const SITUACAO_LABEL: Record<SituacaoMatricula, string> = Object.fromEntries(
+  Object.entries(SITUACAO_MATRICULA).map(([chave, v]) => [chave, v.label])
+) as Record<SituacaoMatricula, string>;
 
 // NOVO: toda mudança de situação agora explica o efeito prático — antes só CANCELADA e
 // TRANSFERIDA confirmavam, e mesmo essas não diziam o que muda na prática. Ficava fácil

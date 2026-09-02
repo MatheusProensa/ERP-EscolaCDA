@@ -9,7 +9,7 @@ import { Badge, type BadgeVariant } from "@/components/ui/Badge";
 import { IconButton } from "@/components/ui/IconButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { showToast } from "@/components/ui/Toast";
-import { formatarData, formatarMoeda } from "@/lib/utils";
+import { formatarData, formatarMoeda, formatarCompetencia } from "@/lib/utils";
 
 const STATUS_LABEL: Record<StatusNotaFiscal, string> = {
   PENDENTE: "Pendente",
@@ -36,13 +36,6 @@ export type NotaFiscalLinha = {
   createdAt: Date;
   aluno: { id: string; nome: string };
 };
-
-function formatarCompetencia(c: string) {
-  const [ano, mes] = c.split("-");
-  const MESES = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"];
-  const idx = Number(mes) - 1;
-  return idx >= 0 && idx < 12 ? `${MESES[idx]}/${ano}` : c;
-}
 
 export function NotasFiscaisTable({ notas }: { notas: NotaFiscalLinha[] }) {
   const router = useRouter();

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { formatarCPF, formatarData } from "@/lib/utils";
 import type { Aluno } from "@prisma/client";
-import { SITUACAO_LABEL, SITUACAO_VARIANT } from "./AlunoTable";
+import { SITUACAO_MATRICULA } from "@/lib/statusVisual";
 import type { SituacaoMatricula } from "@prisma/client";
 
 export function AlunoCard({
@@ -25,7 +25,7 @@ export function AlunoCard({
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-bold text-cda-text">{aluno.nome}</h2>
-              <Badge variant={SITUACAO_VARIANT[situacao]}>{SITUACAO_LABEL[situacao]}</Badge>
+              <Badge variant={SITUACAO_MATRICULA[situacao].variant}>{SITUACAO_MATRICULA[situacao].label}</Badge>
             </div>
             <Button href={`/alunos/${aluno.id}/editar`} variant="outline" size="sm">
               <Pencil className="h-3.5 w-3.5" />

@@ -1,4 +1,5 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gerarRelatorioPdf, respostaPDF, nomeArquivoPdf, type ColunaRelatorio } from "@/lib/gerarRelatorioPdf";
 
@@ -9,6 +10,11 @@ const COLUNAS: ColunaRelatorio[] = [
 ];
 
 export async function GET(request: NextRequest) {
+  // Achado da auditoria ago/2026: era a única rota "de negócio" sem essa checagem
+  // própria (só ficava protegida pelo middleware) — todas as outras 62 têm.
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+
   const params = request.nextUrl.searchParams;
   const turmaId = params.get("turma");
   if (!turmaId) return new Response("Informe a turma", { status: 400 });

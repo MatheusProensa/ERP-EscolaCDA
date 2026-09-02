@@ -2,24 +2,9 @@ import Link from "next/link";
 import type { SituacaoMatricula } from "@prisma/client";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Avatar } from "@/components/ui/Avatar";
-import { Badge, type BadgeVariant } from "@/components/ui/Badge";
+import { Badge } from "@/components/ui/Badge";
+import { SITUACAO_MATRICULA } from "@/lib/statusVisual";
 import { formatarData } from "@/lib/utils";
-
-const SITUACAO_VARIANT: Record<SituacaoMatricula, BadgeVariant> = {
-  ATIVA: "green",
-  TRANCADA: "amber",
-  CANCELADA: "red",
-  TRANSFERIDA: "gray",
-  CONCLUIDA: "blue",
-};
-
-const SITUACAO_LABEL: Record<SituacaoMatricula, string> = {
-  ATIVA: "Ativa",
-  TRANCADA: "Trancada",
-  CANCELADA: "Cancelada",
-  TRANSFERIDA: "Transferida",
-  CONCLUIDA: "Concluída",
-};
 
 export type MatriculaLinha = {
   id: string;
@@ -52,7 +37,7 @@ export function AlunoTable({ matriculas }: { matriculas: MatriculaLinha[] }) {
             <Td>{m.turma.nome}</Td>
             <Td>{formatarData(m.aluno.dataNascimento)}</Td>
             <Td>
-              <Badge variant={SITUACAO_VARIANT[m.situacao]}>{SITUACAO_LABEL[m.situacao]}</Badge>
+              <Badge variant={SITUACAO_MATRICULA[m.situacao].variant}>{SITUACAO_MATRICULA[m.situacao].label}</Badge>
             </Td>
           </Tr>
         ))}
@@ -60,5 +45,3 @@ export function AlunoTable({ matriculas }: { matriculas: MatriculaLinha[] }) {
     </Table>
   );
 }
-
-export { SITUACAO_LABEL, SITUACAO_VARIANT };

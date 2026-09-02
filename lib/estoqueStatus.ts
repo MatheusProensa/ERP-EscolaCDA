@@ -2,9 +2,13 @@ import type { BadgeVariant } from "@/components/ui/Badge";
 
 export type StatusEstoque = "ok" | "baixa" | "crit" | "zero";
 
+// "Crítico" é metade do mínimo configurado pro item — nomeado pra não ficar
+// um "0.5" solto decidindo a regra.
+const FRACAO_CRITICO = 0.5;
+
 export function statusEstoque(quantidade: number, minimo: number): StatusEstoque {
   if (quantidade <= 0) return "zero";
-  if (quantidade <= minimo * 0.5) return "crit";
+  if (quantidade <= minimo * FRACAO_CRITICO) return "crit";
   if (quantidade <= minimo) return "baixa";
   return "ok";
 }

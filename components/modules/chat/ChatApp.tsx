@@ -571,7 +571,12 @@ export function ChatApp({
         ) : (
           <>
             <div key={selecionado} className="flex items-center gap-3 border-b border-cda-border bg-white px-4 py-3">
-              <button onClick={() => setSelecionado(null)} className="text-cda-text2 hover:text-cda-text sm:hidden">
+              <button
+                onClick={() => setSelecionado(null)}
+                title="Voltar pra lista de conversas"
+                aria-label="Voltar pra lista de conversas"
+                className="text-cda-text2 hover:text-cda-text sm:hidden"
+              >
                 <ArrowLeft className="h-4 w-4" />
               </button>
               {conversaAtual ? (

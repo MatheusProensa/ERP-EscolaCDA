@@ -5,15 +5,8 @@ import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdf, respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { formatarData, formatarTelefone } from "@/lib/utils";
+import { SITUACAO_MATRICULA } from "@/lib/statusVisual";
 import type { SituacaoMatricula } from "@prisma/client";
-
-const SITUACAO_LABEL: Record<string, string> = {
-  ATIVA: "Ativa",
-  TRANCADA: "Trancada",
-  CANCELADA: "Cancelada",
-  TRANSFERIDA: "Transferida",
-  CONCLUIDA: "Concluída",
-};
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -47,7 +40,7 @@ export async function GET(request: NextRequest) {
       Nome: m.aluno.nome,
       DataNascimento: formatarData(m.aluno.dataNascimento),
       Turma: m.turma.nome,
-      Situacao: SITUACAO_LABEL[m.situacao] ?? m.situacao,
+      Situacao: SITUACAO_MATRICULA[m.situacao]?.label ?? m.situacao,
       Responsavel: responsavel?.nome ?? "",
       Telefone: responsavel ? formatarTelefone(responsavel.telefone) : "",
       Endereco: m.aluno.endereco ?? "",
@@ -60,7 +53,7 @@ export async function GET(request: NextRequest) {
     const nomeTurma = matriculas[0]?.turma.nome ?? (await prisma.turma.findUnique({ where: { id: turma } }))?.nome;
     if (nomeTurma) filtrosAplicados.push(`Turma: ${nomeTurma}`);
   }
-  if (situacao) filtrosAplicados.push(`Situação: ${SITUACAO_LABEL[situacao] ?? situacao}`);
+  if (situacao) filtrosAplicados.push(`Situação: ${SITUACAO_MATRICULA[situacao]?.label ?? situacao}`);
   if (busca) filtrosAplicados.push(`Busca: "${busca}"`);
   if (censoIncompleto) filtrosAplicados.push("Censo incompleto");
 

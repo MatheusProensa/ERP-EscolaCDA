@@ -13,6 +13,7 @@ import { NovaMatriculaModal } from "@/components/modules/alunos/NovaMatriculaMod
 import { FichaMatriculaModal } from "@/components/modules/alunos/FichaMatriculaModal";
 import { ordenarTurmas, formatarData } from "@/lib/utils";
 import { turnoDoContrato } from "@/lib/contratoTexto";
+import { turmasComMatriculados } from "@/lib/turmas";
 
 export default async function AlunoPerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,12 +39,7 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
   const turmasBrutas = anoLetivo
     ? ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo.id } }))
     : [];
-  const turmasDisponiveis = await Promise.all(
-    turmasBrutas.map(async (t) => ({
-      ...t,
-      matriculados: await prisma.matricula.count({ where: { turmaId: t.id, situacao: "ATIVA" } }),
-    }))
-  );
+  const turmasDisponiveis = await turmasComMatriculados(turmasBrutas);
   const turmaIdsDoAluno = new Set(matriculasAtivas.map((m) => m.turmaId));
 
   function paraResponsavelFicha(parentesco: "Pai" | "Mãe") {

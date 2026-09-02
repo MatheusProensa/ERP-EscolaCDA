@@ -3,14 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gerarFichaPdf, respostaPDF, nomeArquivoPdf, type SecaoFicha } from "@/lib/gerarRelatorioPdf";
 import { formatarCPF, formatarData, formatarTelefone } from "@/lib/utils";
-
-const SITUACAO_LABEL: Record<string, string> = {
-  ATIVA: "Ativa",
-  TRANCADA: "Trancada",
-  CANCELADA: "Cancelada",
-  TRANSFERIDA: "Transferida",
-  CONCLUIDA: "Concluída",
-};
+import { SITUACAO_MATRICULA } from "@/lib/statusVisual";
 
 const RACA_COR_LABEL: Record<string, string> = {
   BRANCA: "Branca",
@@ -97,7 +90,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
         aluno.matriculas.length > 0
           ? aluno.matriculas.map((m) => ({
               label: m.turma.nome,
-              valor: `${SITUACAO_LABEL[m.situacao] ?? m.situacao} · matriculado em ${formatarData(m.dataMatricula)}`,
+              valor: `${SITUACAO_MATRICULA[m.situacao]?.label ?? m.situacao} · matriculado em ${formatarData(m.dataMatricula)}`,
             }))
           : [{ label: "Matrículas", valor: "Nenhuma matrícula" }],
     },

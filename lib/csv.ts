@@ -1,6 +1,11 @@
 export function paraCSV(linhas: Record<string, string | number>[], colunas: string[]): string {
   function escapar(valor: string | number): string {
-    const texto = String(valor ?? "");
+    let texto = String(valor ?? "");
+    // Achado da auditoria ago/2026 (CSV/Formula Injection): campo de texto livre
+    // digitado por alguém (ex.: observação da lista de espera) que comece com
+    // = + - ou @ é interpretado como fórmula pelo Excel ao abrir o CSV — um
+    // apóstrofo na frente neutraliza sem mudar o que aparece pra quem lê.
+    if (/^[=+\-@]/.test(texto)) texto = `'${texto}`;
     if (texto.includes(",") || texto.includes('"') || texto.includes("\n")) {
       return `"${texto.replace(/"/g, '""')}"`;
     }

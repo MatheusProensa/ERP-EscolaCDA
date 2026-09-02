@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Users } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { showToast } from "@/components/ui/Toast";
 import { minParaHora } from "@/lib/ponto";
 
 type FuncionarioResumo = {
@@ -31,7 +32,7 @@ export function GerenciarParticipantesModal({ funcionarios }: { funcionarios: Fu
     });
     setAlterandoId(null);
     if (!res.ok) {
-      alert("Não foi possível alterar.");
+      showToast("Não foi possível alterar.", "error");
       return;
     }
     router.refresh();
@@ -54,7 +55,7 @@ export function GerenciarParticipantesModal({ funcionarios }: { funcionarios: Fu
       body: JSON.stringify({ jornadaPrevista: valor || null }),
     });
     if (!res.ok) {
-      alert("Não foi possível salvar a jornada prevista.");
+      showToast("Não foi possível salvar a jornada prevista.", "error");
       return;
     }
     router.refresh();

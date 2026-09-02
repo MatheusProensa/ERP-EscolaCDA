@@ -30,12 +30,16 @@ function abrirDocumento(link: string) {
   setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
+// Prazo de "documento vencendo" pra chamar atenção antes de vencer de vez
+// (CNPJ, alvará etc.) — nomeado pra não ficar um "60" solto no meio da função.
+const DIAS_ALERTA_VENCIMENTO = 60;
+
 function statusValidade(validade: Date | null): { label: string; variant: "red" | "amber" | "green" } | null {
   if (!validade) return null;
   const hoje = new Date();
   const dias = Math.floor((new Date(validade).getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24));
   if (dias < 0) return { label: "Vencido", variant: "red" };
-  if (dias <= 60) return { label: `Vence em ${dias}d`, variant: "amber" };
+  if (dias <= DIAS_ALERTA_VENCIMENTO) return { label: `Vence em ${dias}d`, variant: "amber" };
   return { label: "Válido", variant: "green" };
 }
 
