@@ -83,12 +83,12 @@ const ALUNOS_REAIS: { nome: string; nascimento: string; turmas: (keyof typeof CO
   { nome: "Matteo Tolotti Vargas", nascimento: "2023-02-11", turmas: ["MII"] },
   { nome: "Arthur Magalhães Lippert", nascimento: "2019-02-14", turmas: ["2ANO", "CTIV"] },
   { nome: "Verônica Rossato Lima", nascimento: "2023-02-21", turmas: ["MII", "CTIII"] },
-  { nome: "Aurora Balbinot Azzi", nascimento: "2023-02-25", turmas: ["CTIII"] },
+  { nome: "Aurora Balbinot Azzi", nascimento: "2023-02-25", turmas: ["MII", "CTIII"] },
   { nome: "Laís Colpo", nascimento: "2026-02-26", turmas: ["BI"] },
   { nome: "Luísa Colpo", nascimento: "2026-02-26", turmas: ["BI"] },
   // Março
   { nome: "Théo Savegnago Cherobini", nascimento: "2019-03-01", turmas: ["2ANO"] },
-  { nome: "Laura Bento Martel", nascimento: "2025-03-01", turmas: ["CTI"] },
+  { nome: "Laura Bento Martel", nascimento: "2025-03-01", turmas: ["BII", "CTI"] },
   { nome: "Luara Minuzzi Marin", nascimento: "2021-03-07", turmas: ["PREII"] },
   { nome: "Valentina Badke Negrini", nascimento: "2022-03-09", turmas: ["PREI"] },
   { nome: "Luana Wonsick Dall'Agnol", nascimento: "2025-03-09", turmas: ["BII"] },
@@ -100,6 +100,9 @@ const ALUNOS_REAIS: { nome: string; nascimento: string; turmas: (keyof typeof CO
   { nome: "Vicente Pozebon Trauer", nascimento: "2018-03-28", turmas: ["3ANO"] },
   // Abril
   { nome: "Joaquim Farencena Sarturi", nascimento: "2019-04-13", turmas: ["1ANO", "CTIV"] },
+  // Confirmado em duas fontes: planilha "Relação de alunos" (25/06/2026) com turma base
+  // Berçário I, e print do Diário Escola de Contraturno I (02/09/2026).
+  { nome: "Conrado Minello de Almeida", nascimento: "2025-04-14", turmas: ["BI", "CTI"] },
   { nome: "Gabriel Stangherlin Marchesan", nascimento: "2020-04-14", turmas: ["PREII"] },
   { nome: "Lucas Alves Fiorin", nascimento: "2020-04-15", turmas: ["PREII", "CTIII"] },
   { nome: "Mercedita Janke Salgado", nascimento: "2021-04-17", turmas: ["PREI"] },
@@ -119,7 +122,7 @@ const ALUNOS_REAIS: { nome: string; nascimento: string; turmas: (keyof typeof CO
   { nome: "Martín Aires Giacomeli", nascimento: "2023-06-20", turmas: ["MI", "CTII"] },
   { nome: "Joaquim Inácio Benini Bragagnolo", nascimento: "2023-06-22", turmas: ["MI", "CTII"] },
   { nome: "Miguel Pereira Machado", nascimento: "2023-06-26", turmas: ["MI"] },
-  { nome: "Maria Helena Alberton de Lima", nascimento: "2022-06-30", turmas: ["CTIII"] },
+  { nome: "Maria Helena Alberton de Lima", nascimento: "2022-06-30", turmas: ["MII", "CTIII"] },
   // Julho
   { nome: "Davi Loures Lazzari", nascimento: "2020-07-02", turmas: ["PREII"] },
   { nome: "Ana Beatriz de Brito Pedrosa Vasconcelos", nascimento: "2017-07-08", turmas: ["3ANO", "CTIV"] },
@@ -145,7 +148,7 @@ const ALUNOS_REAIS: { nome: string; nascimento: string; turmas: (keyof typeof CO
   { nome: "Martin Hister de Macedo", nascimento: "2020-09-10", turmas: ["PREII"] },
   { nome: "Alisson Reisdorfer Macedo", nascimento: "2021-09-15", turmas: ["PREI", "CTIII"] },
   { nome: "Mathias Lagomarsino Beux", nascimento: "2021-09-21", turmas: ["PREI"] },
-  { nome: "Luisa dos Santos Pacheco", nascimento: "2022-09-21", turmas: ["CTIII"] },
+  { nome: "Luisa dos Santos Pacheco", nascimento: "2022-09-21", turmas: ["MII", "CTIII"] },
   // Contraturno removido: não aparece em nenhuma das listas de Contraturno I-IV do Diário
   // Escola conferidas em 2026-09 — CTII do seed antigo não batia. Confirmar com a escola.
   { nome: "Maria Antônia Machado Wallau", nascimento: "2023-09-25", turmas: ["MI"] },
@@ -154,11 +157,11 @@ const ALUNOS_REAIS: { nome: string; nascimento: string; turmas: (keyof typeof CO
   { nome: "Fernando Soares Oliveira Krug", nascimento: "2021-10-04", turmas: ["PREI"] },
   { nome: "Maria Manoela Souza Papalia", nascimento: "2020-10-07", turmas: ["PREII"] },
   { nome: "Laura Luisa Friedrich", nascimento: "2018-10-15", turmas: ["2ANO"] },
-  { nome: "Helena Rossetto Bortolotto", nascimento: "2025-10-15", turmas: ["CTI"] },
-  { nome: "Arthur Antônio Dias Gomes", nascimento: "2023-10-19", turmas: ["CTII"] },
+  { nome: "Helena Rossetto Bortolotto", nascimento: "2025-10-15", turmas: ["BI", "CTI"] },
+  { nome: "Arthur Antônio Dias Gomes", nascimento: "2023-10-19", turmas: ["MI", "CTII"] },
   { nome: "Murilo Vargas Forgiarini", nascimento: "2024-10-19", turmas: ["BII"] },
   { nome: "Aurora Cavalheiro Penteado", nascimento: "2022-10-21", turmas: ["MII"] },
-  { nome: "Luca Alberton de Lima", nascimento: "2024-10-22", turmas: ["CTI"] },
+  { nome: "Luca Alberton de Lima", nascimento: "2024-10-22", turmas: ["BII", "CTI"] },
   { nome: "Bernardo Mascarenhas da Silva", nascimento: "2018-10-22", turmas: ["2ANO"] },
   { nome: "Ornella da Conceição Carvalho", nascimento: "2020-10-26", turmas: ["PREII"] },
   { nome: "Mariah Ramos Busanello", nascimento: "2019-10-31", turmas: ["1ANO", "CTIV"] },
@@ -182,15 +185,25 @@ const ALUNOS_REAIS: { nome: string; nascimento: string; turmas: (keyof typeof CO
 
   // TODO: alunos confirmados como matriculados no Diário Escola (app.diarioescola.com.br,
   // conferido em 2026-09-02) mas que ainda não têm data de nascimento cadastrada em lugar
-  // nenhum — não dá pra inventar dado de criança real. Preencher "nascimento" e mover pra
-  // cima (mantendo a ordem cronológica) assim que a data chegar:
+  // nenhum — não aparecem na planilha "Relação de alunos" de 25/06/2026 (provavelmente
+  // matricularam depois dessa data) e não dá pra inventar dado de criança real. Preencher
+  // "nascimento" e mover pra cima (mantendo a ordem cronológica) assim que a data chegar:
   // { nome: "Mathias Figueredo Cassamalli", nascimento: "????-??-??", turmas: ["1ANO"] },
   // { nome: "Vinícius Cardoso da Avilla", nascimento: "????-??-??", turmas: ["CTIV"] },
   // { nome: "Lara Rizzetti Rutzig", nascimento: "????-??-??", turmas: ["BI", "CTI"] },
   // { nome: "Antônia Brondani Karsburg", nascimento: "????-??-??", turmas: ["CTI"] }, // turma base não confirmada
-  // { nome: "Conrado Minello de Almeida", nascimento: "????-??-??", turmas: ["CTI"] }, // turma base não confirmada
   // { nome: "Eduardo Santin", nascimento: "????-??-??", turmas: ["CTI"] }, // turma base não confirmada
   // { nome: "Gustavo Gomes Barasuol", nascimento: "????-??-??", turmas: ["PREI", "CTIII"] },
+
+  // TODO: alunos que aparecem SÓ na planilha de 25/06/2026 (com data de nascimento
+  // completa), mas sem confirmação de que ainda estão matriculados em 02/09/2026 — os
+  // prints do Diário Escola conferidos não cobriram a turma inteira deles (Berçário II só
+  // mostrou 8 de 11, Pré-escola II nunca foi fotografada). Confirmar se ainda estão ativos
+  // antes de cadastrar:
+  // { nome: "Esther Corcini Maia", nascimento: "2024-11-05", turmas: ["BII"] },
+  // { nome: "Cauê Rodrigues de Freitas", nascimento: "2024-08-24", turmas: ["MII"] },
+  // { nome: "Alice Brum Tagliani Lúcio", nascimento: "2020-07-28", turmas: ["PREII"] },
+  // { nome: "Murilo de Souza Ribas", nascimento: "2020-12-27", turmas: ["PREII"] },
 ];
 
 // Equipe real da Escola CDA, cruzando as figurinhas da Copa 2026 com o calendário de
