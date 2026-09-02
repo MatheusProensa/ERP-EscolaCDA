@@ -133,11 +133,11 @@ const ALUNOS_REAIS: { nome: string; nascimento: string; turmas: (keyof typeof CO
   { nome: "Bernardo Uhlmann Thewes", nascimento: "2025-07-27", turmas: ["BI", "CTI"] },
   // Agosto
   { nome: "Rafael Costa Fagundes de Oliveira", nascimento: "2021-08-02", turmas: ["PREI"] },
-  // ATENÇÃO: o Diário Escola mostra um único aluno "Mateus Hister de Macedo" no Berçário I —
-  // nome diferente dos dois "Macedo" abaixo (este e o de setembro). Pode ser um terceiro
-  // irmão, ou os nomes/turmas destes dois se embaralharam ao montar a lista. Confirmar com
-  // a escola antes de mexer.
-  { nome: "Mateus Martin de Macedo", nascimento: "2025-08-16", turmas: ["BI"] },
+  // Nome corrigido para "Mateus Hister de Macedo" conforme Diário Escola (print do
+  // Berçário I, 2026-09-02) — o calendário de aniversariantes trazia "Martin" como nome do
+  // meio, provavelmente confundido com o colega de turma "Martin Menegon Pinheiro". Não é o
+  // mesmo aluno que "Martin Hister de Macedo" (Pré-escola II, nascido 2020) logo abaixo.
+  { nome: "Mateus Hister de Macedo", nascimento: "2025-08-16", turmas: ["BI"] },
   { nome: "Rafael do Carmo Hunhoff", nascimento: "2022-08-30", turmas: ["MII"] },
   // Setembro
   { nome: "Davi Menezes Gass", nascimento: "2019-09-03", turmas: ["1ANO"] },
