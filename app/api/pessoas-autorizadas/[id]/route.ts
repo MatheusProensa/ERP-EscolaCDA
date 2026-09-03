@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
+import { formatarNomePessoa } from "@/lib/utils";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -15,7 +16,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const pessoa = await prisma.pessoaAutorizada.update({
       where: { id },
       data: {
-        nome: nome?.trim() || undefined,
+        nome: nome?.trim() ? formatarNomePessoa(nome) : undefined,
         parentesco: parentesco !== undefined ? parentesco.trim() || "Não informado" : undefined,
       },
     });

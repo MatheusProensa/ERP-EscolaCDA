@@ -1,4 +1,5 @@
 import JSZip from "jszip";
+import { formatarNomePessoa } from "@/lib/utils";
 
 /**
  * Importação de Ficha de Matrícula (.docx) — o modelo que a escola usa hoje
@@ -285,6 +286,12 @@ export async function parsarFichaMatricula(buffer: Buffer): Promise<ResultadoFic
   if (!resultado.dataNascimento) avisos.push("Não achei a data de nascimento.");
   if (!resultado.turno) avisos.push("Não achei o turno (Tarde/Contraturno) marcado.");
   if (resultado.responsaveis.length === 0) avisos.push("Não achei nenhum responsável (pai/mãe).");
+
+  // Muita ficha vem digitada em CAIXA ALTA — sem isso o nome ia pro cadastro do
+  // jeito que veio, misturando com nome digitado normal em outro lugar do sistema.
+  if (resultado.nome) resultado.nome = formatarNomePessoa(resultado.nome);
+  resultado.responsaveis.forEach((r) => (r.nome = formatarNomePessoa(r.nome)));
+  resultado.pessoasAutorizadas.forEach((p) => (p.nome = formatarNomePessoa(p.nome)));
 
   return resultado;
 }

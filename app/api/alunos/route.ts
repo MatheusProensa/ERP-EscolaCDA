@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { validarUploadDataUri } from "@/lib/validarUpload";
+import { formatarNomePessoa } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -88,7 +89,7 @@ export async function POST(req: NextRequest) {
     const aluno = await prisma.$transaction(async (tx) => {
       const novoAluno = await tx.aluno.create({
         data: {
-          nome,
+          nome: formatarNomePessoa(nome),
           dataNascimento: new Date(dataNascimento),
           naturalidade: naturalidade || null,
           cpf: cpf || null,
@@ -122,7 +123,7 @@ export async function POST(req: NextRequest) {
           nis: nis || null,
           responsaveis: {
             create: {
-              nome: responsavel.nome,
+              nome: formatarNomePessoa(responsavel.nome),
               parentesco: responsavel.parentesco || "Responsável",
               telefone: responsavel.telefone,
               email: responsavel.email || null,

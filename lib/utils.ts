@@ -3,6 +3,24 @@ export function primeiroNome(nomeCompleto: string): string {
   return nomeCompleto.trim().split(" ")[0] || nomeCompleto;
 }
 
+const PARTICULAS_MINUSCULAS = new Set(["de", "da", "do", "das", "dos", "e"]);
+
+/** Nome de pessoa em Title Case, com as partículas comuns de sobrenome brasileiro
+ * (de, da, do, das, dos, e) em minúsculo — usada na importação de fichas/planilhas
+ * pra não deixar nome em CAIXA ALTA passando pro cadastro. Idempotente: rodar de
+ * novo num nome que já veio certo não muda nada. */
+export function formatarNomePessoa(nome: string): string {
+  return nome
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .map((palavra, i) => {
+      if (i > 0 && PARTICULAS_MINUSCULAS.has(palavra)) return palavra;
+      return palavra.replace(/(^|['-])([a-zà-ÿ])/g, (_, sep, letra) => sep + letra.toUpperCase());
+    })
+    .join(" ");
+}
+
 const ORDEM_TURMAS = [
   "Berçário I", "Berçário II", "Maternal I", "Maternal II",
   "Pré-escola I", "Pré-escola II", "1º Ano", "2º Ano", "3º Ano",

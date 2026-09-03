@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
+import { formatarNomePessoa } from "@/lib/utils";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -15,7 +16,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const responsavel = await prisma.responsavel.update({
       where: { id },
       data: {
-        nome: nome || undefined,
+        nome: nome ? formatarNomePessoa(nome) : undefined,
         parentesco: parentesco || undefined,
         telefone: telefone || undefined,
         email: email !== undefined ? email || null : undefined,

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { validarUploadDataUri } from "@/lib/validarUpload";
+import { formatarNomePessoa } from "@/lib/utils";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -54,7 +55,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const aluno = await prisma.aluno.update({
       where: { id },
       data: {
-        nome: nome || undefined,
+        nome: nome ? formatarNomePessoa(nome) : undefined,
         dataNascimento: dataNascimento ? new Date(dataNascimento) : undefined,
         naturalidade: naturalidade || null,
         cpf: cpf || null,

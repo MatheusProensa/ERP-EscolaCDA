@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { gerarFichaMatriculaPdf } from "@/lib/gerarFichaMatriculaPdf";
 import { respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { montarDadosFichaMatricula } from "@/lib/montarFichaMatricula";
+import { formatarNomePessoa } from "@/lib/utils";
 
 const includeFicha = {
   responsaveis: true,
@@ -120,7 +121,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       (r) => r.parentesco.trim().toLowerCase() === parentescoPadrao.toLowerCase()
     );
     const data = {
-      nome: dados.nome.trim(),
+      nome: formatarNomePessoa(dados.nome),
       rg: dados.rg || null,
       cpf: dados.cpf || null,
       email: dados.email || null,
@@ -163,7 +164,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const validas = pessoasAutorizadas.filter((p) => p.nome?.trim());
     if (validas.length > 0) {
       await prisma.pessoaAutorizada.createMany({
-        data: validas.map((p) => ({ nome: p.nome.trim(), parentesco: p.parentesco?.trim() || "Não informado", alunoId: id })),
+        data: validas.map((p) => ({ nome: formatarNomePessoa(p.nome), parentesco: p.parentesco?.trim() || "Não informado", alunoId: id })),
       });
     }
   }

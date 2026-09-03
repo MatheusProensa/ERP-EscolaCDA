@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
+import { formatarNomePessoa } from "@/lib/utils";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const responsavel = await prisma.responsavel.create({
       data: {
         alunoId: id,
-        nome,
+        nome: formatarNomePessoa(nome),
         parentesco: parentesco || "Responsável",
         telefone,
         email: email || null,
