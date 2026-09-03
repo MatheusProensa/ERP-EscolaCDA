@@ -76,7 +76,8 @@ export default async function AlunosPage({
         subtitle={`${matriculas.length} aluno(s) encontrado(s)`}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <ExportButtons href="/api/relatorios/alunos" label="" params={{ turma, situacao, busca, censo, contrato }} />
+            <ExportButtons href="/api/relatorios/alunos" label="Relatório" params={{ turma, situacao, busca, censo, contrato }} />
+            <ExportButtons href="/api/relatorios/contatos-alunos" label="Contatos" params={{ turma }} />
             <Button href="/alunos/importar" variant="outline">
               <FileSpreadsheet className="h-4 w-4" />
               Importar planilha
