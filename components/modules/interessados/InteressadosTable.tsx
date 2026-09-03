@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Segmented } from "@/components/ui/Segmented";
 import { IconButton } from "@/components/ui/IconButton";
+import { Avatar } from "@/components/ui/Avatar";
+import { Badge, BADGE_VARIANT_STYLE, type BadgeVariant } from "@/components/ui/Badge";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { showToast } from "@/components/ui/Toast";
 import { formatarData, formatarTelefone, linkWhatsApp } from "@/lib/utils";
@@ -19,6 +21,15 @@ import type { ItemInteressado } from "./types";
 // Agrupamento pro filtro rápido do topo — a Duda pensa em "quem falta ligar"
 // vs. "quem já visitou" vs. "fechado", não nos 10 status um por um (esses
 // continuam completos no seletor de cada linha).
+// Cor categórica por turma de interesse — só pra dar identidade visual (não é
+// estado, por isso cicla cat1-cat6 em vez de usar a paleta de status).
+const CAT_CICLO: BadgeVariant[] = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6"];
+function corPorTexto(texto: string): BadgeVariant {
+  let h = 0;
+  for (let i = 0; i < texto.length; i++) h = (h * 31 + texto.charCodeAt(i)) >>> 0;
+  return CAT_CICLO[h % CAT_CICLO.length];
+}
+
 const GRUPOS: { chave: string; label: string; status: string[] | null }[] = [
   { chave: "todos", label: "Todos", status: null },
   { chave: "andamento", label: "Em andamento", status: ["AGUARDANDO", "CONTATADO", "CHAMAR_NOVAMENTE", "NAO_RESPONDEU", "PORTAS_ABERTAS"] },
@@ -102,11 +113,29 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
           <TableBody>
             {filtrados.length === 0 && <TableEmpty colSpan={8}>Nenhum interessado encontrado.</TableEmpty>}
             {filtrados.map((item) => {
+              const badge = STATUS_INTERESSADO_BADGE[item.status] ?? { variant: "neutral" as const, label: item.status };
+              const corStatus = (BADGE_VARIANT_STYLE[badge.variant].color as string) ?? "var(--text-body)";
+              const nota = item.oQueBusca || item.observacoes;
+              const interesse = item.turmaDesejada?.nome ?? item.interesseTexto;
               return (
-                <Tr key={item.id}>
+                <Tr
+                  key={item.id}
+                  className="hover:brightness-[0.97] transition-[filter]"
+                  style={{
+                    borderLeft: `3px solid color-mix(in oklch, ${corStatus} 65%, transparent)`,
+                    backgroundColor: `color-mix(in oklch, ${corStatus} 5%, white)`,
+                  }}
+                >
                   <Td className="font-medium">
-                    {item.nomeCrianca}
-                    {item.dataNascimento && <div className="mt-0.5 text-xs text-cda-text3">{formatarData(item.dataNascimento)}</div>}
+                    <div className="flex items-center gap-2.5">
+                      <Avatar nome={item.nomeCrianca} size="sm" />
+                      <div>
+                        {item.nomeCrianca}
+                        {item.dataNascimento && (
+                          <div className="text-xs font-normal text-cda-text3">{formatarData(item.dataNascimento)}</div>
+                        )}
+                      </div>
+                    </div>
                   </Td>
                   <Td>
                     {item.nomeResponsavel}
@@ -122,13 +151,17 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
                       {formatarTelefone(item.telefoneResponsavel)}
                     </a>
                   </Td>
-                  <Td className="text-cda-text2">
-                    {item.turmaDesejada?.nome ?? item.interesseTexto ?? <span className="text-cda-text3">—</span>}
+                  <Td>
+                    {interesse ? (
+                      <Badge variant={corPorTexto(interesse)}>{interesse}</Badge>
+                    ) : (
+                      <span className="text-cda-text3">—</span>
+                    )}
                   </Td>
-                  <Td className="max-w-[220px]">
-                    {item.oQueBusca ? (
-                      <span className="line-clamp-2 text-xs text-cda-text2" title={item.oQueBusca}>
-                        {item.oQueBusca}
+                  <Td className="max-w-[240px]">
+                    {nota ? (
+                      <span className="line-clamp-2 text-xs text-cda-text2" title={nota}>
+                        {nota}
                       </span>
                     ) : (
                       <span className="text-cda-text3">—</span>
@@ -143,10 +176,11 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
                       value={item.status}
                       disabled={carregando === item.id}
                       onChange={(e) => alterarStatus(item.id, e.target.value)}
-                      className="h-8 w-[180px] text-xs"
+                      className="h-8 w-[180px] border-transparent text-xs font-semibold shadow-sm focus:border-cda-blue"
+                      style={{ ...BADGE_VARIANT_STYLE[badge.variant], accentColor: "var(--cda-blue)", colorScheme: "light" }}
                     >
                       {Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => (
-                        <option key={valor} value={valor}>
+                        <option key={valor} value={valor} style={{ color: "initial", backgroundColor: "white" }}>
                           {label}
                         </option>
                       ))}

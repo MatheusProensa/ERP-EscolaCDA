@@ -36,7 +36,10 @@ export type BadgeVariant =
   | "pink"
   | "gray";
 
-const VARIANT_STYLE: Record<BadgeVariant, React.CSSProperties> = {
+/** Exportado pra quem precisa aplicar a mesma cor de variante fora de um
+ * <Badge> — ex.: o fundo do <select> de status em InteressadosTable, que
+ * precisa mudar de cor junto com o valor escolhido. */
+export const BADGE_VARIANT_STYLE: Record<BadgeVariant, React.CSSProperties> = {
   success: { backgroundColor: "color-mix(in srgb, var(--status-success) 10%, transparent)", color: "var(--status-success)" },
   warning: { backgroundColor: "color-mix(in srgb, var(--status-warning) 10%, transparent)", color: "var(--status-warning)" },
   critical: { backgroundColor: "color-mix(in srgb, var(--status-critical) 10%, transparent)", color: "var(--status-critical)" },
@@ -75,7 +78,7 @@ export function Badge({
 }) {
   return (
     <span
-      style={VARIANT_STYLE[variant]}
+      style={BADGE_VARIANT_STYLE[variant]}
       className={cn(
         "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap",
         className

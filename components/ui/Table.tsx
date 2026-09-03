@@ -36,10 +36,13 @@ export function TableBody({ children }: { children: React.ReactNode }) {
 export function Tr({
   children,
   className,
+  style,
   onClick,
 }: {
   children: React.ReactNode;
   className?: string;
+  /** Ex.: borderLeft colorido por categoria/estado da linha (InteressadosTable). */
+  style?: React.CSSProperties;
   onClick?: () => void;
 }) {
   // NOVO: linhas clicáveis agora são focáveis e ativáveis via teclado (Enter/Espaço),
@@ -47,6 +50,7 @@ export function Tr({
   return (
     <tr
       onClick={onClick}
+      style={style}
       tabIndex={onClick ? 0 : undefined}
       role={onClick ? "button" : undefined}
       onKeyDown={
