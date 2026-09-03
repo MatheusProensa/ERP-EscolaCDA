@@ -2,12 +2,13 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Search, MessageCircle, Pencil } from "lucide-react";
 import type { Turma } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { Segmented } from "@/components/ui/Segmented";
+import { FilterSelect } from "@/components/ui/FilterSelect";
 import { IconButton } from "@/components/ui/IconButton";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge, BADGE_VARIANT_STYLE, type BadgeVariant } from "@/components/ui/Badge";
@@ -18,9 +19,6 @@ import { STATUS_INTERESSADO_BADGE } from "@/lib/statusVisual";
 import { EditarInteressadoModal } from "./EditarInteressadoModal";
 import type { ItemInteressado } from "./types";
 
-// Agrupamento pro filtro rápido do topo — a Duda pensa em "quem falta ligar"
-// vs. "quem já visitou" vs. "fechado", não nos 10 status um por um (esses
-// continuam completos no seletor de cada linha).
 // Cor categórica por turma de interesse — só pra dar identidade visual (não é
 // estado, por isso cicla cat1-cat6 em vez de usar a paleta de status).
 const CAT_CICLO: BadgeVariant[] = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6"];
@@ -30,18 +28,9 @@ function corPorTexto(texto: string): BadgeVariant {
   return CAT_CICLO[h % CAT_CICLO.length];
 }
 
-const GRUPOS: { chave: string; label: string; status: string[] | null }[] = [
-  { chave: "todos", label: "Todos", status: null },
-  { chave: "andamento", label: "Em andamento", status: ["AGUARDANDO", "CONTATADO", "CHAMAR_NOVAMENTE", "NAO_RESPONDEU", "PORTAS_ABERTAS"] },
-  { chave: "visitou", label: "Visitou, sem retorno", status: ["SEM_RETORNO_APOS_VISITA"] },
-  { chave: "matriculado", label: "Matriculado", status: ["MATRICULADO"] },
-  { chave: "nao-avancou", label: "Não avançou", status: ["NAO_TEM_INTERESSE", "VALOR_ULTRAPASSA", "DESISTIU"] },
-];
-
 export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[]; turmas: Turma[] }) {
   const router = useRouter();
   const [busca, setBusca] = useState("");
-  const [grupo, setGrupo] = useState("todos");
   const [filtroInteresse, setFiltroInteresse] = useState("");
   const [filtroStatus, setFiltroStatus] = useState("");
   const [carregando, setCarregando] = useState<string | null>(null);
@@ -75,16 +64,8 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
     }
   }
 
-  const contagens = useMemo(() => {
-    const c: Record<string, number> = { todos: itens.length };
-    for (const g of GRUPOS.slice(1)) c[g.chave] = itens.filter((i) => g.status!.includes(i.status)).length;
-    return c;
-  }, [itens]);
-
   const filtrados = useMemo(() => {
-    const grupoAtivo = GRUPOS.find((g) => g.chave === grupo);
     return itens.filter((i) => {
-      if (grupoAtivo?.status && !grupoAtivo.status.includes(i.status)) return false;
       if (filtroStatus && i.status !== filtroStatus) return false;
       if (filtroInteresse && (i.turmaDesejada?.nome ?? i.interesseTexto) !== filtroInteresse) return false;
       if (busca) {
@@ -93,7 +74,7 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
       }
       return true;
     });
-  }, [itens, grupo, filtroStatus, filtroInteresse, busca]);
+  }, [itens, filtroStatus, filtroInteresse, busca]);
 
   return (
     <>
@@ -106,45 +87,39 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
             onChange={(e) => setBusca(e.target.value)}
           />
         </div>
-        <Select
+        <FilterSelect
+          className="w-44"
           value={filtroInteresse}
-          onChange={(e) => setFiltroInteresse(e.target.value)}
-          className="h-10 w-44 text-sm"
-        >
-          <option value="">Toda turma/interesse</option>
-          {interessesDisponiveis.map((v) => (
-            <option key={v} value={v}>
-              {v}
-            </option>
-          ))}
-        </Select>
-        <Select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} className="h-10 w-48 text-sm">
-          <option value="">Todo status</option>
-          {Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => (
-            <option key={valor} value={valor}>
-              {label}
-            </option>
-          ))}
-        </Select>
-        <Segmented
-          value={grupo}
-          onChange={setGrupo}
-          options={GRUPOS.map((g) => ({ value: g.chave, label: g.label, count: contagens[g.chave] }))}
+          onChange={setFiltroInteresse}
+          placeholder="Toda turma/interesse"
+          options={[{ value: "", label: "Toda turma/interesse" }, ...interessesDisponiveis.map((v) => ({ value: v, label: v }))]}
         />
-        {(busca || filtroInteresse || filtroStatus || grupo !== "todos") && (
+        <FilterSelect
+          className="w-52"
+          value={filtroStatus}
+          onChange={setFiltroStatus}
+          placeholder="Todo status"
+          options={[
+            { value: "", label: "Todo status" },
+            ...Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => ({ value: valor, label })),
+          ]}
+        />
+        {(busca || filtroInteresse || filtroStatus) && (
           <button
             type="button"
             onClick={() => {
               setBusca("");
               setFiltroInteresse("");
               setFiltroStatus("");
-              setGrupo("todos");
             }}
             className="h-10 px-2 text-xs font-medium text-cda-text3 underline-offset-2 hover:text-cda-blue hover:underline"
           >
             Limpar filtros
           </button>
         )}
+        <span className="ml-auto text-xs font-medium text-cda-text3">
+          {filtrados.length} de {itens.length}
+        </span>
       </div>
 
       <Card>
@@ -176,15 +151,17 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
                   }}
                 >
                   <Td className="font-medium">
-                    <div className="flex items-center gap-2.5">
+                    <Link href={`/interessados/${item.id}`} className="flex items-center gap-2.5 group">
                       <Avatar nome={item.nomeCrianca} size="sm" />
                       <div>
-                        {item.nomeCrianca}
+                        <span className="group-hover:text-cda-blue group-hover:underline underline-offset-2">
+                          {item.nomeCrianca}
+                        </span>
                         {item.dataNascimento && (
                           <div className="text-xs font-normal text-cda-text3">{formatarData(item.dataNascimento)}</div>
                         )}
                       </div>
-                    </div>
+                    </Link>
                   </Td>
                   <Td>
                     {item.nomeResponsavel}

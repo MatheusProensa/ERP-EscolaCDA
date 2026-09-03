@@ -78,35 +78,39 @@ export function InteressadoFormFields({ turmas, inicial }: { turmas: Turma[]; in
         <Input label="Data da visita (opcional)" name="dataVisita" type="date" defaultValue={paraInputDate(inicial?.dataVisita)} />
       </div>
 
+      <Select label="Status" name="status" defaultValue={inicial?.status ?? "AGUARDANDO"}>
+        {Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => (
+          <option key={valor} value={valor}>
+            {label}
+          </option>
+        ))}
+      </Select>
+
+      {/* "O que busca" e "Observações" são coisas diferentes e ficavam confundidas
+          num campinho apertado de 1 linha — agora cada um tem o próprio espaço e
+          uma explicação curta do que vai em cada um. */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-cda-text2">O que a família busca (opcional)</label>
+        <p className="text-xs text-cda-text3">O que a família prioriza numa escola — o que ela contou na ligação.</p>
         <textarea
           name="oQueBusca"
           rows={3}
-          placeholder="O que a família prioriza numa escola — fica registrado pro próximo atendimento"
+          placeholder="Ex: segurança, cuidado na alimentação, ambiente acolhedor..."
           defaultValue={inicial?.oQueBusca ?? ""}
           className="w-full rounded-lg border border-cda-border bg-white px-3 py-2 text-sm text-cda-text outline-none transition-colors focus:border-cda-blue"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Select label="Status" name="status" defaultValue={inicial?.status ?? "AGUARDANDO"}>
-          {Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => (
-            <option key={valor} value={valor}>
-              {label}
-            </option>
-          ))}
-        </Select>
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-medium text-cda-text2">Observações (opcional)</label>
-          <textarea
-            name="observacoes"
-            rows={1}
-            placeholder="Desfecho, detalhe da ligação..."
-            defaultValue={inicial?.observacoes ?? ""}
-            className="h-10 w-full resize-none rounded-lg border border-cda-border bg-white px-3 py-2 text-sm text-cda-text outline-none transition-colors focus:border-cda-blue"
-          />
-        </div>
+      <div className="flex flex-col gap-1.5">
+        <label className="text-xs font-medium text-cda-text2">Observações internas (opcional)</label>
+        <p className="text-xs text-cda-text3">Anotações da secretaria — desfecho da ligação, combinados, follow-up.</p>
+        <textarea
+          name="observacoes"
+          rows={3}
+          placeholder="Ex: combinou de ligar de novo semana que vem..."
+          defaultValue={inicial?.observacoes ?? ""}
+          className="w-full rounded-lg border border-cda-border bg-white px-3 py-2 text-sm text-cda-text outline-none transition-colors focus:border-cda-blue"
+        />
       </div>
     </>
   );
