@@ -1,4 +1,4 @@
-import { UserPlus, FileSpreadsheet } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { AlunoTable } from "@/components/modules/alunos/AlunoTable";
-import { ImportarFichaModal } from "@/components/modules/alunos/ImportarFichaModal";
+import { ImportarMenu } from "@/components/modules/alunos/ImportarMenu";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
 import { ordenarTurmas } from "@/lib/utils";
@@ -77,11 +77,7 @@ export default async function AlunosPage({
           <div className="flex flex-wrap items-center gap-2">
             <ExportButtons href="/api/relatorios/alunos" label="Relatório" params={{ turma, busca, censo, contrato }} />
             <ExportButtons href="/api/relatorios/contatos-alunos" label="Contatos" params={{ turma }} />
-            <Button href="/alunos/importar" variant="outline">
-              <FileSpreadsheet className="h-4 w-4" />
-              Importar planilha
-            </Button>
-            <ImportarFichaModal turmas={turmas.map((t) => ({ id: t.id, nome: t.nome }))} />
+            <ImportarMenu turmas={turmas.map((t) => ({ id: t.id, nome: t.nome }))} />
             <Button href="/alunos/novo">
               <UserPlus className="h-4 w-4" />
               Novo aluno

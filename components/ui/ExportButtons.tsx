@@ -1,5 +1,5 @@
-import { Download, FileText } from "lucide-react";
-import { Button } from "./Button";
+import { Download, FileDown, FileText } from "lucide-react";
+import { MenuButton } from "./MenuButton";
 
 type Params = Record<string, string | undefined>;
 
@@ -17,14 +17,14 @@ function montarUrl(href: string, params?: Params, formato?: "pdf") {
 
 export function ExportButtons({ href, label = "Exportar", params }: { href: string; label?: string; params?: Params }) {
   return (
-    <div className="flex items-center gap-2">
-      {label && <span className="hidden text-xs font-medium text-cda-text3 sm:inline">{label}</span>}
-      <Button variant="outline" size="sm" icon={Download} href={montarUrl(href, params)}>
-        CSV
-      </Button>
-      <Button variant="outline" size="sm" icon={FileText} href={montarUrl(href, params, "pdf")}>
-        PDF
-      </Button>
-    </div>
+    <MenuButton
+      label={label}
+      icon={FileDown}
+      size="sm"
+      items={[
+        { label: "Baixar CSV", icon: Download, href: montarUrl(href, params) },
+        { label: "Baixar PDF", icon: FileText, href: montarUrl(href, params, "pdf") },
+      ]}
+    />
   );
 }

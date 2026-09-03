@@ -23,9 +23,16 @@ type ResultadoArquivo = {
  * rápido pra lote de fichas de uma vez). O resultado por arquivo aparece
  * depois de processar, pra saber o que criou/pulou/deu erro.
  */
-export function ImportarFichaModal({ turmas }: { turmas: { id: string; nome: string }[] }) {
+export function ImportarFichaModal({
+  turmas,
+  open,
+  onClose,
+}: {
+  turmas: { id: string; nome: string }[];
+  open: boolean;
+  onClose: () => void;
+}) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
   const [turmaId, setTurmaId] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState<{ criados: number; total: number; resultados: ResultadoArquivo[] } | null>(null);
@@ -33,7 +40,7 @@ export function ImportarFichaModal({ turmas }: { turmas: { id: string; nome: str
   const inputRef = useRef<HTMLInputElement>(null);
 
   function fechar() {
-    setOpen(false);
+    onClose();
     setResultado(null);
     setErro("");
     setTurmaId("");
@@ -86,15 +93,9 @@ export function ImportarFichaModal({ turmas }: { turmas: { id: string; nome: str
   }
 
   return (
-    <>
-      <Button variant="outline" onClick={() => setOpen(true)}>
-        <FileText className="h-4 w-4" />
-        Importar ficha(s)
-      </Button>
-
-      <Modal open={open} onClose={fechar} title="Importar Ficha(s) de Matrícula">
-        <div className="flex flex-col gap-4">
-          {!resultado && (
+    <Modal open={open} onClose={fechar} title="Importar Ficha(s) de Matrícula">
+      <div className="flex flex-col gap-4">
+        {!resultado && (
             <>
               <p className="text-sm text-cda-text2">
                 Envia o(s) .docx da Ficha de Matrícula já preenchida — cria o(s) aluno(s) com os responsáveis direto,
@@ -172,6 +173,5 @@ export function ImportarFichaModal({ turmas }: { turmas: { id: string; nome: str
           )}
         </div>
       </Modal>
-    </>
   );
 }

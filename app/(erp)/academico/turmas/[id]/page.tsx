@@ -60,7 +60,7 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
               <ClipboardList className="h-3.5 w-3.5" />
               Lista de chamada
             </Button>
-            <ExportButtons href="/api/relatorios/alunos" label="" params={{ turma: turma.id }} />
+            <ExportButtons href="/api/relatorios/alunos" params={{ turma: turma.id }} />
             <MatricularNaTurmaModal turmaId={turma.id} alunosDisponiveis={alunosDisponiveis} />
           </div>
         }
