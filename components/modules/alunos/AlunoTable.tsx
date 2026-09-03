@@ -1,14 +1,10 @@
 import Link from "next/link";
-import type { SituacaoMatricula } from "@prisma/client";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Avatar } from "@/components/ui/Avatar";
-import { Badge } from "@/components/ui/Badge";
-import { SITUACAO_MATRICULA } from "@/lib/statusVisual";
 import { formatarData } from "@/lib/utils";
 
 export type MatriculaLinha = {
   id: string;
-  situacao: SituacaoMatricula;
   aluno: { id: string; nome: string; dataNascimento: Date };
   turma: { nome: string };
 };
@@ -20,11 +16,10 @@ export function AlunoTable({ matriculas }: { matriculas: MatriculaLinha[] }) {
         <Th>Aluno</Th>
         <Th>Turma</Th>
         <Th>Nascimento</Th>
-        <Th>Situação</Th>
       </TableHead>
       <TableBody>
         {matriculas.length === 0 && (
-          <TableEmpty colSpan={4}>Nenhum aluno encontrado.</TableEmpty>
+          <TableEmpty colSpan={3}>Nenhum aluno encontrado.</TableEmpty>
         )}
         {matriculas.map((m) => (
           <Tr key={m.id}>
@@ -36,9 +31,6 @@ export function AlunoTable({ matriculas }: { matriculas: MatriculaLinha[] }) {
             </Td>
             <Td>{m.turma.nome}</Td>
             <Td>{formatarData(m.aluno.dataNascimento)}</Td>
-            <Td>
-              <Badge variant={SITUACAO_MATRICULA[m.situacao].variant}>{SITUACAO_MATRICULA[m.situacao].label}</Badge>
-            </Td>
           </Tr>
         ))}
       </TableBody>

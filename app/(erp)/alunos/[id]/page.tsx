@@ -112,11 +112,7 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="flex flex-col gap-5 lg:col-span-2">
-          <AlunoCard
-            aluno={aluno}
-            turmas={matriculasAtivas.map((m) => m.turma.nome)}
-            situacao={matriculaPrincipal?.situacao ?? "ATIVA"}
-          />
+          <AlunoCard aluno={aluno} turmas={matriculasAtivas.map((m) => m.turma.nome)} />
 
           <CensoSecao aluno={aluno} />
 
@@ -136,7 +132,7 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
               action={
                 <MatriculaAcoes
                   matriculaId={m.id}
-                  situacaoAtual={m.situacao}
+                  turmaNome={m.turma.nome}
                   turmasDisponiveis={turmasDisponiveis.filter((t) => t.id !== m.turmaId)}
                 />
               }

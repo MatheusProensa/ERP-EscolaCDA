@@ -5,8 +5,6 @@ import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdf, respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { formatarData, formatarTelefone } from "@/lib/utils";
-import { SITUACAO_MATRICULA } from "@/lib/statusVisual";
-import type { SituacaoMatricula } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -14,19 +12,17 @@ export async function GET(request: NextRequest) {
 
   const params = request.nextUrl.searchParams;
   const turma = params.get("turma") || undefined;
-  const situacao = params.get("situacao") || undefined;
   const busca = params.get("busca") || undefined;
   const censoIncompleto = params.get("censo") === "incompleto";
-  // Mesma regra da tela: sem filtro escolhido, só quem está na escola hoje.
-  const situacaoEfetiva = situacao === "TODAS" ? undefined : ((situacao as SituacaoMatricula) ?? "ATIVA");
 
   const anoLetivo = await getAnoLetivoAtivo();
 
+  // Sempre só quem está na escola hoje — não existe filtro pra ver quem já saiu.
   const matriculas = await prisma.matricula.findMany({
     where: {
       anoLetivoId: anoLetivo?.id,
       turmaId: turma,
-      situacao: situacaoEfetiva,
+      situacao: "ATIVA",
       aluno: {
         nome: busca ? { contains: busca, mode: "insensitive" } : undefined,
         OR: censoIncompleto ? [{ racaCor: null }, { filiacao1: null }, { sexo: null }] : undefined,
@@ -42,7 +38,6 @@ export async function GET(request: NextRequest) {
       Nome: m.aluno.nome,
       DataNascimento: formatarData(m.aluno.dataNascimento),
       Turma: m.turma.nome,
-      Situacao: SITUACAO_MATRICULA[m.situacao]?.label ?? m.situacao,
       Responsavel: responsavel?.nome ?? "",
       Telefone: responsavel ? formatarTelefone(responsavel.telefone) : "",
       Endereco: m.aluno.endereco ?? "",
@@ -55,7 +50,6 @@ export async function GET(request: NextRequest) {
     const nomeTurma = matriculas[0]?.turma.nome ?? (await prisma.turma.findUnique({ where: { id: turma } }))?.nome;
     if (nomeTurma) filtrosAplicados.push(`Turma: ${nomeTurma}`);
   }
-  if (situacaoEfetiva) filtrosAplicados.push(`Situação: ${SITUACAO_MATRICULA[situacaoEfetiva]?.label ?? situacaoEfetiva}`);
   if (busca) filtrosAplicados.push(`Busca: "${busca}"`);
   if (censoIncompleto) filtrosAplicados.push("Censo incompleto");
 
@@ -72,30 +66,20 @@ export async function GET(request: NextRequest) {
       titulo: "Histórico de alunos",
       subtitulo,
       colunas: [
-        { chave: "Nome", label: "Nome", largura: 150 },
-        { chave: "DataNascimento", label: "Nascimento", largura: 80 },
-        { chave: "Turma", label: "Turma", largura: 110 },
-        { chave: "Situacao", label: "Situação", largura: 80 },
-        { chave: "Responsavel", label: "Responsável", largura: 130 },
-        { chave: "Telefone", label: "Telefone", largura: 95 },
-        { chave: "Endereco", label: "Endereço", largura: 130 },
-        { chave: "Cidade", label: "Cidade", largura: 90 },
+        { chave: "Nome", label: "Nome", largura: 170 },
+        { chave: "DataNascimento", label: "Nascimento", largura: 85 },
+        { chave: "Turma", label: "Turma", largura: 120 },
+        { chave: "Responsavel", label: "Responsável", largura: 140 },
+        { chave: "Telefone", label: "Telefone", largura: 100 },
+        { chave: "Endereco", label: "Endereço", largura: 140 },
+        { chave: "Cidade", label: "Cidade", largura: 95 },
       ],
       linhas,
     });
     return respostaPDF(pdf, nomeArquivoPdf("Historico de Alunos", sufixoArquivo, data));
   }
 
-  const csv = paraCSV(linhas, [
-    "Nome",
-    "DataNascimento",
-    "Turma",
-    "Situacao",
-    "Responsavel",
-    "Telefone",
-    "Endereco",
-    "Cidade",
-  ]);
+  const csv = paraCSV(linhas, ["Nome", "DataNascimento", "Turma", "Responsavel", "Telefone", "Endereco", "Cidade"]);
 
   return respostaCSV(csv, [`Historico de Alunos`, sufixoArquivo, data].filter(Boolean).join(" - ") + ".csv");
 }

@@ -13,29 +13,26 @@ import { ImportarFichaModal } from "@/components/modules/alunos/ImportarFichaMod
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
 import { ordenarTurmas } from "@/lib/utils";
-import type { SituacaoMatricula } from "@prisma/client";
 
 export default async function AlunosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ turma?: string; situacao?: string; busca?: string; censo?: string; contrato?: string }>;
+  searchParams: Promise<{ turma?: string; busca?: string; censo?: string; contrato?: string }>;
 }) {
-  const { turma, situacao, busca, censo, contrato } = await searchParams;
+  const { turma, busca, censo, contrato } = await searchParams;
   const censoIncompleto = censo === "incompleto";
   const contratoPendente = contrato === "pendente";
-  // Sem filtro escolhido, mostra só quem está na escola hoje — cancelada/transferida/
-  // concluída só aparece se alguém pedir isso de propósito (opção "Todas as situações").
-  const situacaoEfetiva = situacao === "TODAS" ? undefined : ((situacao as SituacaoMatricula) ?? "ATIVA");
 
   const totalListaEspera = await prisma.listaEspera.count();
   const anoLetivo = await getAnoLetivoAtivo();
   const turmas = ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }));
 
+  // Só quem está na escola hoje — não existe filtro pra ver quem já saiu.
   const matriculas = await prisma.matricula.findMany({
     where: {
       anoLetivoId: anoLetivo?.id,
       turmaId: turma || undefined,
-      situacao: situacaoEfetiva,
+      situacao: "ATIVA",
       contrato: contratoPendente ? { is: { assinado: false } } : undefined,
       aluno: {
         AND: [
@@ -63,7 +60,6 @@ export default async function AlunosPage({
     },
     select: {
       id: true,
-      situacao: true,
       // "foto" fica de fora de propósito: é base64 e pesa MB por aluno — a listagem
       // só mostra um avatar de 28px, então não vale trazer o arquivo inteiro aqui.
       aluno: { select: { id: true, nome: true, dataNascimento: true } },
@@ -79,11 +75,7 @@ export default async function AlunosPage({
         subtitle={`${matriculas.length} aluno(s) encontrado(s)`}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <ExportButtons
-              href="/api/relatorios/alunos"
-              label="Relatório"
-              params={{ turma, situacao: situacaoEfetiva, busca, censo, contrato }}
-            />
+            <ExportButtons href="/api/relatorios/alunos" label="Relatório" params={{ turma, busca, censo, contrato }} />
             <ExportButtons href="/api/relatorios/contatos-alunos" label="Contatos" params={{ turma }} />
             <Button href="/alunos/importar" variant="outline">
               <FileSpreadsheet className="h-4 w-4" />
@@ -111,7 +103,7 @@ export default async function AlunosPage({
       )}
 
       <Card className="mb-5 p-4">
-        <form className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+        <form className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Input name="busca" placeholder="Buscar por nome, CPF ou responsável..." defaultValue={busca} />
           <Select name="turma" defaultValue={turma ?? ""}>
             <option value="">Todas as turmas</option>
@@ -121,18 +113,10 @@ export default async function AlunosPage({
               </option>
             ))}
           </Select>
-          <Select name="situacao" defaultValue={situacao ?? "ATIVA"}>
-            <option value="ATIVA">Ativa (só quem está na escola)</option>
-            <option value="TODAS">Todas as situações</option>
-            <option value="TRANCADA">Trancada</option>
-            <option value="CANCELADA">Cancelada</option>
-            <option value="TRANSFERIDA">Transferida</option>
-            <option value="CONCLUIDA">Concluída</option>
-          </Select>
           <Button type="submit" variant="outline">
             Filtrar
           </Button>
-          <label className="flex items-center gap-2 text-sm text-cda-text2 sm:col-span-4">
+          <label className="flex items-center gap-2 text-sm text-cda-text2 sm:col-span-3">
             <input
               type="checkbox"
               name="censo"
@@ -142,7 +126,7 @@ export default async function AlunosPage({
             />
             Só alunos com dados incompletos pro censo
           </label>
-          <label className="flex items-center gap-2 text-sm text-cda-text2 sm:col-span-4">
+          <label className="flex items-center gap-2 text-sm text-cda-text2 sm:col-span-3">
             <input
               type="checkbox"
               name="contrato"

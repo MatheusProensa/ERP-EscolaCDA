@@ -4,13 +4,11 @@ import { AlertTriangle, ClipboardList } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Avatar } from "@/components/ui/Avatar";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Button } from "@/components/ui/Button";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { MatricularNaTurmaModal } from "@/components/modules/academico/MatricularNaTurmaModal";
-import { SITUACAO_MATRICULA } from "@/lib/statusVisual";
 
 const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã — Contraturno", TARDE: "Tarde — Ensino regular" };
 
@@ -83,27 +81,21 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
         <Table>
           <TableHead>
             <Th>Aluno</Th>
-            <Th>Situação da matrícula</Th>
           </TableHead>
           <TableBody>
             {turma.matriculas.length === 0 && (
-              <TableEmpty colSpan={2}>Nenhum aluno matriculado nesta turma.</TableEmpty>
+              <TableEmpty colSpan={1}>Nenhum aluno matriculado nesta turma.</TableEmpty>
             )}
-            {turma.matriculas.map((m) => {
-              return (
-                <Tr key={m.id}>
-                  <Td>
-                    <Link href={`/alunos/${m.aluno.id}`} className="flex items-center gap-2.5 hover:text-cda-blue">
-                      <Avatar nome={m.aluno.nome} size="sm" />
-                      {m.aluno.nome}
-                    </Link>
-                  </Td>
-                  <Td>
-                    <Badge variant={SITUACAO_MATRICULA[m.situacao].variant}>{SITUACAO_MATRICULA[m.situacao].label}</Badge>
-                  </Td>
-                </Tr>
-              );
-            })}
+            {turma.matriculas.map((m) => (
+              <Tr key={m.id}>
+                <Td>
+                  <Link href={`/alunos/${m.aluno.id}`} className="flex items-center gap-2.5 hover:text-cda-blue">
+                    <Avatar nome={m.aluno.nome} size="sm" />
+                    {m.aluno.nome}
+                  </Link>
+                </Td>
+              </Tr>
+            ))}
           </TableBody>
         </Table>
       </Card>
