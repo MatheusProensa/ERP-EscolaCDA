@@ -1,25 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { Responsavel } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
+import { separarResponsaveis } from "@/lib/alunos";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdfSecoesEmpilhadas, respostaPDF, nomeArquivoPdf, type ColunaRelatorio } from "@/lib/gerarRelatorioPdf";
 import { formatarData, formatarTelefone, ordenarTurmas } from "@/lib/utils";
-
-// Mãe e pai primeiro (é o que a secretaria quer pra ligar rápido), o resto dos
-// responsáveis (avó, tio etc.) preenche as duas colunas na ordem que sobrar.
-function separarResponsaveis(responsaveis: Responsavel[]) {
-  const restante = [...responsaveis];
-  function tirar(parentesco: string) {
-    const i = restante.findIndex((r) => r.parentesco.trim().toLowerCase() === parentesco);
-    if (i === -1) return null;
-    return restante.splice(i, 1)[0];
-  }
-  const mae = tirar("mãe") ?? tirar("mae");
-  const pai = tirar("pai");
-  return { resp1: mae ?? restante.shift() ?? null, resp2: pai ?? restante.shift() ?? null };
-}
 
 export async function GET(request: NextRequest) {
   const session = await auth();

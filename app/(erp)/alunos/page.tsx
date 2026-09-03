@@ -62,7 +62,7 @@ export default async function AlunosPage({
       id: true,
       // "foto" fica de fora de propósito: é base64 e pesa MB por aluno — a listagem
       // só mostra um avatar de 28px, então não vale trazer o arquivo inteiro aqui.
-      aluno: { select: { id: true, nome: true, dataNascimento: true } },
+      aluno: { select: { id: true, nome: true, dataNascimento: true, responsaveis: true } },
       turma: { select: { nome: true } },
     },
     orderBy: { aluno: { nome: "asc" } },
