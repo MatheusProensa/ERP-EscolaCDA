@@ -20,7 +20,6 @@ function ContatoResponsavel({ resp }: { resp: Responsavel }) {
       rel="noopener noreferrer"
       title="Chamar no WhatsApp"
       className="flex items-center gap-1 hover:text-cda-green"
-      onClick={(e) => e.stopPropagation()}
     >
       <MessageCircle className="h-3 w-3 shrink-0" />
       <span className="truncate">

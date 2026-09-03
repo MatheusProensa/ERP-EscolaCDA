@@ -1,3 +1,5 @@
+"use client";
+
 import { Download, FileDown, FileText } from "lucide-react";
 import { MenuButton } from "./MenuButton";
 
