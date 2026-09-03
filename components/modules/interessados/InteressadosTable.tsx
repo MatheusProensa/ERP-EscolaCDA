@@ -42,8 +42,21 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
   const router = useRouter();
   const [busca, setBusca] = useState("");
   const [grupo, setGrupo] = useState("todos");
+  const [filtroInteresse, setFiltroInteresse] = useState("");
+  const [filtroStatus, setFiltroStatus] = useState("");
   const [carregando, setCarregando] = useState<string | null>(null);
   const [editando, setEditando] = useState<ItemInteressado | null>(null);
+
+  // Lista de turmas/interesses que realmente aparecem nos dados — sem opção
+  // vazia poluindo o filtro se ninguém marcou aquela turma ainda.
+  const interessesDisponiveis = useMemo(() => {
+    const set = new Set<string>();
+    for (const i of itens) {
+      const v = i.turmaDesejada?.nome ?? i.interesseTexto;
+      if (v) set.add(v);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }, [itens]);
 
   async function alterarStatus(id: string, status: string) {
     setCarregando(id);
@@ -72,17 +85,19 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
     const grupoAtivo = GRUPOS.find((g) => g.chave === grupo);
     return itens.filter((i) => {
       if (grupoAtivo?.status && !grupoAtivo.status.includes(i.status)) return false;
+      if (filtroStatus && i.status !== filtroStatus) return false;
+      if (filtroInteresse && (i.turmaDesejada?.nome ?? i.interesseTexto) !== filtroInteresse) return false;
       if (busca) {
         const alvo = `${i.nomeCrianca} ${i.nomeResponsavel}`.toLowerCase();
         if (!alvo.includes(busca.toLowerCase())) return false;
       }
       return true;
     });
-  }, [itens, grupo, busca]);
+  }, [itens, grupo, filtroStatus, filtroInteresse, busca]);
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <div className="mb-4 flex flex-wrap items-end gap-3">
         <div className="w-64">
           <Input
             placeholder="Buscar criança ou responsável..."
@@ -91,11 +106,45 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
             onChange={(e) => setBusca(e.target.value)}
           />
         </div>
+        <Select
+          value={filtroInteresse}
+          onChange={(e) => setFiltroInteresse(e.target.value)}
+          className="h-10 w-44 text-sm"
+        >
+          <option value="">Toda turma/interesse</option>
+          {interessesDisponiveis.map((v) => (
+            <option key={v} value={v}>
+              {v}
+            </option>
+          ))}
+        </Select>
+        <Select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value)} className="h-10 w-48 text-sm">
+          <option value="">Todo status</option>
+          {Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => (
+            <option key={valor} value={valor}>
+              {label}
+            </option>
+          ))}
+        </Select>
         <Segmented
           value={grupo}
           onChange={setGrupo}
           options={GRUPOS.map((g) => ({ value: g.chave, label: g.label, count: contagens[g.chave] }))}
         />
+        {(busca || filtroInteresse || filtroStatus || grupo !== "todos") && (
+          <button
+            type="button"
+            onClick={() => {
+              setBusca("");
+              setFiltroInteresse("");
+              setFiltroStatus("");
+              setGrupo("todos");
+            }}
+            className="h-10 px-2 text-xs font-medium text-cda-text3 underline-offset-2 hover:text-cda-blue hover:underline"
+          >
+            Limpar filtros
+          </button>
+        )}
       </div>
 
       <Card>
