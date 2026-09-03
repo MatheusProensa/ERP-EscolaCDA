@@ -23,6 +23,9 @@ export default async function AlunosPage({
   const { turma, situacao, busca, censo, contrato } = await searchParams;
   const censoIncompleto = censo === "incompleto";
   const contratoPendente = contrato === "pendente";
+  // Sem filtro escolhido, mostra só quem está na escola hoje — cancelada/transferida/
+  // concluída só aparece se alguém pedir isso de propósito (opção "Todas as situações").
+  const situacaoEfetiva = situacao === "TODAS" ? undefined : ((situacao as SituacaoMatricula) ?? "ATIVA");
 
   const totalListaEspera = await prisma.listaEspera.count();
   const anoLetivo = await getAnoLetivoAtivo();
@@ -32,7 +35,7 @@ export default async function AlunosPage({
     where: {
       anoLetivoId: anoLetivo?.id,
       turmaId: turma || undefined,
-      situacao: (situacao as SituacaoMatricula) || undefined,
+      situacao: situacaoEfetiva,
       contrato: contratoPendente ? { is: { assinado: false } } : undefined,
       aluno: {
         AND: [
@@ -76,7 +79,11 @@ export default async function AlunosPage({
         subtitle={`${matriculas.length} aluno(s) encontrado(s)`}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <ExportButtons href="/api/relatorios/alunos" label="Relatório" params={{ turma, situacao, busca, censo, contrato }} />
+            <ExportButtons
+              href="/api/relatorios/alunos"
+              label="Relatório"
+              params={{ turma, situacao: situacaoEfetiva, busca, censo, contrato }}
+            />
             <ExportButtons href="/api/relatorios/contatos-alunos" label="Contatos" params={{ turma }} />
             <Button href="/alunos/importar" variant="outline">
               <FileSpreadsheet className="h-4 w-4" />
@@ -114,9 +121,9 @@ export default async function AlunosPage({
               </option>
             ))}
           </Select>
-          <Select name="situacao" defaultValue={situacao ?? ""}>
-            <option value="">Todas as situações</option>
-            <option value="ATIVA">Ativa</option>
+          <Select name="situacao" defaultValue={situacao ?? "ATIVA"}>
+            <option value="ATIVA">Ativa (só quem está na escola)</option>
+            <option value="TODAS">Todas as situações</option>
             <option value="TRANCADA">Trancada</option>
             <option value="CANCELADA">Cancelada</option>
             <option value="TRANSFERIDA">Transferida</option>

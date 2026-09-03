@@ -17,6 +17,8 @@ export async function GET(request: NextRequest) {
   const situacao = params.get("situacao") || undefined;
   const busca = params.get("busca") || undefined;
   const censoIncompleto = params.get("censo") === "incompleto";
+  // Mesma regra da tela: sem filtro escolhido, só quem está na escola hoje.
+  const situacaoEfetiva = situacao === "TODAS" ? undefined : ((situacao as SituacaoMatricula) ?? "ATIVA");
 
   const anoLetivo = await getAnoLetivoAtivo();
 
@@ -24,7 +26,7 @@ export async function GET(request: NextRequest) {
     where: {
       anoLetivoId: anoLetivo?.id,
       turmaId: turma,
-      situacao: (situacao as SituacaoMatricula) || undefined,
+      situacao: situacaoEfetiva,
       aluno: {
         nome: busca ? { contains: busca, mode: "insensitive" } : undefined,
         OR: censoIncompleto ? [{ racaCor: null }, { filiacao1: null }, { sexo: null }] : undefined,
@@ -53,7 +55,7 @@ export async function GET(request: NextRequest) {
     const nomeTurma = matriculas[0]?.turma.nome ?? (await prisma.turma.findUnique({ where: { id: turma } }))?.nome;
     if (nomeTurma) filtrosAplicados.push(`Turma: ${nomeTurma}`);
   }
-  if (situacao) filtrosAplicados.push(`Situação: ${SITUACAO_MATRICULA[situacao]?.label ?? situacao}`);
+  if (situacaoEfetiva) filtrosAplicados.push(`Situação: ${SITUACAO_MATRICULA[situacaoEfetiva]?.label ?? situacaoEfetiva}`);
   if (busca) filtrosAplicados.push(`Busca: "${busca}"`);
   if (censoIncompleto) filtrosAplicados.push("Censo incompleto");
 
