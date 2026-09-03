@@ -3,8 +3,28 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gerarFichaMatriculaPdf } from "@/lib/gerarFichaMatriculaPdf";
 import { respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
-import { turnoDoContrato } from "@/lib/contratoTexto";
-import { RACA_COR_LABEL } from "@/lib/censo";
+import { montarDadosFichaMatricula } from "@/lib/montarFichaMatricula";
+
+const includeFicha = {
+  responsaveis: true,
+  pessoasAutorizadas: true,
+  matriculas: { include: { turma: true, anoLetivo: true }, orderBy: { dataMatricula: "desc" as const } },
+};
+
+// Reexporta a Ficha de Matrícula já gerada antes, direto do que está salvo no
+// cadastro — sem passar pelo formulário de novo. É o mesmo PDF que o POST abaixo
+// gera ao salvar; aqui só lê o que já está no banco.
+export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+
+  const { id } = await params;
+  const aluno = await prisma.aluno.findUnique({ where: { id }, include: includeFicha });
+  if (!aluno) return NextResponse.json({ error: "Aluno não encontrado" }, { status: 404 });
+
+  const pdf = await gerarFichaMatriculaPdf(montarDadosFichaMatricula(aluno));
+  return respostaPDF(pdf, nomeArquivoPdf("Ficha de Matricula", aluno.nome));
+}
 
 type ResponsavelInput = {
   nome: string;
@@ -71,18 +91,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     pessoasAutorizadas?: { nome: string; parentesco: string }[];
   } = body;
 
-  const aluno = await prisma.aluno.findUnique({
-    where: { id },
-    include: {
-      responsaveis: true,
-      matriculas: { include: { turma: true, anoLetivo: true }, orderBy: { dataMatricula: "desc" } },
-    },
-  });
+  const aluno = await prisma.aluno.findUnique({ where: { id }, include: { responsaveis: true } });
   if (!aluno) return NextResponse.json({ error: "Aluno não encontrado" }, { status: 404 });
-
-  const matricula = matriculaId
-    ? aluno.matriculas.find((m) => m.id === matriculaId)
-    : (aluno.matriculas.find((m) => m.situacao === "ATIVA") ?? aluno.matriculas[0]);
 
   await prisma.aluno.update({
     where: { id },
@@ -167,75 +177,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     },
   });
 
-  const alunoAtualizado = await prisma.aluno.findUniqueOrThrow({
-    where: { id },
-    include: { pessoasAutorizadas: true },
-  });
+  const alunoAtualizado = await prisma.aluno.findUniqueOrThrow({ where: { id }, include: includeFicha });
 
-  const obsSaude = [
-    alunoAtualizado.alergias && `Alergias: ${alunoAtualizado.alergias}`,
-    alunoAtualizado.restricoes && `Restrições alimentares: ${alunoAtualizado.restricoes}`,
-    alunoAtualizado.medicacaoContinua && `Medicação contínua: ${alunoAtualizado.medicacaoContinua}`,
-    alunoAtualizado.necessidadesEsp && `Necessidades especiais: ${alunoAtualizado.necessidadesEsp}`,
-  ]
-    .filter(Boolean)
-    .join(" · ");
-
-  const pdf = await gerarFichaMatriculaPdf({
-    anoLetivo: matricula?.anoLetivo.ano ?? new Date().getFullYear(),
-    dataIngresso: matricula?.dataMatricula ?? new Date(),
-    turnoLabel:
-      turnoLabel || (matricula ? turnoDoContrato(matricula.turma.nome, matricula.turma.turno) : "Não informado"),
-    alunoNome: alunoAtualizado.nome,
-    alunoDataNascimento: alunoAtualizado.dataNascimento,
-    alunoCpf: alunoAtualizado.cpf,
-    sexo: alunoAtualizado.sexo,
-    racaCorLabel: alunoAtualizado.racaCor ? RACA_COR_LABEL[alunoAtualizado.racaCor] : null,
-    autorizaImagemMarcado: alunoAtualizado.autorizacaoImagem,
-    temIrmaos: alunoAtualizado.temIrmaos,
-    idadesIrmaos: alunoAtualizado.idadesIrmaos,
-    usaBico: alunoAtualizado.usaBico,
-    usaMamadeira: alunoAtualizado.usaMamadeira,
-    obsBicoMamadeira: alunoAtualizado.obsBicoMamadeira,
-    jaFrequentouEscola: alunoAtualizado.jaFrequentouEscola,
-    duracaoEscolaAnterior: alunoAtualizado.duracaoEscolaAnterior,
-    temProblemaSaude: obsSaude.length > 0,
-    obsSaude,
-    rotinaSonoAlimentacao: alunoAtualizado.rotinaSonoAlimentacao,
-    brincadeirasPrediletas: alunoAtualizado.brincadeirasPrediletas,
-    reacoesContrariado: alunoAtualizado.reacoesContrariado,
-    pai: paiSalvo
-      ? {
-          nome: paiSalvo.nome,
-          rg: paiSalvo.rg,
-          cpf: paiSalvo.cpf,
-          email: paiSalvo.email,
-          escolaridade: paiSalvo.escolaridade,
-          profissao: paiSalvo.profissao,
-          endereco: paiSalvo.endereco,
-          cep: paiSalvo.cep,
-          telefoneFixo: paiSalvo.telefoneFixo,
-          telefoneComercial: paiSalvo.telefoneComercial,
-          telefoneCelular: paiSalvo.telefone,
-        }
-      : null,
-    mae: maeSalvo
-      ? {
-          nome: maeSalvo.nome,
-          rg: maeSalvo.rg,
-          cpf: maeSalvo.cpf,
-          email: maeSalvo.email,
-          escolaridade: maeSalvo.escolaridade,
-          profissao: maeSalvo.profissao,
-          endereco: maeSalvo.endereco,
-          cep: maeSalvo.cep,
-          telefoneFixo: maeSalvo.telefoneFixo,
-          telefoneComercial: maeSalvo.telefoneComercial,
-          telefoneCelular: maeSalvo.telefone,
-        }
-      : null,
-    pessoasAutorizadas: alunoAtualizado.pessoasAutorizadas.map((p) => ({ nome: p.nome, parentesco: p.parentesco })),
-  });
+  const pdf = await gerarFichaMatriculaPdf(montarDadosFichaMatricula(alunoAtualizado, matriculaId, turnoLabel));
 
   return respostaPDF(pdf, nomeArquivoPdf("Ficha de Matricula", alunoAtualizado.nome));
 }

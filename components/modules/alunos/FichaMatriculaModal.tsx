@@ -332,7 +332,7 @@ export function FichaMatriculaModal({
     <>
       <Button onClick={() => setOpen(true)} size="sm" variant="outline">
         <ClipboardList className="h-3.5 w-3.5" />
-        Ficha de matrícula
+        Editar Ficha de Matrícula
       </Button>
 
       <Modal open={open} onClose={() => setOpen(false)} title="Ficha de matrícula" className="max-w-6xl">
