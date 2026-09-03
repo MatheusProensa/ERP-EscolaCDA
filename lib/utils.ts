@@ -97,6 +97,14 @@ export function formatarTelefone(telefone: string): string {
   return telefone;
 }
 
+/** Link "wa.me" pra chamar no WhatsApp direto — telefone é salvo só com DDD (10/11
+ * dígitos, sem +55), o wa.me precisa do código do país na frente. */
+export function linkWhatsApp(telefone: string): string {
+  const digits = telefone.replace(/\D/g, "");
+  const comPais = digits.startsWith("55") && digits.length > 11 ? digits : `55${digits}`;
+  return `https://wa.me/${comPais}`;
+}
+
 export function iniciais(nome: string): string {
   const partes = nome.trim().split(/\s+/);
   if (partes.length === 1) return partes[0].slice(0, 2).toUpperCase();

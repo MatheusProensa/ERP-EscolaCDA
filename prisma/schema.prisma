@@ -152,6 +152,12 @@ model ListaEspera {
 enum StatusListaEspera {
   AGUARDANDO
   CONTATADO
+  /// Ligou, precisa ligar de novo (não conseguiu falar, pediu pra ligar depois etc.)
+  CHAMAR_NOVAMENTE
+  /// Ligou(s) e não teve retorno nenhum até agora.
+  NAO_RESPONDEU
+  /// Convite pendente pro evento de Portas Abertas.
+  PORTAS_ABERTAS
   MATRICULADO
   DESISTIU
 }

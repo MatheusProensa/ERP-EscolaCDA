@@ -2,16 +2,20 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2 } from "lucide-react";
+import { Trash2, MessageCircle } from "lucide-react";
 import type { StatusListaEspera } from "@prisma/client";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Select } from "@/components/ui/Select";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { showToast } from "@/components/ui/Toast";
-import { formatarData, formatarTelefone } from "@/lib/utils";
+import { formatarData, formatarTelefone, linkWhatsApp } from "@/lib/utils";
 
+// Ordem pensada pro fluxo real de ligação da secretaria, não a ordem do enum no banco.
 const STATUS_LABEL: Record<StatusListaEspera, string> = {
   AGUARDANDO: "Aguardando",
+  CHAMAR_NOVAMENTE: "Chamar novamente",
+  NAO_RESPONDEU: "Não deu retorno",
+  PORTAS_ABERTAS: "Chamar p/ Portas Abertas",
   CONTATADO: "Contatado",
   MATRICULADO: "Matriculado",
   DESISTIU: "Desistiu",
@@ -81,7 +85,16 @@ export function ListaEsperaTable({ itens }: { itens: ItemListaEspera[] }) {
             <Td className="font-medium">{item.nomeCrianca}</Td>
             <Td>
               {item.nomeResponsavel}
-              <span className="block text-xs text-cda-text3">{formatarTelefone(item.telefoneResponsavel)}</span>
+              <a
+                href={linkWhatsApp(item.telefoneResponsavel)}
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Chamar no WhatsApp"
+                className="mt-0.5 flex items-center gap-1 text-xs text-cda-text3 hover:text-cda-green"
+              >
+                <MessageCircle className="h-3 w-3" />
+                {formatarTelefone(item.telefoneResponsavel)}
+              </a>
             </Td>
             <Td>{item.turmaDesejada?.nome ?? "—"}</Td>
             <Td>{formatarData(item.createdAt)}</Td>

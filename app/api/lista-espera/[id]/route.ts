@@ -3,7 +3,15 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 
-const STATUS = ["AGUARDANDO", "CONTATADO", "MATRICULADO", "DESISTIU"] as const;
+const STATUS = [
+  "AGUARDANDO",
+  "CONTATADO",
+  "CHAMAR_NOVAMENTE",
+  "NAO_RESPONDEU",
+  "PORTAS_ABERTAS",
+  "MATRICULADO",
+  "DESISTIU",
+] as const;
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
