@@ -9,6 +9,7 @@ import { CensoSecao } from "@/components/modules/alunos/CensoSecao";
 import { ContratoSecao } from "@/components/modules/alunos/ContratoSecao";
 import { MatriculaAcoes } from "@/components/modules/alunos/MatriculaAcoes";
 import { ResponsaveisSecao } from "@/components/modules/alunos/ResponsaveisSecao";
+import { PessoasAutorizadasSecao } from "@/components/modules/alunos/PessoasAutorizadasSecao";
 import { NovaMatriculaModal } from "@/components/modules/alunos/NovaMatriculaModal";
 import { FichaMatriculaModal } from "@/components/modules/alunos/FichaMatriculaModal";
 import { ordenarTurmas, formatarData } from "@/lib/utils";
@@ -143,7 +144,10 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
           ))}
         </div>
 
-        <ResponsaveisSecao alunoId={aluno.id} responsaveis={aluno.responsaveis} />
+        <div className="flex flex-col gap-5">
+          <ResponsaveisSecao alunoId={aluno.id} responsaveis={aluno.responsaveis} />
+          <PessoasAutorizadasSecao alunoId={aluno.id} pessoas={aluno.pessoasAutorizadas} />
+        </div>
       </div>
     </div>
   );
