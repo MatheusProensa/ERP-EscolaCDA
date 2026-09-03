@@ -31,6 +31,8 @@ const FINANCEIRO: RoleAtiva[] = ["ADMIN", "DIRECAO", "FINANCEIRO"];
 const PEDAGOGICO: RoleAtiva[] = ["ADMIN", "DIRECAO", "PEDAGOGICO"];
 const ADMINISTRATIVO: RoleAtiva[] = ["ADMIN", "DIRECAO", "ADMINISTRATIVO"];
 // Aniversariantes mistura alunos (Pedagógico) e funcionários (Administrativo).
+// Interessados (funil de pré-matrícula) usa o mesmo pacote — é conduzido pela
+// secretaria (Administrativo) mas é fundamentalmente sobre futuros alunos.
 const ANIVERSARIANTES: RoleAtiva[] = ["ADMIN", "DIRECAO", "PEDAGOGICO", "ADMINISTRATIVO"];
 
 // Regras de acesso por prefixo de rota (páginas e APIs) — o pacote padrão que
@@ -43,6 +45,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/academico", roles: PEDAGOGICO },
   { prefixo: "/cardapio", roles: PEDAGOGICO },
   { prefixo: "/aniversariantes", roles: ANIVERSARIANTES },
+  { prefixo: "/interessados", roles: ANIVERSARIANTES },
   { prefixo: "/funcionarios", roles: ADMINISTRATIVO },
   { prefixo: "/estoque", roles: ADMINISTRATIVO },
   { prefixo: "/chaves", roles: ADMINISTRATIVO },
@@ -65,7 +68,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/api/documentos", roles: GESTAO },
   { prefixo: "/api/alunos", roles: PEDAGOGICO },
   { prefixo: "/api/matriculas", roles: PEDAGOGICO },
-  { prefixo: "/api/lista-espera", roles: PEDAGOGICO },
+  { prefixo: "/api/interessados", roles: ANIVERSARIANTES },
   { prefixo: "/api/responsaveis", roles: PEDAGOGICO },
   { prefixo: "/api/turmas", roles: PEDAGOGICO },
   { prefixo: "/api/cardapio", roles: PEDAGOGICO },
@@ -103,10 +106,11 @@ export type PermissoesPorModulo = Record<string, NivelPermissao>;
 /** Cada setor que aparece na tela de Permissões — chave usada tanto no banco
  * quanto pra reconhecer a que módulo uma rota pertence. */
 export const MODULOS: { chave: string; label: string; prefixos: string[] }[] = [
-  { chave: "alunos", label: "Alunos", prefixos: ["/alunos", "/api/alunos", "/api/matriculas", "/api/lista-espera", "/api/responsaveis", "/api/contratos", "/api/relatorios/alunos", "/api/relatorios/chamada"] },
+  { chave: "alunos", label: "Alunos", prefixos: ["/alunos", "/api/alunos", "/api/matriculas", "/api/responsaveis", "/api/contratos", "/api/relatorios/alunos", "/api/relatorios/chamada"] },
   { chave: "academico", label: "Acadêmico", prefixos: ["/academico", "/api/turmas"] },
   { chave: "cardapio", label: "Cardápio", prefixos: ["/cardapio", "/api/cardapio"] },
   { chave: "aniversariantes", label: "Aniversariantes", prefixos: ["/aniversariantes", "/api/relatorios/aniversariantes"] },
+  { chave: "interessados", label: "Interessados", prefixos: ["/interessados", "/api/interessados"] },
   { chave: "funcionarios", label: "Funcionários", prefixos: ["/funcionarios", "/api/funcionarios"] },
   { chave: "estoque", label: "Estoque", prefixos: ["/estoque", "/api/estoque", "/api/relatorios/estoque"] },
   { chave: "chaves", label: "Chaves", prefixos: ["/chaves", "/api/chaves"] },

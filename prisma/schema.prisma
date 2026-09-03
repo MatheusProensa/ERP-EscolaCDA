@@ -135,15 +135,28 @@ enum Turno {
   TARDE
 }
 
+/// Funil de famílias interessadas (pré-matrícula) — espelha o "Controle de
+/// Interessados" que a secretaria já mantinha à mão no Canva: contato,
+/// o que a família busca, data da visita e o desfecho de cada chamada.
 model ListaEspera {
   id                  String            @id @default(cuid())
   nomeCrianca         String
   dataNascimento      DateTime?
   nomeResponsavel     String
+  /// Preenchido só quando quem liga não é o responsável direto (ex.: "Vó", "Irmã").
+  parentescoContato   String?
   telefoneResponsavel String
   emailResponsavel    String?
   turmaDesejada       Turma?            @relation(fields: [turmaDesejadaId], references: [id])
   turmaDesejadaId     String?
+  /// Turma/turno/ano de interesse em texto livre, pra quando não bate com
+  /// nenhuma Turma já cadastrada (ex. interesse já pro ano letivo seguinte).
+  interesseTexto      String?
+  dataPrimeiroContato DateTime?
+  /// O que a família prioriza/busca numa escola — texto livre, é informação
+  /// valiosa pro atendimento e pra entender o perfil de quem procura a CDA.
+  oQueBusca           String?
+  dataVisita          DateTime?
   observacoes         String?
   status              StatusListaEspera @default(AGUARDANDO)
   createdAt           DateTime          @default(now())
@@ -158,6 +171,12 @@ enum StatusListaEspera {
   NAO_RESPONDEU
   /// Convite pendente pro evento de Portas Abertas.
   PORTAS_ABERTAS
+  /// Visitou a escola mas não respondeu mais depois disso.
+  SEM_RETORNO_APOS_VISITA
+  /// Recusou por motivo alheio à escola (localidade, não vai trocar de escola esse ano etc.)
+  NAO_TEM_INTERESSE
+  /// Recusou especificamente pelo valor da mensalidade.
+  VALOR_ULTRAPASSA
   MATRICULADO
   DESISTIU
 }

@@ -12,13 +12,12 @@ import { ordenarTurmas } from "@/lib/utils";
 export default async function AcademicoPage() {
   const anoLetivo = await getAnoLetivoAtivo();
 
-  const [turmasRaw, totalAlunos, totalListaEspera] = await Promise.all([
+  const [turmasRaw, totalAlunos] = await Promise.all([
     prisma.turma.findMany({
       where: { anoLetivoId: anoLetivo?.id },
       include: { _count: { select: { matriculas: { where: { situacao: "ATIVA" } } } } },
     }),
     contarAlunosAtivos(anoLetivo?.id),
-    prisma.listaEspera.count(),
   ]);
   const regulares = ordenarTurmas(turmasRaw.filter((t) => t.turno === "TARDE"));
   const contraturno = ordenarTurmas(turmasRaw.filter((t) => t.turno === "MANHA"));
@@ -43,12 +42,7 @@ export default async function AcademicoPage() {
         />
       </div>
 
-      <AcademicoTabs
-        active="turmas"
-        totalTurmas={turmasRaw.length}
-        totalAlunos={totalAlunos}
-        totalListaEspera={totalListaEspera}
-      />
+      <AcademicoTabs active="turmas" totalTurmas={turmasRaw.length} totalAlunos={totalAlunos} />
 
       <section className="mb-8">
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-cda-text2">

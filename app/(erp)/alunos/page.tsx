@@ -23,7 +23,6 @@ export default async function AlunosPage({
   const censoIncompleto = censo === "incompleto";
   const contratoPendente = contrato === "pendente";
 
-  const totalListaEspera = await prisma.listaEspera.count();
   const anoLetivo = await getAnoLetivoAtivo();
   const turmas = ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }));
 
@@ -86,7 +85,7 @@ export default async function AlunosPage({
         }
       />
 
-      <AcademicoTabs active="alunos" totalAlunos={matriculas.length} totalListaEspera={totalListaEspera} />
+      <AcademicoTabs active="alunos" totalAlunos={matriculas.length} />
 
       {(censoIncompleto || contratoPendente) && (
         <div className="mb-5 flex flex-wrap items-center gap-2">

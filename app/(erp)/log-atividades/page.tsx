@@ -22,7 +22,8 @@ const ENTIDADE_LABEL: Record<string, string> = {
   Usuario: "Usuário",
   Boleto: "Boleto",
   NotaFiscal: "Nota Fiscal",
-  ListaEspera: "Lista de Espera",
+  ListaEspera: "Interessados",
+  Interessado: "Interessados",
 };
 
 // Categórica (handoff de design, etapa 3.2): tipo de registro não é estado —
@@ -36,6 +37,7 @@ const ENTIDADE_VARIANT: Record<string, BadgeVariant> = {
   Usuario: "cat6",
   Boleto: "cat1",
   ListaEspera: "cat5",
+  Interessado: "cat5",
 };
 
 export default async function LogAtividadesPage({

@@ -13,6 +13,7 @@ import {
   KeyRound,
   ShieldCheck,
   Cake,
+  UserPlus,
   Clock,
   FileText,
   CalendarDays,
@@ -32,8 +33,8 @@ type NavItem = { label: string; href: string; icon: LucideIcon };
 type NavGroup = { label: string; items: NavItem[] };
 
 // NOVO: de 7 grupos pra 4 — "Escola", "Direção" e "Sistema" só tinham 1 item cada,
-// só bagunçavam o menu. Aniversariantes foi pro Pedagógico, Documentos e Usuários
-// pro Administrativo.
+// só bagunçavam o menu. Aniversariantes e Interessados foram pro Administrativo
+// (Duda usa os dois no dia a dia, junto com Documentos e Usuários).
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Principal",
@@ -49,7 +50,6 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Acadêmico", href: "/academico", icon: GraduationCap },
       { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
-      { label: "Aniversariantes", href: "/aniversariantes", icon: Cake },
     ],
   },
   {
@@ -63,6 +63,8 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Administrativo",
     items: [
+      { label: "Interessados", href: "/interessados", icon: UserPlus },
+      { label: "Aniversariantes", href: "/aniversariantes", icon: Cake },
       { label: "Funcionários", href: "/funcionarios", icon: UserCog },
       { label: "Estoque", href: "/estoque", icon: Package },
       { label: "Chaves", href: "/chaves", icon: KeyRound },
