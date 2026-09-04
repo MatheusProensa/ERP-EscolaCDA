@@ -69,7 +69,6 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
 
     const opcoes: { value: string; label: string }[] = [];
     for (const serie of series) {
-      opcoes.push({ value: serie, label: serie });
       for (const turno of TURNOS) {
         opcoes.push({ value: `${serie}::${turno}`, label: `${serie}, ${turno}` });
       }
