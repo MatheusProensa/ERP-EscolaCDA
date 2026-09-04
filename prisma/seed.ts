@@ -338,7 +338,7 @@ async function main() {
   await prisma.muralAviso.deleteMany();
   await prisma.emprestimoChave.deleteMany();
   await prisma.chave.deleteMany();
-  await prisma.cardapio.deleteMany();
+  await prisma.cardapioMes.deleteMany();
   await prisma.user.deleteMany();
 
   console.log("Criando usuários...");
@@ -508,23 +508,10 @@ async function main() {
     });
   }
 
-  console.log("Criando cardápio da semana...");
-  const hoje = new Date();
-  const inicioSemana = new Date(Date.UTC(hoje.getFullYear(), hoje.getMonth(), hoje.getDate()));
-  const diaSemanaAtual = inicioSemana.getUTCDay();
-  inicioSemana.setUTCDate(inicioSemana.getUTCDate() + (diaSemanaAtual === 0 ? -6 : 1 - diaSemanaAtual));
-  const cardapioSemana = [
-    { almoco: "Arroz, feijão, frango grelhado e salada", lanche: "Fruta e biscoito" },
-    { almoco: "Macarrão à bolonhesa e legumes no vapor", lanche: "Iogurte e granola" },
-    { almoco: "Arroz, feijão, carne moída e purê de batata", lanche: "Suco natural e bolo" },
-    { almoco: "Risoto de frango e salada verde", lanche: "Fruta picada" },
-    { almoco: "Arroz, feijão, peixe assado e legumes", lanche: "Sanduíche natural" },
-  ];
-  for (let i = 0; i < cardapioSemana.length; i++) {
-    const dia = new Date(inicioSemana);
-    dia.setUTCDate(dia.getUTCDate() + i);
-    await prisma.cardapio.create({ data: { data: dia, ...cardapioSemana[i] } });
-  }
+  // Cardápio real é montado a partir do documento que a Nutricionista manda
+  // (por público, com padrão de semana 1&3 / 2&4) — não faz sentido inventar
+  // um cardápio de demonstração aqui; a tela mostra "Preparar este mês"
+  // quando não há nada cadastrado ainda pro mês selecionado.
 
   console.log("Criando avisos do mural...");
   await prisma.muralAviso.createMany({

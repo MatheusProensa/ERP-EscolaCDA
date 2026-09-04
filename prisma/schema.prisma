@@ -527,15 +527,29 @@ enum TipoMov {
   ESTORNO
 }
 
-model Cardapio {
-  id                String   @id @default(cuid())
-  data              DateTime @unique
-  fruta             String?
-  almoco            String?
-  lancheInfantil    String?
-  lancheFundamental String?
-  lanche            String? // legado (antes do detalhamento por turno/segmento) — não usado na UI
-  createdAt         DateTime @default(now())
+// Substituiu o antigo modelo "Cardapio" (um registro solto por data, 4 campos
+// genéricos) — não refletia como a Nutricionista realmente manda o cardápio:
+// por público (Maternal/Pré, Berçário, Fundamental), com um padrão de semana
+// que SE REPETE (semana 1&3 e semana 2&4 têm o mesmo cardápio no mês todo),
+// cada dia com várias refeições em horário fixo. "semanas" guarda os dois
+// padrões em JSON — { impar: DiaCardapio[], par: DiaCardapio[] } — pra editar
+// um padrão sem mexer no outro. Um registro por (ano, mes, público).
+model CardapioMes {
+  id        String          @id @default(cuid())
+  ano       Int
+  mes       Int
+  publico   PublicoCardapio
+  semanas   Json
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@unique([ano, mes, publico])
+}
+
+enum PublicoCardapio {
+  MATERNAL_PRE
+  BERCARIO
+  FUNDAMENTAL
 }
 
 model Chave {
