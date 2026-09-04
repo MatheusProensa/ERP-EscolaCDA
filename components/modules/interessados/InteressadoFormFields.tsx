@@ -47,12 +47,12 @@ export function InteressadoFormFields({ turmas, inicial }: { turmas: Turma[]; in
       <PhotoUpload value={foto} onChange={setFoto} nome={inicial?.nomeCrianca ?? ""} />
       <input type="hidden" name="foto" value={foto ?? ""} />
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Input label="Nome da criança" name="nomeCrianca" required defaultValue={inicial?.nomeCrianca} />
         <Input label="Nascimento (opcional)" name="dataNascimento" type="date" defaultValue={paraInputDate(inicial?.dataNascimento)} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Input label="Nome do responsável" name="nomeResponsavel" required defaultValue={inicial?.nomeResponsavel} />
         <Input
           label="Parentesco de quem ligou (opcional)"
@@ -62,12 +62,12 @@ export function InteressadoFormFields({ turmas, inicial }: { turmas: Turma[]; in
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Input label="Telefone" name="telefoneResponsavel" required defaultValue={inicial?.telefoneResponsavel} />
         <Input label="E-mail (opcional)" name="emailResponsavel" type="email" defaultValue={inicial?.emailResponsavel ?? ""} />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Select label="Turma desejada (opcional)" name="turmaDesejadaId" defaultValue={inicial?.turmaDesejadaId ?? ""}>
           <option value="">Sem preferência</option>
           {turmas.map((t) => (
@@ -84,7 +84,7 @@ export function InteressadoFormFields({ turmas, inicial }: { turmas: Turma[]; in
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <Input label="Data do 1º contato" name="dataPrimeiroContato" type="date" defaultValue={paraInputDate(inicial?.dataPrimeiroContato)} />
         <Input label="Data da visita (opcional)" name="dataVisita" type="date" defaultValue={paraInputDate(inicial?.dataVisita)} />
       </div>

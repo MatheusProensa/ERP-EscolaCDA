@@ -61,7 +61,7 @@ export function NovoItemModal() {
             <Input label="Quantidade inicial" name="quantidade" type="number" defaultValue="0" />
             <Input label="Mínimo" name="minimo" type="number" defaultValue="5" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label="Localização (opcional)" name="localizacao" placeholder="Armário 2, Depósito..." />
             <Input label="Fornecedor (opcional)" name="fornecedor" placeholder="Papelaria Central" />
           </div>

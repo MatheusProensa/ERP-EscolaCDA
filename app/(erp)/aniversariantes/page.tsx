@@ -131,8 +131,8 @@ export default async function AniversariantesPage({
       )}
 
       <Card className="mb-5 p-4">
-        <form className="flex items-center gap-3">
-          <Select name="mes" defaultValue={String(mesFiltro)} className="w-48">
+        <form className="flex flex-wrap items-center gap-3">
+          <Select name="mes" defaultValue={String(mesFiltro)} className="w-full sm:w-48">
             {MESES.map((m, i) => (
               <option key={m} value={i + 1}>
                 {m}

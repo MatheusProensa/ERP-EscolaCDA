@@ -35,38 +35,42 @@ type NavGroup = { label: string; items: NavItem[] };
 // De 7 grupos pra 3 — "Escola", "Direção" e "Sistema" só tinham 1 item cada,
 // só bagunçavam o menu, e "Pedagógico" também virou parte do Administrativo
 // (Acadêmico e Cardápio no dia a dia são tarefa da secretaria, junto com
-// Aniversariantes, Interessados, Documentos e Usuários).
+// Aniversariantes, Interessados, Documentos e Usuários). Dentro de cada
+// grupo, ordem alfabética — com 10 itens em Administrativo, ficou mais fácil
+// de escanear por posição do que por frequência de uso. "Dashboard" é a
+// única exceção, sempre primeiro no Principal (é a home, não faz sentido
+// ordenar ele no meio da lista).
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Principal",
     items: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { label: "Calendário", href: "/calendario", icon: CalendarDays },
-      { label: "Mural", href: "/mural", icon: Megaphone },
       { label: "Chat", href: "/chat", icon: MessageCircle },
-    ],
-  },
-  {
-    label: "Financeiro",
-    items: [
-      { label: "Ponto", href: "/ponto", icon: Clock },
-      { label: "Notas Fiscais", href: "/notas-fiscais", icon: Receipt },
-      { label: "Boletos", href: "/boletos", icon: Barcode },
+      { label: "Mural", href: "/mural", icon: Megaphone },
     ],
   },
   {
     label: "Administrativo",
     items: [
-      { label: "Interessados", href: "/interessados", icon: UserPlus },
-      { label: "Aniversariantes", href: "/aniversariantes", icon: Cake },
       { label: "Acadêmico", href: "/academico", icon: GraduationCap },
+      { label: "Aniversariantes", href: "/aniversariantes", icon: Cake },
       { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
-      { label: "Funcionários", href: "/funcionarios", icon: UserCog },
-      { label: "Estoque", href: "/estoque", icon: Package },
       { label: "Chaves", href: "/chaves", icon: KeyRound },
       { label: "Documentos", href: "/documentos", icon: FileText },
-      { label: "Usuários", href: "/usuarios", icon: ShieldCheck },
+      { label: "Estoque", href: "/estoque", icon: Package },
+      { label: "Funcionários", href: "/funcionarios", icon: UserCog },
+      { label: "Interessados", href: "/interessados", icon: UserPlus },
       { label: "Log de Atividades", href: "/log-atividades", icon: History },
+      { label: "Usuários", href: "/usuarios", icon: ShieldCheck },
+    ],
+  },
+  {
+    label: "Financeiro",
+    items: [
+      { label: "Boletos", href: "/boletos", icon: Barcode },
+      { label: "Notas Fiscais", href: "/notas-fiscais", icon: Receipt },
+      { label: "Ponto", href: "/ponto", icon: Clock },
     ],
   },
 ];

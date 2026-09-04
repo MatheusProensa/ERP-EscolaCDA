@@ -60,7 +60,7 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="w-72">
+        <div className="w-full sm:w-72">
           <Input placeholder="Buscar item ou categoria..." icon={<Search className="h-4 w-4" />} value={busca} onChange={(e) => setBusca(e.target.value)} />
         </div>
         <Segmented

@@ -40,7 +40,7 @@ export function ExportarCalendarioPdfModal() {
             Escolha o mês inicial e o período que quer incluir no PDF, com a identidade visual da escola.
           </p>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Select label="Mês inicial" value={mes} onChange={(e) => setMes(Number(e.target.value))}>
               {MESES.map((nome, i) => (
                 <option key={nome} value={i + 1}>

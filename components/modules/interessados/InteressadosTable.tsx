@@ -118,7 +118,7 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
   return (
     <>
       <div className="mb-4 flex flex-wrap items-end gap-3">
-        <div className="w-64">
+        <div className="w-full sm:w-64">
           <Input
             placeholder="Buscar criança ou responsável..."
             icon={<Search className="h-4 w-4" />}
@@ -127,14 +127,14 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
           />
         </div>
         <FilterSelect
-          className="w-44"
+          className="w-full sm:w-44"
           value={filtroInteresse}
           onChange={setFiltroInteresse}
           placeholder="Toda turma/interesse"
           options={[{ value: "", label: "Toda turma/interesse" }, ...opcoesInteresse]}
         />
         <FilterSelect
-          className="w-52"
+          className="w-full sm:w-52"
           value={filtroStatus}
           onChange={setFiltroStatus}
           placeholder="Todo status"

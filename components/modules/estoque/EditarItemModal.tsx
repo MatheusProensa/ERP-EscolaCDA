@@ -46,11 +46,11 @@ export function EditarItemModal({ item, onClose }: { item: ItemEstoque | null; o
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <Input label="Nome" name="nome" required defaultValue={item.nome} />
           <Input label="Categoria" name="categoria" required defaultValue={item.categoria} />
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label="Unidade" name="unidade" required defaultValue={item.unidade} />
             <Input label="Mínimo" name="minimo" type="number" defaultValue={item.minimo} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Input label="Localização (opcional)" name="localizacao" defaultValue={item.localizacao ?? ""} />
             <Input label="Fornecedor (opcional)" name="fornecedor" defaultValue={item.fornecedor ?? ""} />
           </div>

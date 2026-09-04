@@ -76,7 +76,7 @@ export function MovimentacoesTab({ movimentacoes: movimentacoesIniciais }: { mov
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="w-72">
+        <div className="w-full sm:w-72">
           <Input
             placeholder="Buscar item, responsável, destino..."
             icon={<Search className="h-4 w-4" />}
@@ -84,7 +84,7 @@ export function MovimentacoesTab({ movimentacoes: movimentacoesIniciais }: { mov
             onChange={(e) => setBusca(e.target.value)}
           />
         </div>
-        <div className="w-44">
+        <div className="w-full sm:w-44">
           <Select value={tipoFiltro} onChange={(e) => setTipoFiltro(e.target.value)}>
             <option value="">Todos os tipos</option>
             <option value="ENTRADA">Entrada</option>

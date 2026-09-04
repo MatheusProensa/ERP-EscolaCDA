@@ -223,7 +223,7 @@ export function PontoMesForm({
   return (
     <div className="flex flex-col gap-4">
       <Card className="flex flex-wrap items-end justify-between gap-3 p-4">
-        <div className="flex items-end gap-3">
+        <div className="flex flex-wrap items-end gap-3">
           <Select label="Mês" value={mes} onChange={(e) => setMes(Number(e.target.value))} className="w-40">
             {MESES.map((m, i) => (
               <option key={m} value={i + 1}>{m}</option>

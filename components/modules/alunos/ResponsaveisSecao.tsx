@@ -17,8 +17,8 @@ import { formatarTelefone } from "@/lib/utils";
 function CamposResponsavel({ responsavel }: { responsavel?: Responsavel }) {
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-2 gap-3">
-        <Input label="Nome" name="nome" required defaultValue={responsavel?.nome ?? ""} className="col-span-2" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Input label="Nome" name="nome" required defaultValue={responsavel?.nome ?? ""} className="sm:col-span-2" />
         <Select label="Parentesco" name="parentesco" defaultValue={responsavel?.parentesco ?? "Mãe"}>
           {["Mãe", "Pai", "Avó", "Avô", "Tia", "Tio", "Responsável"].map((p) => (
             <option key={p} value={p}>
