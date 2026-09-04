@@ -23,7 +23,7 @@ export function formatarNomePessoa(nome: string): string {
 
 const ORDEM_TURMAS = [
   "Berçário I", "Berçário II", "Maternal I", "Maternal II",
-  "Pré-escola I", "Pré-escola II", "1º Ano", "2º Ano", "3º Ano",
+  "Pré-escola I", "Pré-escola II", "1º Ano", "2º Ano", "3º Ano", "4º Ano",
   "Contraturno I", "Contraturno II", "Contraturno III", "Contraturno IV", "Contraturno V",
 ];
 

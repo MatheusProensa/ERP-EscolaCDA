@@ -34,7 +34,7 @@ function corPorTexto(texto: string): BadgeVariant {
 // nos dados mas não estejam aqui entram avulsas, sem cruzar turno.
 const SERIES_CURRICULO = [
   "Berçário I", "Berçário II", "Maternal I", "Maternal II",
-  "Pré-escola I", "Pré-escola II", "1º Ano", "2º Ano", "3º Ano",
+  "Pré-escola I", "Pré-escola II", "1º Ano", "2º Ano", "3º Ano", "4º Ano",
 ];
 // Na CDA "contraturno" e "manhã" são o mesmo turno (por isso só 3 opções,
 // não 4) — dado extraído do PDF como "CT"/"contraturno" é normalizado pra
