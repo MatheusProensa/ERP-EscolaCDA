@@ -26,6 +26,7 @@ export const STATUS_INTERESSADO_BADGE: Record<string, { variant: BadgeVariant; l
   SEM_RETORNO_APOS_VISITA: { variant: "warning", label: "Visitou, sem retorno" },
   NAO_TEM_INTERESSE: { variant: "neutral", label: "Não tem interesse" },
   VALOR_ULTRAPASSA: { variant: "neutral", label: "Valor ultrapassa" },
+  SEM_VAGA: { variant: "warning", label: "Sem vaga na escola" },
   MATRICULADO: { variant: "success", label: "Matriculado" },
   DESISTIU: { variant: "danger", label: "Desistiu" },
 };

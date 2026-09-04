@@ -180,6 +180,10 @@ enum StatusListaEspera {
   NAO_TEM_INTERESSE
   /// Recusou especificamente pelo valor da mensalidade.
   VALOR_ULTRAPASSA
+  /// A escola que não tinha vaga na turma desejada — diferente de
+  /// NAO_TEM_INTERESSE, aqui é a família que queria e não pôde. Rechamar
+  /// quando abrir vaga.
+  SEM_VAGA
   MATRICULADO
   DESISTIU
 }
