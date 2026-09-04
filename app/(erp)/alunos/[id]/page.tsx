@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
-import { FileDown } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Button } from "@/components/ui/Button";
 import { AlunoCard } from "@/components/modules/alunos/AlunoCard";
 import { CensoSecao } from "@/components/modules/alunos/CensoSecao";
 import { ContratoSecao } from "@/components/modules/alunos/ContratoSecao";
@@ -11,7 +9,7 @@ import { MatriculaAcoes } from "@/components/modules/alunos/MatriculaAcoes";
 import { ResponsaveisSecao } from "@/components/modules/alunos/ResponsaveisSecao";
 import { PessoasAutorizadasSecao } from "@/components/modules/alunos/PessoasAutorizadasSecao";
 import { NovaMatriculaModal } from "@/components/modules/alunos/NovaMatriculaModal";
-import { FichaMatriculaModal } from "@/components/modules/alunos/FichaMatriculaModal";
+import { FichaMatriculaAcoes } from "@/components/modules/alunos/FichaMatriculaAcoes";
 import { ordenarTurmas, formatarData } from "@/lib/utils";
 import { turnoDoContrato } from "@/lib/contratoTexto";
 import { turmasComMatriculados } from "@/lib/turmas";
@@ -72,15 +70,8 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
               alunoId={aluno.id}
               turmas={turmasDisponiveis.filter((t) => !turmaIdsDoAluno.has(t.id))}
             />
-            {/* Reexporta a última Ficha de Matrícula salva, sem reabrir o formulário —
-                o FichaMatriculaModal logo abaixo continua existindo pra quando precisar
-                editar algo e gerar de novo. */}
-            <Button href={`/api/alunos/${aluno.id}/ficha-matricula`} variant="outline">
-              <FileDown className="h-4 w-4" />
-              Baixar Ficha de Matrícula (PDF)
-            </Button>
             {matriculaPrincipal && (
-              <FichaMatriculaModal
+              <FichaMatriculaAcoes
                 alunoId={aluno.id}
                 matriculaId={matriculaPrincipal.id}
                 alunoNome={aluno.nome}

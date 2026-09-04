@@ -11,6 +11,9 @@ export type MenuButtonItem = {
   icon?: LucideIcon;
   href?: string;
   onClick?: () => void;
+  /** Ação destrutiva (ex.: "Remover") — item colorido em vermelho, mesma
+   * convenção do Button variant="danger". */
+  danger?: boolean;
 };
 
 const VARIANT_CLASSES = {
@@ -23,6 +26,13 @@ const SIZE_CLASSES = {
   md: "h-10 px-4 text-sm gap-2",
 };
 
+// Gatilho só de ícone (sem rótulo/seta) — pra caber num cabeçalho de card
+// apertado (ex.: ações da matrícula), no lugar de 2+ botões com texto soltos.
+const SIZE_CLASSES_ICON = {
+  sm: "h-8 w-8",
+  md: "h-10 w-10",
+};
+
 // Botão com um menu de opções embaixo (não dois botões grudados) — usado onde antes
 // tinha "CSV + PDF" ou "Importar planilha + Importar ficha(s)" lado a lado poluindo
 // a barra de ações. Mesmo padrão de portal + fecha-ao-clicar-fora do ItemMenu (estoque).
@@ -32,12 +42,16 @@ export function MenuButton({
   items,
   variant = "outline",
   size = "md",
+  iconOnly = false,
 }: {
   label: string;
   icon?: LucideIcon;
   items: MenuButtonItem[];
   variant?: "outline" | "primary";
   size?: "sm" | "md";
+  /** Mostra só o ícone, sem texto nem seta — o `label` vira title/aria-label
+   * (acessibilidade). Ex.: menu de "⋮" num cabeçalho de card apertado. */
+  iconOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
@@ -65,15 +79,17 @@ export function MenuButton({
       <button
         ref={btnRef}
         onClick={toggle}
+        title={iconOnly ? label : undefined}
+        aria-label={iconOnly ? label : undefined}
         className={cn(
           "inline-flex items-center justify-center rounded-lg font-medium transition-colors",
           VARIANT_CLASSES[variant],
-          SIZE_CLASSES[size]
+          iconOnly ? SIZE_CLASSES_ICON[size] : SIZE_CLASSES[size]
         )}
       >
         {Icon && <Icon className="h-4 w-4" />}
-        {label}
-        <ChevronDown className="h-3.5 w-3.5" />
+        {!iconOnly && label}
+        {!iconOnly && <ChevronDown className="h-3.5 w-3.5" />}
       </button>
       {open &&
         createPortal(
@@ -89,8 +105,12 @@ export function MenuButton({
                   {item.label}
                 </>
               );
-              const classe =
-                "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs font-medium text-cda-text2 hover:bg-cda-bg hover:text-cda-text";
+              const classe = cn(
+                "flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-left text-xs font-medium",
+                item.danger
+                  ? "text-cda-red hover:bg-cda-red/5"
+                  : "text-cda-text2 hover:bg-cda-bg hover:text-cda-text"
+              );
               return item.href ? (
                 <Link key={i} href={item.href} onClick={() => setOpen(false)} className={classe}>
                   {conteudo}

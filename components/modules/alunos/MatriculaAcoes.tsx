@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeftRight, Trash2 } from "lucide-react";
+import { ArrowLeftRight, MoreVertical, Trash2 } from "lucide-react";
 import type { Turma } from "@prisma/client";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { MenuButton } from "@/components/ui/MenuButton";
 
 type TurmaComVagas = Turma & { matriculados: number };
 
@@ -68,25 +69,21 @@ export function MatriculaAcoes({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {turmasDisponiveis && turmasDisponiveis.length > 0 && (
-        <button
-          onClick={() => setTransferindo(true)}
-          title="Transferir de turma"
-          className="flex h-8 items-center gap-1.5 rounded-lg border border-cda-border bg-white px-2.5 text-xs font-medium text-cda-text hover:bg-cda-bg"
-        >
-          <ArrowLeftRight className="h-3.5 w-3.5" />
-          Transferir turma
-        </button>
-      )}
-      <button
-        onClick={() => setConfirmandoExclusao(true)}
-        disabled={loading}
-        title="Aluno saiu da escola / remover matrícula"
-        className="flex h-8 items-center gap-1.5 rounded-lg border border-cda-border bg-white px-2.5 text-xs font-medium text-cda-red hover:bg-cda-red/5 disabled:opacity-50"
-      >
-        <Trash2 className="h-3.5 w-3.5" />
-        Remover matrícula
-      </button>
+      {/* Um menu só (⋮) em vez de 2 botões com texto soltos no cabeçalho do
+          card de contrato — "Transferir turma" ficava concorrendo visualmente
+          com o título "Contrato — {turma}" logo ao lado. */}
+      <MenuButton
+        label="Ações da matrícula"
+        icon={MoreVertical}
+        iconOnly
+        size="sm"
+        items={[
+          ...(turmasDisponiveis && turmasDisponiveis.length > 0
+            ? [{ label: "Transferir de turma", icon: ArrowLeftRight, onClick: () => setTransferindo(true) }]
+            : []),
+          { label: "Remover matrícula", icon: Trash2, danger: true, onClick: () => setConfirmandoExclusao(true) },
+        ]}
+      />
       {error && <p className="text-xs text-cda-red">{error}</p>}
 
       <Modal open={transferindo} onClose={() => setTransferindo(false)} title="Transferir de turma">
