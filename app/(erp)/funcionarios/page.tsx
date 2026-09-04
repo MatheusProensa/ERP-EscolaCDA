@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { ExportButtons } from "@/components/ui/ExportButtons";
 import { FuncionarioTable } from "@/components/modules/funcionarios/FuncionarioTable";
 import { SETORES, agruparPorSetor } from "@/lib/utils";
 
@@ -32,10 +33,14 @@ export default async function FuncionariosPage({
         title="Funcionários"
         subtitle={`${funcionarios.length} funcionário(s) encontrado(s), organizados por setor`}
         action={
-          <Button href="/funcionarios/novo">
-            <UserPlus className="h-4 w-4" />
-            Novo funcionário
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <ExportButtons href="/api/relatorios/funcionarios" label="Lista completa" params={{ setor }} />
+            <ExportButtons href="/api/relatorios/funcionarios-contatos" label="Contatos" />
+            <Button href="/funcionarios/novo">
+              <UserPlus className="h-4 w-4" />
+              Novo funcionário
+            </Button>
+          </div>
         }
       />
 

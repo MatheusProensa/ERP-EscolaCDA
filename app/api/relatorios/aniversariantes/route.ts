@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
       include: { aluno: true, turma: true },
     }),
-    prisma.funcionario.findMany({ where: { ativo: true, dataNascimento: { not: null } } }),
+    prisma.funcionario.findMany({ where: { ativo: true } }),
   ]);
 
   const porAluno = new Map<string, { nome: string; dataNascimento: Date; turmas: string[] }>();
@@ -69,6 +69,21 @@ export async function GET(request: NextRequest) {
     .sort((a, b) => a.dia - b.dia)
     .map(({ dia: _dia, ...linha }) => linha);
 
+  // Aniversário de empresa — mesmo padrão, contado a partir da admissão. Só
+  // entra quem já completou pelo menos 1 ano (não faz sentido "completar 0").
+  const aniversariosEmpresa = funcionarios
+    .filter((f) => f.admissao.getUTCMonth() + 1 === mesFiltro && idade(f.admissao, anoAtual) > 0)
+    .map((f) => ({
+      dia: f.admissao.getUTCDate(),
+      Tipo: "Empresa",
+      Nome: f.nome,
+      Detalhe: f.cargo,
+      Data: `${String(f.admissao.getUTCDate()).padStart(2, "0")}/${String(f.admissao.getUTCMonth() + 1).padStart(2, "0")}`,
+      Completa: `${idade(f.admissao, anoAtual)} ${idade(f.admissao, anoAtual) === 1 ? "ano" : "anos"} de empresa`,
+    }))
+    .sort((a, b) => a.dia - b.dia)
+    .map(({ dia: _dia, ...linha }) => linha);
+
   if (params.get("formato") === "pdf") {
     const colunasAluno = [
       { chave: "Nome", label: "Nome", largura: 240 },
@@ -98,12 +113,18 @@ export async function GET(request: NextRequest) {
           colunas: colunasFuncionario,
           linhas: aniversariantesFuncionarios,
         },
+        {
+          titulo: "Aniversário de empresa",
+          subtitulo: `${nomeMes}/${anoAtual} — ${aniversariosEmpresa.length} pessoa(s)`,
+          colunas: colunasFuncionario,
+          linhas: aniversariosEmpresa,
+        },
       ],
     });
     return respostaPDF(pdf, nomeArquivoPdf("Aniversariantes", `${nomeMes} ${anoAtual}`));
   }
 
-  const aniversariantes = [...aniversariantesAlunos, ...aniversariantesFuncionarios];
+  const aniversariantes = [...aniversariantesAlunos, ...aniversariantesFuncionarios, ...aniversariosEmpresa];
   const csv = paraCSV(aniversariantes, ["Tipo", "Nome", "Detalhe", "Data", "Completa"]);
   return respostaCSV(csv, `Aniversariantes - ${nomeMes} ${anoAtual}.csv`);
 }

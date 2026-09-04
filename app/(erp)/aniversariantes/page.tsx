@@ -59,7 +59,10 @@ export default async function AniversariantesPage({
         turma: { select: { nome: true } },
       },
     }),
-    prisma.funcionario.findMany({ where: { ativo: true, dataNascimento: { not: null } } }),
+    // Sem filtro por dataNascimento aqui — esse mesmo funcionario serve tanto
+    // pro aniversário de nascimento quanto pro de empresa (que usa admissao,
+    // sempre preenchida), e nem todo mundo tem data de nascimento cadastrada.
+    prisma.funcionario.findMany({ where: { ativo: true } }),
   ]);
 
   const porAluno = new Map<string, Pessoa & { turmas: string[] }>();
@@ -99,6 +102,22 @@ export default async function AniversariantesPage({
       nome: f.nome,
       foto: null,
       dataNascimento: f.dataNascimento!,
+      detalhe: f.cargo,
+      href: `/funcionarios/${f.id}`,
+    }));
+
+  // Aniversário de empresa — pedido da Duda (set/2026) pra parabenizar quem
+  // completa X anos de casa na reunião mensal, mesmo padrão de aniversário de
+  // nascimento, só que contado a partir da admissão. Só quem já completou pelo
+  // menos 1 ano entra na lista (ninguém "completa 0 anos de empresa").
+  const funcionariosEmpresa: Pessoa[] = funcionarios
+    .filter((f) => eDoMes(f.admissao, mesFiltro) && idadeCompletando(f.admissao, anoAtual) > 0)
+    .sort((a, b) => a.admissao.getUTCDate() - b.admissao.getUTCDate())
+    .map((f) => ({
+      id: f.id,
+      nome: f.nome,
+      foto: null,
+      dataNascimento: f.admissao,
       detalhe: f.cargo,
       href: `/funcionarios/${f.id}`,
     }));
@@ -162,6 +181,17 @@ export default async function AniversariantesPage({
           anoAtual={anoAtual}
           mesFiltro={mesFiltro}
         />
+        <ListaAniversariantes
+          titulo="Aniversário de empresa"
+          colunaDetalhe="Cargo"
+          colunaData="Admissão"
+          colunaCompleta="Completa"
+          sufixoCompleta=" de empresa"
+          pessoas={funcionariosEmpresa}
+          hoje={hoje}
+          anoAtual={anoAtual}
+          mesFiltro={mesFiltro}
+        />
       </div>
     </div>
   );
@@ -170,6 +200,9 @@ export default async function AniversariantesPage({
 function ListaAniversariantes({
   titulo,
   colunaDetalhe,
+  colunaData = "Data",
+  colunaCompleta = "Completa",
+  sufixoCompleta = "",
   pessoas,
   hoje,
   anoAtual,
@@ -177,6 +210,12 @@ function ListaAniversariantes({
 }: {
   titulo: string;
   colunaDetalhe: string;
+  /** "Data" (padrão) diz respeito ao nascimento; "Aniversário de empresa" usa
+   * "Admissão" — mesmo componente, rótulo diferente pra não confundir. */
+  colunaData?: string;
+  colunaCompleta?: string;
+  /** Ex.: " de empresa" — vira "5 anos de empresa" em vez de só "5 anos". */
+  sufixoCompleta?: string;
   pessoas: Pessoa[];
   hoje: Date;
   anoAtual: number;
@@ -188,12 +227,12 @@ function ListaAniversariantes({
         <TableHead>
           <Th>Nome</Th>
           <Th>{colunaDetalhe}</Th>
-          <Th>Data</Th>
-          <Th>Completa</Th>
+          <Th>{colunaData}</Th>
+          <Th>{colunaCompleta}</Th>
         </TableHead>
         <TableBody>
           {pessoas.length === 0 && (
-            <TableEmpty colSpan={4}>Nenhum aniversariante em {MESES[mesFiltro - 1]}.</TableEmpty>
+            <TableEmpty colSpan={4}>Ninguém em {MESES[mesFiltro - 1]}.</TableEmpty>
           )}
           {pessoas.map((p) => (
             <Tr key={p.id}>
@@ -211,6 +250,7 @@ function ListaAniversariantes({
               </Td>
               <Td>
                 {idadeCompletando(p.dataNascimento, anoAtual)} {idadeCompletando(p.dataNascimento, anoAtual) === 1 ? "ano" : "anos"}
+                {sufixoCompleta}
               </Td>
             </Tr>
           ))}
