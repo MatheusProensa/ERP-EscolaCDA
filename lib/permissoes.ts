@@ -107,6 +107,7 @@ export type PermissoesPorModulo = Record<string, NivelPermissao>;
  * quanto pra reconhecer a que módulo uma rota pertence. */
 export const MODULOS: { chave: string; label: string; prefixos: string[] }[] = [
   { chave: "alunos", label: "Alunos", prefixos: ["/alunos", "/api/alunos", "/api/matriculas", "/api/responsaveis", "/api/contratos", "/api/relatorios/alunos", "/api/relatorios/chamada"] },
+  { chave: "calendario", label: "Calendário", prefixos: ["/calendario", "/api/eventos"] },
   { chave: "academico", label: "Acadêmico", prefixos: ["/academico", "/api/turmas"] },
   { chave: "cardapio", label: "Cardápio", prefixos: ["/cardapio", "/api/cardapio"] },
   { chave: "aniversariantes", label: "Aniversariantes", prefixos: ["/aniversariantes", "/api/relatorios/aniversariantes"] },
@@ -143,8 +144,10 @@ const METODOS_LEITURA = new Set(["GET", "HEAD", "OPTIONS"]);
  * mesmo que o Perfil dela normalmente desse. ADMIN continua vendo tudo
  * (senão ninguém consegue nem abrir a tela de Usuários pra configurar a
  * grade de mais ninguém). Rota que não é nenhum dos setores da grade
- * (Dashboard, Calendário, Mural, Chat, Log de Atividades...) continua pelo
- * pacote do Role de sempre — essas nunca fizeram parte da grade. */
+ * (Dashboard, Mural, Chat, Log de Atividades...) continua pelo pacote do
+ * Role de sempre — essas nunca fizeram parte da grade. Calendário entrou na
+ * grade em set/2026 — todo usuário existente na época recebeu "Ler e
+ * editar" junto com a migração, pra ninguém perder acesso sem querer. */
 export function acessoPermitido(
   pathname: string,
   method: string,
