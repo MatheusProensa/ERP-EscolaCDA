@@ -17,12 +17,18 @@ export function FilterSelect({
   options,
   placeholder,
   className,
+  triggerStyle,
+  disabled,
 }: {
   value: string;
   onChange: (value: string) => void;
   options: FilterSelectOption[];
   placeholder: string;
   className?: string;
+  /** Estilo do botão fechado — ex.: fundo/cor colorida acompanhando o valor
+   * escolhido (status de Interessados). O popup de opções continua branco. */
+  triggerStyle?: React.CSSProperties;
+  disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
@@ -53,13 +59,15 @@ export function FilterSelect({
         type="button"
         ref={btnRef}
         onClick={toggle}
+        disabled={disabled}
+        style={triggerStyle}
         className={cn(
-          "flex h-10 w-full items-center justify-between gap-2 rounded-lg border bg-white pl-3 pr-3 text-sm text-cda-text outline-none transition-colors hover:border-cda-text3/50 focus-visible:ring-2 focus-visible:ring-cda-blue/40",
-          open ? "border-cda-blue ring-2 ring-cda-blue/40" : "border-cda-border"
+          "flex h-10 w-full items-center justify-between gap-2 rounded-lg border bg-white pl-3 pr-3 text-sm text-cda-text outline-none transition-colors hover:border-cda-text3/50 focus-visible:ring-2 focus-visible:ring-cda-blue/40 disabled:cursor-not-allowed disabled:opacity-60",
+          !triggerStyle && (open ? "border-cda-blue ring-2 ring-cda-blue/40" : "border-cda-border")
         )}
       >
-        <span className={cn("truncate", !selecionado?.value && "text-cda-text3")}>{selecionado?.label ?? placeholder}</span>
-        <ChevronDown className={cn("h-4 w-4 shrink-0 text-cda-text3 transition-transform", open && "rotate-180")} />
+        <span className={cn("truncate", !selecionado?.value && !triggerStyle && "text-cda-text3")}>{selecionado?.label ?? placeholder}</span>
+        <ChevronDown className={cn("h-4 w-4 shrink-0 transition-transform", !triggerStyle && "text-cda-text3", open && "rotate-180")} />
       </button>
       {open &&
         createPortal(

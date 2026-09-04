@@ -7,7 +7,7 @@ import type { Turma } from "@prisma/client";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Select";
+import { FilterSelect } from "@/components/ui/FilterSelect";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge, BADGE_VARIANT_STYLE, type BadgeVariant } from "@/components/ui/Badge";
 import { showToast } from "@/components/ui/Toast";
@@ -90,19 +90,22 @@ export function InteressadoDetalhe({ item, turmas }: { item: ItemInteressado; tu
 
               <div className="flex flex-col items-end gap-1">
                 <span className="text-xs font-medium text-cda-text3">Status</span>
-                <Select
+                <FilterSelect
+                  className="w-[210px]"
                   value={item.status}
                   disabled={carregando}
-                  onChange={(e) => alterarStatus(e.target.value)}
-                  className="h-9 w-[210px] border-transparent text-sm font-semibold shadow-sm focus:border-cda-blue"
-                  style={{ ...BADGE_VARIANT_STYLE[badge.variant], accentColor: "var(--cda-blue)", colorScheme: "light" }}
-                >
-                  {Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => (
-                    <option key={valor} value={valor} style={{ color: "initial", backgroundColor: "white" }}>
-                      {label}
-                    </option>
-                  ))}
-                </Select>
+                  onChange={alterarStatus}
+                  placeholder="Status"
+                  triggerStyle={{
+                    ...BADGE_VARIANT_STYLE[badge.variant],
+                    border: "none",
+                    height: "36px",
+                    fontSize: "0.875rem",
+                    fontWeight: 600,
+                    boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+                  }}
+                  options={Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => ({ value: valor, label }))}
+                />
               </div>
             </div>
 

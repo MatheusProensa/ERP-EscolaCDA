@@ -7,7 +7,6 @@ import { Search, MessageCircle, Pencil } from "lucide-react";
 import type { Turma } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
 import { FilterSelect } from "@/components/ui/FilterSelect";
 import { IconButton } from "@/components/ui/IconButton";
 import { Avatar } from "@/components/ui/Avatar";
@@ -237,19 +236,26 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
                   </Td>
                   <Td className="whitespace-nowrap text-cda-text2">{item.dataVisita ? formatarData(item.dataVisita) : "—"}</Td>
                   <Td>
-                    <Select
+                    {/* FilterSelect no lugar do <select> nativo — o nativo cortava o
+                        texto sem "..." no Safari/Mac (ex.: "Aguardando" virava "Ag"),
+                        porque o navegador desenha a caixa fechada do jeito dele, sem
+                        respeitar a largura/truncamento que a gente pede via CSS. */}
+                    <FilterSelect
+                      className="w-[190px]"
                       value={item.status}
                       disabled={carregando === item.id}
-                      onChange={(e) => alterarStatus(item.id, e.target.value)}
-                      className="h-8 w-[180px] border-transparent text-xs font-semibold shadow-sm focus:border-cda-blue"
-                      style={{ ...BADGE_VARIANT_STYLE[badge.variant], accentColor: "var(--cda-blue)", colorScheme: "light" }}
-                    >
-                      {Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => (
-                        <option key={valor} value={valor} style={{ color: "initial", backgroundColor: "white" }}>
-                          {label}
-                        </option>
-                      ))}
-                    </Select>
+                      onChange={(valor) => alterarStatus(item.id, valor)}
+                      placeholder="Status"
+                      triggerStyle={{
+                        ...BADGE_VARIANT_STYLE[badge.variant],
+                        border: "none",
+                        height: "32px",
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+                      }}
+                      options={Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => ({ value: valor, label }))}
+                    />
                   </Td>
                   <Td>
                     <IconButton icon={Pencil} label="Editar interessado" size="sm" onClick={() => setEditando(item)} />
