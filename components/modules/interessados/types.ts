@@ -3,6 +3,7 @@ import type { StatusListaEspera } from "@prisma/client";
 export type ItemInteressado = {
   id: string;
   nomeCrianca: string;
+  foto: string | null;
   dataNascimento: Date | null;
   nomeResponsavel: string;
   parentescoContato: string | null;

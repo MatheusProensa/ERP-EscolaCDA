@@ -24,6 +24,7 @@ export function NovoInteressadoModal({ turmas }: { turmas: Turma[] }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         nomeCrianca: fd.get("nomeCrianca"),
+        foto: fd.get("foto") || null,
         dataNascimento: fd.get("dataNascimento") || null,
         nomeResponsavel: fd.get("nomeResponsavel"),
         parentescoContato: fd.get("parentescoContato") || null,

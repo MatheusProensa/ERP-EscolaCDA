@@ -142,6 +142,9 @@ model ListaEspera {
   id                  String            @id @default(cuid())
   nomeCrianca         String
   dataNascimento      DateTime?
+  /// Foto da criança (base64), mesmo padrão do Aluno.foto — vira o avatar
+  /// na tabela e na tela de perfil, opcional.
+  foto                String?
   nomeResponsavel     String
   /// Preenchido só quando quem liga não é o responsável direto (ex.: "Vó", "Irmã").
   parentescoContato   String?

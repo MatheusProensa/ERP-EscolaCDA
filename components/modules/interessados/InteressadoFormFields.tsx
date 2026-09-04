@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import type { Turma } from "@prisma/client";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
+import { PhotoUpload } from "@/components/ui/PhotoUpload";
 import { STATUS_INTERESSADO_BADGE } from "@/lib/statusVisual";
 
 /** Formata Date pro value de um <input type="date"> sem escorregar de fuso
@@ -17,6 +19,7 @@ function paraInputDate(data: Date | string | null | undefined): string {
 export type InteressadoInicial = {
   nomeCrianca?: string;
   dataNascimento?: Date | string | null;
+  foto?: string | null;
   nomeResponsavel?: string;
   parentescoContato?: string | null;
   telefoneResponsavel?: string;
@@ -34,8 +37,16 @@ export type InteressadoInicial = {
  * "novo" e o de "editar" — são os mesmos ~13 campos que a Duda preenchia
  * à mão no quadro do Canva, só que agora com status e busca de verdade. */
 export function InteressadoFormFields({ turmas, inicial }: { turmas: Turma[]; inicial?: InteressadoInicial }) {
+  // Controlado à parte porque o PhotoUpload não é um input nativo — o valor
+  // (base64 já redimensionado) viaja no submit via um input escondido, junto
+  // com o resto do FormData que os modais de Novo/Editar já leem.
+  const [foto, setFoto] = useState<string | null>(inicial?.foto ?? null);
+
   return (
     <>
+      <PhotoUpload value={foto} onChange={setFoto} nome={inicial?.nomeCrianca ?? ""} />
+      <input type="hidden" name="foto" value={foto ?? ""} />
+
       <div className="grid grid-cols-2 gap-3">
         <Input label="Nome da criança" name="nomeCrianca" required defaultValue={inicial?.nomeCrianca} />
         <Input label="Nascimento (opcional)" name="dataNascimento" type="date" defaultValue={paraInputDate(inicial?.dataNascimento)} />

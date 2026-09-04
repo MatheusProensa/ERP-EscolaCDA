@@ -152,7 +152,7 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
                 >
                   <Td className="font-medium">
                     <Link href={`/interessados/${item.id}`} className="flex items-center gap-2.5 group">
-                      <Avatar nome={item.nomeCrianca} size="sm" />
+                      <Avatar nome={item.nomeCrianca} foto={item.foto} size="sm" />
                       <div>
                         <span className="group-hover:text-cda-blue group-hover:underline underline-offset-2">
                           {item.nomeCrianca}

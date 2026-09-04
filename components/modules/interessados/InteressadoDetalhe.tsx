@@ -71,7 +71,7 @@ export function InteressadoDetalhe({ item, turmas }: { item: ItemInteressado; tu
           <Card className="p-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex items-center gap-4">
-                <Avatar nome={item.nomeCrianca} size="xl" />
+                <Avatar nome={item.nomeCrianca} foto={item.foto} size="xl" />
                 <div>
                   <h2 className="text-lg font-bold text-cda-text">{item.nomeCrianca}</h2>
                   {item.dataNascimento && (

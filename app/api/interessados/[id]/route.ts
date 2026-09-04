@@ -28,6 +28,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const body = await req.json();
   const {
     nomeCrianca,
+    foto,
     dataNascimento,
     nomeResponsavel,
     parentescoContato,
@@ -54,6 +55,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       where: { id },
       data: {
         nomeCrianca: formatarNomePessoa(nomeCrianca),
+        foto: foto || null,
         dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
         nomeResponsavel: formatarNomePessoa(nomeResponsavel),
         parentescoContato: parentescoContato?.trim() || null,

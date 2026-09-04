@@ -22,6 +22,7 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const {
     nomeCrianca,
+    foto,
     dataNascimento,
     nomeResponsavel,
     parentescoContato,
@@ -44,6 +45,7 @@ export async function POST(req: NextRequest) {
     const item = await prisma.listaEspera.create({
       data: {
         nomeCrianca: formatarNomePessoa(nomeCrianca),
+        foto: foto || null,
         dataNascimento: dataNascimento ? new Date(dataNascimento) : null,
         nomeResponsavel: formatarNomePessoa(nomeResponsavel),
         parentescoContato: parentescoContato?.trim() || null,
