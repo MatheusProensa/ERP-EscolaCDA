@@ -12,11 +12,11 @@ export default async function InteressadosPage() {
   const [itens, turmasRaw] = await Promise.all([
     prisma.listaEspera.findMany({
       include: { turmaDesejada: { select: { nome: true } } },
-      // Ordem cronológica do funil (data do 1º contato), não de quando foi
-      // cadastrado no sistema — é como a Duda pensava no quadro do Canva.
+      // Contato mais recente primeiro — quem ligou agora fica no topo da lista.
       // Quem não tem data ainda cai no fim (comportamento padrão do Postgres
-      // pra ASC: NULLS LAST).
-      orderBy: { dataPrimeiroContato: "asc" },
+      // pra DESC: NULLS FIRST só que aqui viraria NULLS LAST porque é isso
+      // que a Duda quer ver por último, não em cima).
+      orderBy: [{ dataPrimeiroContato: { sort: "desc", nulls: "last" } }],
     }),
     prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }),
   ]);
