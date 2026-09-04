@@ -602,6 +602,34 @@ model EventoCalendario {
   createdAt DateTime @default(now())
 }
 
+/// Escala de horários da equipe (entrada/saída por contraturno-turma, mais
+/// avisos de organização) — a Duda mantinha isso num quadro A3 montado no
+/// Canva pra cada ano. Cada linha aqui é um "bloco" (card) da tela, na ordem
+/// em que aparece.
+model EscalaEquipeBloco {
+  id                 String            @id @default(cuid())
+  ano                Int
+  ordem              Int
+  titulo             String
+  tipo               TipoEscalaBloco   @default(TURNO)
+  /// Só pra TURNO: horários citados no bloco, como referência visual (não
+  /// necessariamente 1 pra 1 com cada entrada/saída — ver nota no seed).
+  horariosReferencia String[]          @default([])
+  /// Só pra TURNO: [{ pessoa, nota }], nota é o que já vinha escrito no
+  /// quadro (ex.: "início do turno", "vem do CTI").
+  entradas           Json?
+  saidas             Json?
+  /// Só pra NOTA: texto livre (organização de turmas, avisos gerais).
+  conteudoLivre      String?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+enum TipoEscalaBloco {
+  TURNO
+  NOTA
+}
+
 model DocumentoInstitucional {
   id         String    @id @default(cuid())
   titulo     String
