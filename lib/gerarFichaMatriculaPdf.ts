@@ -297,7 +297,7 @@ export async function gerarFichaMatriculaPdf(d: DadosFichaMatricula): Promise<st
   }
 
   // ---- Autorização de imagem (fora da grade, igual ao modelo) ----
-  y -= 8;
+  y -= 16;
   garantirEspaco(11);
   for (const l of quebrarLinhas(TEXTO_AUTORIZACAO_IMAGEM, 8.3, LARGURA_UTIL)) {
     garantirEspaco(10.5);

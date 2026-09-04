@@ -1,12 +1,11 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { AlertTriangle, ClipboardList } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
-import { Button } from "@/components/ui/Button";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { MatricularNaTurmaModal } from "@/components/modules/academico/MatricularNaTurmaModal";
 
@@ -56,10 +55,6 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
         ]}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <Button href={`/api/relatorios/chamada?turma=${turma.id}`} variant="outline" size="sm">
-              <ClipboardList className="h-3.5 w-3.5" />
-              Lista de chamada
-            </Button>
             <ExportButtons href="/api/relatorios/alunos" params={{ turma: turma.id }} />
             <MatricularNaTurmaModal turmaId={turma.id} alunosDisponiveis={alunosDisponiveis} />
           </div>
