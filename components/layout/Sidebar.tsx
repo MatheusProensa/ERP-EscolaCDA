@@ -32,9 +32,10 @@ import { getSupabaseRealtimeClient } from "@/lib/supabaseRealtimeClient";
 type NavItem = { label: string; href: string; icon: LucideIcon };
 type NavGroup = { label: string; items: NavItem[] };
 
-// NOVO: de 7 grupos pra 4 — "Escola", "Direção" e "Sistema" só tinham 1 item cada,
-// só bagunçavam o menu. Aniversariantes e Interessados foram pro Administrativo
-// (Duda usa os dois no dia a dia, junto com Documentos e Usuários).
+// De 7 grupos pra 3 — "Escola", "Direção" e "Sistema" só tinham 1 item cada,
+// só bagunçavam o menu, e "Pedagógico" também virou parte do Administrativo
+// (Acadêmico e Cardápio no dia a dia são tarefa da secretaria, junto com
+// Aniversariantes, Interessados, Documentos e Usuários).
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Principal",
@@ -43,13 +44,6 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Calendário", href: "/calendario", icon: CalendarDays },
       { label: "Mural", href: "/mural", icon: Megaphone },
       { label: "Chat", href: "/chat", icon: MessageCircle },
-    ],
-  },
-  {
-    label: "Pedagógico",
-    items: [
-      { label: "Acadêmico", href: "/academico", icon: GraduationCap },
-      { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
     ],
   },
   {
@@ -65,6 +59,8 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Interessados", href: "/interessados", icon: UserPlus },
       { label: "Aniversariantes", href: "/aniversariantes", icon: Cake },
+      { label: "Acadêmico", href: "/academico", icon: GraduationCap },
+      { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
       { label: "Funcionários", href: "/funcionarios", icon: UserCog },
       { label: "Estoque", href: "/estoque", icon: Package },
       { label: "Chaves", href: "/chaves", icon: KeyRound },
