@@ -12,7 +12,11 @@ export default async function InteressadosPage() {
   const [itens, turmasRaw] = await Promise.all([
     prisma.listaEspera.findMany({
       include: { turmaDesejada: { select: { nome: true } } },
-      orderBy: { createdAt: "desc" },
+      // Ordem cronológica do funil (data do 1º contato), não de quando foi
+      // cadastrado no sistema — é como a Duda pensava no quadro do Canva.
+      // Quem não tem data ainda cai no fim (comportamento padrão do Postgres
+      // pra ASC: NULLS LAST).
+      orderBy: { dataPrimeiroContato: "asc" },
     }),
     prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }),
   ]);

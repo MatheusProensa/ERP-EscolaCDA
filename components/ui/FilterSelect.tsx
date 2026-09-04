@@ -65,7 +65,10 @@ export function FilterSelect({
         createPortal(
           <div
             data-filter-select
-            style={{ position: "fixed", top: pos.top, left: pos.left, width: Math.max(pos.width, 200) }}
+            // NOVO: largura acompanha o conteúdo (min. a do botão, até um teto),
+            // e o texto quebra linha em vez de truncar com "..." — opções como
+            // "3º Ano, tarde ou contraturno" ficavam ilegíveis cortadas.
+            style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: Math.max(pos.width, 220), maxWidth: 340 }}
             className="z-50 max-h-72 overflow-auto rounded-lg border border-cda-border bg-white p-1.5 shadow-lg"
           >
             {options.map((o) => {
@@ -83,7 +86,7 @@ export function FilterSelect({
                     ativo ? "bg-cda-blue/10 text-cda-blue" : "text-cda-text2 hover:bg-cda-bg hover:text-cda-text"
                   )}
                 >
-                  <span className="truncate">{o.label}</span>
+                  <span className="whitespace-normal break-words">{o.label}</span>
                   {ativo && <Check className="h-3.5 w-3.5 shrink-0" />}
                 </button>
               );
