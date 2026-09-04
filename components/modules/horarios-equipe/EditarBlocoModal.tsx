@@ -26,12 +26,15 @@ function EditorPessoas({
     onChange(itens.filter((_, idx) => idx !== i));
   }
   function adicionar() {
-    onChange([...itens, { pessoa: "", nota: "" }]);
+    onChange([...itens, { pessoa: "", horario: "", nota: "" }]);
   }
 
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-xs font-medium text-cda-text2">{titulo}</label>
+      <p className="text-xs text-cda-text3">
+        Horário fica de fora se você não souber a hora exata — a tela usa lista simples nesse caso, sem inventar.
+      </p>
       <div className="flex flex-col gap-2">
         {itens.map((it, i) => (
           <div key={i} className="flex items-center gap-2">
@@ -39,7 +42,13 @@ function EditorPessoas({
               value={it.pessoa}
               onChange={(e) => set(i, "pessoa", e.target.value)}
               placeholder="Nome"
-              className="h-9 w-1/3 rounded-lg border border-cda-border bg-white px-2.5 text-sm text-cda-text outline-none focus:border-cda-blue"
+              className="h-9 w-[26%] rounded-lg border border-cda-border bg-white px-2.5 text-sm text-cda-text outline-none focus:border-cda-blue"
+            />
+            <input
+              value={it.horario ?? ""}
+              onChange={(e) => set(i, "horario", e.target.value)}
+              placeholder="Hora"
+              className="h-9 w-[18%] shrink-0 rounded-lg border border-cda-border bg-white px-2.5 text-sm text-cda-text outline-none focus:border-cda-blue"
             />
             <input
               value={it.nota}
