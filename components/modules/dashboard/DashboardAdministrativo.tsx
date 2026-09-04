@@ -39,7 +39,7 @@ export async function DashboardAdministrativo({ nome }: { nome: string }) {
       />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricCard icon={UserCog} tone="cat5" value={funcionariosAtivos} label="Funcionários ativos" />
+        <MetricCard icon={UserCog} tone="cat5" value={funcionariosAtivos} label="Funcionários ativos" href="/funcionarios" />
         {/* NOVO: ícone também troca junto com a cor — triângulo de alerta cinza
             com selo verde "Em dia" ficava contraditório (parece aviso, mas não é). */}
         <MetricCard
@@ -49,8 +49,9 @@ export async function DashboardAdministrativo({ nome }: { nome: string }) {
           label="Itens críticos no estoque"
           badge={criticos.length > 0 ? "Atenção" : "Em dia"}
           badgeVariant={criticos.length > 0 ? "red" : "green"}
+          href="/estoque"
         />
-        <MetricCard icon={KeyRound} tone="cat6" value={chavesEmprestadas} label="Chaves emprestadas" subtext="Ainda não devolvidas" />
+        <MetricCard icon={KeyRound} tone="cat6" value={chavesEmprestadas} label="Chaves emprestadas" subtext="Ainda não devolvidas" href="/chaves" />
       </div>
 
       <Card title="Estoque baixo">

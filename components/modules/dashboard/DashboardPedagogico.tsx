@@ -44,9 +44,9 @@ export async function DashboardPedagogico({ nome }: { nome: string }) {
       />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricCard icon={Users} tone="cat1" value={totalAlunos} label="Total de alunos" subtext="Matrículas ativas" />
-        <MetricCard icon={GraduationCap} tone="cat3" value={turmasAtivas} label="Turmas ativas" subtext="Ano letivo atual" />
-        <MetricCard icon={Megaphone} tone="cat4" value={avisosFixados} label="Avisos fixados" subtext="No mural" />
+        <MetricCard icon={Users} tone="cat1" value={totalAlunos} label="Total de alunos" subtext="Matrículas ativas" href="/alunos" />
+        <MetricCard icon={GraduationCap} tone="cat3" value={turmasAtivas} label="Turmas ativas" subtext="Ano letivo atual" href="/academico/turmas" />
+        <MetricCard icon={Megaphone} tone="cat4" value={avisosFixados} label="Avisos fixados" subtext="No mural" href="/mural" />
       </div>
 
       <div className="mb-5">
