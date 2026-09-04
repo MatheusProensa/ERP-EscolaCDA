@@ -63,35 +63,40 @@ export function FilterSelect({
       </button>
       {open &&
         createPortal(
-          <div
-            data-filter-select
-            // NOVO: largura acompanha o conteúdo (min. a do botão, até um teto),
-            // e o texto quebra linha em vez de truncar com "..." — opções como
-            // "3º Ano, tarde ou contraturno" ficavam ilegíveis cortadas.
-            style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: Math.max(pos.width, 220), maxWidth: 340 }}
-            className="z-50 max-h-72 overflow-auto rounded-lg border border-cda-border bg-white p-1.5 shadow-lg"
-          >
-            {options.map((o) => {
-              const ativo = o.value === value;
-              return (
-                <button
-                  key={o.value || "__todos"}
-                  type="button"
-                  onClick={() => {
-                    onChange(o.value);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    "flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
-                    ativo ? "bg-cda-blue/10 text-cda-blue" : "text-cda-text2 hover:bg-cda-bg hover:text-cda-text"
-                  )}
-                >
-                  <span className="whitespace-normal break-words">{o.label}</span>
-                  {ativo && <Check className="h-3.5 w-3.5 shrink-0" />}
-                </button>
-              );
-            })}
-          </div>,
+          <>
+            {/* NOVO: fundo esmaecido enquanto o menu tá aberto — antes dava pra ver
+                pedaço da tabela "vazando" do lado do popup, ficava com cara de bug. */}
+            <div className="fixed inset-0 z-40 bg-cda-text/10 backdrop-blur-[1px]" onClick={() => setOpen(false)} />
+            <div
+              data-filter-select
+              // Largura acompanha o conteúdo (min. a do botão, até um teto), e o
+              // texto quebra linha em vez de truncar com "..." — opções como
+              // "3º Ano, tarde ou contraturno" ficavam ilegíveis cortadas.
+              style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: Math.max(pos.width, 220), maxWidth: 340 }}
+              className="z-50 max-h-72 overflow-auto rounded-lg border border-cda-border bg-white p-1.5 shadow-xl"
+            >
+              {options.map((o) => {
+                const ativo = o.value === value;
+                return (
+                  <button
+                    key={o.value || "__todos"}
+                    type="button"
+                    onClick={() => {
+                      onChange(o.value);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      "flex w-full items-center justify-between gap-2 rounded-md px-2.5 py-2 text-left text-sm font-medium transition-colors",
+                      ativo ? "bg-cda-blue/10 text-cda-blue" : "text-cda-text2 hover:bg-cda-bg hover:text-cda-text"
+                    )}
+                  >
+                    <span className="whitespace-normal break-words">{o.label}</span>
+                    {ativo && <Check className="h-3.5 w-3.5 shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </>,
           document.body
         )}
     </div>
