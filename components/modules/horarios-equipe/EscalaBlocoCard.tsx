@@ -65,7 +65,10 @@ function LinhaDoTempo({ itens, cor }: { itens: PessoaEvento[]; cor: string }) {
 
   const grupos = agruparPorHorario(itens);
   return (
-    <div className="flex gap-0 overflow-x-auto pb-1">
+    // NOVO: py-1.5 (não só pb-1) dá espaço vertical pro anel da bolinha —
+    // com overflow-x:auto e overflow-y no padrão (visible), o navegador força
+    // overflow-y a virar auto também, e sem folga o anel saía cortado em cima.
+    <div className="flex gap-0 overflow-x-auto py-1.5">
       {grupos.map((g, i) => (
         <div key={i} className="flex items-start">
           {i > 0 && <div className="mt-[7px] h-px w-5 shrink-0" style={{ backgroundColor: "var(--cda-border)" }} />}
