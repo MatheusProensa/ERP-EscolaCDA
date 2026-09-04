@@ -28,6 +28,25 @@ function corPorTexto(texto: string): BadgeVariant {
   return CAT_CICLO[h % CAT_CICLO.length];
 }
 
+// Séries do currículo (mesma ordem do resto do sistema) — usadas pra montar
+// TODAS as combinações de série × turno no filtro, não só as que por acaso já
+// têm algum interessado. Turmas extras (ex.: "Contraturno I") que apareçam
+// nos dados mas não estejam aqui entram avulsas, sem cruzar turno.
+const SERIES_CURRICULO = [
+  "Berçário I", "Berçário II", "Maternal I", "Maternal II",
+  "Pré-escola I", "Pré-escola II", "1º Ano", "2º Ano", "3º Ano",
+];
+const TURNOS = ["manhã", "tarde", "integral", "contraturno"];
+
+/** "Berçário I, tarde" -> { serie: "Berçário I", turno: "tarde" }. Usado tanto
+ * pra montar as opções do filtro quanto pra comparar com o que cada linha tem. */
+function parseInteresse(texto: string | null | undefined): { serie: string; turno: string | null } {
+  if (!texto) return { serie: "", turno: null };
+  const i = texto.indexOf(",");
+  if (i === -1) return { serie: texto.trim(), turno: null };
+  return { serie: texto.slice(0, i).trim(), turno: texto.slice(i + 1).trim().toLowerCase() };
+}
+
 export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[]; turmas: Turma[] }) {
   const router = useRouter();
   const [busca, setBusca] = useState("");
@@ -36,15 +55,26 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
   const [carregando, setCarregando] = useState<string | null>(null);
   const [editando, setEditando] = useState<ItemInteressado | null>(null);
 
-  // Lista de turmas/interesses que realmente aparecem nos dados — sem opção
-  // vazia poluindo o filtro se ninguém marcou aquela turma ainda.
-  const interessesDisponiveis = useMemo(() => {
-    const set = new Set<string>();
+  // Opções do filtro de turma/interesse: TODAS as combinações de série ×
+  // turno do currículo (não só as que já têm algum interessado), mais
+  // qualquer série "extra" que apareça nos dados e não esteja na lista
+  // curricular (ex.: nome digitado diferente, ou uma turma administrativa).
+  const opcoesInteresse = useMemo(() => {
+    const extras = new Set<string>();
     for (const i of itens) {
-      const v = i.turmaDesejada?.nome ?? i.interesseTexto;
-      if (v) set.add(v);
+      const { serie } = parseInteresse(i.turmaDesejada?.nome ?? i.interesseTexto);
+      if (serie && !SERIES_CURRICULO.includes(serie)) extras.add(serie);
     }
-    return Array.from(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+    const series = [...SERIES_CURRICULO, ...Array.from(extras).sort((a, b) => a.localeCompare(b, "pt-BR"))];
+
+    const opcoes: { value: string; label: string }[] = [];
+    for (const serie of series) {
+      opcoes.push({ value: serie, label: serie });
+      for (const turno of TURNOS) {
+        opcoes.push({ value: `${serie}::${turno}`, label: `${serie}, ${turno}` });
+      }
+    }
+    return opcoes;
   }, [itens]);
 
   async function alterarStatus(id: string, status: string) {
@@ -65,9 +95,16 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
   }
 
   const filtrados = useMemo(() => {
+    const [selSerie, selTurno] = filtroInteresse ? filtroInteresse.split("::") : [null, null];
     return itens.filter((i) => {
       if (filtroStatus && i.status !== filtroStatus) return false;
-      if (filtroInteresse && (i.turmaDesejada?.nome ?? i.interesseTexto) !== filtroInteresse) return false;
+      if (selSerie) {
+        const { serie, turno } = parseInteresse(i.turmaDesejada?.nome ?? i.interesseTexto);
+        if (serie !== selSerie) return false;
+        // Turno "tarde ou integral" (anotação de dúvida do PDF) conta pros dois
+        // filtros — a família aceitaria qualquer um dos dois.
+        if (selTurno && !(turno && turno.includes(selTurno))) return false;
+      }
       if (busca) {
         const alvo = `${i.nomeCrianca} ${i.nomeResponsavel}`.toLowerCase();
         if (!alvo.includes(busca.toLowerCase())) return false;
@@ -92,7 +129,7 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
           value={filtroInteresse}
           onChange={setFiltroInteresse}
           placeholder="Toda turma/interesse"
-          options={[{ value: "", label: "Toda turma/interesse" }, ...interessesDisponiveis.map((v) => ({ value: v, label: v }))]}
+          options={[{ value: "", label: "Toda turma/interesse" }, ...opcoesInteresse]}
         />
         <FilterSelect
           className="w-52"
