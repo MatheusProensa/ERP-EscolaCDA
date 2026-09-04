@@ -36,7 +36,10 @@ const SERIES_CURRICULO = [
   "Berçário I", "Berçário II", "Maternal I", "Maternal II",
   "Pré-escola I", "Pré-escola II", "1º Ano", "2º Ano", "3º Ano",
 ];
-const TURNOS = ["manhã", "tarde", "integral", "contraturno"];
+// Na CDA "contraturno" e "manhã" são o mesmo turno (por isso só 3 opções,
+// não 4) — dado extraído do PDF como "CT"/"contraturno" é normalizado pra
+// "manhã" direto no banco, ver SQL de correção enviado no chat.
+const TURNOS = ["manhã", "tarde", "integral"];
 
 /** "Berçário I, tarde" -> { serie: "Berçário I", turno: "tarde" }. Usado tanto
  * pra montar as opções do filtro quanto pra comparar com o que cada linha tem. */
