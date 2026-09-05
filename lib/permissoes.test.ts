@@ -55,9 +55,17 @@ describe("rotaPermitida", () => {
 });
 
 describe("acessoPermitido (permissão granular por pessoa)", () => {
-  it("sem override, cai no comportamento padrão do Role", () => {
+  // "estoque" está na grade (MODULOS) — pra módulo da grade, o Role não
+  // decide mais nada sozinho, só a marcação explícita (ver comentário de
+  // acessoPermitido em permissoes.ts). Sem override, nem quem o Role
+  // liberaria por padrão (ADMINISTRATIVO, dono normal de Estoque) entra.
+  it("módulo da grade sem override nega acesso, mesmo pra Role que o pacote padrão liberaria", () => {
     expect(acessoPermitido("/estoque", "GET", "PEDAGOGICO")).toBe(false);
-    expect(acessoPermitido("/estoque", "POST", "ADMINISTRATIVO")).toBe(true);
+    expect(acessoPermitido("/estoque", "POST", "ADMINISTRATIVO")).toBe(false);
+  });
+
+  it("ADMIN sempre acessa módulo da grade, mesmo sem override — senão ninguém configura a grade de mais ninguém", () => {
+    expect(acessoPermitido("/estoque", "POST", "ADMIN")).toBe(true);
   });
 
   it("override NENHUM bloqueia mesmo quem o Role liberaria", () => {

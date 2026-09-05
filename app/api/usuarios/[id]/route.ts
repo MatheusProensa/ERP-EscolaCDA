@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import type { Role } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ROLES_ATIVAS } from "@/lib/permissoes";
+import { ROLES_ATIVAS, acessoPermitido } from "@/lib/permissoes";
 import { gerarSenhaAleatoria } from "@/lib/senha";
 import { validarUploadDataUri } from "@/lib/validarUpload";
 import { erroApi } from "@/lib/apiError";
@@ -14,6 +14,9 @@ import { erroApi } from "@/lib/apiError";
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  if (!acessoPermitido(req.nextUrl.pathname, req.method, session.user.role, session.user.permissoes)) {
+    return NextResponse.json({ error: "Sem permissão para este setor" }, { status: 403 });
+  }
 
   const { id } = await params;
   const body = await req.json();
@@ -88,6 +91,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  if (!acessoPermitido(req.nextUrl.pathname, req.method, session.user.role, session.user.permissoes)) {
+    return NextResponse.json({ error: "Sem permissão para este setor" }, { status: 403 });
+  }
 
   const { id } = await params;
   // Deixa escolher a senha (senhaEscolhida) em vez de só gerar uma aleatória
@@ -107,9 +113,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   return NextResponse.json({ senha });
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  if (!acessoPermitido(req.nextUrl.pathname, req.method, session.user.role, session.user.permissoes)) {
+    return NextResponse.json({ error: "Sem permissão para este setor" }, { status: 403 });
+  }
 
   const { id } = await params;
   if (id === session.user.id) {

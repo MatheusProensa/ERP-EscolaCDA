@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
-import { MODULOS, type NivelPermissao } from "@/lib/permissoes";
+import { MODULOS, acessoPermitido, type NivelPermissao } from "@/lib/permissoes";
 
 const NIVEIS_VALIDOS = ["HERDAR", "NENHUM", "VER", "EDITAR"] as const;
 const CHAVES_VALIDAS = new Set(MODULOS.map((m) => m.chave));
@@ -14,6 +14,11 @@ const CHAVES_VALIDAS = new Set(MODULOS.map((m) => m.chave));
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  // Rota mais sensível do sistema — dá acesso EDITAR em qualquer setor pra
+  // qualquer pessoa. Confere de novo aqui dentro, não só no middleware.
+  if (!acessoPermitido(req.nextUrl.pathname, req.method, session.user.role, session.user.permissoes)) {
+    return NextResponse.json({ error: "Sem permissão para este setor" }, { status: 403 });
+  }
 
   const { id } = await params;
   const alvo = await prisma.user.findUnique({ where: { id } });

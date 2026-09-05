@@ -29,6 +29,10 @@
     "react-dom": "19.2.4",
     "recharts": "^3.9.2"
   },
+  "overrides": {
+    "deepmerge-ts": "^8.0.2",
+    "uuid": "^11.1.1"
+  },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",

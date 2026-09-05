@@ -1,9 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { validarUploadDataUri } from "./validarUpload";
 
-function dataUri(mime: string, tamanhoBytes: number): string {
-  // base64 tem ~4/3 do tamanho binário original.
-  const base64 = "A".repeat(Math.ceil((tamanhoBytes * 4) / 3));
+// Assinatura real (magic bytes) de cada tipo — sem isso na frente, o
+// conteúdo "de mentira" dos testes seria rejeitado pela checagem de
+// assinatura, que existe justamente pra não aceitar bytes que não batem
+// com o tipo declarado.
+const ASSINATURA: Record<string, Buffer> = {
+  "image/png": Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+  "image/jpeg": Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
+  "image/webp": Buffer.concat([Buffer.from("RIFF"), Buffer.from([0, 0, 0, 0]), Buffer.from("WEBP")]),
+  "application/pdf": Buffer.from("%PDF-1.4"),
+};
+
+function dataUri(mime: string, tamanhoBytes: number, { assinaturaValida = true } = {}): string {
+  const cabecalho = assinaturaValida && ASSINATURA[mime] ? ASSINATURA[mime] : Buffer.alloc(0);
+  const resto = Buffer.alloc(Math.max(0, tamanhoBytes - cabecalho.length), 0x41); // 0x41 = "A"
+  const base64 = Buffer.concat([cabecalho, resto]).toString("base64");
   return `data:${mime};base64,${base64}`;
 }
 
@@ -14,6 +26,11 @@ describe("validarUploadDataUri", () => {
 
   it("aceita PDF dentro do limite", () => {
     expect(validarUploadDataUri(dataUri("application/pdf", 1024))).toEqual({ ok: true });
+  });
+
+  it("aceita png e webp dentro do limite", () => {
+    expect(validarUploadDataUri(dataUri("image/png", 1024))).toEqual({ ok: true });
+    expect(validarUploadDataUri(dataUri("image/webp", 1024))).toEqual({ ok: true });
   });
 
   it("rejeita quando não é string", () => {
@@ -47,4 +64,15 @@ describe("validarUploadDataUri", () => {
     expect(r.ok).toBe(true);
   });
 
+  it("rejeita quando o mimetype diz uma coisa mas o conteúdo é outra (mimetype forjado)", () => {
+    // Declara "image/png" mas manda bytes de PDF — o navegador nunca faz
+    // isso sozinho, mas chamar a API direto (sem passar pela tela) sim.
+    const r = validarUploadDataUri(dataUri("image/png", 1024, { assinaturaValida: false }));
+    expect(r).toEqual({ ok: false, erro: "O conteúdo do arquivo não bate com o tipo informado" });
+  });
+
+  it("rejeita PDF sem a assinatura %PDF- de verdade", () => {
+    const r = validarUploadDataUri(dataUri("application/pdf", 1024, { assinaturaValida: false }));
+    expect(r.ok).toBe(false);
+  });
 });

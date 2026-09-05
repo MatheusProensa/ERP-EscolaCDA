@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { ROLES_ATIVAS } from "@/lib/permissoes";
+import { ROLES_ATIVAS, acessoPermitido } from "@/lib/permissoes";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  if (!acessoPermitido(req.nextUrl.pathname, req.method, session.user.role, session.user.permissoes)) {
+    return NextResponse.json({ error: "Sem permissão para este setor" }, { status: 403 });
+  }
 
   const usuarios = await prisma.user.findMany({
     orderBy: { name: "asc" },
@@ -15,9 +18,15 @@ export async function GET() {
   return NextResponse.json(usuarios);
 }
 
+// Cria usuário — inclusive com perfil Admin. Confere de novo aqui dentro (não
+// só no middleware): é a rota que decide quem entra no sistema e com que
+// nível de acesso, não pode depender só do matcher do middleware.
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+  if (!acessoPermitido(req.nextUrl.pathname, req.method, session.user.role, session.user.permissoes)) {
+    return NextResponse.json({ error: "Sem permissão para este setor" }, { status: 403 });
+  }
 
   const body = await req.json();
   const { name, email, password, role } = body;
