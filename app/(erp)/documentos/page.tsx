@@ -6,7 +6,7 @@ import { Alert } from "@/components/ui/Alert";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { NovoDocumentoModal } from "@/components/modules/documentos/NovoDocumentoModal";
 import { DocumentosLista } from "@/components/modules/documentos/DocumentosLista";
-import { CATEGORIAS_DOCUMENTO, formatarData } from "@/lib/utils";
+import { CATEGORIAS_DOCUMENTO, formatarData, hojeBrasilia } from "@/lib/utils";
 
 export default async function DocumentosPage() {
   const documentos = await prisma.documentoInstitucional.findMany({
@@ -21,7 +21,11 @@ export default async function DocumentosPage() {
   const outras = documentos.filter((d) => !CATEGORIAS_DOCUMENTO.includes(d.categoria));
   if (outras.length > 0) grupos.push({ categoria: "Outros", itens: outras });
 
-  const hoje = new Date();
+  // hojeBrasilia() (data pura, meia-noite UTC) em vez de new Date() (instante
+  // real): comparado contra o instante agora, um documento com validade "hoje"
+  // já aparecia vencido a partir das 21h do dia anterior em Brasília (meia-
+  // noite UTC do dia da validade chega bem antes disso).
+  const hoje = hojeBrasilia();
   const vencidos = documentos.filter((d) => d.validade && new Date(d.validade) < hoje);
 
   return (

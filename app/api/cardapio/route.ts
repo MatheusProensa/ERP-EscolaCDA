@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PUBLICOS_CARDAPIO } from "@/components/modules/cardapio/constants";
 import { comDatasDoMes } from "@/components/modules/cardapio/esqueleto";
 import type { SemanasCardapio } from "@/components/modules/cardapio/types";
+import { hojeBrasilia } from "@/lib/utils";
 
 const SEMANAS_VAZIAS: SemanasCardapio = { impar: [], par: [] };
 
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const { searchParams } = new URL(req.url);
-  const hoje = new Date();
+  const hoje = hojeBrasilia();
   const ano = Number(searchParams.get("ano")) || hoje.getUTCFullYear();
   const mes = Number(searchParams.get("mes")) || hoje.getUTCMonth() + 1;
 

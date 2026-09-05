@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdfMultiSecao, respostaPDF, nomeArquivoPdf, type SecaoRelatorio } from "@/lib/gerarRelatorioPdf";
 import { calcularMes, minParaHora, OCORRENCIA_LABEL, type RegistroPontoDia } from "@/lib/ponto";
+import { hojeBrasilia } from "@/lib/utils";
 
 function inicioMes(mes: number, ano: number) {
   return new Date(Date.UTC(ano, mes - 1, 1));
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const params = request.nextUrl.searchParams;
-  const hoje = new Date();
+  const hoje = hojeBrasilia();
   const mes = Number(params.get("mes")) || hoje.getUTCMonth() + 1;
   const ano = Number(params.get("ano")) || hoje.getUTCFullYear();
   const funcionarioId = params.get("funcionarioId");

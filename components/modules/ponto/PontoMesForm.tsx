@@ -56,7 +56,10 @@ export function PontoMesForm({
   funcionarioId: string;
   jornadaPrevistaMinutos: number | null;
 }) {
-  const hoje = new Date();
+  // "Hoje" no fuso de quem tá vendo a tela — pinado em meia-noite UTC pra
+  // comparar certo com o resto do mês, que já trabalha com data pura.
+  const agora = new Date();
+  const hoje = new Date(Date.UTC(agora.getFullYear(), agora.getMonth(), agora.getDate()));
   const [mes, setMes] = useState(hoje.getUTCMonth() + 1);
   const [ano, setAno] = useState(hoje.getUTCFullYear());
   const [linhas, setLinhas] = useState<Linha[]>([]);

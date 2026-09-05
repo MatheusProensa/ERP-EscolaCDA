@@ -5,7 +5,7 @@ import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { separarResponsaveis } from "@/lib/alunos";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdfSecoesEmpilhadas, respostaPDF, nomeArquivoPdf, type ColunaRelatorio } from "@/lib/gerarRelatorioPdf";
-import { formatarData, formatarTelefone, ordenarTurmas } from "@/lib/utils";
+import { formatarData, formatarTelefone, ordenarTurmas, dataArquivo } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -65,12 +65,12 @@ export async function GET(request: NextRequest) {
         };
       }),
     });
-    return respostaPDF(pdf, nomeArquivoPdf("Contatos Telefonicos", new Date().toLocaleDateString("pt-BR").replace(/\//g, "-")));
+    return respostaPDF(pdf, nomeArquivoPdf("Contatos Telefonicos", dataArquivo()));
   }
 
   const linhasCSV = turmasOrdenadas.flatMap((nomeTurma) =>
     linhasDaTurma(porTurma.get(nomeTurma)!).map((linha) => ({ Turma: nomeTurma, ...linha }))
   );
   const csv = paraCSV(linhasCSV, ["Turma", "Nome", "Nascimento", "Resp1", "Tel1", "Resp2", "Tel2"]);
-  return respostaCSV(csv, `Contatos Telefonicos - ${new Date().toLocaleDateString("pt-BR").replace(/\//g, "-")}.csv`);
+  return respostaCSV(csv, `Contatos Telefonicos - ${dataArquivo()}.csv`);
 }

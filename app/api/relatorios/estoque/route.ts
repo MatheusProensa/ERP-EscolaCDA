@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdf, respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { statusEstoque, STATUS_ESTOQUE_INFO, type StatusEstoque } from "@/lib/estoqueStatus";
+import { dataArquivo } from "@/lib/utils";
 
 export async function GET(request: NextRequest) {
   const session = await auth();
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest) {
       ? `${linhas.length} item(ns) — ${filtrosAplicados.join(" · ")}`
       : `${linhas.length} item(ns) cadastrado(s)`;
 
-  const data = new Date().toLocaleDateString("pt-BR").replace(/\//g, "-");
+  const data = dataArquivo();
   const sufixoArquivo = filtrosAplicados.length > 0 ? "Filtrado" : "";
 
   if (params.get("formato") === "pdf") {

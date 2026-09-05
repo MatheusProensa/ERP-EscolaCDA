@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { acessoPermitido } from "@/lib/permissoes";
+import { dataArquivo } from "@/lib/utils";
 
 /** Backup manual sob demanda: exporta todos os dados estruturados do sistema em
  * JSON pra quem tem acesso de gestão baixar e guardar off-site (Drive, etc.).
@@ -96,7 +97,7 @@ export async function GET(req: NextRequest) {
     mensagens,
   };
 
-  const nomeArquivo = `Backup Escola CDA - ${new Date().toLocaleDateString("pt-BR").replace(/\//g, "-")}.json`;
+  const nomeArquivo = `Backup Escola CDA - ${dataArquivo()}.json`;
   return new NextResponse(JSON.stringify(backup), {
     headers: {
       "Content-Type": "application/json",

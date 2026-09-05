@@ -4,10 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { corCategoria, MESES } from "@/lib/calendario";
+import { hojeBrasilia } from "@/lib/utils";
 
 export async function ProximosEventosWidget() {
-  const hoje = new Date();
-  const inicioHoje = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), hoje.getUTCDate()));
+  // hojeBrasilia() (não new Date()) — o servidor roda em UTC, e usar a data
+  // "agora" direto excluía os eventos de HOJE da lista entre 21h e meia-noite
+  // no horário de Brasília (o corte ficava marcado como amanhã).
+  const inicioHoje = hojeBrasilia();
 
   const eventos = await prisma.eventoCalendario.findMany({
     where: { data: { gte: inicioHoje } },

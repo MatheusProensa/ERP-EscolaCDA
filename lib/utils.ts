@@ -89,6 +89,32 @@ export function formatarData(data: Date | string): string {
   return d.toLocaleDateString("pt-BR", { timeZone: "UTC" });
 }
 
+/** "Hoje" como data de calendário pura (meia-noite UTC), no fuso de
+ * Brasília — pra usar com getUTCFullYear/getUTCMonth/getUTCDate exatamente
+ * como qualquer outra data pura do sistema (nascimento, evento de
+ * calendário). `new Date()` sozinho é o instante AGORA em UTC (o servidor
+ * roda em UTC); tirar ano/mês/dia direto dele com getUTCFullYear/Month/Date
+ * devolve o dia de AMANHÃ pra qualquer usuário no Brasil entre 21h e meia-
+ * noite — foi exatamente esse bug que já tinha aparecido no "Gerado em" dos
+ * PDFs, só que aqui afeta lógica de negócio (ex.: "hoje é aniversário de
+ * quem", mês padrão do filtro), não só o texto exibido. */
+export function hojeBrasilia(): Date {
+  const [ano, mes, dia] = new Date()
+    .toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })
+    .split("-")
+    .map(Number);
+  return new Date(Date.UTC(ano, mes - 1, dia));
+}
+
+/** "DD-MM-AAAA" de hoje, no horário de Brasília — pro sufixo de nome de
+ * arquivo gerado no servidor (relatórios, backup). Sem o timeZone explícito,
+ * o servidor (Vercel, UTC) pode datar o arquivo com o dia de AMANHÃ pra
+ * qualquer exportação feita depois das 21h em Brasília (mesma causa raiz do
+ * "Gerado em" que já tinha saído errado nos PDFs). */
+export function dataArquivo(): string {
+  return new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }).replace(/\//g, "-");
+}
+
 export function formatarDataHora(data: Date | string): string {
   const d = typeof data === "string" ? new Date(data) : data;
   // Fuso fixo explícito: sem isso, o servidor (Vercel, geralmente UTC) e o

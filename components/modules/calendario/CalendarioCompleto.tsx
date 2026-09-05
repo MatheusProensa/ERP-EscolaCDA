@@ -32,7 +32,11 @@ type Evento = {
 
 export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
   const router = useRouter();
-  const hoje = new Date();
+  // "Hoje" no fuso de quem tá vendo a tela (não UTC) — reconstruído como data
+  // pura (meia-noite UTC) pra comparar certo com o resto da grade, que já usa
+  // getUTCFullYear/Month/Date em cima de datas de calendário puras.
+  const agora = new Date();
+  const hoje = new Date(Date.UTC(agora.getFullYear(), agora.getMonth(), agora.getDate()));
   const [mes, setMes] = useState(hoje.getUTCMonth() + 1);
   const [ano, setAno] = useState(hoje.getUTCFullYear());
   const [eventos, setEventos] = useState<Evento[]>([]);

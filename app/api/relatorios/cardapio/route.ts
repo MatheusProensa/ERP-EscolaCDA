@@ -8,6 +8,7 @@ import { PUBLICOS_CARDAPIO, MESES_CARDAPIO, DIA_LABEL_CARDAPIO } from "@/compone
 import type { BadgeVariant } from "@/components/ui/Badge";
 import { gerarEsqueletoSemanas } from "@/components/modules/cardapio/esqueleto";
 import type { ItemCardapioMes, SemanasCardapio } from "@/components/modules/cardapio/types";
+import { hojeBrasilia } from "@/lib/utils";
 
 // Mesma cor de identidade de cada público usada na tela (BADGE_VARIANT_STYLE
 // via CSS var) — convertida pro hex real, já que o PDF não lê variável CSS.
@@ -29,7 +30,7 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const params = req.nextUrl.searchParams;
-  const hoje = new Date();
+  const hoje = hojeBrasilia();
   const ano = Number(params.get("ano")) || hoje.getUTCFullYear();
   const mes = Number(params.get("mes")) || hoje.getUTCMonth() + 1;
   const publicoFiltro = params.get("publico");

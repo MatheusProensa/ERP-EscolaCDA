@@ -49,7 +49,11 @@ function extrairFallbackFormula(formula: string): string | null {
 
 function celulaParaTexto(valor: ExcelJS.CellValue): string {
   if (valor === null || valor === undefined) return "";
-  if (valor instanceof Date) return isNaN(valor.getTime()) ? "" : valor.toLocaleDateString("pt-BR");
+  // timeZone: "UTC" (não América/Sao_Paulo) — datas de planilha (ex.: nascimento)
+  // não têm hora de verdade, o ExcelJS já entrega como meia-noite UTC. Formatar
+  // em fuso negativo voltaria um dia (mesmo bug do formatarData em lib/utils.ts,
+  // só que na direção oposta ao "Gerado em" de timestamp real).
+  if (valor instanceof Date) return isNaN(valor.getTime()) ? "" : valor.toLocaleDateString("pt-BR", { timeZone: "UTC" });
   if (typeof valor === "object") {
     if ("richText" in valor) return valor.richText.map((r) => r.text).join("");
     if ("formula" in valor) {

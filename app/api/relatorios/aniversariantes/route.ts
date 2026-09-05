@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdfSecoesEmpilhadas, respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
+import { hojeBrasilia } from "@/lib/utils";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -19,7 +20,7 @@ export async function GET(request: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const params = request.nextUrl.searchParams;
-  const hoje = new Date();
+  const hoje = hojeBrasilia();
   const mesFiltro = Number(params.get("mes")) || hoje.getUTCMonth() + 1;
   const anoAtual = hoje.getUTCFullYear();
   const nomeMes = MESES[mesFiltro - 1];

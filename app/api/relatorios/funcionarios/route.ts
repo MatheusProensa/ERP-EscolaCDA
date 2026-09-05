@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdf, respostaPDF, nomeArquivoPdf, type ColunaRelatorio } from "@/lib/gerarRelatorioPdf";
-import { formatarData, formatarTelefone } from "@/lib/utils";
+import { formatarData, formatarTelefone, dataArquivo } from "@/lib/utils";
 
 // Lista completa de funcionários — pra RH/direção terem um PDF/CSV pra imprimir
 // ou levar pra reunião. "Contatos telefônicos" (só nome+telefone, por setor,
@@ -47,9 +47,9 @@ export async function GET(request: NextRequest) {
       colunas,
       linhas,
     });
-    return respostaPDF(pdf, nomeArquivoPdf("Funcionarios", new Date().toLocaleDateString("pt-BR").replace(/\//g, "-")));
+    return respostaPDF(pdf, nomeArquivoPdf("Funcionarios", dataArquivo()));
   }
 
   const csv = paraCSV(linhas, ["Nome", "Setor", "Cargo", "Telefone", "Email", "Admissao", "Status"]);
-  return respostaCSV(csv, `Funcionarios - ${new Date().toLocaleDateString("pt-BR").replace(/\//g, "-")}.csv`);
+  return respostaCSV(csv, `Funcionarios - ${dataArquivo()}.csv`);
 }

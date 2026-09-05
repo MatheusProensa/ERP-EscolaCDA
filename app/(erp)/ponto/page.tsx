@@ -11,6 +11,7 @@ import { ExportButtons } from "@/components/ui/ExportButtons";
 import { GerenciarParticipantesModal } from "@/components/modules/ponto/GerenciarParticipantesModal";
 import { JornadaPrevistaCell } from "@/components/modules/ponto/JornadaPrevistaCell";
 import { calcularMes, minParaHora, type RegistroPontoDia } from "@/lib/ponto";
+import { hojeBrasilia } from "@/lib/utils";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -23,7 +24,7 @@ export default async function PontoPage({
   searchParams: Promise<{ mes?: string; ano?: string }>;
 }) {
   const { mes, ano: anoParam } = await searchParams;
-  const hoje = new Date();
+  const hoje = hojeBrasilia();
   const mesFiltro = mes ? Number(mes) : hoje.getUTCMonth() + 1;
   const ano = anoParam ? Number(anoParam) : hoje.getUTCFullYear();
   const anoAtual = hoje.getUTCFullYear();

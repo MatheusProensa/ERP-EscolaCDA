@@ -11,6 +11,7 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { ExportButtons } from "@/components/ui/ExportButtons";
+import { hojeBrasilia } from "@/lib/utils";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -42,7 +43,7 @@ export default async function AniversariantesPage({
   searchParams: Promise<{ mes?: string }>;
 }) {
   const { mes } = await searchParams;
-  const hoje = new Date();
+  const hoje = hojeBrasilia();
   const mesFiltro = mes ? Number(mes) : hoje.getUTCMonth() + 1;
   const anoAtual = hoje.getUTCFullYear();
 

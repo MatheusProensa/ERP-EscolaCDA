@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calcularMes, type RegistroPontoDia } from "@/lib/ponto";
 import { inicioMes, fimMes, salvarRegistrosDoMes, type LinhaPonto } from "@/lib/pontoWrite";
+import { hojeBrasilia } from "@/lib/utils";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ funcionarioId: string }> }) {
   const session = await auth();
@@ -10,7 +11,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
   const { funcionarioId } = await params;
   const searchParams = request.nextUrl.searchParams;
-  const hoje = new Date();
+  const hoje = hojeBrasilia();
   const mes = Number(searchParams.get("mes")) || hoje.getUTCMonth() + 1;
   const ano = Number(searchParams.get("ano")) || hoje.getUTCFullYear();
 

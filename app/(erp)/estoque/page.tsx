@@ -2,10 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EstoquePainel } from "@/components/modules/estoque/EstoquePainel";
 import { NovoItemModal } from "@/components/modules/estoque/NovoItemModal";
+import { hojeBrasilia } from "@/lib/utils";
 
 export default async function EstoquePage() {
-  const agora = new Date();
-  const inicioMes = new Date(agora.getFullYear(), agora.getMonth(), 1);
+  // hojeBrasilia() (não new Date()): agora.getMonth() num servidor que roda em
+  // UTC (Vercel) já é UTC por baixo dos panos — "entradas/saídas deste mês"
+  // virava do mês errado entre 21h e meia-noite em Brasília.
+  const hoje = hojeBrasilia();
+  const inicioMes = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), 1));
 
   const [itens, movimentacoes, entradasMes, saidasMes] = await Promise.all([
     prisma.itemEstoque.findMany({ orderBy: { nome: "asc" } }),

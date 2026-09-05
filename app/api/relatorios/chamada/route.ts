@@ -29,7 +29,9 @@ export async function GET(request: NextRequest) {
   });
 
   const linhas = matriculas.map((m) => ({ nome: m.aluno.nome, presente: "", observacao: "" }));
-  const hoje = new Date().toLocaleDateString("pt-BR");
+  // timeZone explícito: sem isso, o servidor (Vercel, UTC) data a chamada de
+  // AMANHÃ pra quem imprimir depois das 21h em Brasília.
+  const hoje = new Date().toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
   const dataUri = await gerarRelatorioPdf({
     titulo: `Lista de Chamada — ${turma.nome}`,

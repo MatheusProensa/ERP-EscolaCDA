@@ -10,6 +10,7 @@ import { ExcluirMesButton } from "@/components/modules/cardapio/ExcluirMesButton
 import { CardapioExportButtons } from "@/components/modules/cardapio/CardapioExportButtons";
 import { PUBLICOS_CARDAPIO, MESES_CARDAPIO, NUTRICIONISTA_CARDAPIO } from "@/components/modules/cardapio/constants";
 import type { ItemCardapioMes } from "@/components/modules/cardapio/types";
+import { hojeBrasilia } from "@/lib/utils";
 
 export default async function CardapioPage({
   searchParams,
@@ -17,7 +18,7 @@ export default async function CardapioPage({
   searchParams: Promise<{ ano?: string; mes?: string }>;
 }) {
   const { ano: anoParam, mes: mesParam } = await searchParams;
-  const hoje = new Date();
+  const hoje = hojeBrasilia();
   const ano = Number(anoParam) || hoje.getUTCFullYear();
   const mes = Number(mesParam) || hoje.getUTCMonth() + 1;
 
