@@ -7,6 +7,7 @@ import type { Responsavel } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -146,12 +147,8 @@ export function ResponsaveisSecao({
                 {r.autorizado && <Badge variant="green">Autorizado</Badge>}
                 {podeEditar && (
                   <>
-                    <button onClick={() => setEditando(r)} title="Editar" className="text-cda-text3 hover:text-cda-blue">
-                      <Pencil className="h-3.5 w-3.5" />
-                    </button>
-                    <button onClick={() => setExcluindoId(r.id)} title="Excluir" className="text-cda-text3 hover:text-cda-red">
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <IconButton icon={Pencil} label="Editar responsável" size="sm" onClick={() => setEditando(r)} />
+                    <IconButton icon={Trash2} label="Excluir responsável" size="sm" variant="danger" onClick={() => setExcluindoId(r.id)} />
                   </>
                 )}
               </div>

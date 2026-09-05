@@ -6,6 +6,7 @@ import { Download, Trash2, FileText } from "lucide-react";
 import type { DocumentoFuncionario } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
+import { IconButton } from "@/components/ui/IconButton";
 import { FileUpload } from "@/components/ui/FileUpload";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatarDataHora } from "@/lib/utils";
@@ -94,18 +95,21 @@ export function DocumentosFuncionario({
               <a
                 href={doc.arquivo}
                 download={doc.nomeArquivo}
+                title={`Baixar ${doc.nomeArquivo}`}
+                aria-label={`Baixar ${doc.nomeArquivo}`}
                 className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-bg"
               >
                 <Download className="h-4 w-4" />
               </a>
               {podeEditar && (
-                <button
-                  onClick={() => setDocParaRemover(doc.id)}
+                <IconButton
+                  icon={Trash2}
+                  label={`Remover ${doc.nomeArquivo}`}
+                  size="sm"
+                  variant="danger"
                   disabled={removendoId === doc.id}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                  onClick={() => setDocParaRemover(doc.id)}
+                />
               )}
             </div>
           </div>

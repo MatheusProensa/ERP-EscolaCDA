@@ -73,7 +73,7 @@ function Celula({
       className="flex min-w-0 flex-col gap-1 px-3 py-2.5"
       style={{ flex: peso }}
     >
-      <span className="text-[10.5px] font-bold uppercase tracking-wide text-[#0d1f4e]">
+      <span className="text-[10.5px] font-bold uppercase tracking-wide text-cda-text">
         {label}
       </span>
       <span className="min-w-0">{children}</span>

@@ -6,6 +6,7 @@ import { Pencil, Trash2, Plus, UserCheck } from "lucide-react";
 import type { PessoaAutorizada } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
 import { Modal } from "@/components/ui/Modal";
 import { Input } from "@/components/ui/Input";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
@@ -127,12 +128,8 @@ export function PessoasAutorizadasSecao({
               </span>
               {podeEditar && (
                 <div className="flex shrink-0 items-center gap-1">
-                  <button onClick={() => setEditando(p)} title="Editar" className="text-cda-text3 hover:text-cda-blue">
-                    <Pencil className="h-3.5 w-3.5" />
-                  </button>
-                  <button onClick={() => setExcluindoId(p.id)} title="Excluir" className="text-cda-text3 hover:text-cda-red">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <IconButton icon={Pencil} label="Editar pessoa autorizada" size="sm" onClick={() => setEditando(p)} />
+                  <IconButton icon={Trash2} label="Excluir pessoa autorizada" size="sm" variant="danger" onClick={() => setExcluindoId(p.id)} />
                 </div>
               )}
             </div>
