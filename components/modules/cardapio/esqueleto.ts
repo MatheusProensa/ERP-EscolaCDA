@@ -68,3 +68,17 @@ export function gerarEsqueletoSemanas(publico: string, ano: number, mes: number)
 
   return { impar: montar("impar"), par: montar("par") };
 }
+
+/** Usado por "copiar do mês anterior": mantém as refeições/itens de outro mês
+ * (Setembro geralmente repete Agosto, só muda um ou outro item) mas troca as
+ * datas de cada dia pelas do mês novo — copiar "03/08" pra Setembro ficaria
+ * errado. */
+export function comDatasDoMes(semanas: SemanasCardapio, ano: number, mes: number): SemanasCardapio {
+  const datas = datasPorPadrao(ano, mes);
+
+  function trocarDatas(dias: DiaCardapio[], padrao: "impar" | "par"): DiaCardapio[] {
+    return dias.map((d) => ({ ...d, datas: datas[d.dia]?.[padrao] ?? [] }));
+  }
+
+  return { impar: trocarDatas(semanas.impar, "impar"), par: trocarDatas(semanas.par, "par") };
+}

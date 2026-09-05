@@ -24,6 +24,19 @@ export default async function CardapioPage({
   const blocos = blocosRaw as unknown as ItemCardapioMes[];
   const porPublico = new Map(blocos.map((b) => [b.publico, b]));
 
+  // Pro botão "Copiar do mês anterior" — o mês/ano com cardápio cadastrado
+  // mais recente ANTES do que está sendo visto agora (não precisa ser o mês
+  // civil imediatamente anterior: se pularam um mês, pega o último que tem
+  // dado de verdade).
+  const mesAnteriorComDados =
+    blocos.length === 0
+      ? await prisma.cardapioMes.findFirst({
+          where: { OR: [{ ano: { lt: ano } }, { ano, mes: { lt: mes } }] },
+          orderBy: [{ ano: "desc" }, { mes: "desc" }],
+          select: { ano: true, mes: true },
+        })
+      : null;
+
   const anoAtual = hoje.getUTCFullYear();
   const anos = [anoAtual - 1, anoAtual, anoAtual + 1];
 
@@ -65,7 +78,15 @@ export default async function CardapioPage({
           <p className="text-sm text-cda-text3">
             Ainda não tem cardápio cadastrado pra {MESES_CARDAPIO[mes - 1]} de {ano}.
           </p>
-          <PrepararMesButton ano={ano} mes={mes} />
+          <PrepararMesButton
+            ano={ano}
+            mes={mes}
+            mesAnterior={
+              mesAnteriorComDados
+                ? { ano: mesAnteriorComDados.ano, mes: mesAnteriorComDados.mes, label: MESES_CARDAPIO[mesAnteriorComDados.mes - 1] }
+                : null
+            }
+          />
         </div>
       ) : (
         <div className="flex flex-col gap-5">
