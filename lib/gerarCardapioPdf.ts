@@ -133,7 +133,7 @@ export async function gerarCardapioPdf({
   function novaPagina(tituloPublico: string) {
     pagina = pdf.addPage([PAGE_W, PAGE_H]);
     desenharCabecalho(tituloPublico);
-    y = PAGE_H - HEADER_H - 12;
+    y = PAGE_H - HEADER_H - 18;
   }
 
   const colW = (PAGE_W - MARGIN * 2 - LABEL_COL_W) / 5;
@@ -209,7 +209,7 @@ export async function gerarCardapioPdf({
       }
     });
 
-    y -= 9;
+    y -= 6;
   }
 
   for (const publico of publicos) {
