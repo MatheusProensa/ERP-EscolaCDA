@@ -6,7 +6,6 @@ import { contarAlunosAtivos } from "@/lib/alunos";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
-import { AtalhosRapidos, type Atalho } from "@/components/modules/dashboard/AtalhosRapidos";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { ProximosEventosWidget } from "@/components/modules/dashboard/ProximosEventosWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
@@ -47,19 +46,9 @@ export async function DashboardPedagogico({
       : Promise.resolve([]),
   ]);
 
-  const atalhos: Atalho[] = [
-    { label: "Mural", href: "/mural", icon: Megaphone, tone: "cat4" },
-    ...(podeAcademico ? [{ label: "Acadêmico", href: "/academico", icon: GraduationCap, tone: "cat3" as const }] : []),
-    ...(podeAlunos ? [{ label: "Alunos", href: "/alunos", icon: Users, tone: "cat1" as const }] : []),
-  ];
-
   return (
     <div>
       <PageHeader title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`} subtitle="Alunos, turmas e censo escolar" />
-
-      {/* Chat tirado daqui — já tem ícone próprio na topbar, mesma revisão feita
-          no dashboard do Admin (era triplo: topbar + sidebar + atalho aqui). */}
-      <AtalhosRapidos itens={atalhos} />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {podeAlunos && (
