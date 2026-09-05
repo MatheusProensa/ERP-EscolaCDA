@@ -21,7 +21,7 @@ const LINE_H = 9.5;
 const FONT_SIZE = 8.5;
 const PAD_X = 5;
 const PAD_Y = 4;
-const HEAD_ROW_H = 27;
+const HEAD_ROW_H = 25;
 
 const DIA_LABEL_PDF: Record<string, string> = {
   SEGUNDA: "Segunda",
@@ -141,9 +141,12 @@ export async function gerarCardapioPdf({
     pagina.drawText("REFEIÇÃO", { x: MARGIN + PAD_X, y: y - HEAD_ROW_H / 2 - 3, size: 7.5, font: fonteBold, color: WHITE });
     let x = MARGIN + LABEL_COL_W;
     for (const dia of dias) {
-      pagina.drawText((DIA_LABEL_PDF[dia.dia] ?? dia.dia).toUpperCase(), { x: x + PAD_X, y: y - 11, size: 7.5, font: fonteBold, color: WHITE });
+      // As duas linhas (dia + datas) precisam de ~9pt de distância entre as
+      // bases pra não sobrepor (7.5pt de fonte só cabe apertado com esse
+      // espaçamento) — um valor perto disso já tinha ficado colado antes.
+      pagina.drawText((DIA_LABEL_PDF[dia.dia] ?? dia.dia).toUpperCase(), { x: x + PAD_X, y: y - 9, size: 7.5, font: fonteBold, color: WHITE });
       if (dia.datas.length > 0) {
-        pagina.drawText(dia.datas.join(" · "), { x: x + PAD_X, y: y - HEAD_ROW_H + 10, size: 7, font: fonte, color: rgb(0.75, 0.8, 0.9) });
+        pagina.drawText(dia.datas.join(" · "), { x: x + PAD_X, y: y - 18, size: 7, font: fonte, color: rgb(0.75, 0.8, 0.9) });
       }
       x += colW;
     }
@@ -205,7 +208,7 @@ export async function gerarCardapioPdf({
       }
     });
 
-    y -= 12;
+    y -= 9;
   }
 
   for (const publico of publicos) {
@@ -216,7 +219,7 @@ export async function gerarCardapioPdf({
     // impresso não dá pra saber de cara qual público é cada página.
     pagina.drawRectangle({ x: MARGIN, y: y - 16, width: 4, height: 18, color: corSolida(publico.corHex) });
     pagina.drawText(publico.label, { x: MARGIN + 12, y: y - 12, size: 15, font: fonteBold, color: NAVY });
-    y -= 21;
+    y -= 28;
 
     if (publico.notaPublico) {
       pagina.drawText(publico.notaPublico, { x: MARGIN, y, size: 7.5, font: fonte, color: TEXT2 });
