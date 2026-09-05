@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { DocumentosFuncionario } from "@/components/modules/funcionarios/DocumentosFuncionario";
@@ -34,12 +33,7 @@ export default async function FuncionarioPerfilPage({ params }: { params: Promis
           <Avatar nome={funcionario.nome} size="lg" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg font-bold text-cda-text">{funcionario.nome}</h2>
-                <Badge variant={funcionario.ativo ? "green" : "gray"}>
-                  {funcionario.ativo ? "Ativo" : "Inativo"}
-                </Badge>
-              </div>
+              <h2 className="text-lg font-bold text-cda-text">{funcionario.nome}</h2>
               {podeEditar && (
                 <Button href={`/funcionarios/${funcionario.id}/editar`} variant="outline" size="sm">
                   <Pencil className="h-3.5 w-3.5" />

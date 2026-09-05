@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Pencil, UserX, UserCheck, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import type { Funcionario } from "@prisma/client";
 import { Table, TableHead, Th, ThActions, TableBody, Tr, Td, TdActions, TableEmpty } from "@/components/ui/Table";
 import { Avatar } from "@/components/ui/Avatar";
@@ -28,20 +28,7 @@ export function FuncionarioTable({
 }) {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [desativando, setDesativando] = useState<Funcionario | null>(null);
   const [excluindo, setExcluindo] = useState<Funcionario | null>(null);
-
-  async function alternarAtivo(f: Funcionario) {
-    setLoadingId(f.id);
-    await fetch(`/api/funcionarios/${f.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ativo: !f.ativo }),
-    });
-    setLoadingId(null);
-    setDesativando(null);
-    router.refresh();
-  }
 
   async function excluir(f: Funcionario) {
     setLoadingId(f.id);
@@ -63,16 +50,15 @@ export function FuncionarioTable({
         {mostrarSetor && <Th>Setor</Th>}
         <Th>Telefone</Th>
         <Th>Admissão</Th>
-        <Th>Situação</Th>
         {podeEditar && <ThActions />}
       </TableHead>
       <TableBody>
         {funcionarios.length === 0 && (
-          <TableEmpty colSpan={(mostrarSetor ? 6 : 5) + (podeEditar ? 1 : 0)}>Nenhum funcionário encontrado.</TableEmpty>
+          <TableEmpty colSpan={(mostrarSetor ? 5 : 4) + (podeEditar ? 1 : 0)}>Nenhum funcionário encontrado.</TableEmpty>
         )}
         {funcionarios.map((f) => {
           const pendencias: string[] = [];
-          if (f.ativo && f.participaPonto && f.jornadaPrevistaMinutos == null) {
+          if (f.participaPonto && f.jornadaPrevistaMinutos == null) {
             pendencias.push("Sem jornada prevista definida — o Ponto não vai calcular horas extra/atraso corretamente");
           }
           if (!f.telefone) pendencias.push("Sem telefone cadastrado");
@@ -98,20 +84,9 @@ export function FuncionarioTable({
             {mostrarSetor && <Td>{f.setor}</Td>}
             <Td>{f.telefone ? formatarTelefone(f.telefone) : "—"}</Td>
             <Td>{formatarData(f.admissao)}</Td>
-            <Td>
-              <Badge variant={f.ativo ? "green" : "gray"}>{f.ativo ? "Ativo" : "Inativo"}</Badge>
-            </Td>
             {podeEditar && (
               <TdActions>
                 <IconButton icon={Pencil} label="Editar funcionário" size="sm" href={`/funcionarios/${f.id}/editar`} />
-                <IconButton
-                  icon={f.ativo ? UserX : UserCheck}
-                  label={f.ativo ? "Desativar funcionário" : "Reativar funcionário"}
-                  size="sm"
-                  variant={f.ativo ? "danger" : "neutral"}
-                  disabled={loadingId === f.id}
-                  onClick={() => (f.ativo ? setDesativando(f) : alternarAtivo(f))}
-                />
                 <IconButton
                   icon={Trash2}
                   label="Excluir funcionário de vez"
@@ -128,22 +103,12 @@ export function FuncionarioTable({
       </TableBody>
 
       <ConfirmDialog
-        open={desativando !== null}
-        onClose={() => setDesativando(null)}
-        onConfirm={() => desativando && alternarAtivo(desativando)}
-        title={`Desativar ${desativando?.nome ?? ""}?`}
-        confirmLabel="Desativar"
-        loading={loadingId === desativando?.id}
-      />
-
-      <ConfirmDialog
         open={excluindo !== null}
         onClose={() => setExcluindo(null)}
         onConfirm={() => excluindo && excluir(excluindo)}
         title={`Excluir ${excluindo?.nome ?? ""} de vez?`}
         consequence="Isso apaga também o histórico de ponto e os documentos anexados dele — não dá pra desfazer."
         confirmLabel="Excluir de vez"
-        secondaryAction={excluindo ? { label: "Desativar", onClick: () => { setExcluindo(null); setDesativando(excluindo); } } : undefined}
         loading={loadingId === excluindo?.id}
       />
     </Table>
