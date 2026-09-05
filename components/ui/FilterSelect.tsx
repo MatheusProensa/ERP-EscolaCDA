@@ -31,7 +31,7 @@ export function FilterSelect({
   disabled?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const [pos, setPos] = useState({ top: 0, right: 0, width: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -43,10 +43,15 @@ export function FilterSelect({
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [open]);
 
+  // Mesmo achado/correção do MenuButton: ancorar pela esquerda (left: r.left)
+  // estourava a tela quando o gatilho ficava perto da borda direita — o caso
+  // comum aqui, já que esse controle é usado na última coluna da tabela
+  // (Interessados) e no canto superior direito do perfil. Ancora pela borda
+  // direita do botão, abrindo pra esquerda — cabe na tela sempre.
   function toggle() {
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, left: r.left, width: r.width });
+      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right, width: r.width });
     }
     setOpen((v) => !v);
   }
@@ -80,7 +85,7 @@ export function FilterSelect({
               // Largura acompanha o conteúdo (min. a do botão, até um teto), e o
               // texto quebra linha em vez de truncar com "..." — opções como
               // "3º Ano, tarde ou contraturno" ficavam ilegíveis cortadas.
-              style={{ position: "fixed", top: pos.top, left: pos.left, minWidth: Math.max(pos.width, 220), maxWidth: 340 }}
+              style={{ position: "fixed", top: pos.top, right: pos.right, minWidth: Math.max(pos.width, 220), maxWidth: 340 }}
               className="z-50 max-h-72 overflow-auto rounded-lg border border-cda-border bg-white p-1.5 shadow-xl"
             >
               {options.map((o) => {
