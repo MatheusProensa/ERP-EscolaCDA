@@ -466,9 +466,12 @@ export async function gerarRelatorioPdfSecoesEmpilhadas({
     });
   }
 
+  // 16pt aqui deixava o título da 1ª seção (ex.: "Maternal I") quase colado
+  // na borda do cabeçalho navy — o ascent de um texto bold de 12pt já come
+  // boa parte disso. 24pt dá um respiro visível de verdade.
   let pagina = pdf.addPage([PAGE_W, PAGE_H]);
   desenharCabecalho(pagina);
-  let y = PAGE_H - HEADER_H - 16;
+  let y = PAGE_H - HEADER_H - 24;
 
   if (subtitulo) {
     pagina.drawText(subtitulo, { x: MARGIN, y, size: 10, font: fonte, color: TEXT2 });
@@ -480,7 +483,7 @@ export async function gerarRelatorioPdfSecoesEmpilhadas({
     paginaAtual += 1;
     totalPaginas = paginaAtual;
     desenharCabecalho(pagina);
-    y = PAGE_H - HEADER_H - 16;
+    y = PAGE_H - HEADER_H - 24;
   }
 
   for (const secao of secoes) {

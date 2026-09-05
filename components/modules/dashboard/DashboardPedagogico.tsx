@@ -6,28 +6,52 @@ import { contarAlunosAtivos } from "@/lib/alunos";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
-import { AtalhosRapidos } from "@/components/modules/dashboard/AtalhosRapidos";
+import { AtalhosRapidos, type Atalho } from "@/components/modules/dashboard/AtalhosRapidos";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
 import { ProximosEventosWidget } from "@/components/modules/dashboard/ProximosEventosWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
+import { podeVerModulo, type PermissoesPorModulo } from "@/lib/permissoes";
 import { primeiroNome } from "@/lib/utils";
 
-export async function DashboardPedagogico({ nome }: { nome: string }) {
+export async function DashboardPedagogico({
+  nome,
+  role,
+  permissoes,
+}: {
+  nome: string;
+  role: string;
+  permissoes?: PermissoesPorModulo;
+}) {
+  // Mesmo achado do DashboardAdministrativo: Role "Pedagógico" não significa
+  // mais acesso a Alunos/Acadêmico se a grade restringiu a pessoa a outro
+  // setor (ex.: só Cardápio) — cada card/atalho confere a grade de verdade.
+  const podeAlunos = podeVerModulo("/alunos", role, permissoes);
+  const podeAcademico = podeVerModulo("/academico", role, permissoes);
   const anoLetivo = await getAnoLetivoAtivo();
 
   const [totalAlunos, turmasAtivas, censoIncompleto, avisosFixados, logs] = await Promise.all([
-    contarAlunosAtivos(anoLetivo?.id),
-    prisma.turma.count({ where: { anoLetivoId: anoLetivo?.id } }),
-    prisma.aluno.count({
-      where: {
-        matriculas: { some: { situacao: "ATIVA" } },
-        OR: [{ racaCor: null }, { filiacao1: null }, { sexo: null }],
-      },
-    }),
+    podeAlunos ? contarAlunosAtivos(anoLetivo?.id) : Promise.resolve(0),
+    podeAcademico ? prisma.turma.count({ where: { anoLetivoId: anoLetivo?.id } }) : Promise.resolve(0),
+    podeAlunos
+      ? prisma.aluno.count({
+          where: {
+            matriculas: { some: { situacao: "ATIVA" } },
+            OR: [{ racaCor: null }, { filiacao1: null }, { sexo: null }],
+          },
+        })
+      : Promise.resolve(0),
     prisma.muralAviso.count({ where: { fixado: true } }),
-    prisma.logAtividade.findMany({ where: { entidade: "Aluno" }, orderBy: { createdAt: "desc" }, take: 8 }),
+    podeAlunos
+      ? prisma.logAtividade.findMany({ where: { entidade: "Aluno" }, orderBy: { createdAt: "desc" }, take: 8 })
+      : Promise.resolve([]),
   ]);
+
+  const atalhos: Atalho[] = [
+    { label: "Mural", href: "/mural", icon: Megaphone, tone: "cat4" },
+    ...(podeAcademico ? [{ label: "Acadêmico", href: "/academico", icon: GraduationCap, tone: "cat3" as const }] : []),
+    ...(podeAlunos ? [{ label: "Alunos", href: "/alunos", icon: Users, tone: "cat1" as const }] : []),
+  ];
 
   return (
     <div>
@@ -35,27 +59,29 @@ export async function DashboardPedagogico({ nome }: { nome: string }) {
 
       {/* Chat tirado daqui — já tem ícone próprio na topbar, mesma revisão feita
           no dashboard do Admin (era triplo: topbar + sidebar + atalho aqui). */}
-      <AtalhosRapidos
-        itens={[
-          { label: "Mural", href: "/mural", icon: Megaphone, tone: "cat4" },
-          { label: "Acadêmico", href: "/academico", icon: GraduationCap, tone: "cat3" },
-          { label: "Alunos", href: "/alunos", icon: Users, tone: "cat1" },
-        ]}
-      />
+      <AtalhosRapidos itens={atalhos} />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <MetricCard icon={Users} tone="cat1" value={totalAlunos} label="Total de alunos" subtext="Matrículas ativas" href="/alunos" />
-        <MetricCard icon={GraduationCap} tone="cat3" value={turmasAtivas} label="Turmas ativas" subtext="Ano letivo atual" href="/academico/turmas" />
+        {podeAlunos && (
+          <MetricCard icon={Users} tone="cat1" value={totalAlunos} label="Total de alunos" subtext="Matrículas ativas" href="/alunos" />
+        )}
+        {podeAcademico && (
+          <MetricCard icon={GraduationCap} tone="cat3" value={turmasAtivas} label="Turmas ativas" subtext="Ano letivo atual" href="/academico/turmas" />
+        )}
         <MetricCard icon={Megaphone} tone="cat4" value={avisosFixados} label="Avisos fixados" subtext="No mural" href="/mural" />
       </div>
 
-      <div className="mb-5">
-        <CensoAlerta quantidade={censoIncompleto} />
-      </div>
+      {podeAlunos && (
+        <div className="mb-5">
+          <CensoAlerta quantidade={censoIncompleto} />
+        </div>
+      )}
 
-      <div className="mb-5">
-        <FeedAtividade logs={logs} />
-      </div>
+      {podeAlunos && (
+        <div className="mb-5">
+          <FeedAtividade logs={logs} />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="lg:col-span-2">
