@@ -5,7 +5,15 @@ import { Card } from "@/components/ui/Card";
 import { formatarCPF, formatarData } from "@/lib/utils";
 import type { Aluno } from "@prisma/client";
 
-export function AlunoCard({ aluno, turmas }: { aluno: Aluno; turmas: string[] }) {
+export function AlunoCard({
+  aluno,
+  turmas,
+  podeEditar = true,
+}: {
+  aluno: Aluno;
+  turmas: string[];
+  podeEditar?: boolean;
+}) {
   return (
     <Card className="p-5">
       <div className="flex items-start gap-4">
@@ -15,10 +23,12 @@ export function AlunoCard({ aluno, turmas }: { aluno: Aluno; turmas: string[] })
             <div className="flex flex-wrap items-center gap-2">
               <h2 className="text-lg font-bold text-cda-text">{aluno.nome}</h2>
             </div>
-            <Button href={`/alunos/${aluno.id}/editar`} variant="outline" size="sm">
-              <Pencil className="h-3.5 w-3.5" />
-              Editar cadastro
-            </Button>
+            {podeEditar && (
+              <Button href={`/alunos/${aluno.id}/editar`} variant="outline" size="sm">
+                <Pencil className="h-3.5 w-3.5" />
+                Editar cadastro
+              </Button>
+            )}
           </div>
           <p className="mt-0.5 text-sm text-cda-text2">
             {turmas.length > 0 ? turmas.join(" · ") : "Sem turma"}

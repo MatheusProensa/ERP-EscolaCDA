@@ -28,7 +28,15 @@ function CamposPessoaAutorizada({ pessoa }: { pessoa?: PessoaAutorizada }) {
 
 // Pessoas além dos responsáveis que também podem buscar o aluno — mesma lista que
 // aparece no final da Ficha de Matrícula, só que editável direto aqui no cadastro.
-export function PessoasAutorizadasSecao({ alunoId, pessoas }: { alunoId: string; pessoas: PessoaAutorizada[] }) {
+export function PessoasAutorizadasSecao({
+  alunoId,
+  pessoas,
+  podeEditar = true,
+}: {
+  alunoId: string;
+  pessoas: PessoaAutorizada[];
+  podeEditar?: boolean;
+}) {
   const router = useRouter();
   const [novo, setNovo] = useState(false);
   const [editando, setEditando] = useState<PessoaAutorizada | null>(null);
@@ -95,10 +103,12 @@ export function PessoasAutorizadasSecao({ alunoId, pessoas }: { alunoId: string;
     <Card
       title="Autorizados a buscar"
       action={
-        <Button size="sm" variant="ghost" onClick={() => setNovo(true)}>
-          <Plus className="h-3.5 w-3.5" />
-          Adicionar
-        </Button>
+        podeEditar ? (
+          <Button size="sm" variant="ghost" onClick={() => setNovo(true)}>
+            <Plus className="h-3.5 w-3.5" />
+            Adicionar
+          </Button>
+        ) : undefined
       }
       className="h-fit"
     >
@@ -115,14 +125,16 @@ export function PessoasAutorizadasSecao({ alunoId, pessoas }: { alunoId: string;
                 <UserCheck className="h-3.5 w-3.5 text-cda-text3" />
                 {p.nome}
               </span>
-              <div className="flex shrink-0 items-center gap-1">
-                <button onClick={() => setEditando(p)} title="Editar" className="text-cda-text3 hover:text-cda-blue">
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-                <button onClick={() => setExcluindoId(p.id)} title="Excluir" className="text-cda-text3 hover:text-cda-red">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
-              </div>
+              {podeEditar && (
+                <div className="flex shrink-0 items-center gap-1">
+                  <button onClick={() => setEditando(p)} title="Editar" className="text-cda-text3 hover:text-cda-blue">
+                    <Pencil className="h-3.5 w-3.5" />
+                  </button>
+                  <button onClick={() => setExcluindoId(p.id)} title="Excluir" className="text-cda-text3 hover:text-cda-red">
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
             <p className="mt-0.5 text-xs text-cda-text3">{p.parentesco}</p>
           </div>

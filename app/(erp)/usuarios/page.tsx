@@ -7,9 +7,14 @@ import { Alert } from "@/components/ui/Alert";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { NovoUsuarioModal } from "@/components/modules/usuarios/NovoUsuarioModal";
 import { UsuarioCard } from "@/components/modules/usuarios/UsuarioCard";
+import { podeEditarModulo } from "@/lib/permissoes";
 
 export default async function UsuariosPage() {
   const session = await auth();
+  // Achado real (revisão de set/2026): quem tem "Só visualizar" em Usuários
+  // via a grade via ainda o botão de criar usuário novo — sério porque esse
+  // setor mexe com acesso ao sistema inteiro, não só dado de um cadastro.
+  const podeEditar = podeEditarModulo("/usuarios", session?.user.role ?? "", session?.user.permissoes);
   const usuarios = await prisma.user.findMany({
     orderBy: { name: "asc" },
     select: { id: true, name: true, email: true, role: true, foto: true, createdAt: true, pedidoResetSenhaEm: true },
@@ -27,7 +32,7 @@ export default async function UsuariosPage() {
               <Download className="h-4 w-4" />
               Baixar backup
             </Button>
-            <NovoUsuarioModal />
+            {podeEditar && <NovoUsuarioModal />}
           </div>
         }
       />

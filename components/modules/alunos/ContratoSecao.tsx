@@ -25,6 +25,7 @@ export function ContratoSecao({
   responsavelCpf,
   valorMensalidade,
   action,
+  podeEditar = true,
 }: {
   matriculaId: string;
   turmaNome: string;
@@ -38,6 +39,7 @@ export function ContratoSecao({
   responsavelCpf: string;
   valorMensalidade: number;
   action?: React.ReactNode;
+  podeEditar?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -127,7 +129,7 @@ export function ContratoSecao({
       {!contrato ? (
         <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-cda-text2">Nenhum contrato gerado para esta matrícula ainda.</p>
-          <GerarContratoModal {...modalProps} temContrato={false} />
+          {podeEditar && <GerarContratoModal {...modalProps} temContrato={false} />}
         </div>
       ) : (
         <div className="flex flex-col gap-3">
@@ -165,53 +167,57 @@ export function ContratoSecao({
                 Baixar PDF
               </a>
             )}
-            {!contrato.assinado ? (
-              <Button onClick={() => setConfirmandoAssinatura(true)} loading={loading} size="sm" className="bg-cda-green hover:bg-cda-green/90">
-                Marcar como assinado
-              </Button>
-            ) : (
-              <Button onClick={() => setConfirmandoAssinatura(true)} loading={loading} size="sm" variant="outline">
-                Marcar como pendente
-              </Button>
+            {podeEditar && (
+              <>
+                {!contrato.assinado ? (
+                  <Button onClick={() => setConfirmandoAssinatura(true)} loading={loading} size="sm" className="bg-cda-green hover:bg-cda-green/90">
+                    Marcar como assinado
+                  </Button>
+                ) : (
+                  <Button onClick={() => setConfirmandoAssinatura(true)} loading={loading} size="sm" variant="outline">
+                    Marcar como pendente
+                  </Button>
+                )}
+                {!contrato.dataEnvio && (
+                  <Button
+                    onClick={marcarEnviado}
+                    loading={loading}
+                    size="sm"
+                    variant="outline"
+                    title="Só marca a data de envio — não muda o status de assinatura"
+                    className="border-cda-blue/40 text-cda-blue hover:bg-cda-blue/5"
+                  >
+                    <Send className="h-3.5 w-3.5" />
+                    Marcar como enviado
+                  </Button>
+                )}
+                {!contrato.assinado && (
+                  <Button
+                    onClick={copiarLinkAssinatura}
+                    loading={loading}
+                    size="sm"
+                    variant="outline"
+                    title="Copia o link público de assinatura pra mandar pro responsável"
+                    className="border-cda-purple/40 text-cda-purple hover:bg-cda-purple/5"
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    {linkCopiado ? "Link copiado!" : "Copiar link de assinatura"}
+                  </Button>
+                )}
+                <div className="mx-1 h-6 w-px bg-cda-border" />
+                <GerarContratoModal {...modalProps} temContrato />
+                <button
+                  onClick={() => setConfirmandoExclusao(true)}
+                  disabled={loading}
+                  title="Excluir contrato — apaga de vez, não dá pra desfazer"
+                  aria-label="Excluir contrato"
+                  className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-cda-red hover:bg-cda-red/5 disabled:opacity-50"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  Excluir contrato
+                </button>
+              </>
             )}
-            {!contrato.dataEnvio && (
-              <Button
-                onClick={marcarEnviado}
-                loading={loading}
-                size="sm"
-                variant="outline"
-                title="Só marca a data de envio — não muda o status de assinatura"
-                className="border-cda-blue/40 text-cda-blue hover:bg-cda-blue/5"
-              >
-                <Send className="h-3.5 w-3.5" />
-                Marcar como enviado
-              </Button>
-            )}
-            {!contrato.assinado && (
-              <Button
-                onClick={copiarLinkAssinatura}
-                loading={loading}
-                size="sm"
-                variant="outline"
-                title="Copia o link público de assinatura pra mandar pro responsável"
-                className="border-cda-purple/40 text-cda-purple hover:bg-cda-purple/5"
-              >
-                <Link2 className="h-3.5 w-3.5" />
-                {linkCopiado ? "Link copiado!" : "Copiar link de assinatura"}
-              </Button>
-            )}
-            <div className="mx-1 h-6 w-px bg-cda-border" />
-            <GerarContratoModal {...modalProps} temContrato />
-            <button
-              onClick={() => setConfirmandoExclusao(true)}
-              disabled={loading}
-              title="Excluir contrato — apaga de vez, não dá pra desfazer"
-              aria-label="Excluir contrato"
-              className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-cda-red hover:bg-cda-red/5 disabled:opacity-50"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              Excluir contrato
-            </button>
           </div>
         </div>
       )}

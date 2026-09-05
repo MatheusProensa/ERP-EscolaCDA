@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, KeyRound, Copy, Check } from "lucide-react";
 import { PhotoUpload } from "@/components/ui/PhotoUpload";
+import { Avatar } from "@/components/ui/Avatar";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -28,9 +29,15 @@ type Usuario = {
 export function PerfilUsuarioClient({
   usuario,
   souEu,
+  podeEditar = true,
 }: {
   usuario: Usuario;
   souEu: boolean;
+  /** Achado real (set/2026): esse formulário deixava trocar nome/e-mail/
+   * Setor, redefinir senha e excluir o usuário pra qualquer um que
+   * enxergasse a tela, mesmo com "Só visualizar" em Usuários marcado na
+   * grade. Sem EDITAR, vira só uma ficha de leitura. */
+  podeEditar?: boolean;
 }) {
   const router = useRouter();
   const [name, setName] = useState(usuario.name);
@@ -56,6 +63,32 @@ export function PerfilUsuarioClient({
     () => !ROLES_ATIVAS.includes(usuario.role as (typeof ROLES_ATIVAS)[number]),
     [usuario.role]
   );
+
+  if (!podeEditar) {
+    return (
+      <Card className="p-5">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+          <div className="flex flex-col items-start gap-2">
+            <Avatar nome={usuario.name} foto={usuario.foto} size="lg" />
+            <Badge variant={ROLE_BADGE_VARIANT[usuario.role] ?? "gray"}>
+              {ROLE_LABEL[usuario.role] ?? usuario.role}
+            </Badge>
+            <span className="text-xs text-cda-text3">Desde {formatarData(usuario.createdAt)}</span>
+          </div>
+          <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <p className="text-xs text-cda-text3">Nome</p>
+              <p className="text-sm text-cda-text">{usuario.name}</p>
+            </div>
+            <div>
+              <p className="text-xs text-cda-text3">Email</p>
+              <p className="text-sm text-cda-text">{usuario.email}</p>
+            </div>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   async function salvar() {
     setErroSalvar("");

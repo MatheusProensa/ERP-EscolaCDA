@@ -27,7 +27,7 @@ function Campo({
   );
 }
 
-export function CensoSecao({ aluno }: { aluno: Aluno }) {
+export function CensoSecao({ aluno, podeEditar = true }: { aluno: Aluno; podeEditar?: boolean }) {
   const ufNome = aluno.ufNasc ? (UFS.find((u) => u.sigla === aluno.ufNasc)?.nome ?? aluno.ufNasc) : null;
   const pendencias = [!aluno.sexo, !aluno.racaCor, !aluno.filiacao1].filter(Boolean).length;
 
@@ -39,14 +39,16 @@ export function CensoSecao({ aluno }: { aluno: Aluno }) {
           {pendencias > 0 && <Badge variant="amber">{pendencias} pendente(s)</Badge>}
         </div>
         <div className="flex items-center gap-3">
-          <Link
-            href={`/alunos/${aluno.id}/editar`}
-            onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
-          >
-            <Pencil className="h-3.5 w-3.5" />
-            Editar
-          </Link>
+          {podeEditar && (
+            <Link
+              href={`/alunos/${aluno.id}/editar`}
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+              Editar
+            </Link>
+          )}
           <ChevronDown className="h-4 w-4 text-cda-text3 transition-transform group-open:rotate-180" />
         </div>
       </summary>

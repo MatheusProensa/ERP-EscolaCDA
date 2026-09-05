@@ -10,7 +10,7 @@ type Props = Omit<ComponentProps<typeof FichaMatriculaModal>, "open" | "onClose"
 /** Junta "Baixar PDF" (a última ficha salva, sem abrir nada) e "Editar ficha"
  * (abre o formulário, gera um PDF novo ao salvar) num menu só — antes eram
  * 2 botões grudados no cabeçalho, competindo por atenção com "Nova matrícula". */
-export function FichaMatriculaAcoes(props: Props) {
+export function FichaMatriculaAcoes({ podeEditar = true, ...props }: Props & { podeEditar?: boolean }) {
   const [editando, setEditando] = useState(false);
 
   return (
@@ -21,7 +21,9 @@ export function FichaMatriculaAcoes(props: Props) {
         variant="outline"
         items={[
           { label: "Baixar PDF", icon: FileDown, href: `/api/alunos/${props.alunoId}/ficha-matricula` },
-          { label: "Editar ficha", icon: ClipboardList, onClick: () => setEditando(true) },
+          // "Editar ficha" some pra quem só tem "Só visualizar" — baixar o PDF
+          // já existente continua liberado (é leitura).
+          ...(podeEditar ? [{ label: "Editar ficha", icon: ClipboardList, onClick: () => setEditando(true) }] : []),
         ]}
       />
       <FichaMatriculaModal {...props} open={editando} onClose={() => setEditando(false)} />

@@ -43,7 +43,15 @@ function CamposResponsavel({ responsavel }: { responsavel?: Responsavel }) {
   );
 }
 
-export function ResponsaveisSecao({ alunoId, responsaveis }: { alunoId: string; responsaveis: Responsavel[] }) {
+export function ResponsaveisSecao({
+  alunoId,
+  responsaveis,
+  podeEditar = true,
+}: {
+  alunoId: string;
+  responsaveis: Responsavel[];
+  podeEditar?: boolean;
+}) {
   const router = useRouter();
   const [novo, setNovo] = useState(false);
   const [editando, setEditando] = useState<Responsavel | null>(null);
@@ -114,7 +122,18 @@ export function ResponsaveisSecao({ alunoId, responsaveis }: { alunoId: string; 
   }
 
   return (
-    <Card title="Responsáveis" action={<Button size="sm" variant="ghost" onClick={() => setNovo(true)}><Plus className="h-3.5 w-3.5" />Adicionar</Button>} className="h-fit">
+    <Card
+      title="Responsáveis"
+      action={
+        podeEditar ? (
+          <Button size="sm" variant="ghost" onClick={() => setNovo(true)}>
+            <Plus className="h-3.5 w-3.5" />
+            Adicionar
+          </Button>
+        ) : undefined
+      }
+      className="h-fit"
+    >
       <div className="flex flex-col divide-y divide-cda-border">
         {responsaveis.length === 0 && (
           <p className="px-5 py-6 text-center text-sm text-cda-text3">Nenhum responsável cadastrado.</p>
@@ -125,12 +144,16 @@ export function ResponsaveisSecao({ alunoId, responsaveis }: { alunoId: string; 
               <span className="text-sm font-semibold text-cda-text">{r.nome}</span>
               <div className="flex shrink-0 items-center gap-1">
                 {r.autorizado && <Badge variant="green">Autorizado</Badge>}
-                <button onClick={() => setEditando(r)} title="Editar" className="text-cda-text3 hover:text-cda-blue">
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
-                <button onClick={() => setExcluindoId(r.id)} title="Excluir" className="text-cda-text3 hover:text-cda-red">
-                  <Trash2 className="h-3.5 w-3.5" />
-                </button>
+                {podeEditar && (
+                  <>
+                    <button onClick={() => setEditando(r)} title="Editar" className="text-cda-text3 hover:text-cda-blue">
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button onClick={() => setExcluindoId(r.id)} title="Excluir" className="text-cda-text3 hover:text-cda-red">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
             <p className="mt-0.5 text-xs text-cda-text3">{r.parentesco}</p>

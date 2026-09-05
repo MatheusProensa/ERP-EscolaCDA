@@ -19,10 +19,12 @@ export function MatriculaAcoes({
   matriculaId,
   turmaNome,
   turmasDisponiveis,
+  podeEditar = true,
 }: {
   matriculaId: string;
   turmaNome: string;
   turmasDisponiveis?: TurmaComVagas[];
+  podeEditar?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -30,6 +32,10 @@ export function MatriculaAcoes({
   const [transferindo, setTransferindo] = useState(false);
   const [novaTurmaId, setNovaTurmaId] = useState("");
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+
+  // Transferir/remover matrícula é só escrita — sem opção de "visualizar"
+  // aqui, então quem não tem EDITAR nem vê o menu.
+  if (!podeEditar) return null;
 
   async function excluir() {
     setError("");

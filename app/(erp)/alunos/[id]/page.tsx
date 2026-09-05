@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { AlunoCard } from "@/components/modules/alunos/AlunoCard";
@@ -10,12 +11,15 @@ import { ResponsaveisSecao } from "@/components/modules/alunos/ResponsaveisSecao
 import { PessoasAutorizadasSecao } from "@/components/modules/alunos/PessoasAutorizadasSecao";
 import { NovaMatriculaModal } from "@/components/modules/alunos/NovaMatriculaModal";
 import { FichaMatriculaAcoes } from "@/components/modules/alunos/FichaMatriculaAcoes";
+import { podeEditarModulo } from "@/lib/permissoes";
 import { ordenarTurmas, formatarData } from "@/lib/utils";
 import { turnoDoContrato } from "@/lib/contratoTexto";
 import { turmasComMatriculados } from "@/lib/turmas";
 
 export default async function AlunoPerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/alunos", session?.user.role ?? "", session?.user.permissoes);
 
   const aluno = await prisma.aluno.findUnique({
     where: { id },
@@ -66,12 +70,15 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
         breadcrumb={[{ label: "Alunos", href: "/alunos" }, { label: aluno.nome }]}
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <NovaMatriculaModal
-              alunoId={aluno.id}
-              turmas={turmasDisponiveis.filter((t) => !turmaIdsDoAluno.has(t.id))}
-            />
+            {podeEditar && (
+              <NovaMatriculaModal
+                alunoId={aluno.id}
+                turmas={turmasDisponiveis.filter((t) => !turmaIdsDoAluno.has(t.id))}
+              />
+            )}
             {matriculaPrincipal && (
               <FichaMatriculaAcoes
+                podeEditar={podeEditar}
                 alunoId={aluno.id}
                 matriculaId={matriculaPrincipal.id}
                 alunoNome={aluno.nome}
@@ -103,9 +110,9 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
         <div className="flex flex-col gap-5 lg:col-span-2">
-          <AlunoCard aluno={aluno} turmas={matriculasAtivas.map((m) => m.turma.nome)} />
+          <AlunoCard aluno={aluno} turmas={matriculasAtivas.map((m) => m.turma.nome)} podeEditar={podeEditar} />
 
-          <CensoSecao aluno={aluno} />
+          <CensoSecao aluno={aluno} podeEditar={podeEditar} />
 
           {aluno.matriculas.map((m) => (
             <ContratoSecao
@@ -120,11 +127,13 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
               responsavelNome={aluno.responsaveis[0]?.nome ?? ""}
               responsavelCpf={aluno.responsaveis[0]?.cpf ?? ""}
               valorMensalidade={m.valorMensalidade ?? 0}
+              podeEditar={podeEditar}
               action={
                 <MatriculaAcoes
                   matriculaId={m.id}
                   turmaNome={m.turma.nome}
                   turmasDisponiveis={turmasDisponiveis.filter((t) => t.id !== m.turmaId)}
+                  podeEditar={podeEditar}
                 />
               }
             />
@@ -132,8 +141,8 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
         </div>
 
         <div className="flex flex-col gap-5">
-          <ResponsaveisSecao alunoId={aluno.id} responsaveis={aluno.responsaveis} />
-          <PessoasAutorizadasSecao alunoId={aluno.id} pessoas={aluno.pessoasAutorizadas} />
+          <ResponsaveisSecao alunoId={aluno.id} responsaveis={aluno.responsaveis} podeEditar={podeEditar} />
+          <PessoasAutorizadasSecao alunoId={aluno.id} pessoas={aluno.pessoasAutorizadas} podeEditar={podeEditar} />
         </div>
       </div>
     </div>

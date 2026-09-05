@@ -27,12 +27,18 @@ export function PermissoesUsuarioSecao({
   souEu,
   role,
   permissoesSalvas,
+  podeEditar = true,
 }: {
   usuarioId: string;
   usuarioNome: string;
   souEu: boolean;
   role: string;
   permissoesSalvas: Record<string, string>;
+  /** Achado real (set/2026): essa grade decide o que cada pessoa acessa no
+   * sistema inteiro — deixá-la editável pra quem só tem "Só visualizar" em
+   * Usuários seria um jeito de auto-conceder EDITAR em qualquer setor. Quem
+   * não tem EDITAR aqui só vê o estado atual, sem clicar em nada. */
+  podeEditar?: boolean;
 }) {
   const router = useRouter();
   const [valores, setValores] = useState<Record<string, Nivel>>(() =>
@@ -125,13 +131,22 @@ export function PermissoesUsuarioSecao({
                     // fora dessa tela sem ter como voltar atrás (ADMIN escapa disso,
                     // sempre vê tudo, mas Direção/outros com acesso a Usuários não).
                     const bloqueadoAutoUsuarios = souEu && modulo.chave === "usuarios";
+                    // Sem EDITAR em Usuários, essa grade é só pra olhar — clicar
+                    // aqui poderia auto-conceder acesso a qualquer setor.
+                    const bloqueado = bloqueadoAutoUsuarios || !podeEditar;
                     return (
                       <button
                         key={valor}
                         type="button"
-                        disabled={bloqueadoAutoUsuarios}
+                        disabled={bloqueado}
                         onClick={() => definir(modulo.chave, valor)}
-                        title={bloqueadoAutoUsuarios ? "Você não pode alterar sua própria permissão em Usuários" : label}
+                        title={
+                          bloqueadoAutoUsuarios
+                            ? "Você não pode alterar sua própria permissão em Usuários"
+                            : !podeEditar
+                              ? "Você só tem \"Só visualizar\" em Usuários — não pode alterar permissões"
+                              : label
+                        }
                         className={`flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-30 ${
                           ativo ? "border-cda-blue bg-cda-blue/10 text-cda-blue" : "border-cda-border bg-white text-cda-text2 hover:bg-cda-bg"
                         }`}
@@ -146,11 +161,13 @@ export function PermissoesUsuarioSecao({
             ))}
           </div>
           {erro && <p className="px-5 py-3 text-sm text-cda-red">{erro}</p>}
-          <div className="flex justify-end border-t border-cda-border px-5 py-3">
-            <Button onClick={salvar} loading={salvando} disabled={!sujo} size="sm">
-              Salvar
-            </Button>
-          </div>
+          {podeEditar && (
+            <div className="flex justify-end border-t border-cda-border px-5 py-3">
+              <Button onClick={salvar} loading={salvando} disabled={!sujo} size="sm">
+                Salvar
+              </Button>
+            </div>
+          )}
         </>
       )}
     </Card>
