@@ -133,7 +133,7 @@ export async function gerarCardapioPdf({
   function novaPagina(tituloPublico: string) {
     pagina = pdf.addPage([PAGE_W, PAGE_H]);
     desenharCabecalho(tituloPublico);
-    y = PAGE_H - HEADER_H - 18;
+    y = PAGE_H - HEADER_H - 16;
   }
 
   const colW = (PAGE_W - MARGIN * 2 - LABEL_COL_W) / 5;
@@ -155,10 +155,10 @@ export async function gerarCardapioPdf({
   }
 
   function desenharPainel(titulo: string, dias: DiaCardapio[], tituloPublico: string) {
-    if (y - 10 - HEAD_ROW_H - (LINE_H * 2 + PAD_Y * 2) < MARGIN) novaPagina(tituloPublico);
+    if (y - 8 - HEAD_ROW_H - (LINE_H * 2 + PAD_Y * 2) < MARGIN) novaPagina(tituloPublico);
 
     pagina.drawText(titulo, { x: MARGIN, y, size: 9.5, font: fonteBold, color: NAVY });
-    y -= 10;
+    y -= 8;
 
     // Sem cardápio cadastrado ainda pra esse padrão de semana — avisa em vez
     // de deixar a página em branco (nunca inventa conteúdo).
@@ -209,7 +209,7 @@ export async function gerarCardapioPdf({
       }
     });
 
-    y -= 6;
+    y -= 11;
   }
 
   for (const publico of publicos) {
