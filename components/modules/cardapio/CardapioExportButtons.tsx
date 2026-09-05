@@ -1,3 +1,5 @@
+"use client";
+
 import { Download, FileDown, FileText } from "lucide-react";
 import { MenuButton, type MenuButtonItem } from "@/components/ui/MenuButton";
 import { PUBLICOS_CARDAPIO } from "./constants";
