@@ -1,12 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { LogIn, LogOut, Pencil, StickyNote } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ChevronDown, ChevronUp, LogIn, LogOut, Pencil, StickyNote, Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { IconButton } from "@/components/ui/IconButton";
 import { Badge, type BadgeVariant } from "@/components/ui/Badge";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { showToast } from "@/components/ui/Toast";
 import { EditarBlocoModal } from "./EditarBlocoModal";
 import type { ItemEscalaBloco, PessoaEvento } from "./types";
+
+/** Vizinho na mesma seção (Turnos ou Organização e avisos), pra "mover pra
+ * cima/baixo" — só a ordem importa, o resto do bloco não precisa viajar. */
+type VizinhoBloco = { id: string; ordem: number };
 
 const CAT_CICLO: BadgeVariant[] = ["cat1", "cat2", "cat3", "cat4", "cat5", "cat6"];
 function corPorTexto(texto: string): BadgeVariant {
@@ -90,7 +97,104 @@ function LinhaDoTempo({ itens, cor }: { itens: PessoaEvento[]; cor: string }) {
   );
 }
 
-export function EscalaBlocoCard({ bloco }: { bloco: ItemEscalaBloco }) {
+/** Subir/descer troca a `ordem` com o vizinho na mesma seção (2 PUTs) —
+ * excluir pede confirmação (não dá pra desfazer, some com o histórico do
+ * bloco). Os três ficam juntos aqui porque as duas telas (Turno e Nota) usam
+ * exatamente a mesma barra de controles. */
+function ControlesBloco({
+  bloco,
+  anterior,
+  proximo,
+  onEditar,
+}: {
+  bloco: ItemEscalaBloco;
+  anterior?: VizinhoBloco;
+  proximo?: VizinhoBloco;
+  onEditar: () => void;
+}) {
+  const router = useRouter();
+  const [movendo, setMovendo] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+
+  async function mover(vizinho: VizinhoBloco) {
+    setMovendo(true);
+    const [r1, r2] = await Promise.all([
+      fetch(`/api/horarios-equipe/${bloco.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ordem: vizinho.ordem }),
+      }),
+      fetch(`/api/horarios-equipe/${vizinho.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ordem: bloco.ordem }),
+      }),
+    ]);
+    setMovendo(false);
+    if (!r1.ok || !r2.ok) {
+      showToast("Não foi possível mover. Tente de novo.", "error");
+      return;
+    }
+    router.refresh();
+  }
+
+  async function excluir() {
+    setExcluindo(true);
+    const res = await fetch(`/api/horarios-equipe/${bloco.id}`, { method: "DELETE" });
+    setExcluindo(false);
+    if (!res.ok) {
+      showToast("Não foi possível excluir. Tente de novo.", "error");
+      return;
+    }
+    setConfirmando(false);
+    router.refresh();
+  }
+
+  return (
+    <>
+      <div className="flex shrink-0 items-center gap-0.5">
+        <IconButton
+          icon={ChevronUp}
+          label="Mover pra cima"
+          size="sm"
+          disabled={!anterior || movendo}
+          onClick={() => anterior && mover(anterior)}
+        />
+        <IconButton
+          icon={ChevronDown}
+          label="Mover pra baixo"
+          size="sm"
+          disabled={!proximo || movendo}
+          onClick={() => proximo && mover(proximo)}
+        />
+        <IconButton icon={Pencil} label="Editar bloco" size="sm" onClick={onEditar} />
+        <IconButton icon={Trash2} label="Excluir bloco" size="sm" variant="danger" onClick={() => setConfirmando(true)} />
+      </div>
+      <ConfirmDialog
+        open={confirmando}
+        onClose={() => setConfirmando(false)}
+        onConfirm={excluir}
+        title={`Excluir "${bloco.titulo}"?`}
+        consequence="Apaga o bloco inteiro — entradas, saídas e horários cadastrados nele."
+        confirmLabel="Excluir"
+        loading={excluindo}
+      />
+    </>
+  );
+}
+
+export function EscalaBlocoCard({
+  bloco,
+  anterior,
+  proximo,
+}: {
+  bloco: ItemEscalaBloco;
+  /** Vizinhos na mesma seção (Turnos ou Organização e avisos) — undefined nas
+   * pontas, desabilita a seta correspondente. */
+  anterior?: VizinhoBloco;
+  proximo?: VizinhoBloco;
+}) {
   const [editando, setEditando] = useState(false);
   const variant = corPorTexto(grupoDoTitulo(bloco.titulo));
 
@@ -103,7 +207,7 @@ export function EscalaBlocoCard({ bloco }: { bloco: ItemEscalaBloco }) {
               <StickyNote className="h-4 w-4 text-cda-text3" />
               <h3 className="text-sm font-semibold text-cda-text">{bloco.titulo}</h3>
             </div>
-            <IconButton icon={Pencil} label="Editar bloco" size="sm" onClick={() => setEditando(true)} />
+            <ControlesBloco bloco={bloco} anterior={anterior} proximo={proximo} onEditar={() => setEditando(true)} />
           </div>
           {bloco.horariosReferencia.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-1.5">
@@ -129,7 +233,7 @@ export function EscalaBlocoCard({ bloco }: { bloco: ItemEscalaBloco }) {
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <h3 className="text-sm font-semibold text-cda-text">{bloco.titulo}</h3>
-          <IconButton icon={Pencil} label="Editar bloco" size="sm" onClick={() => setEditando(true)} />
+          <ControlesBloco bloco={bloco} anterior={anterior} proximo={proximo} onEditar={() => setEditando(true)} />
         </div>
 
         <div className="flex flex-col gap-4">
