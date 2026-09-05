@@ -8,7 +8,7 @@ import { CardapioPublicoCard } from "@/components/modules/cardapio/CardapioPubli
 import { PrepararMesButton } from "@/components/modules/cardapio/PrepararMesButton";
 import { ExcluirMesButton } from "@/components/modules/cardapio/ExcluirMesButton";
 import { CardapioExportButtons } from "@/components/modules/cardapio/CardapioExportButtons";
-import { PUBLICOS_CARDAPIO, MESES_CARDAPIO } from "@/components/modules/cardapio/constants";
+import { PUBLICOS_CARDAPIO, MESES_CARDAPIO, NUTRICIONISTA_CARDAPIO } from "@/components/modules/cardapio/constants";
 import type { ItemCardapioMes } from "@/components/modules/cardapio/types";
 
 export default async function CardapioPage({
@@ -97,6 +97,17 @@ export default async function CardapioPage({
             if (!item) return null;
             return <CardapioPublicoCard key={p.valor} item={item} label={p.label} notaPublico={p.nota} cor={p.cor} />;
           })}
+
+          <Card className="border-cda-border bg-cda-bg2 p-4 text-xs text-cda-text2">
+            <p className="font-semibold text-cda-text1">
+              Nutricionista: {NUTRICIONISTA_CARDAPIO.nome} · {NUTRICIONISTA_CARDAPIO.registro}
+            </p>
+            {NUTRICIONISTA_CARDAPIO.observacoes.map((obs) => (
+              <p key={obs} className="mt-1">
+                {obs}
+              </p>
+            ))}
+          </Card>
         </div>
       )}
     </div>

@@ -24,6 +24,20 @@ export const MESES_CARDAPIO = [
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
 ];
 
+/** Responsável técnica que monta o cardápio todo mês — crédito e as
+ * observações que ela sempre manda junto no documento original (alterações
+ * só com autorização dela, frutas da estação). Aparece na tela e em todo PDF
+ * exportado, não só quando alguém pede — informação de origem real, não pode
+ * ficar faltando em nenhum lugar. */
+export const NUTRICIONISTA_CARDAPIO = {
+  nome: "Natália Dotto Flores",
+  registro: "CRN2 9671D",
+  observacoes: [
+    "*O cardápio poderá sofrer alterações por alimentos de mesmo valor nutricional, caso haja alguma intercorrência, com autorização prévia da Nutricionista.",
+    "Será ofertado sempre 2 tipos de Frutas da estação.",
+  ],
+};
+
 /** Cor por tipo de refeição — categoria fixa (mesmo horário sempre significa a
  * mesma coisa), por isso é um mapa direto e não um hash como em Interessados. */
 export const COR_REFEICAO: Record<string, BadgeVariant> = {

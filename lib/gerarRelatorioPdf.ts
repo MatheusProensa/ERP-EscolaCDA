@@ -20,7 +20,7 @@ export async function embarcarLogo(pdf: PDFDocument): Promise<PDFImage | null> {
  * vem a seguir (ex.: o selo da campanha, logo ao lado). */
 export function desenharLogo(pagina: PDFPage, logo: PDFImage | null, alturaPagina: number): number {
   if (!logo) return 0;
-  const alturaLogo = 34;
+  const alturaLogo = 30;
   const escala = alturaLogo / logo.height;
   const larguraLogo = logo.width * escala;
   const x = MARGIN;
@@ -41,7 +41,7 @@ export function desenharLogo(pagina: PDFPage, logo: PDFImage | null, alturaPagin
 export function desenharSlogan(pagina: PDFPage, fonte: PDFFont, alturaPagina: number) {
   pagina.drawText("Fundamental para aprender e crescer.", {
     x: MARGIN,
-    y: alturaPagina - 58,
+    y: alturaPagina - 60,
     size: 8.5,
     font: fonte,
     color: rgb(0.75, 0.8, 0.9),

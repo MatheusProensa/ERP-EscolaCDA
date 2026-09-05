@@ -1,8 +1,9 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import {
-  NAVY, YELLOW, BORDER, TEXT2, WHITE, BLACK, PAGE_W, PAGE_H, MARGIN, HEADER_H,
+  NAVY, YELLOW, BORDER, TEXT2, TEXT3, WHITE, BLACK, PAGE_W, PAGE_H, MARGIN, HEADER_H,
   embarcarLogo, desenharLogo, desenharSlogan,
 } from "./gerarRelatorioPdf";
+import { NUTRICIONISTA_CARDAPIO } from "@/components/modules/cardapio/constants";
 import type { DiaCardapio, SemanasCardapio } from "@/components/modules/cardapio/types";
 
 export type PublicoParaPdf = {
@@ -130,9 +131,23 @@ export async function gerarCardapioPdf({
     });
   }
 
+  // Crédito da Nutricionista que monta o cardápio + as observações que ela
+  // sempre manda junto (alteração só com autorização dela, frutas da
+  // estação) — cabe dentro da margem inferior de 36pt que já existia, sem
+  // tirar espaço da área de conteúdo (que já está no limite pra caber numa
+  // página só).
+  function desenharRodape(paginaLocal: PDFPage) {
+    paginaLocal.drawLine({ start: { x: MARGIN, y: MARGIN - 4 }, end: { x: PAGE_W - MARGIN, y: MARGIN - 4 }, thickness: 0.5, color: BORDER });
+    const credito = `Nutricionista: ${NUTRICIONISTA_CARDAPIO.nome} · ${NUTRICIONISTA_CARDAPIO.registro}`;
+    paginaLocal.drawText(credito, { x: MARGIN, y: 25, size: 7, font: fonteBold, color: NAVY });
+    paginaLocal.drawText(NUTRICIONISTA_CARDAPIO.observacoes[0], { x: MARGIN, y: 16, size: 6.5, font: fonte, color: TEXT2 });
+    paginaLocal.drawText(NUTRICIONISTA_CARDAPIO.observacoes[1], { x: MARGIN, y: 7, size: 6.5, font: fonte, color: TEXT2 });
+  }
+
   function novaPagina(tituloPublico: string) {
     pagina = pdf.addPage([PAGE_W, PAGE_H]);
     desenharCabecalho(tituloPublico);
+    desenharRodape(pagina);
     y = PAGE_H - HEADER_H - 16;
   }
 
@@ -223,8 +238,17 @@ export async function gerarCardapioPdf({
     y -= 28;
 
     if (publico.notaPublico) {
-      pagina.drawText(publico.notaPublico, { x: MARGIN, y, size: 7.5, font: fonte, color: TEXT2 });
-      y -= 12;
+      // Restrição alimentar de verdade (sem sal/açúcar) — não pode passar
+      // despercebida como um texto cinza qualquer. Caixa destacada + negrito.
+      const alturaNota = 17;
+      const corAviso = "#8a4d09";
+      pagina.drawRectangle({ x: MARGIN, y: y - alturaNota, width: PAGE_W - MARGIN * 2, height: alturaNota, color: misturarComBranco("#b5670c", 0.1) });
+      pagina.drawRectangle({ x: MARGIN, y: y - alturaNota, width: 2.5, height: alturaNota, color: corSolida("#b5670c") });
+      pagina.drawText(publico.notaPublico, { x: MARGIN + 8, y: y - alturaNota + 5.5, size: 8, font: fonteBold, color: corSolida(corAviso) });
+      // Gap medido pela baseline do próximo título (9.5pt ~7pt de ascent), não
+      // só pela borda da caixa — 8pt de "gap" deixava o texto quase encostado
+      // na caixa (erro já cometido antes). 13pt garante uns 5-6pt de vão real.
+      y -= alturaNota + 13;
     }
     desenharPainel("Semanas 1 e 3", publico.semanas.impar, publico.label);
     desenharPainel("Semanas 2 e 4", publico.semanas.par, publico.label);
