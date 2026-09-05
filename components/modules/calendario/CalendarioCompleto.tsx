@@ -226,11 +226,18 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
 
       {/* NOVO: grade + painel "Próximos eventos" lado a lado */}
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_1fr]">
-        <Card className="overflow-hidden p-0">
+        {/* Achado da auditoria de responsividade (set/2026): 7 colunas fixas
+            espremidas no celular deixavam o título do evento ilegível (poucos
+            caracteres antes de truncar). Mesma solução que o resto do sistema
+            já usa pra grade larga em tela estreita (Table, CardapioPublicoCard,
+            PontoMesForm): rola na horizontal com uma largura mínima, em vez de
+            comprimir a coluna até ficar inútil — overflow-x-auto no lugar do
+            overflow-hidden. */}
+        <Card className="overflow-x-auto p-0">
           {carregando ? (
             <div className="p-10 text-center text-sm text-cda-text3">Carregando...</div>
           ) : (
-            <div key={`${ano}-${mes}`} className="grid grid-cols-7 gap-px bg-cda-border">
+            <div key={`${ano}-${mes}`} className="grid min-w-[700px] grid-cols-7 gap-px bg-cda-border">
               {DIAS_SEMANA_ABREV.map((d) => (
                 <div key={d} className="bg-white py-2.5 text-center text-[11px] font-bold uppercase tracking-wide text-cda-text3">
                   {d}
