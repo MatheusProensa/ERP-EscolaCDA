@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import {
   NAVY, YELLOW, BORDER, TEXT2, TEXT3, WHITE, BLACK, PAGE_W, PAGE_H, MARGIN, HEADER_H,
-  embarcarLogo, desenharLogo, desenharSlogan,
+  embarcarLogo, embarcarCampanha, desenharLogo, desenharSlogan, desenharCapa,
 } from "./gerarRelatorioPdf";
 import type { ItemEscalaBloco, PessoaEvento } from "@/components/modules/horarios-equipe/types";
 
@@ -90,7 +90,14 @@ export async function gerarHorariosEquipePdf({ ano, blocos }: { ano: number; blo
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
+  const campanha = await embarcarCampanha(pdf);
   const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+
+  desenharCapa(pdf, {
+    logo, campanha, fonte, fonteBold, geradoEm,
+    titulo: `Horários da Equipe · ${ano}`,
+    subtitulo: "Entrada e saída por contraturno/turma",
+  });
 
   let pagina!: PDFPage;
   let y = 0;

@@ -12,6 +12,70 @@ export async function embarcarLogo(pdf: PDFDocument): Promise<PDFImage | null> {
   }
 }
 
+/** Embarca a arte oficial da campanha ("Fundamental para aprender e
+ * crescer") em alta resolução — só cabe legível numa página inteira (no
+ * cabeçalho fino ela virava bagunça colada no logo, por isso lá é texto
+ * simples — ver desenharSlogan). */
+export async function embarcarCampanha(pdf: PDFDocument): Promise<PDFImage | null> {
+  try {
+    const bytes = await readFile(path.join(process.cwd(), "public", "campanha-2027.png"));
+    return await pdf.embedPng(bytes);
+  } catch {
+    return null;
+  }
+}
+
+/** Página de capa com a arte da campanha — logo no topo, arte grande
+ * centralizada, título do documento embaixo. Pensada pros documentos "de
+ * vitrine" que costumam ser impressos ou compartilhados inteiros (Cardápio,
+ * Horários da Equipe, Calendário), não pros relatórios de trabalho
+ * (boletos, log de atividades etc.), onde uma capa de marketing ficaria
+ * fora de lugar. Não conta como página numerada — é uma folha de rosto,
+ * a numeração "página X/Y" dos relatórios continua batendo com o conteúdo
+ * de verdade que vem depois dela. */
+export function desenharCapa(
+  pdf: PDFDocument,
+  {
+    logo,
+    campanha,
+    fonte,
+    fonteBold,
+    titulo,
+    subtitulo,
+    geradoEm,
+  }: { logo: PDFImage | null; campanha: PDFImage | null; fonte: PDFFont; fonteBold: PDFFont; titulo: string; subtitulo?: string; geradoEm: string }
+) {
+  const pagina = pdf.addPage([PAGE_W, PAGE_H]);
+  pagina.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: WHITE });
+  pagina.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: 5, color: YELLOW });
+
+  if (logo) {
+    const alturaLogo = 42;
+    const larguraLogo = (logo.width / logo.height) * alturaLogo;
+    pagina.drawImage(logo, { x: (PAGE_W - larguraLogo) / 2, y: PAGE_H - 66, width: larguraLogo, height: alturaLogo });
+  }
+
+  if (campanha) {
+    const larguraArte = 400;
+    const alturaArte = (campanha.height / campanha.width) * larguraArte;
+    const yArte = PAGE_H - 66 - 40 - alturaArte;
+    pagina.drawImage(campanha, { x: (PAGE_W - larguraArte) / 2, y: yArte, width: larguraArte, height: alturaArte });
+  }
+
+  const tituloLargura = fonteBold.widthOfTextAtSize(titulo, 22);
+  const yTitulo = campanha ? 108 : PAGE_H / 2;
+  pagina.drawText(titulo, { x: (PAGE_W - tituloLargura) / 2, y: yTitulo, size: 22, font: fonteBold, color: NAVY });
+
+  if (subtitulo) {
+    const subtituloLargura = fonte.widthOfTextAtSize(subtitulo, 12);
+    pagina.drawText(subtitulo, { x: (PAGE_W - subtituloLargura) / 2, y: yTitulo - 22, size: 12, font: fonte, color: TEXT2 });
+  }
+
+  const rodape = `Escola CDA — Santa Maria, RS · Gerado em ${geradoEm}`;
+  const rodapeLargura = fonte.widthOfTextAtSize(rodape, 9);
+  pagina.drawText(rodape, { x: (PAGE_W - rodapeLargura) / 2, y: 36, size: 9, font: fonte, color: TEXT3 });
+}
+
 /** Desenha o logo no canto superior esquerdo do cabeçalho navy. O PNG já tem
  * fundo transparente e contorno branco embutido nas letras (dá contraste
  * sozinho) — sem caixa branca atrás, que ficava com cara de botão colado.

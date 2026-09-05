@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import {
   NAVY, YELLOW, BORDER, TEXT2, TEXT3, WHITE, BLACK, PAGE_W, PAGE_H, MARGIN, HEADER_H,
-  embarcarLogo, desenharLogo, desenharSlogan,
+  embarcarLogo, embarcarCampanha, desenharLogo, desenharSlogan, desenharCapa,
 } from "./gerarRelatorioPdf";
 import { NUTRICIONISTA_CARDAPIO } from "@/components/modules/cardapio/constants";
 import type { DiaCardapio, SemanasCardapio } from "@/components/modules/cardapio/types";
@@ -108,9 +108,16 @@ export async function gerarCardapioPdf({
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
+  const campanha = await embarcarCampanha(pdf);
   // O servidor roda em UTC — sem timeZone explícito, "Gerado em" saía com a
   // hora errada (3h a menos do horário de Brasília).
   const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
+
+  desenharCapa(pdf, {
+    logo, campanha, fonte, fonteBold, geradoEm,
+    titulo: `Cardápio · ${mesLabel} ${ano}`,
+    subtitulo: "Alimentação por público — Maternal/Pré, Berçário e Fundamental",
+  });
 
   let pagina!: PDFPage;
   let y = 0;

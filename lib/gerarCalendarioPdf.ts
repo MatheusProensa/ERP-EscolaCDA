@@ -1,8 +1,10 @@
 import { PDFDocument, StandardFonts, rgb, type PDFPage } from "pdf-lib";
 import {
   embarcarLogo,
+  embarcarCampanha,
   desenharLogo,
   desenharSlogan,
+  desenharCapa,
   truncar,
   NAVY,
   YELLOW,
@@ -45,11 +47,19 @@ export async function gerarCalendarioPdf({
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
+  const campanha = await embarcarCampanha(pdf);
 
   // O servidor roda em UTC — sem timeZone explícito, "Gerado em" saía com a
   // hora errada (3h a menos do horário de Brasília).
   const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
   const totalPaginas = meses.length;
+
+  const ultimoMes = meses[meses.length - 1];
+  const tituloCapa =
+    meses.length > 1
+      ? `Calendário · ${MESES[primeiroMes.mes - 1]} a ${MESES[ultimoMes.mes - 1]}/${ultimoMes.ano}`
+      : `Calendário · ${MESES[primeiroMes.mes - 1]} ${primeiroMes.ano}`;
+  desenharCapa(pdf, { logo, campanha, fonte, fonteBold, geradoEm, titulo: tituloCapa, subtitulo: "Eventos e datas importantes do ano letivo" });
 
   function desenharCabecalho(pagina: PDFPage, tituloMes: string, numeroPagina: number) {
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H, width: PAGE_W, height: HEADER_H, color: NAVY });
