@@ -15,15 +15,45 @@ export async function embarcarLogo(pdf: PDFDocument): Promise<PDFImage | null> {
 /** Desenha o logo no canto superior esquerdo do cabeçalho navy. O PNG já tem
  * fundo transparente e contorno branco embutido nas letras (dá contraste
  * sozinho) — sem caixa branca atrás, que ficava com cara de botão colado.
- * `alturaPagina` porque nem toda página usa a mesma altura (ficha é retrato). */
-export function desenharLogo(pagina: PDFPage, logo: PDFImage | null, alturaPagina: number) {
-  if (!logo) return;
+ * `alturaPagina` porque nem toda página usa a mesma altura (ficha é retrato).
+ * Retorna a largura desenhada, pra quem chamar saber onde posicionar o que
+ * vem a seguir (ex.: o selo da campanha, logo ao lado). */
+export function desenharLogo(pagina: PDFPage, logo: PDFImage | null, alturaPagina: number): number {
+  if (!logo) return 0;
   const alturaLogo = 34;
   const escala = alturaLogo / logo.height;
   const larguraLogo = logo.width * escala;
   const x = MARGIN;
   const y = alturaPagina - 16 - alturaLogo;
   pagina.drawImage(logo, { x, y, width: larguraLogo, height: alturaLogo });
+  return larguraLogo;
+}
+
+/** Selo da campanha vigente (set/2026: "Fundamental para aprender e
+ * crescer") — substitui a frase "Onde, há 15 anos..." da campanha anterior
+ * em todo PDF do sistema. Trocar de campanha no futuro é só trocar o arquivo
+ * public/campanha-2027.png (mesmo enquadramento — fundo transparente,
+ * proporção parecida) e o nome do arquivo aqui embaixo. */
+export async function embarcarCampanha(pdf: PDFDocument): Promise<PDFImage | null> {
+  try {
+    const bytes = await readFile(path.join(process.cwd(), "public", "campanha-2027.png"));
+    return await pdf.embedPng(bytes);
+  } catch {
+    return null;
+  }
+}
+
+/** Desenha o selo da campanha ao lado do logo, com a mesma altura — os dois
+ * lado a lado leem como "logo da escola + selo da campanha do momento", sem
+ * disputar espaço com o título do documento (que fica à direita). */
+export function desenharCampanha(pagina: PDFPage, campanha: PDFImage | null, alturaPagina: number, xInicial: number) {
+  if (!campanha) return;
+  const alturaSelo = 34;
+  const escala = alturaSelo / campanha.height;
+  const larguraSelo = campanha.width * escala;
+  const x = xInicial + 14;
+  const y = alturaPagina - 16 - alturaSelo;
+  pagina.drawImage(campanha, { x, y, width: larguraSelo, height: alturaSelo });
 }
 
 export const NAVY = rgb(0x0d / 255, 0x1f / 255, 0x4e / 255);
@@ -70,6 +100,7 @@ export async function gerarRelatorioPdf({
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
+  const campanha = await embarcarCampanha(pdf);
 
   const larguraTabela = colunas.reduce((acc, c) => acc + c.largura, 0);
   const escala = Math.min(1, (PAGE_W - MARGIN * 2) / larguraTabela);
@@ -83,14 +114,8 @@ export async function gerarRelatorioPdf({
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H, width: PAGE_W, height: HEADER_H, color: NAVY });
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H - 3, width: PAGE_W, height: 3, color: YELLOW });
 
-    desenharLogo(pagina, logo, PAGE_H);
-    pagina.drawText("Onde, há 15 anos, família e escola sonham juntas", {
-      x: MARGIN,
-      y: PAGE_H - 58,
-      size: 8.5,
-      font: fonte,
-      color: rgb(0.75, 0.8, 0.9),
-    });
+    const larguraLogo = desenharLogo(pagina, logo, PAGE_H);
+    desenharCampanha(pagina, campanha, PAGE_H, larguraLogo);
 
     const tituloLargura = fonteBold.widthOfTextAtSize(titulo, 14);
     pagina.drawText(titulo, {
@@ -220,6 +245,7 @@ export async function gerarRelatorioPdfMultiSecao({
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
+  const campanha = await embarcarCampanha(pdf);
 
   const geradoEm = new Date().toLocaleString("pt-BR");
 
@@ -235,14 +261,8 @@ export async function gerarRelatorioPdfMultiSecao({
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H, width: PAGE_W, height: HEADER_H, color: NAVY });
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H - 3, width: PAGE_W, height: 3, color: YELLOW });
 
-    desenharLogo(pagina, logo, PAGE_H);
-    pagina.drawText("Onde, há 15 anos, família e escola sonham juntas", {
-      x: MARGIN,
-      y: PAGE_H - 58,
-      size: 8.5,
-      font: fonte,
-      color: rgb(0.75, 0.8, 0.9),
-    });
+    const larguraLogo = desenharLogo(pagina, logo, PAGE_H);
+    desenharCampanha(pagina, campanha, PAGE_H, larguraLogo);
 
     const tituloCompleto = `${titulo} · ${tituloSecao}`;
     const tituloLargura = fonteBold.widthOfTextAtSize(tituloCompleto, 14);
@@ -357,6 +377,7 @@ export async function gerarRelatorioPdfSecoesEmpilhadas({
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
+  const campanha = await embarcarCampanha(pdf);
 
   const geradoEm = new Date().toLocaleString("pt-BR");
   let paginaAtual = 1;
@@ -366,10 +387,8 @@ export async function gerarRelatorioPdfSecoesEmpilhadas({
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H, width: PAGE_W, height: HEADER_H, color: NAVY });
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H - 3, width: PAGE_W, height: 3, color: YELLOW });
 
-    desenharLogo(pagina, logo, PAGE_H);
-    pagina.drawText("Onde, há 15 anos, família e escola sonham juntas", {
-      x: MARGIN, y: PAGE_H - 58, size: 8.5, font: fonte, color: rgb(0.75, 0.8, 0.9),
-    });
+    const larguraLogo = desenharLogo(pagina, logo, PAGE_H);
+    desenharCampanha(pagina, campanha, PAGE_H, larguraLogo);
 
     const tituloLargura = fonteBold.widthOfTextAtSize(titulo, 14);
     pagina.drawText(titulo, { x: PAGE_W - MARGIN - tituloLargura, y: PAGE_H - 28, size: 14, font: fonteBold, color: WHITE });

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { CardapioPublicoCard } from "@/components/modules/cardapio/CardapioPublicoCard";
 import { PrepararMesButton } from "@/components/modules/cardapio/PrepararMesButton";
 import { ExcluirMesButton } from "@/components/modules/cardapio/ExcluirMesButton";
+import { CardapioExportButtons } from "@/components/modules/cardapio/CardapioExportButtons";
 import { PUBLICOS_CARDAPIO, MESES_CARDAPIO } from "@/components/modules/cardapio/constants";
 import type { ItemCardapioMes } from "@/components/modules/cardapio/types";
 
@@ -45,6 +46,7 @@ export default async function CardapioPage({
       <PageHeader
         title="Cardápio"
         subtitle="Alimentação por público — o que a Nutricionista define pra cada mês, sempre em vigor"
+        action={blocos.length > 0 ? <CardapioExportButtons ano={ano} mes={mes} /> : undefined}
       />
 
       <Card className="mb-5 p-4">

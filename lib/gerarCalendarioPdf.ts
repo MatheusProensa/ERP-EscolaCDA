@@ -2,6 +2,8 @@ import { PDFDocument, StandardFonts, rgb, type PDFPage } from "pdf-lib";
 import {
   embarcarLogo,
   desenharLogo,
+  embarcarCampanha,
+  desenharCampanha,
   truncar,
   NAVY,
   YELLOW,
@@ -44,6 +46,7 @@ export async function gerarCalendarioPdf({
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
+  const campanha = await embarcarCampanha(pdf);
 
   const geradoEm = new Date().toLocaleString("pt-BR");
   const totalPaginas = meses.length;
@@ -52,14 +55,8 @@ export async function gerarCalendarioPdf({
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H, width: PAGE_W, height: HEADER_H, color: NAVY });
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H - 3, width: PAGE_W, height: 3, color: YELLOW });
 
-    desenharLogo(pagina, logo, PAGE_H);
-    pagina.drawText("Onde, há 15 anos, família e escola sonham juntas", {
-      x: MARGIN,
-      y: PAGE_H - 58,
-      size: 8.5,
-      font: fonte,
-      color: rgb(0.75, 0.8, 0.9),
-    });
+    const larguraLogo = desenharLogo(pagina, logo, PAGE_H);
+    desenharCampanha(pagina, campanha, PAGE_H, larguraLogo);
 
     const titulo = `Calendário — ${tituloMes}`;
     const tituloLargura = fonteBold.widthOfTextAtSize(titulo, 14);

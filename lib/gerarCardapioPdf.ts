@@ -1,5 +1,8 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
-import { NAVY, YELLOW, BORDER, TEXT2, WHITE, BLACK, PAGE_W, PAGE_H, MARGIN, HEADER_H, embarcarLogo, desenharLogo } from "./gerarRelatorioPdf";
+import {
+  NAVY, YELLOW, BORDER, TEXT2, WHITE, BLACK, PAGE_W, PAGE_H, MARGIN, HEADER_H,
+  embarcarLogo, desenharLogo, embarcarCampanha, desenharCampanha,
+} from "./gerarRelatorioPdf";
 import type { DiaCardapio, SemanasCardapio } from "@/components/modules/cardapio/types";
 
 export type PublicoParaPdf = {
@@ -101,6 +104,7 @@ export async function gerarCardapioPdf({
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
+  const campanha = await embarcarCampanha(pdf);
   const geradoEm = new Date().toLocaleString("pt-BR");
 
   let pagina!: PDFPage;
@@ -109,10 +113,8 @@ export async function gerarCardapioPdf({
   function desenharCabecalho(tituloPublico: string) {
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H, width: PAGE_W, height: HEADER_H, color: NAVY });
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H - 3, width: PAGE_W, height: 3, color: YELLOW });
-    desenharLogo(pagina, logo, PAGE_H);
-    pagina.drawText("Onde, há 15 anos, família e escola sonham juntas", {
-      x: MARGIN, y: PAGE_H - 58, size: 8.5, font: fonte, color: rgb(0.75, 0.8, 0.9),
-    });
+    const larguraLogo = desenharLogo(pagina, logo, PAGE_H);
+    desenharCampanha(pagina, campanha, PAGE_H, larguraLogo);
 
     const titulo = `Cardápio · ${mesLabel} ${ano} · ${tituloPublico}`;
     const tituloLargura = fonteBold.widthOfTextAtSize(titulo, 13);
@@ -147,12 +149,21 @@ export async function gerarCardapioPdf({
   }
 
   function desenharPainel(titulo: string, dias: DiaCardapio[], tituloPublico: string) {
-    if (dias.length === 0 || dias.every((d) => d.refeicoes.length === 0)) return;
-
     if (y - 16 - HEAD_ROW_H - (LINE_H * 2 + PAD_Y * 2) < MARGIN) novaPagina(tituloPublico);
 
     pagina.drawText(titulo, { x: MARGIN, y, size: 10.5, font: fonteBold, color: NAVY });
     y -= 16;
+
+    // Sem cardápio cadastrado ainda pra esse padrão de semana — avisa em vez
+    // de deixar a página em branco (nunca inventa conteúdo).
+    if (dias.length === 0 || dias.every((d) => d.refeicoes.length === 0)) {
+      pagina.drawText("Ainda não tem cardápio cadastrado pra este padrão de semana.", {
+        x: MARGIN, y: y - 12, size: 8.5, font: fonte, color: TEXT2,
+      });
+      y -= 28;
+      return;
+    }
+
     desenharCabecalhoTabela(dias);
 
     const refeicoesBase = dias[0].refeicoes;
