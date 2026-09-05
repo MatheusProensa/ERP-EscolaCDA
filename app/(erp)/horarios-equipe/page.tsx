@@ -1,5 +1,6 @@
 import { Clock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
@@ -8,6 +9,7 @@ import { EscalaBlocoCard } from "@/components/modules/horarios-equipe/EscalaBloc
 import { NovoBlocoButton } from "@/components/modules/horarios-equipe/NovoBlocoButton";
 import { HorariosExportButtons } from "@/components/modules/horarios-equipe/HorariosExportButtons";
 import type { ItemEscalaBloco } from "@/components/modules/horarios-equipe/types";
+import { podeEditarModulo } from "@/lib/permissoes";
 
 export default async function HorariosEquipePage({
   searchParams,
@@ -15,6 +17,8 @@ export default async function HorariosEquipePage({
   searchParams: Promise<{ ano?: string }>;
 }) {
   const { ano: anoParam } = await searchParams;
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/horarios-equipe", session?.user.role ?? "", session?.user.permissoes);
   const ano = Number(anoParam) || new Date().getFullYear();
 
   const blocosRaw = await prisma.escalaEquipeBloco.findMany({
@@ -60,10 +64,12 @@ export default async function HorariosEquipePage({
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-cda-border bg-white py-16 text-center">
           <Clock className="h-8 w-8 text-cda-text3" />
           <p className="text-sm text-cda-text3">Ainda não tem escala cadastrada para {ano}.</p>
-          <div className="mt-2 flex w-full max-w-md flex-col gap-3 px-6 sm:flex-row">
-            <NovoBlocoButton ano={ano} tipo="TURNO" label="Nova turma/turno" placeholder="Ex.: Contraturno IV / 1º Ano EF" />
-            <NovoBlocoButton ano={ano} tipo="NOTA" label="Novo aviso" placeholder="Ex.: Organização das turmas" />
-          </div>
+          {podeEditar && (
+            <div className="mt-2 flex w-full max-w-md flex-col gap-3 px-6 sm:flex-row">
+              <NovoBlocoButton ano={ano} tipo="TURNO" label="Nova turma/turno" placeholder="Ex.: Contraturno IV / 1º Ano EF" />
+              <NovoBlocoButton ano={ano} tipo="NOTA" label="Novo aviso" placeholder="Ex.: Organização das turmas" />
+            </div>
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-6">
@@ -74,9 +80,12 @@ export default async function HorariosEquipePage({
                 bloco={bloco}
                 anterior={i > 0 ? turnos[i - 1] : undefined}
                 proximo={i < turnos.length - 1 ? turnos[i + 1] : undefined}
+                podeEditar={podeEditar}
               />
             ))}
-            <NovoBlocoButton ano={ano} tipo="TURNO" label="Nova turma/turno" placeholder="Ex.: Contraturno IV / 1º Ano EF" />
+            {podeEditar && (
+              <NovoBlocoButton ano={ano} tipo="TURNO" label="Nova turma/turno" placeholder="Ex.: Contraturno IV / 1º Ano EF" />
+            )}
           </div>
 
           <div>
@@ -90,9 +99,12 @@ export default async function HorariosEquipePage({
                   bloco={bloco}
                   anterior={i > 0 ? notas[i - 1] : undefined}
                   proximo={i < notas.length - 1 ? notas[i + 1] : undefined}
+                  podeEditar={podeEditar}
                 />
               ))}
-              <NovoBlocoButton ano={ano} tipo="NOTA" label="Novo aviso" placeholder="Ex.: Organização das turmas" />
+              {podeEditar && (
+                <NovoBlocoButton ano={ano} tipo="NOTA" label="Novo aviso" placeholder="Ex.: Organização das turmas" />
+              )}
             </div>
           </div>
         </div>

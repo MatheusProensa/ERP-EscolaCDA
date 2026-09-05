@@ -24,9 +24,14 @@ const TIPOS_DOCUMENTO = [
 export function DocumentosFuncionario({
   funcionarioId,
   documentos,
+  podeEditar = true,
 }: {
   funcionarioId: string;
   documentos: DocumentoFuncionario[];
+  /** Anexar/remover documento é escrita — mesma revisão de permissão de
+   * set/2026 (Cardápio, Funcionários...). Default true só pra não quebrar
+   * chamador antigo; a página já passa o valor real. */
+  podeEditar?: boolean;
 }) {
   const router = useRouter();
   const [tipo, setTipo] = useState(TIPOS_DOCUMENTO[0]);
@@ -93,30 +98,34 @@ export function DocumentosFuncionario({
               >
                 <Download className="h-4 w-4" />
               </a>
-              <button
-                onClick={() => setDocParaRemover(doc.id)}
-                disabled={removendoId === doc.id}
-                className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+              {podeEditar && (
+                <button
+                  onClick={() => setDocParaRemover(doc.id)}
+                  disabled={removendoId === doc.id}
+                  className="flex h-8 w-8 items-center justify-center rounded-lg text-cda-red hover:bg-cda-bg disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
             </div>
           </div>
         ))}
       </div>
 
-      <div className="flex flex-col gap-3 border-t border-cda-border p-5 sm:flex-row sm:items-end">
-        <div className="flex-1">
-          <Select label="Tipo de documento" value={tipo} onChange={(e) => setTipo(e.target.value)}>
-            {TIPOS_DOCUMENTO.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </Select>
+      {podeEditar && (
+        <div className="flex flex-col gap-3 border-t border-cda-border p-5 sm:flex-row sm:items-end">
+          <div className="flex-1">
+            <Select label="Tipo de documento" value={tipo} onChange={(e) => setTipo(e.target.value)}>
+              {TIPOS_DOCUMENTO.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <FileUpload onSelect={handleUpload} disabled={enviando} />
         </div>
-        <FileUpload onSelect={handleUpload} disabled={enviando} />
-      </div>
+      )}
       {error && <p className="px-5 pb-4 text-sm text-cda-red">{error}</p>}
 
       <ConfirmDialog

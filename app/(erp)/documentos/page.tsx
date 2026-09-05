@@ -1,14 +1,18 @@
 import { TriangleAlert } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { NovoDocumentoModal } from "@/components/modules/documentos/NovoDocumentoModal";
 import { DocumentosLista } from "@/components/modules/documentos/DocumentosLista";
+import { podeEditarModulo } from "@/lib/permissoes";
 import { CATEGORIAS_DOCUMENTO, formatarData, hojeBrasilia } from "@/lib/utils";
 
 export default async function DocumentosPage() {
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/documentos", session?.user.role ?? "", session?.user.permissoes);
   const documentos = await prisma.documentoInstitucional.findMany({
     orderBy: [{ categoria: "asc" }, { titulo: "asc" }],
   });
@@ -33,7 +37,7 @@ export default async function DocumentosPage() {
       <PageHeader
         title="Documentos Institucionais"
         subtitle="Alvará, contratos, credenciamento e demais documentos da escola — acesso restrito à Direção"
-        action={<NovoDocumentoModal />}
+        action={podeEditar ? <NovoDocumentoModal /> : undefined}
       />
 
       {vencidos.length > 0 && (
@@ -52,7 +56,7 @@ export default async function DocumentosPage() {
           <EmptyState title="Nenhum documento cadastrado ainda." />
         </Card>
       ) : (
-        <DocumentosLista grupos={grupos} />
+        <DocumentosLista grupos={grupos} podeEditar={podeEditar} />
       )}
     </div>
   );

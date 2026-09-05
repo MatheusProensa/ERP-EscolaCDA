@@ -39,7 +39,7 @@ export type BoletoLinha = {
   aluno: { id: string; nome: string };
 };
 
-export function BoletosTable({ boletos }: { boletos: BoletoLinha[] }) {
+export function BoletosTable({ boletos, podeEditar = true }: { boletos: BoletoLinha[]; podeEditar?: boolean }) {
   const router = useRouter();
   const [carregando, setCarregando] = useState<string | null>(null);
   const [excluindo, setExcluindo] = useState<string | null>(null);
@@ -77,10 +77,10 @@ export function BoletosTable({ boletos }: { boletos: BoletoLinha[] }) {
         <Th>Valor</Th>
         <Th>Vencimento</Th>
         <Th>Status</Th>
-        <ThActions />
+        {podeEditar && <ThActions />}
       </TableHead>
       <TableBody>
-        {boletos.length === 0 && <TableEmpty colSpan={6}>Nenhum boleto lançado ainda.</TableEmpty>}
+        {boletos.length === 0 && <TableEmpty colSpan={podeEditar ? 6 : 5}>Nenhum boleto lançado ainda.</TableEmpty>}
         {boletos.map((b) => (
           <Tr key={b.id}>
             <Td className="font-medium">{b.aluno.nome}</Td>
@@ -100,27 +100,29 @@ export function BoletosTable({ boletos }: { boletos: BoletoLinha[] }) {
                 )}
               </div>
             </Td>
-            <TdActions>
-              {b.status !== "REGISTRADO" && b.status !== "PAGO" && (
-                <IconButton
-                  icon={RotateCw}
-                  label="Tentar registrar de novo"
-                  size="sm"
-                  disabled={carregando === b.id}
-                  onClick={() => reemitir(b.id)}
-                />
-              )}
-              {b.status !== "REGISTRADO" && b.status !== "PAGO" && (
-                <IconButton
-                  icon={Trash2}
-                  label="Excluir boleto"
-                  size="sm"
-                  variant="danger"
-                  disabled={carregando === b.id}
-                  onClick={() => setExcluindo(b.id)}
-                />
-              )}
-            </TdActions>
+            {podeEditar && (
+              <TdActions>
+                {b.status !== "REGISTRADO" && b.status !== "PAGO" && (
+                  <IconButton
+                    icon={RotateCw}
+                    label="Tentar registrar de novo"
+                    size="sm"
+                    disabled={carregando === b.id}
+                    onClick={() => reemitir(b.id)}
+                  />
+                )}
+                {b.status !== "REGISTRADO" && b.status !== "PAGO" && (
+                  <IconButton
+                    icon={Trash2}
+                    label="Excluir boleto"
+                    size="sm"
+                    variant="danger"
+                    disabled={carregando === b.id}
+                    onClick={() => setExcluindo(b.id)}
+                  />
+                )}
+              </TdActions>
+            )}
           </Tr>
         ))}
       </TableBody>

@@ -1,5 +1,6 @@
 import { TriangleAlert } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
@@ -7,8 +8,11 @@ import { NovoBoletoModal } from "@/components/modules/boletos/NovoBoletoModal";
 import { BoletosTable } from "@/components/modules/boletos/BoletosTable";
 import { BoletosExportButton } from "@/components/modules/boletos/BoletosExportButton";
 import { banrisulConfigurado } from "@/lib/banrisul";
+import { podeEditarModulo } from "@/lib/permissoes";
 
 export default async function BoletosPage() {
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/boletos", session?.user.role ?? "", session?.user.permissoes);
   const [boletos, alunos] = await Promise.all([
     prisma.boleto.findMany({
       include: { aluno: { select: { id: true, nome: true } } },
@@ -28,7 +32,7 @@ export default async function BoletosPage() {
         action={
           <>
             {boletos.length > 0 && <BoletosExportButton />}
-            <NovoBoletoModal alunos={alunos} />
+            {podeEditar && <NovoBoletoModal alunos={alunos} />}
           </>
         }
       />
@@ -42,7 +46,7 @@ export default async function BoletosPage() {
       )}
 
       <Card>
-        <BoletosTable boletos={boletos} />
+        <BoletosTable boletos={boletos} podeEditar={podeEditar} />
       </Card>
     </div>
   );

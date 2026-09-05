@@ -16,7 +16,13 @@ import { formatarDataHora } from "@/lib/utils";
 
 type MovimentacaoComItem = MovimentacaoEstoque & { item: ItemEstoque };
 
-export function MovimentacoesTab({ movimentacoes: movimentacoesIniciais }: { movimentacoes: MovimentacaoComItem[] }) {
+export function MovimentacoesTab({
+  movimentacoes: movimentacoesIniciais,
+  podeEditar = true,
+}: {
+  movimentacoes: MovimentacaoComItem[];
+  podeEditar?: boolean;
+}) {
   const router = useRouter();
   const [movimentacoes, setMovimentacoes] = useState(movimentacoesIniciais);
   const [busca, setBusca] = useState("");
@@ -111,7 +117,7 @@ export function MovimentacoesTab({ movimentacoes: movimentacoesIniciais }: { mov
             {filtradas.length === 0 && <TableEmpty colSpan={8}>Nenhuma movimentação registrada.</TableEmpty>}
             {filtradas.map((mov) => {
               const estilo = MOV_INFO[mov.tipo];
-              const podeEstornar = !mov.anulada && mov.tipo !== "ESTORNO";
+              const podeEstornar = podeEditar && !mov.anulada && mov.tipo !== "ESTORNO";
               return (
                 <Tr key={mov.id} className={mov.anulada ? "opacity-50" : ""}>
                   <Td>

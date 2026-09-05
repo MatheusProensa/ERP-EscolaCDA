@@ -1,12 +1,16 @@
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ChaveCard } from "@/components/modules/chaves/ChaveCard";
 import { NovaChaveModal } from "@/components/modules/chaves/NovaChaveModal";
 import { ChavesExportButton } from "@/components/modules/chaves/ChavesExportButton";
+import { podeEditarModulo } from "@/lib/permissoes";
 
 export default async function ChavesPage() {
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/chaves", session?.user.role ?? "", session?.user.permissoes);
   const [chaves, funcionarios] = await Promise.all([
     prisma.chave.findMany({
       where: { ativa: true },
@@ -24,7 +28,7 @@ export default async function ChavesPage() {
         action={
           <>
             {chaves.length > 0 && <ChavesExportButton />}
-            <NovaChaveModal />
+            {podeEditar && <NovaChaveModal />}
           </>
         }
       />
@@ -38,7 +42,7 @@ export default async function ChavesPage() {
         // (ex.: "Contraturno V") ficava espremido e cortado ao lado do badge/botões.
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {chaves.map((chave) => (
-            <ChaveCard key={chave.id} chave={chave} funcionarios={funcionarios} />
+            <ChaveCard key={chave.id} chave={chave} funcionarios={funcionarios} podeEditar={podeEditar} />
           ))}
         </div>
       )}

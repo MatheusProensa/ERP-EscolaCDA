@@ -1,6 +1,7 @@
 import { UserPlus } from "lucide-react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -12,6 +13,7 @@ import { AlunoTable } from "@/components/modules/alunos/AlunoTable";
 import { ImportarMenu } from "@/components/modules/alunos/ImportarMenu";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
+import { podeEditarModulo } from "@/lib/permissoes";
 import { ordenarTurmas } from "@/lib/utils";
 
 export default async function AlunosPage({
@@ -20,6 +22,11 @@ export default async function AlunosPage({
   searchParams: Promise<{ turma?: string; busca?: string; censo?: string; contrato?: string }>;
 }) {
   const { turma, busca, censo, contrato } = await searchParams;
+  const session = await auth();
+  // Achado real (set/2026, mesma revisão do Cardápio): essa página mostrava
+  // "Novo aluno" e o menu de Importar planilha pra qualquer um que enxergasse
+  // /alunos, mesmo com "Só visualizar" marcado na grade.
+  const podeEditar = podeEditarModulo("/alunos", session?.user.role ?? "", session?.user.permissoes);
   const censoIncompleto = censo === "incompleto";
   const contratoPendente = contrato === "pendente";
 
@@ -76,11 +83,13 @@ export default async function AlunosPage({
           <div className="flex flex-wrap items-center gap-2">
             <ExportButtons href="/api/relatorios/alunos" label="Relatório" params={{ turma, busca, censo, contrato }} />
             <ExportButtons href="/api/relatorios/contatos-alunos" label="Contatos" params={{ turma }} />
-            <ImportarMenu turmas={turmas.map((t) => ({ id: t.id, nome: t.nome }))} />
-            <Button href="/alunos/novo">
-              <UserPlus className="h-4 w-4" />
-              Novo aluno
-            </Button>
+            {podeEditar && <ImportarMenu turmas={turmas.map((t) => ({ id: t.id, nome: t.nome }))} />}
+            {podeEditar && (
+              <Button href="/alunos/novo">
+                <UserPlus className="h-4 w-4" />
+                Novo aluno
+              </Button>
+            )}
           </div>
         }
       />

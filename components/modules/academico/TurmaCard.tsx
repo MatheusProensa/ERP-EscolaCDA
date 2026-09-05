@@ -30,7 +30,7 @@ const TURNO_STYLE: Record<TurmaCardProps["turno"], { label: string; variant: Bad
   MANHA: { label: "Manhã", variant: "cat3" },
 };
 
-export function TurmaCard({ id, nome, turno, capacidade, matriculados }: TurmaCardProps) {
+export function TurmaCard({ id, nome, turno, capacidade, matriculados, podeEditar = true }: TurmaCardProps & { podeEditar?: boolean }) {
   const router = useRouter();
   const [editando, setEditando] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
@@ -85,8 +85,12 @@ export function TurmaCard({ id, nome, turno, capacidade, matriculados }: TurmaCa
         <p className="font-semibold text-cda-text">{nome}</p>
         <div className="flex shrink-0 items-center gap-1">
           <Badge variant={turnoStyle.variant}>{turnoStyle.label}</Badge>
-          <IconButton icon={Pencil} label="Editar turma" onClick={() => setEditando(true)} />
-          <IconButton icon={Trash2} label="Excluir turma" variant="danger" onClick={() => setConfirmandoExclusao(true)} />
+          {podeEditar && (
+            <>
+              <IconButton icon={Pencil} label="Editar turma" onClick={() => setEditando(true)} />
+              <IconButton icon={Trash2} label="Excluir turma" variant="danger" onClick={() => setConfirmandoExclusao(true)} />
+            </>
+          )}
         </div>
       </div>
 

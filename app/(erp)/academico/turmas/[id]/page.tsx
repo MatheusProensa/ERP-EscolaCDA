@@ -2,17 +2,21 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { AlertTriangle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Avatar } from "@/components/ui/Avatar";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { MatricularNaTurmaModal } from "@/components/modules/academico/MatricularNaTurmaModal";
+import { podeEditarModulo } from "@/lib/permissoes";
 
 const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã — Contraturno", TARDE: "Tarde — Ensino regular" };
 
 export default async function TurmaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/academico", session?.user.role ?? "", session?.user.permissoes);
 
   const turma = await prisma.turma.findUnique({
     where: { id },
@@ -56,7 +60,7 @@ export default async function TurmaDetalhePage({ params }: { params: Promise<{ i
         action={
           <div className="flex flex-wrap items-center gap-2">
             <ExportButtons href="/api/relatorios/alunos" params={{ turma: turma.id }} />
-            <MatricularNaTurmaModal turmaId={turma.id} alunosDisponiveis={alunosDisponiveis} />
+            {podeEditar && <MatricularNaTurmaModal turmaId={turma.id} alunosDisponiveis={alunosDisponiveis} />}
           </div>
         }
       />

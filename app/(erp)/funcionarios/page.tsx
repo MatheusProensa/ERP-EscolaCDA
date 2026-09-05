@@ -1,5 +1,6 @@
 import { UserPlus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { FuncionarioTable } from "@/components/modules/funcionarios/FuncionarioTable";
+import { podeEditarModulo } from "@/lib/permissoes";
 import { SETORES, agruparPorSetor } from "@/lib/utils";
 
 export default async function FuncionariosPage({
@@ -16,6 +18,8 @@ export default async function FuncionariosPage({
   searchParams: Promise<{ setor?: string; busca?: string }>;
 }) {
   const { setor, busca } = await searchParams;
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/funcionarios", session?.user.role ?? "", session?.user.permissoes);
 
   const funcionarios = await prisma.funcionario.findMany({
     where: {
@@ -36,10 +40,12 @@ export default async function FuncionariosPage({
           <div className="flex flex-wrap items-center gap-2">
             <ExportButtons href="/api/relatorios/funcionarios" label="Lista completa" params={{ setor }} />
             <ExportButtons href="/api/relatorios/funcionarios-contatos" label="Contatos" />
-            <Button href="/funcionarios/novo">
-              <UserPlus className="h-4 w-4" />
-              Novo funcionário
-            </Button>
+            {podeEditar && (
+              <Button href="/funcionarios/novo">
+                <UserPlus className="h-4 w-4" />
+                Novo funcionário
+              </Button>
+            )}
           </div>
         }
       />
@@ -63,7 +69,7 @@ export default async function FuncionariosPage({
 
       {grupos.length === 0 && (
         <Card>
-          <FuncionarioTable funcionarios={[]} />
+          <FuncionarioTable funcionarios={[]} podeEditar={podeEditar} />
         </Card>
       )}
 
@@ -74,7 +80,7 @@ export default async function FuncionariosPage({
             title={grupo.setor}
             action={<Badge variant="count">{grupo.itens.length}</Badge>}
           >
-            <FuncionarioTable funcionarios={grupo.itens} mostrarSetor={false} />
+            <FuncionarioTable funcionarios={grupo.itens} mostrarSetor={false} podeEditar={podeEditar} />
           </Card>
         ))}
       </div>

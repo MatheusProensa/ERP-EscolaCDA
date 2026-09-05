@@ -1,5 +1,6 @@
 import { GraduationCap, Users, School } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { contarAlunosAtivos } from "@/lib/alunos";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -7,9 +8,12 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { TurmaCard } from "@/components/modules/academico/TurmaCard";
 import { NovaTurmaModal } from "@/components/modules/academico/NovaTurmaModal";
 import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
+import { podeEditarModulo } from "@/lib/permissoes";
 import { ordenarTurmas } from "@/lib/utils";
 
 export default async function AcademicoPage() {
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/academico", session?.user.role ?? "", session?.user.permissoes);
   const anoLetivo = await getAnoLetivoAtivo();
 
   const [turmasRaw, totalAlunos] = await Promise.all([
@@ -28,7 +32,7 @@ export default async function AcademicoPage() {
         title="Acadêmico"
         subtitle={`Ano letivo ${anoLetivo?.ano ?? "—"}`}
         breadcrumb={[{ label: "Acadêmico" }]}
-        action={<NovaTurmaModal />}
+        action={podeEditar ? <NovaTurmaModal /> : undefined}
       />
 
       <div className="mb-5 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3">
@@ -57,6 +61,7 @@ export default async function AcademicoPage() {
               turno={t.turno}
               capacidade={t.capacidade}
               matriculados={t._count.matriculas}
+              podeEditar={podeEditar}
             />
           ))}
         </div>
@@ -75,6 +80,7 @@ export default async function AcademicoPage() {
               turno={t.turno}
               capacidade={t.capacidade}
               matriculados={t._count.matriculas}
+              podeEditar={podeEditar}
             />
           ))}
         </div>

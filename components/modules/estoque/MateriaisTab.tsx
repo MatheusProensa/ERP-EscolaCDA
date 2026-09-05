@@ -18,7 +18,7 @@ import { EditarItemModal } from "./EditarItemModal";
 import { AjusteEstoqueModal } from "./AjusteEstoqueModal";
 import { statusEstoque, type StatusEstoque } from "@/lib/estoqueStatus";
 
-export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
+export function MateriaisTab({ itens, podeEditar = true }: { itens: ItemEstoque[]; podeEditar?: boolean }) {
   const router = useRouter();
   const [busca, setBusca] = useState("");
   const [filtroStatus, setFiltroStatus] = useState<StatusEstoque | "todos">("todos");
@@ -119,15 +119,20 @@ export function MateriaisTab({ itens }: { itens: ItemEstoque[] }) {
                   <StatusEstoquePill status={statusEstoque(item.quantidade, item.minimo)} />
                 </Td>
                 <Td>
-                  <div className="flex justify-end">
-                    <ItemMenu
-                      onEntrada={() => setItemMovimentacao({ item, tipo: "ENTRADA" })}
-                      onSaida={() => setItemMovimentacao({ item, tipo: "SAIDA" })}
-                      onAjuste={() => setItemAjuste(item)}
-                      onEditar={() => setItemEditar(item)}
-                      onExcluir={() => setItemExcluir(item)}
-                    />
-                  </div>
+                  {/* Achado real (set/2026): esse menu (entrada/saída/ajuste/editar/
+                      excluir — só escrita) aparecia pra qualquer um que enxergasse
+                      /estoque, mesmo com "Só visualizar" marcado. */}
+                  {podeEditar && (
+                    <div className="flex justify-end">
+                      <ItemMenu
+                        onEntrada={() => setItemMovimentacao({ item, tipo: "ENTRADA" })}
+                        onSaida={() => setItemMovimentacao({ item, tipo: "SAIDA" })}
+                        onAjuste={() => setItemAjuste(item)}
+                        onEditar={() => setItemEditar(item)}
+                        onExcluir={() => setItemExcluir(item)}
+                      />
+                    </div>
+                  )}
                 </Td>
               </Tr>
             ))}

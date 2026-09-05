@@ -188,12 +188,14 @@ export function EscalaBlocoCard({
   bloco,
   anterior,
   proximo,
+  podeEditar = true,
 }: {
   bloco: ItemEscalaBloco;
   /** Vizinhos na mesma seção (Turnos ou Organização e avisos) — undefined nas
    * pontas, desabilita a seta correspondente. */
   anterior?: VizinhoBloco;
   proximo?: VizinhoBloco;
+  podeEditar?: boolean;
 }) {
   const [editando, setEditando] = useState(false);
   const variant = corPorTexto(grupoDoTitulo(bloco.titulo));
@@ -207,7 +209,9 @@ export function EscalaBlocoCard({
               <StickyNote className="h-4 w-4 text-cda-text3" />
               <h3 className="text-sm font-semibold text-cda-text">{bloco.titulo}</h3>
             </div>
-            <ControlesBloco bloco={bloco} anterior={anterior} proximo={proximo} onEditar={() => setEditando(true)} />
+            {podeEditar && (
+              <ControlesBloco bloco={bloco} anterior={anterior} proximo={proximo} onEditar={() => setEditando(true)} />
+            )}
           </div>
           {bloco.horariosReferencia.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-1.5">
@@ -233,7 +237,9 @@ export function EscalaBlocoCard({
       >
         <div className="mb-4 flex items-start justify-between gap-3">
           <h3 className="text-sm font-semibold text-cda-text">{bloco.titulo}</h3>
-          <ControlesBloco bloco={bloco} anterior={anterior} proximo={proximo} onEditar={() => setEditando(true)} />
+          {podeEditar && (
+            <ControlesBloco bloco={bloco} anterior={anterior} proximo={proximo} onEditar={() => setEditando(true)} />
+          )}
         </div>
 
         <div className="flex flex-col gap-4">

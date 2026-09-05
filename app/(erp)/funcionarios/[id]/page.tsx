@@ -1,16 +1,20 @@
 import { notFound } from "next/navigation";
 import { Phone, Mail, Calendar, Cake, Briefcase, Pencil } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { DocumentosFuncionario } from "@/components/modules/funcionarios/DocumentosFuncionario";
+import { podeEditarModulo } from "@/lib/permissoes";
 import { formatarCPF, formatarData, formatarTelefone } from "@/lib/utils";
 
 export default async function FuncionarioPerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/funcionarios", session?.user.role ?? "", session?.user.permissoes);
   const funcionario = await prisma.funcionario.findUnique({
     where: { id },
     include: { documentos: { orderBy: { createdAt: "desc" } } },
@@ -36,10 +40,12 @@ export default async function FuncionarioPerfilPage({ params }: { params: Promis
                   {funcionario.ativo ? "Ativo" : "Inativo"}
                 </Badge>
               </div>
-              <Button href={`/funcionarios/${funcionario.id}/editar`} variant="outline" size="sm">
-                <Pencil className="h-3.5 w-3.5" />
-                Editar
-              </Button>
+              {podeEditar && (
+                <Button href={`/funcionarios/${funcionario.id}/editar`} variant="outline" size="sm">
+                  <Pencil className="h-3.5 w-3.5" />
+                  Editar
+                </Button>
+              )}
             </div>
             <p className="mt-0.5 text-sm text-cda-text2">
               {funcionario.cargo} · {funcionario.setor}
@@ -64,7 +70,7 @@ export default async function FuncionarioPerfilPage({ params }: { params: Promis
         </div>
       </Card>
 
-      <DocumentosFuncionario funcionarioId={funcionario.id} documentos={funcionario.documentos} />
+      <DocumentosFuncionario funcionarioId={funcionario.id} documentos={funcionario.documentos} podeEditar={podeEditar} />
     </div>
   );
 }

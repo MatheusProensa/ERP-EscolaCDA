@@ -83,6 +83,7 @@ function PainelSemana({
   titulo,
   dias,
   onEditar,
+  podeEditar,
 }: {
   /** Repete o nome do público aqui dentro (não só lá em cima no card) — numa
    * tela comprida com os 3 públicos empilhados, rolar até o meio de um card
@@ -92,6 +93,7 @@ function PainelSemana({
   titulo: string;
   dias: DiaCardapio[];
   onEditar: () => void;
+  podeEditar: boolean;
 }) {
   return (
     <div className="overflow-hidden rounded-lg border border-cda-border">
@@ -101,7 +103,13 @@ function PainelSemana({
           <span className="mx-2 font-normal text-cda-text3">·</span>
           <span className="text-xs font-semibold uppercase tracking-wide text-cda-text2">{titulo}</span>
         </h4>
-        <IconButton icon={Pencil} label={`Editar ${titulo.toLowerCase()}`} size="sm" onClick={onEditar} />
+        {/* Achado real (set/2026): esse botão aparecia pra qualquer um que
+            enxergasse a tela, mesmo com "Só visualizar" marcado — a pessoa
+            abria o modal e preenchia tudo antes de descobrir (ou não) que não
+            podia salvar. Agora só existe pra quem tem EDITAR de verdade. */}
+        {podeEditar && (
+          <IconButton icon={Pencil} label={`Editar ${titulo.toLowerCase()}`} size="sm" onClick={onEditar} />
+        )}
       </div>
       <TabelaSemana dias={dias} />
     </div>
@@ -113,11 +121,13 @@ export function CardapioPublicoCard({
   label,
   notaPublico,
   cor,
+  podeEditar,
 }: {
   item: ItemCardapioMes;
   label: string;
   notaPublico?: string;
   cor: BadgeVariant;
+  podeEditar: boolean;
 }) {
   const [editando, setEditando] = useState<"impar" | "par" | null>(null);
   const corBorda = BADGE_VARIANT_STYLE[cor].color as string;
@@ -148,26 +158,33 @@ export function CardapioPublicoCard({
       {notaPublico && <p className="border-b border-cda-border bg-cda-bg px-5 py-2 text-xs text-cda-text3">{notaPublico}</p>}
 
       <div className="flex flex-col gap-4 p-5">
-        <PainelSemana publicoLabel={label} titulo="Semanas 1 e 3" dias={diasImpar} onEditar={() => setEditando("impar")} />
-        <PainelSemana publicoLabel={label} titulo="Semanas 2 e 4" dias={diasPar} onEditar={() => setEditando("par")} />
+        <PainelSemana publicoLabel={label} titulo="Semanas 1 e 3" dias={diasImpar} onEditar={() => setEditando("impar")} podeEditar={podeEditar} />
+        <PainelSemana publicoLabel={label} titulo="Semanas 2 e 4" dias={diasPar} onEditar={() => setEditando("par")} podeEditar={podeEditar} />
       </div>
 
-      <EditarSemanaModal
-        aberto={editando === "impar"}
-        onClose={() => setEditando(null)}
-        blocoId={item.id}
-        campo="impar"
-        tituloModal={`${label} — semanas 1 e 3`}
-        diasIniciais={diasImpar}
-      />
-      <EditarSemanaModal
-        aberto={editando === "par"}
-        onClose={() => setEditando(null)}
-        blocoId={item.id}
-        campo="par"
-        tituloModal={`${label} — semanas 2 e 4`}
-        diasIniciais={diasPar}
-      />
+      {/* Modal só existe de fato pra quem pode editar — mesmo raciocínio do
+          Pencil acima, e evita montar o formulário de edição inteiro (e a
+          rota de salvar ficar num clique de distância) pra quem é só leitura. */}
+      {podeEditar && (
+        <>
+          <EditarSemanaModal
+            aberto={editando === "impar"}
+            onClose={() => setEditando(null)}
+            blocoId={item.id}
+            campo="impar"
+            tituloModal={`${label} — semanas 1 e 3`}
+            diasIniciais={diasImpar}
+          />
+          <EditarSemanaModal
+            aberto={editando === "par"}
+            onClose={() => setEditando(null)}
+            blocoId={item.id}
+            campo="par"
+            tituloModal={`${label} — semanas 2 e 4`}
+            diasIniciais={diasPar}
+          />
+        </>
+      )}
     </Card>
   );
 }

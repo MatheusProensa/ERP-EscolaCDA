@@ -43,7 +43,13 @@ function statusValidade(validade: Date | null): { label: string; variant: "red" 
   return { label: "Válido", variant: "green" };
 }
 
-export function DocumentosLista({ grupos }: { grupos: { categoria: string; itens: DocumentoInstitucional[] }[] }) {
+export function DocumentosLista({
+  grupos,
+  podeEditar = true,
+}: {
+  grupos: { categoria: string; itens: DocumentoInstitucional[] }[];
+  podeEditar?: boolean;
+}) {
   const router = useRouter();
   const [removendoId, setRemovendoId] = useState<string | null>(null);
   const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
@@ -92,15 +98,19 @@ export function DocumentosLista({ grupos }: { grupos: { categoria: string; itens
                       </Badge>
                     )}
                     <IconButton icon={ExternalLink} label="Abrir documento" size="sm" onClick={() => abrirDocumento(doc.link)} />
-                    <IconButton icon={Pencil} label="Editar documento" size="sm" onClick={() => setEditando(doc)} />
-                    <IconButton
-                      icon={Trash2}
-                      label="Remover documento"
-                      variant="danger"
-                      size="sm"
-                      disabled={removendoId === doc.id}
-                      onClick={() => setConfirmandoId(doc.id)}
-                    />
+                    {podeEditar && (
+                      <>
+                        <IconButton icon={Pencil} label="Editar documento" size="sm" onClick={() => setEditando(doc)} />
+                        <IconButton
+                          icon={Trash2}
+                          label="Remover documento"
+                          variant="danger"
+                          size="sm"
+                          disabled={removendoId === doc.id}
+                          onClick={() => setConfirmandoId(doc.id)}
+                        />
+                      </>
+                    )}
                   </div>
                 </div>
               );

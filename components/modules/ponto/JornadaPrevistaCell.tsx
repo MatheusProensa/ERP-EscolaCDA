@@ -16,14 +16,20 @@ function horaValida(v: string): boolean {
 export function JornadaPrevistaCell({
   funcionarioId,
   minutosIniciais,
+  podeEditar = true,
 }: {
   funcionarioId: string;
   minutosIniciais: number | null;
+  podeEditar?: boolean;
 }) {
   const router = useRouter();
   const valorInicial = minutosIniciais != null ? minParaHora(minutosIniciais) : "";
   const [valor, setValor] = useState(valorInicial);
   const [salvando, setSalvando] = useState(false);
+
+  if (!podeEditar) {
+    return <span className="text-sm text-cda-text2">{valorInicial || "—"}</span>;
+  }
 
   async function salvar() {
     const texto = valor.trim();

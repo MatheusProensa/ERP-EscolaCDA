@@ -27,7 +27,15 @@ function corPorTexto(texto: string): BadgeVariant {
  * tabela. O modal de "Editar" continua existindo (formulário rápido), mas aqui
  * dá pra ver tudo com espaço de sobra, com "o que busca" e "observações"
  * claramente separados um do outro (era a maior confusão do modal apertado). */
-export function InteressadoDetalhe({ item, turmas }: { item: ItemInteressado; turmas: Turma[] }) {
+export function InteressadoDetalhe({
+  item,
+  turmas,
+  podeEditar = true,
+}: {
+  item: ItemInteressado;
+  turmas: Turma[];
+  podeEditar?: boolean;
+}) {
   const router = useRouter();
   const [editando, setEditando] = useState(false);
   const [carregando, setCarregando] = useState(false);
@@ -59,10 +67,12 @@ export function InteressadoDetalhe({ item, turmas }: { item: ItemInteressado; tu
         subtitle={`Responsável: ${item.nomeResponsavel}${item.parentescoContato ? ` (contato: ${item.parentescoContato})` : ""}`}
         breadcrumb={[{ label: "Administrativo" }, { label: "Interessados", href: "/interessados" }, { label: item.nomeCrianca }]}
         action={
-          <Button variant="outline" onClick={() => setEditando(true)}>
-            <Pencil className="h-4 w-4" />
-            Editar
-          </Button>
+          podeEditar ? (
+            <Button variant="outline" onClick={() => setEditando(true)}>
+              <Pencil className="h-4 w-4" />
+              Editar
+            </Button>
+          ) : undefined
         }
       />
 
@@ -90,22 +100,26 @@ export function InteressadoDetalhe({ item, turmas }: { item: ItemInteressado; tu
 
               <div className="flex flex-col items-end gap-1">
                 <span className="text-xs font-medium text-cda-text3">Status</span>
-                <FilterSelect
-                  className="w-[210px]"
-                  value={item.status}
-                  disabled={carregando}
-                  onChange={alterarStatus}
-                  placeholder="Status"
-                  triggerStyle={{
-                    ...BADGE_VARIANT_STYLE[badge.variant],
-                    border: "none",
-                    height: "36px",
-                    fontSize: "0.875rem",
-                    fontWeight: 600,
-                    boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-                  }}
-                  options={Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => ({ value: valor, label }))}
-                />
+                {podeEditar ? (
+                  <FilterSelect
+                    className="w-[210px]"
+                    value={item.status}
+                    disabled={carregando}
+                    onChange={alterarStatus}
+                    placeholder="Status"
+                    triggerStyle={{
+                      ...BADGE_VARIANT_STYLE[badge.variant],
+                      border: "none",
+                      height: "36px",
+                      fontSize: "0.875rem",
+                      fontWeight: 600,
+                      boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+                    }}
+                    options={Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => ({ value: valor, label }))}
+                  />
+                ) : (
+                  <Badge variant={badge.variant}>{badge.label}</Badge>
+                )}
               </div>
             </div>
 

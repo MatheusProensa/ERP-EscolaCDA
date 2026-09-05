@@ -183,3 +183,16 @@ export function acessoPermitido(
 export function podeVerModulo(pathname: string, role: string, overrides?: PermissoesPorModulo): boolean {
   return acessoPermitido(pathname, "GET", role, overrides);
 }
+
+/** Pra decidir se mostra botão de Editar/Excluir/Novo na tela — usa método de
+ * escrita (PUT) pra cair na mesma regra que a API já aplica: só EDITAR (ou
+ * ADMIN) libera. Achado real (set/2026): várias páginas mostravam a UI de
+ * edição pra qualquer um que enxergasse a tela, mesmo com "Só visualizar"
+ * marcado — o back-end barrava o salvamento (403), mas a pessoa via botão de
+ * editar, abria modal, preenchia tudo e só descobria que não tinha permissão
+ * na hora de salvar (ou, se o token da sessão dela ainda estava desatualizado
+ * de antes da mudança, o salvamento passava mesmo). Cada página com ação de
+ * escrita agora confere isso antes de renderizar o botão. */
+export function podeEditarModulo(pathname: string, role: string, overrides?: PermissoesPorModulo): boolean {
+  return acessoPermitido(pathname, "PUT", role, overrides);
+}

@@ -1,5 +1,6 @@
 import { UtensilsCrossed } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
@@ -10,6 +11,7 @@ import { ExcluirMesButton } from "@/components/modules/cardapio/ExcluirMesButton
 import { CardapioExportButtons } from "@/components/modules/cardapio/CardapioExportButtons";
 import { PUBLICOS_CARDAPIO, MESES_CARDAPIO, NUTRICIONISTA_CARDAPIO } from "@/components/modules/cardapio/constants";
 import type { ItemCardapioMes } from "@/components/modules/cardapio/types";
+import { podeEditarModulo } from "@/lib/permissoes";
 import { hojeBrasilia } from "@/lib/utils";
 
 export default async function CardapioPage({
@@ -18,6 +20,14 @@ export default async function CardapioPage({
   searchParams: Promise<{ ano?: string; mes?: string }>;
 }) {
   const { ano: anoParam, mes: mesParam } = await searchParams;
+  const session = await auth();
+  // Achado real (set/2026): essa página mostrava lápis de editar, "Preparar
+  // mês" e "Excluir mês" pra qualquer um que enxergasse /cardapio, mesmo com
+  // "Só visualizar" marcado na grade — a pessoa via botão de editar, abria o
+  // formulário e só descobria (ou não, se a sessão dela ainda tivesse o token
+  // antigo) que não podia salvar na hora de clicar em Salvar. Confere de
+  // verdade agora, antes de renderizar qualquer ação de escrita.
+  const podeEditar = podeEditarModulo("/cardapio", session?.user.role ?? "", session?.user.permissoes);
   const hoje = hojeBrasilia();
   const ano = Number(anoParam) || hoje.getUTCFullYear();
   const mes = Number(mesParam) || hoje.getUTCMonth() + 1;
@@ -69,7 +79,7 @@ export default async function CardapioPage({
           <Button type="submit" variant="outline">
             Filtrar
           </Button>
-          {blocos.length > 0 && (
+          {blocos.length > 0 && podeEditar && (
             <ExcluirMesButton ano={ano} mes={mes} mesLabel={`${MESES_CARDAPIO[mes - 1]} de ${ano}`} />
           )}
         </form>
@@ -81,22 +91,33 @@ export default async function CardapioPage({
           <p className="text-sm text-cda-text3">
             Ainda não tem cardápio cadastrado pra {MESES_CARDAPIO[mes - 1]} de {ano}.
           </p>
-          <PrepararMesButton
-            ano={ano}
-            mes={mes}
-            mesAnterior={
-              mesAnteriorComDados
-                ? { ano: mesAnteriorComDados.ano, mes: mesAnteriorComDados.mes, label: MESES_CARDAPIO[mesAnteriorComDados.mes - 1] }
-                : null
-            }
-          />
+          {podeEditar && (
+            <PrepararMesButton
+              ano={ano}
+              mes={mes}
+              mesAnterior={
+                mesAnteriorComDados
+                  ? { ano: mesAnteriorComDados.ano, mes: mesAnteriorComDados.mes, label: MESES_CARDAPIO[mesAnteriorComDados.mes - 1] }
+                  : null
+              }
+            />
+          )}
         </div>
       ) : (
         <div className="flex flex-col gap-5">
           {PUBLICOS_CARDAPIO.map((p) => {
             const item = porPublico.get(p.valor);
             if (!item) return null;
-            return <CardapioPublicoCard key={p.valor} item={item} label={p.label} notaPublico={p.nota} cor={p.cor} />;
+            return (
+              <CardapioPublicoCard
+                key={p.valor}
+                item={item}
+                label={p.label}
+                notaPublico={p.nota}
+                cor={p.cor}
+                podeEditar={podeEditar}
+              />
+            );
           })}
 
           <Card className="border-cda-border bg-cda-bg2 p-4 text-xs text-cda-text2">

@@ -23,11 +23,13 @@ export function EstoquePainel({
   movimentacoes,
   entradasMes,
   saidasMes,
+  podeEditar = true,
 }: {
   itens: ItemEstoque[];
   movimentacoes: MovimentacaoComItem[];
   entradasMes: number;
   saidasMes: number;
+  podeEditar?: boolean;
 }) {
   const [aba, setAba] = useState<Aba>("visao-geral");
 
@@ -45,8 +47,8 @@ export function EstoquePainel({
           onVerMovimentacoes={() => setAba("movimentacoes")}
         />
       )}
-      {aba === "materiais" && <MateriaisTab itens={itens} />}
-      {aba === "movimentacoes" && <MovimentacoesTab movimentacoes={movimentacoes} />}
+      {aba === "materiais" && <MateriaisTab itens={itens} podeEditar={podeEditar} />}
+      {aba === "movimentacoes" && <MovimentacoesTab movimentacoes={movimentacoes} podeEditar={podeEditar} />}
     </div>
   );
 }

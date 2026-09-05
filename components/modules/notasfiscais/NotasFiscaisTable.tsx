@@ -37,7 +37,7 @@ export type NotaFiscalLinha = {
   aluno: { id: string; nome: string };
 };
 
-export function NotasFiscaisTable({ notas }: { notas: NotaFiscalLinha[] }) {
+export function NotasFiscaisTable({ notas, podeEditar = true }: { notas: NotaFiscalLinha[]; podeEditar?: boolean }) {
   const router = useRouter();
   const [carregando, setCarregando] = useState<string | null>(null);
   const [excluindo, setExcluindo] = useState<string | null>(null);
@@ -74,10 +74,10 @@ export function NotasFiscaisTable({ notas }: { notas: NotaFiscalLinha[] }) {
         <Th>Competência</Th>
         <Th>Valor</Th>
         <Th>Status</Th>
-        <ThActions />
+        {podeEditar && <ThActions />}
       </TableHead>
       <TableBody>
-        {notas.length === 0 && <TableEmpty colSpan={5}>Nenhuma nota fiscal lançada ainda.</TableEmpty>}
+        {notas.length === 0 && <TableEmpty colSpan={podeEditar ? 5 : 4}>Nenhuma nota fiscal lançada ainda.</TableEmpty>}
         {notas.map((n) => (
           <Tr key={n.id}>
             <Td className="font-medium">{n.aluno.nome}</Td>
@@ -96,27 +96,29 @@ export function NotasFiscaisTable({ notas }: { notas: NotaFiscalLinha[] }) {
                 )}
               </div>
             </Td>
-            <TdActions>
-              {n.status !== "EMITIDA" && (
-                <IconButton
-                  icon={RotateCw}
-                  label="Tentar emitir de novo"
-                  size="sm"
-                  disabled={carregando === n.id}
-                  onClick={() => reemitir(n.id)}
-                />
-              )}
-              {n.status !== "EMITIDA" && (
-                <IconButton
-                  icon={Trash2}
-                  label="Excluir nota fiscal"
-                  size="sm"
-                  variant="danger"
-                  disabled={carregando === n.id}
-                  onClick={() => setExcluindo(n.id)}
-                />
-              )}
-            </TdActions>
+            {podeEditar && (
+              <TdActions>
+                {n.status !== "EMITIDA" && (
+                  <IconButton
+                    icon={RotateCw}
+                    label="Tentar emitir de novo"
+                    size="sm"
+                    disabled={carregando === n.id}
+                    onClick={() => reemitir(n.id)}
+                  />
+                )}
+                {n.status !== "EMITIDA" && (
+                  <IconButton
+                    icon={Trash2}
+                    label="Excluir nota fiscal"
+                    size="sm"
+                    variant="danger"
+                    disabled={carregando === n.id}
+                    onClick={() => setExcluindo(n.id)}
+                  />
+                )}
+              </TdActions>
+            )}
           </Tr>
         ))}
       </TableBody>

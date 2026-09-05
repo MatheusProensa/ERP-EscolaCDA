@@ -49,7 +49,15 @@ function parseInteresse(texto: string | null | undefined): { serie: string; turn
   return { serie: texto.slice(0, i).trim(), turno: texto.slice(i + 1).trim().toLowerCase() };
 }
 
-export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[]; turmas: Turma[] }) {
+export function InteressadosTable({
+  itens,
+  turmas,
+  podeEditar = true,
+}: {
+  itens: ItemInteressado[];
+  turmas: Turma[];
+  podeEditar?: boolean;
+}) {
   const router = useRouter();
   const [busca, setBusca] = useState("");
   const [filtroInteresse, setFiltroInteresse] = useState("");
@@ -239,26 +247,34 @@ export function InteressadosTable({ itens, turmas }: { itens: ItemInteressado[];
                     {/* FilterSelect no lugar do <select> nativo — o nativo cortava o
                         texto sem "..." no Safari/Mac (ex.: "Aguardando" virava "Ag"),
                         porque o navegador desenha a caixa fechada do jeito dele, sem
-                        respeitar a largura/truncamento que a gente pede via CSS. */}
-                    <FilterSelect
-                      className="w-[190px]"
-                      value={item.status}
-                      disabled={carregando === item.id}
-                      onChange={(valor) => alterarStatus(item.id, valor)}
-                      placeholder="Status"
-                      triggerStyle={{
-                        ...BADGE_VARIANT_STYLE[badge.variant],
-                        border: "none",
-                        height: "32px",
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-                      }}
-                      options={Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => ({ value: valor, label }))}
-                    />
+                        respeitar a largura/truncamento que a gente pede via CSS.
+                        Achado real (set/2026): mudar o status é escrita — quem só
+                        visualiza via um badge fixo, não um controle clicável. */}
+                    {podeEditar ? (
+                      <FilterSelect
+                        className="w-[190px]"
+                        value={item.status}
+                        disabled={carregando === item.id}
+                        onChange={(valor) => alterarStatus(item.id, valor)}
+                        placeholder="Status"
+                        triggerStyle={{
+                          ...BADGE_VARIANT_STYLE[badge.variant],
+                          border: "none",
+                          height: "32px",
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+                        }}
+                        options={Object.entries(STATUS_INTERESSADO_BADGE).map(([valor, { label }]) => ({ value: valor, label }))}
+                      />
+                    ) : (
+                      <Badge variant={badge.variant}>{badge.label}</Badge>
+                    )}
                   </Td>
                   <Td>
-                    <IconButton icon={Pencil} label="Editar interessado" size="sm" onClick={() => setEditando(item)} />
+                    {podeEditar && (
+                      <IconButton icon={Pencil} label="Editar interessado" size="sm" onClick={() => setEditando(item)} />
+                    )}
                   </Td>
                 </Tr>
               );

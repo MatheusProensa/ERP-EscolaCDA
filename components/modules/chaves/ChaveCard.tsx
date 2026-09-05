@@ -18,9 +18,14 @@ import { formatarDataHora } from "@/lib/utils";
 export function ChaveCard({
   chave,
   funcionarios,
+  podeEditar = true,
 }: {
   chave: Chave & { emprestimos: EmprestimoChave[] };
   funcionarios: { id: string; nome: string }[];
+  /** Retirar/devolver/editar/excluir são todas escritas — achado real
+   * (set/2026) de que essa tela mostrava tudo isso pra qualquer um que
+   * enxergasse /chaves, mesmo com "Só visualizar" marcado na grade. */
+  podeEditar?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -124,10 +129,12 @@ export function ChaveCard({
       </p>
       <div className="mb-2 flex items-center justify-between gap-2">
         <Badge variant={emprestimo ? "amber" : "green"}>{emprestimo ? "Emprestada" : "Disponível"}</Badge>
-        <div className="flex shrink-0 items-center gap-1">
-          <IconButton icon={Pencil} label="Editar chave" onClick={() => setEditando(true)} />
-          <IconButton icon={Trash2} label="Excluir chave" variant="danger" onClick={() => setConfirmandoExclusao(true)} />
-        </div>
+        {podeEditar && (
+          <div className="flex shrink-0 items-center gap-1">
+            <IconButton icon={Pencil} label="Editar chave" onClick={() => setEditando(true)} />
+            <IconButton icon={Trash2} label="Excluir chave" variant="danger" onClick={() => setConfirmandoExclusao(true)} />
+          </div>
+        )}
       </div>
 
       {emprestimo ? (
@@ -139,15 +146,16 @@ export function ChaveCard({
         <p className="flex-1 text-sm text-cda-text3">Chave no lugar.</p>
       )}
 
-      {emprestimo ? (
-        <Button size="sm" variant="outline" className="mt-3" onClick={devolver} loading={loading}>
-          Registrar devolução
-        </Button>
-      ) : (
-        <Button size="sm" className="mt-3" onClick={() => setOpen(true)}>
-          Retirar chave
-        </Button>
-      )}
+      {podeEditar &&
+        (emprestimo ? (
+          <Button size="sm" variant="outline" className="mt-3" onClick={devolver} loading={loading}>
+            Registrar devolução
+          </Button>
+        ) : (
+          <Button size="sm" className="mt-3" onClick={() => setOpen(true)}>
+            Retirar chave
+          </Button>
+        ))}
       {error && !open && <p className="mt-2 text-xs text-cda-red">{error}</p>}
 
       <Modal open={open} onClose={() => setOpen(false)} title={`Retirar chave — ${chave.sala}`}>

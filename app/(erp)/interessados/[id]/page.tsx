@@ -1,11 +1,15 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { InteressadoDetalhe } from "@/components/modules/interessados/InteressadoDetalhe";
+import { podeEditarModulo } from "@/lib/permissoes";
 import { ordenarTurmas } from "@/lib/utils";
 
 export default async function InteressadoPerfilPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/interessados", session?.user.role ?? "", session?.user.permissoes);
 
   const item = await prisma.listaEspera.findUnique({
     where: { id },
@@ -17,5 +21,5 @@ export default async function InteressadoPerfilPage({ params }: { params: Promis
   const turmasRaw = await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } });
   const turmas = ordenarTurmas(turmasRaw);
 
-  return <InteressadoDetalhe item={item} turmas={turmas} />;
+  return <InteressadoDetalhe item={item} turmas={turmas} podeEditar={podeEditar} />;
 }

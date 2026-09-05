@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Clock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
@@ -11,6 +12,7 @@ import { ExportButtons } from "@/components/ui/ExportButtons";
 import { GerenciarParticipantesModal } from "@/components/modules/ponto/GerenciarParticipantesModal";
 import { JornadaPrevistaCell } from "@/components/modules/ponto/JornadaPrevistaCell";
 import { calcularMes, minParaHora, type RegistroPontoDia } from "@/lib/ponto";
+import { podeEditarModulo } from "@/lib/permissoes";
 import { hojeBrasilia } from "@/lib/utils";
 
 const MESES = [
@@ -24,6 +26,8 @@ export default async function PontoPage({
   searchParams: Promise<{ mes?: string; ano?: string }>;
 }) {
   const { mes, ano: anoParam } = await searchParams;
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/ponto", session?.user.role ?? "", session?.user.permissoes);
   const hoje = hojeBrasilia();
   const mesFiltro = mes ? Number(mes) : hoje.getUTCMonth() + 1;
   const ano = anoParam ? Number(anoParam) : hoje.getUTCFullYear();
@@ -64,8 +68,12 @@ export default async function PontoPage({
         subtitle="Lançamento das folhas de ponto e cálculo automático de horas (tolerância CLT, adicional noturno e banco de horas)"
         action={
           <div className="flex flex-wrap items-center gap-2">
-            <GerenciarParticipantesModal funcionarios={todosFuncionarios} />
-            <div className="mx-1 hidden h-7 w-px bg-cda-border sm:block" />
+            {podeEditar && (
+              <>
+                <GerenciarParticipantesModal funcionarios={todosFuncionarios} />
+                <div className="mx-1 hidden h-7 w-px bg-cda-border sm:block" />
+              </>
+            )}
             <ExportButtons href="/api/relatorios/ponto" params={{ mes: String(mesFiltro), ano: String(ano) }} />
           </div>
         }
@@ -115,7 +123,7 @@ export default async function PontoPage({
                 </Td>
                 <Td>{f.cargo}</Td>
                 <Td>
-                  <JornadaPrevistaCell funcionarioId={f.id} minutosIniciais={f.jornadaPrevistaMinutos} />
+                  <JornadaPrevistaCell funcionarioId={f.id} minutosIniciais={f.jornadaPrevistaMinutos} podeEditar={podeEditar} />
                 </Td>
                 <Td>{registrosNoMes} dia(s)</Td>
                 <Td>
@@ -125,7 +133,7 @@ export default async function PontoPage({
                 </Td>
                 <Td>
                   <Button href={`/ponto/${f.id}`} size="sm" variant="outline" className="whitespace-nowrap">
-                    Lançar ponto
+                    {podeEditar ? "Lançar ponto" : "Ver ponto"}
                   </Button>
                 </Td>
               </Tr>

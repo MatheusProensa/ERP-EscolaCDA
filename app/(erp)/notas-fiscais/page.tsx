@@ -1,5 +1,6 @@
 import { TriangleAlert } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
@@ -7,8 +8,11 @@ import { NovaNotaFiscalModal } from "@/components/modules/notasfiscais/NovaNotaF
 import { NotasFiscaisTable } from "@/components/modules/notasfiscais/NotasFiscaisTable";
 import { NotasFiscaisExportButton } from "@/components/modules/notasfiscais/NotasFiscaisExportButton";
 import { issnetConfigurado } from "@/lib/issnet";
+import { podeEditarModulo } from "@/lib/permissoes";
 
 export default async function NotasFiscaisPage() {
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/notas-fiscais", session?.user.role ?? "", session?.user.permissoes);
   const [notas, alunos] = await Promise.all([
     prisma.notaFiscal.findMany({
       include: { aluno: { select: { id: true, nome: true } } },
@@ -28,7 +32,7 @@ export default async function NotasFiscaisPage() {
         action={
           <>
             {notas.length > 0 && <NotasFiscaisExportButton />}
-            <NovaNotaFiscalModal alunos={alunos} />
+            {podeEditar && <NovaNotaFiscalModal alunos={alunos} />}
           </>
         }
       />
@@ -42,7 +46,7 @@ export default async function NotasFiscaisPage() {
       )}
 
       <Card>
-        <NotasFiscaisTable notas={notas} />
+        <NotasFiscaisTable notas={notas} podeEditar={podeEditar} />
       </Card>
     </div>
   );

@@ -1,14 +1,18 @@
 import { UserPlus, PhoneCall, CalendarCheck, GraduationCap } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { InteressadosTable } from "@/components/modules/interessados/InteressadosTable";
 import { NovoInteressadoModal } from "@/components/modules/interessados/NovoInteressadoModal";
 import { InteressadosExportButton } from "@/components/modules/interessados/InteressadosExportButton";
+import { podeEditarModulo } from "@/lib/permissoes";
 import { ordenarTurmas } from "@/lib/utils";
 
 export default async function InteressadosPage() {
+  const session = await auth();
+  const podeEditar = podeEditarModulo("/interessados", session?.user.role ?? "", session?.user.permissoes);
   const anoLetivo = await getAnoLetivoAtivo();
   const [itens, turmasRaw] = await Promise.all([
     prisma.listaEspera.findMany({
@@ -38,7 +42,7 @@ export default async function InteressadosPage() {
         action={
           <>
             {itens.length > 0 && <InteressadosExportButton />}
-            <NovoInteressadoModal turmas={turmas} />
+            {podeEditar && <NovoInteressadoModal turmas={turmas} />}
           </>
         }
       />
@@ -50,7 +54,7 @@ export default async function InteressadosPage() {
         <MetricCard icon={GraduationCap} tone="success" value={matriculadosNoFunil} label="Matriculados" subtext="Vieram desse funil" />
       </div>
 
-      <InteressadosTable itens={itens} turmas={turmas} />
+      <InteressadosTable itens={itens} turmas={turmas} podeEditar={podeEditar} />
     </div>
   );
 }

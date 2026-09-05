@@ -16,9 +16,15 @@ import { formatarData, formatarTelefone } from "@/lib/utils";
 export function FuncionarioTable({
   funcionarios,
   mostrarSetor = true,
+  podeEditar = true,
 }: {
   funcionarios: Funcionario[];
   mostrarSetor?: boolean;
+  /** Achado real (set/2026): as ações de editar/desativar/excluir apareciam
+   * pra qualquer um que enxergasse /funcionarios, mesmo com "Só visualizar"
+   * marcado na grade. Default true só pra não quebrar quem já chama esse
+   * componente sem passar a prop — todo chamador atual já passa de verdade. */
+  podeEditar?: boolean;
 }) {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -58,11 +64,11 @@ export function FuncionarioTable({
         <Th>Telefone</Th>
         <Th>Admissão</Th>
         <Th>Situação</Th>
-        <ThActions />
+        {podeEditar && <ThActions />}
       </TableHead>
       <TableBody>
         {funcionarios.length === 0 && (
-          <TableEmpty colSpan={mostrarSetor ? 7 : 6}>Nenhum funcionário encontrado.</TableEmpty>
+          <TableEmpty colSpan={(mostrarSetor ? 6 : 5) + (podeEditar ? 1 : 0)}>Nenhum funcionário encontrado.</TableEmpty>
         )}
         {funcionarios.map((f) => {
           const pendencias: string[] = [];
@@ -95,25 +101,27 @@ export function FuncionarioTable({
             <Td>
               <Badge variant={f.ativo ? "green" : "gray"}>{f.ativo ? "Ativo" : "Inativo"}</Badge>
             </Td>
-            <TdActions>
-              <IconButton icon={Pencil} label="Editar funcionário" size="sm" href={`/funcionarios/${f.id}/editar`} />
-              <IconButton
-                icon={f.ativo ? UserX : UserCheck}
-                label={f.ativo ? "Desativar funcionário" : "Reativar funcionário"}
-                size="sm"
-                variant={f.ativo ? "danger" : "neutral"}
-                disabled={loadingId === f.id}
-                onClick={() => (f.ativo ? setDesativando(f) : alternarAtivo(f))}
-              />
-              <IconButton
-                icon={Trash2}
-                label="Excluir funcionário de vez"
-                size="sm"
-                variant="danger"
-                disabled={loadingId === f.id}
-                onClick={() => setExcluindo(f)}
-              />
-            </TdActions>
+            {podeEditar && (
+              <TdActions>
+                <IconButton icon={Pencil} label="Editar funcionário" size="sm" href={`/funcionarios/${f.id}/editar`} />
+                <IconButton
+                  icon={f.ativo ? UserX : UserCheck}
+                  label={f.ativo ? "Desativar funcionário" : "Reativar funcionário"}
+                  size="sm"
+                  variant={f.ativo ? "danger" : "neutral"}
+                  disabled={loadingId === f.id}
+                  onClick={() => (f.ativo ? setDesativando(f) : alternarAtivo(f))}
+                />
+                <IconButton
+                  icon={Trash2}
+                  label="Excluir funcionário de vez"
+                  size="sm"
+                  variant="danger"
+                  disabled={loadingId === f.id}
+                  onClick={() => setExcluindo(f)}
+                />
+              </TdActions>
+            )}
           </Tr>
           );
         })}
