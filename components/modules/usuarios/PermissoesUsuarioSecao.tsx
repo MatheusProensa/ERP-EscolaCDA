@@ -16,7 +16,7 @@ type Nivel = NivelPermissao | "HERDAR";
 // setor, pessoa por pessoa. Sem marcação = sem acesso; por isso não tem mais
 // opção de "usar o padrão do perfil".
 const NIVEIS: { valor: Nivel; label: string; icon: typeof Eye; cor: string }[] = [
-  { valor: "EDITAR", label: "Ler e editar", icon: ShieldCheck, cor: "text-cda-green" },
+  { valor: "EDITAR", label: "Editar", icon: ShieldCheck, cor: "text-cda-green" },
   { valor: "VER", label: "Só visualizar", icon: Eye, cor: "text-cda-amber" },
   { valor: "NENHUM", label: "Sem acesso", icon: Ban, cor: "text-cda-red" },
 ];
