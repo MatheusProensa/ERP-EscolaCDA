@@ -73,7 +73,10 @@ export async function gerarFichaAdmissaoPdf(): Promise<string> {
       pagina.drawText(`${p.label}:`, { x: xAcc + 5, y: yTopo - 12, size: 8.3, font: fonteNegrito, color: CINZA });
       if (p.valor) {
         const larguraLabel = fonteNegrito.widthOfTextAtSize(`${p.label}: `, 8.3);
-        pagina.drawText(p.valor, { x: xAcc + 5 + larguraLabel, y: yTopo - 12, size: 8.7, font: fonte, color: PRETO, maxWidth: larguraCol - larguraLabel - 10 });
+        // \r/\n (texto colado do Windows/Word num campo do cadastro) quebra o
+        // pdf-lib ("WinAnsi cannot encode") mesmo com maxWidth.
+        const valor = p.valor.replace(/[\r\n]+/g, " ").trim();
+        pagina.drawText(valor, { x: xAcc + 5 + larguraLabel, y: yTopo - 12, size: 8.7, font: fonte, color: PRETO, maxWidth: larguraCol - larguraLabel - 10 });
       }
       xAcc += larguraCol;
     });

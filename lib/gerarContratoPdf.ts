@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage } from "pdf-lib";
 import { readFile } from "fs/promises";
 import path from "path";
-import { formatarData, formatarMoeda } from "@/lib/utils";
+import { formatarData, formatarMoeda, hojeBrasilia } from "@/lib/utils";
 import { montarClausulas } from "@/lib/contratoTexto";
 
 export type DadosContrato = {
@@ -88,7 +88,9 @@ export async function gerarContratoPdf(dados: DadosContrato): Promise<string> {
   function linha(texto: string, opts?: { negrito?: boolean; tamanho?: number; cor?: ReturnType<typeof rgb>; espacoDepois?: number }) {
     const tamanho = opts?.tamanho ?? 10.5;
     garantirEspaco(tamanho);
-    pagina.drawText(texto, {
+    // \r/\n quebra o pdf-lib ("WinAnsi cannot encode") — linha() é sempre de
+    // uma linha só, então normaliza pra espaço em vez de deixar passar.
+    pagina.drawText(texto.replace(/[\r\n]+/g, " ").trim(), {
       x: MARGEM,
       y,
       size: tamanho,
@@ -100,7 +102,10 @@ export async function gerarContratoPdf(dados: DadosContrato): Promise<string> {
 
   function quebrarLinhas(texto: string, tamanho: number, fonteUsada: PDFFont): string[] {
     const larguraMax = LARGURA - MARGEM * 2;
-    const palavras = texto.split(" ");
+    // \r (colado do Windows/Word) quebra o pdf-lib ("WinAnsi cannot encode"
+    // 0x000d) — essa função já não respeita quebra de linha própria (só
+    // reflui por palavra), então normaliza pra espaço mesmo.
+    const palavras = texto.replace(/[\r\n]+/g, " ").split(" ");
     const linhas: string[] = [];
     let atual = "";
     for (const palavra of palavras) {
@@ -146,7 +151,9 @@ export async function gerarContratoPdf(dados: DadosContrato): Promise<string> {
 
   y -= 20;
   garantirEspaco(70);
-  linha(`Santa Maria - RS, ${formatarData(new Date())}.`, { espacoDepois: 40 });
+  // hojeBrasilia() (não new Date()): formatarData lê em UTC — geraria o
+  // contrato com a data de amanhã pra quem gerasse depois das 21h em Brasília.
+  linha(`Santa Maria - RS, ${formatarData(hojeBrasilia())}.`, { espacoDepois: 40 });
 
   if (dados.assinatura) {
     // Assinado pelo link — carimbo no lugar da linha em branco (ver app/assinar/[token]).
@@ -160,9 +167,16 @@ export async function gerarContratoPdf(dados: DadosContrato): Promise<string> {
       borderWidth: 1,
     });
     pagina.drawText("ASSINADO ELETRONICAMENTE", { x: MARGEM + 10, y: y - 16, size: 10, font: fonteNegrito, color: rgb(0x15 / 255, 0x80 / 255, 0x3d / 255) });
-    pagina.drawText(`Nome: ${dados.assinatura.nome}`, { x: MARGEM + 10, y: y - 32, size: 9, font: fonte, color: PRETO });
-    pagina.drawText(`CPF: ${dados.assinatura.cpf ?? "não informado"}`, { x: MARGEM + 10, y: y - 46, size: 9, font: fonte, color: PRETO });
-    pagina.drawText(`Assinado em: ${formatarData(dados.assinatura.dataHora)} às ${dados.assinatura.dataHora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}`, {
+    // Nome/CPF vêm digitados pelo responsável no link público de assinatura
+    // (sem validação de caractere) — \r/\n colado quebra o pdf-lib.
+    pagina.drawText(`Nome: ${dados.assinatura.nome.replace(/[\r\n]+/g, " ").trim()}`, { x: MARGEM + 10, y: y - 32, size: 9, font: fonte, color: PRETO });
+    pagina.drawText(`CPF: ${(dados.assinatura.cpf ?? "não informado").replace(/[\r\n]+/g, " ").trim()}`, { x: MARGEM + 10, y: y - 46, size: 9, font: fonte, color: PRETO });
+    // formatarData lê em UTC (certo pra data pura) — mas dataHora aqui é um
+    // instante de verdade, e formatar sua DATA em UTC enquanto a HORA ao lado
+    // já usa America/Sao_Paulo podia mostrar um dia diferente do da hora
+    // (ex.: assinado 23h de Brasília = já é outro dia em UTC). As duas partes
+    // precisam do mesmo fuso.
+    pagina.drawText(`Assinado em: ${dados.assinatura.dataHora.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })} às ${dados.assinatura.dataHora.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}`, {
       x: MARGEM + 10,
       y: y - 60,
       size: 9,

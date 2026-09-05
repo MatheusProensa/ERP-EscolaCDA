@@ -110,7 +110,10 @@ export async function gerarAvaliacaoEscritaPdf(): Promise<string> {
   }
 
   function quebrarLinhas(fnt: PDFFont, texto: string, tamanho: number, larguraMax: number): string[] {
-    const palavras = texto.split(" ");
+    // \r/\n (questão digitada com quebra de linha, ou colada do Windows/Word)
+    // quebra o pdf-lib ("WinAnsi cannot encode") — essa função só reflui por
+    // espaço, então normaliza pra espaço em vez de deixar passar.
+    const palavras = texto.replace(/[\r\n]+/g, " ").split(" ");
     const linhas: string[] = [];
     let atual = "";
     for (const palavra of palavras) {

@@ -130,7 +130,15 @@ const HEAD_ROW_H = 24;
 
 export type ColunaRelatorio = { chave: string; label: string; largura: number };
 
+/** Usada por TODA linha de TODO relatório tabular do sistema (funcionários,
+ * alunos, boletos, notas fiscais, log de atividades…) — célula de tabela é
+ * sempre uma linha só, então \r/\n (texto colado do Windows/Word, ex.: numa
+ * observação) sempre pode aparecer aqui. Achado real (ago/2026): um \r
+ * sozinho sobrando derrubava o PDF inteiro com "WinAnsi cannot encode"
+ * (0x000d) — o pdf-lib não sabe desenhar caractere de controle. Removido
+ * antes de qualquer cálculo de largura, não só no texto final. */
 export function truncar(font: PDFFont, texto: string, tamanho: number, larguraMax: number): string {
+  texto = texto.replace(/[\r\n]+/g, " ").trim();
   if (font.widthOfTextAtSize(texto, tamanho) <= larguraMax) return texto;
   let resultado = texto;
   while (resultado.length > 1 && font.widthOfTextAtSize(resultado + "…", tamanho) > larguraMax) {

@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFImage } from "pdf-lib";
 import { readFile } from "fs/promises";
 import path from "path";
-import { formatarData, formatarCPF, formatarTelefone } from "@/lib/utils";
+import { formatarData, formatarCPF, formatarTelefone, hojeBrasilia } from "@/lib/utils";
 import { TEXTO_AUTORIZACAO_IMAGEM, TEXTO_DECLARACAO_MATRICULA, marca } from "@/lib/fichaMatriculaTexto";
 
 /** Papel timbrado real da escola (extraído do modelo .docx oficial) — logo,
@@ -122,7 +122,9 @@ export async function gerarFichaMatriculaPdf(d: DadosFichaMatricula): Promise<st
   }
 
   function quebrarLinhas(texto: string, tamanho: number, larguraMax: number): string[] {
-    const palavras = texto.split(" ");
+    // \r/\n (texto colado do Windows/Word) quebra o pdf-lib ("WinAnsi cannot
+    // encode") — essa função só reflui por espaço, então normaliza pra espaço.
+    const palavras = texto.replace(/[\r\n]+/g, " ").split(" ");
     const linhas: string[] = [];
     let atual = "";
     for (const palavra of palavras) {
@@ -155,7 +157,8 @@ export async function gerarFichaMatriculaPdf(d: DadosFichaMatricula): Promise<st
       if (i > 0) pagina.drawLine({ start: { x: xAcc, y: yTopo }, end: { x: xAcc, y: yBase }, thickness: 0.75, color: AZUL_BORDA });
       pagina.drawText(`${c.label}: `, { x: xAcc + 4, y: yTexto, size: 7.2, font: fonteNegrito, color: CINZA });
       const larguraLabel = fonteNegrito.widthOfTextAtSize(`${c.label}: `, 7.2);
-      pagina.drawText(c.valor, { x: xAcc + 4 + larguraLabel, y: yTexto, size: 7.6, font: fonte, color: PRETO, maxWidth: larguraCol - larguraLabel - 8 });
+      // \r/\n no cadastro (colado do Windows/Word) quebra o pdf-lib mesmo com maxWidth.
+      pagina.drawText(c.valor.replace(/[\r\n]+/g, " ").trim(), { x: xAcc + 4 + larguraLabel, y: yTexto, size: 7.6, font: fonte, color: PRETO, maxWidth: larguraCol - larguraLabel - 8 });
       xAcc += larguraCol;
     });
     y = yBase;
@@ -163,7 +166,9 @@ export async function gerarFichaMatriculaPdf(d: DadosFichaMatricula): Promise<st
 
   /** Linha da grade cujo valor é um texto livre que pode quebrar em várias linhas. */
   function linhaTexto(label: string, texto: string) {
-    const valor = texto || "Não informado";
+    // \r/\n quebra o pdf-lib ("WinAnsi cannot encode") — essa função só
+    // reflui por espaço, não por quebra de linha própria.
+    const valor = (texto || "Não informado").replace(/[\r\n]+/g, " ").trim();
     const rotulo = `${label}: `;
     const larguraRotulo = fonteNegrito.widthOfTextAtSize(rotulo, 7.2);
     const xValor = MARGEM + 4 + larguraRotulo;
@@ -323,7 +328,10 @@ export async function gerarFichaMatriculaPdf(d: DadosFichaMatricula): Promise<st
   y -= 12;
 
   garantirEspaco(48);
-  pagina.drawText(`Santa Maria - RS, ${formatarData(new Date())}.`, { x: MARGEM, y, size: 9, font: fonte, color: PRETO });
+  // hojeBrasilia() (não new Date()): formatarData lê em UTC — aplicado direto
+  // sobre o instante agora, geraria a ficha com a data de amanhã pra quem
+  // imprimisse depois das 21h em Brasília.
+  pagina.drawText(`Santa Maria - RS, ${formatarData(hojeBrasilia())}.`, { x: MARGEM, y, size: 9, font: fonte, color: PRETO });
   y -= 28;
   garantirEspaco(20);
   // Assinatura centralizada embaixo do risco (não colada à margem esquerda).

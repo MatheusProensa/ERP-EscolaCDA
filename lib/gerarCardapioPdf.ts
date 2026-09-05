@@ -58,11 +58,26 @@ function misturarComBranco(hex: string, t: number) {
   return rgb(1 - (1 - c.r) * t, 1 - (1 - c.g) * t, 1 - (1 - c.b) * t);
 }
 
+/** Normaliza quebra de linha (\r\n ou \r solto → \n) — texto colado do
+ * Windows/Word costuma vir em CRLF, e o pdf-lib não sabe codificar \r
+ * sozinho ("WinAnsi cannot encode" 0x000d) quando ele sobra numa linha
+ * depois de dividir só por \n. */
+function normalizarQuebras(texto: string): string {
+  return texto.replace(/\r\n?/g, "\n");
+}
+
+/** Pra campo de uma linha só (label, horário, nome de público, observação)
+ * — sem \r nem \n, os dois são caractere de controle que o pdf-lib não
+ * desenha. */
+function linhaUnica(texto: string): string {
+  return texto.replace(/[\r\n]+/g, " ").trim();
+}
+
 /** Quebra um texto em linhas que cabem em `maxWidth`. Os itens já vêm com uma
  * quebra por item (\n) — só entra em quebra por palavra se uma linha isolada
  * ainda assim for larga demais pra coluna. */
 function quebrarLinhas(font: PDFFont, texto: string, size: number, maxWidth: number): string[] {
-  const linhasBrutas = texto.split("\n");
+  const linhasBrutas = normalizarQuebras(texto).split("\n");
   const linhas: string[] = [];
   for (const bruta of linhasBrutas) {
     if (bruta === "") {
@@ -212,9 +227,9 @@ export async function gerarCardapioPdf({
       pagina.drawRectangle({ x: MARGIN, y: y - alturaLinha, width: PAGE_W - MARGIN * 2, height: alturaLinha, color: misturarComBranco(corHex, 0.06) });
       pagina.drawRectangle({ x: MARGIN, y: y - alturaLinha, width: 2.5, height: alturaLinha, color: corSolida(corHex) });
 
-      pagina.drawText(refBase.label, { x: MARGIN + PAD_X + 4, y: y - PAD_Y - 8, size: 8.5, font: fonteBold, color: BLACK });
+      pagina.drawText(linhaUnica(refBase.label), { x: MARGIN + PAD_X + 4, y: y - PAD_Y - 8, size: 8.5, font: fonteBold, color: BLACK });
       if (refBase.horario) {
-        pagina.drawText(refBase.horario, { x: MARGIN + PAD_X + 4, y: y - PAD_Y - 8 - LINE_H, size: 7, font: fonte, color: TEXT2 });
+        pagina.drawText(linhaUnica(refBase.horario), { x: MARGIN + PAD_X + 4, y: y - PAD_Y - 8 - LINE_H, size: 7, font: fonte, color: TEXT2 });
       }
 
       let x = MARGIN + LABEL_COL_W;

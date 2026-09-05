@@ -35,9 +35,25 @@ function grupoDoTitulo(titulo: string): string {
   return titulo.split(" / ")[0].trim();
 }
 
+/** Normaliza quebra de linha (\r\n ou \r solto → \n) — texto colado do
+ * Windows/Word costuma vir em CRLF, e o pdf-lib não sabe codificar \r
+ * sozinho ("WinAnsi cannot encode" 0x000d) quando ele sobra numa linha
+ * depois de dividir só por \n. Achado real: um bloco salvo assim derrubava
+ * o PDF de Horários da Equipe inteiro. */
+function normalizarQuebras(texto: string): string {
+  return texto.replace(/\r\n?/g, "\n");
+}
+
+/** Pra campo de uma linha só (nome, horário, nota, título) — sem quebra de
+ * linha nenhuma (nem \r nem \n, os dois são caractere de controle que o
+ * pdf-lib não desenha) e sem espaço sobrando nas pontas. */
+function linhaUnica(texto: string): string {
+  return texto.replace(/[\r\n]+/g, " ").trim();
+}
+
 function quebrarLinhas(font: PDFFont, texto: string, size: number, maxWidth: number): string[] {
   const linhas: string[] = [];
-  for (const bruta of texto.split("\n")) {
+  for (const bruta of normalizarQuebras(texto).split("\n")) {
     if (bruta === "") {
       linhas.push("");
       continue;
@@ -132,15 +148,18 @@ export async function gerarHorariosEquipePdf({ ano, blocos }: { ano: number; blo
     const temHorario = itens.some((it) => it.horario);
     itens.forEach((it, i) => {
       const yLinha = yTopo - 14 - i * LINE_H;
-      if (temHorario && it.horario) {
-        pagina.drawText(it.horario, { x, y: yLinha, size: 8.5, font: fonteBold, color: NAVY });
-        const largHorario = fonteBold.widthOfTextAtSize(it.horario, 8.5) + 6;
-        const resto = it.nota ? `${it.pessoa} — ${it.nota}` : it.pessoa;
+      const pessoa = linhaUnica(it.pessoa);
+      const nota = it.nota ? linhaUnica(it.nota) : "";
+      const horario = it.horario ? linhaUnica(it.horario) : "";
+      if (temHorario && horario) {
+        pagina.drawText(horario, { x, y: yLinha, size: 8.5, font: fonteBold, color: NAVY });
+        const largHorario = fonteBold.widthOfTextAtSize(horario, 8.5) + 6;
+        const resto = nota ? `${pessoa} — ${nota}` : pessoa;
         pagina.drawText(truncarLinha(fonte, resto, 8.5, LARGURA_COL - largHorario), {
           x: x + largHorario, y: yLinha, size: 8.5, font: fonte, color: BLACK,
         });
       } else {
-        const texto = it.nota ? `${it.pessoa} — ${it.nota}` : it.pessoa;
+        const texto = nota ? `${pessoa} — ${nota}` : pessoa;
         pagina.drawText(truncarLinha(fonte, texto, 8.5, LARGURA_COL), { x, y: yLinha, size: 8.5, font: fonte, color: BLACK });
       }
     });
@@ -169,12 +188,12 @@ export async function gerarHorariosEquipePdf({ ano, blocos }: { ano: number; blo
     pagina.drawRectangle({ x: MARGIN, y: yTopo - altura, width: 3, height: altura, color: corSolida(corHex) });
 
     let yCursor = yTopo - PAD_Y - TITULO_SIZE + 2;
-    pagina.drawText(bloco.titulo, { x: MARGIN + PAD_X, y: yCursor, size: TITULO_SIZE, font: fonteBold, color: NAVY });
+    pagina.drawText(linhaUnica(bloco.titulo), { x: MARGIN + PAD_X, y: yCursor, size: TITULO_SIZE, font: fonteBold, color: NAVY });
     yCursor -= 4;
 
     if (bloco.horariosReferencia.length > 0) {
       yCursor -= 12;
-      pagina.drawText(`Horários de referência: ${bloco.horariosReferencia.join(", ")}`, {
+      pagina.drawText(`Horários de referência: ${bloco.horariosReferencia.map(linhaUnica).join(", ")}`, {
         x: MARGIN + PAD_X, y: yCursor, size: 7.5, font: fonte, color: TEXT2,
       });
     }
@@ -202,12 +221,12 @@ export async function gerarHorariosEquipePdf({ ano, blocos }: { ano: number; blo
     pagina.drawRectangle({ x: MARGIN, y: yTopo - altura, width: 3, height: altura, color: TEXT3 });
 
     let yCursor = yTopo - PAD_Y - TITULO_SIZE + 2;
-    pagina.drawText(bloco.titulo, { x: MARGIN + PAD_X, y: yCursor, size: TITULO_SIZE, font: fonteBold, color: NAVY });
+    pagina.drawText(linhaUnica(bloco.titulo), { x: MARGIN + PAD_X, y: yCursor, size: TITULO_SIZE, font: fonteBold, color: NAVY });
     yCursor -= 4;
 
     if (bloco.horariosReferencia.length > 0) {
       yCursor -= 12;
-      pagina.drawText(`Horários de referência: ${bloco.horariosReferencia.join(", ")}`, {
+      pagina.drawText(`Horários de referência: ${bloco.horariosReferencia.map(linhaUnica).join(", ")}`, {
         x: MARGIN + PAD_X, y: yCursor, size: 7.5, font: fonte, color: TEXT2,
       });
     }
