@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Turma } from "@prisma/client";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { showToast } from "@/components/ui/Toast";
 import { InteressadoFormFields } from "./InteressadoFormFields";
 import type { ItemInteressado } from "./types";
@@ -21,6 +22,7 @@ export function EditarInteressadoModal({
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
 
   async function salvar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -59,7 +61,7 @@ export function EditarInteressadoModal({
   }
 
   async function excluir() {
-    if (!item || !confirm(`Remover ${item.nomeCrianca} da lista de interessados?`)) return;
+    if (!item) return;
     setLoading(true);
     const res = await fetch(`/api/interessados/${item.id}`, { method: "DELETE" });
     setLoading(false);
@@ -67,31 +69,51 @@ export function EditarInteressadoModal({
       showToast("Não foi possível remover. Tente de novo.", "error");
       return;
     }
+    setConfirmandoExclusao(false);
     onClose();
     router.refresh();
   }
 
   return (
-    <Modal open={!!item} onClose={onClose} title="Editar interessado" className="max-w-xl">
-      {item && (
-        <form onSubmit={salvar} className="flex flex-col gap-4">
-          <InteressadoFormFields turmas={turmas} inicial={item} />
-          {error && <p className="text-sm text-cda-red">{error}</p>}
-          <div className="flex items-center justify-between gap-3">
-            <Button type="button" variant="ghost" className="text-cda-red hover:bg-cda-red/10" onClick={excluir} disabled={loading}>
-              Remover
-            </Button>
-            <div className="flex gap-3">
-              <Button type="button" variant="outline" onClick={onClose}>
-                Cancelar
+    <>
+      <Modal open={!!item} onClose={onClose} title="Editar interessado" className="max-w-xl">
+        {item && (
+          <form onSubmit={salvar} className="flex flex-col gap-4">
+            <InteressadoFormFields turmas={turmas} inicial={item} />
+            {error && <p className="text-sm text-cda-red">{error}</p>}
+            <div className="flex items-center justify-between gap-3">
+              <Button
+                type="button"
+                variant="ghost"
+                className="text-cda-red hover:bg-cda-red/10"
+                onClick={() => setConfirmandoExclusao(true)}
+                disabled={loading}
+              >
+                Remover
               </Button>
-              <Button type="submit" loading={loading}>
-                Salvar
-              </Button>
+              <div className="flex gap-3">
+                <Button type="button" variant="outline" onClick={onClose}>
+                  Cancelar
+                </Button>
+                <Button type="submit" loading={loading}>
+                  Salvar
+                </Button>
+              </div>
             </div>
-          </div>
-        </form>
+          </form>
+        )}
+      </Modal>
+
+      {item && (
+        <ConfirmDialog
+          open={confirmandoExclusao}
+          onClose={() => setConfirmandoExclusao(false)}
+          onConfirm={excluir}
+          title={`Remover ${item.nomeCrianca} da lista de interessados?`}
+          confirmLabel="Remover"
+          loading={loading}
+        />
       )}
-    </Modal>
+    </>
   );
 }

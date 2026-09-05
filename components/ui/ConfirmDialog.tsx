@@ -8,7 +8,8 @@ import { Alert } from "./Alert";
 /**
  * Confirmação destrutiva (handoff de design, etapa 4.5). Substitui window.confirm() em:
  *   TurmaCard · ChaveCard · AvisoCard · FuncionarioTable (2×) ·
- *   DocumentosLista · BoletosTable · NotasFiscaisTable
+ *   DocumentosLista · BoletosTable · NotasFiscaisTable · EditarInteressadoModal
+ *   (revisão de set/2026 — esse último ainda usava confirm() nativo)
  *
  * `consequence` existe porque os textos atuais de confirm() já carregam a
  * consequência ("apaga também o histórico de ponto… não dá pra desfazer") e ela
