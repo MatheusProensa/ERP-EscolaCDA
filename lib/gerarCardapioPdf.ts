@@ -21,7 +21,7 @@ const LINE_H = 9.5;
 const FONT_SIZE = 8.5;
 const PAD_X = 5;
 const PAD_Y = 4;
-const HEAD_ROW_H = 23;
+const HEAD_ROW_H = 27;
 
 const DIA_LABEL_PDF: Record<string, string> = {
   SEGUNDA: "Segunda",
@@ -141,9 +141,9 @@ export async function gerarCardapioPdf({
     pagina.drawText("REFEIÇÃO", { x: MARGIN + PAD_X, y: y - HEAD_ROW_H / 2 - 3, size: 7.5, font: fonteBold, color: WHITE });
     let x = MARGIN + LABEL_COL_W;
     for (const dia of dias) {
-      pagina.drawText((DIA_LABEL_PDF[dia.dia] ?? dia.dia).toUpperCase(), { x: x + PAD_X, y: y - 10, size: 7.5, font: fonteBold, color: WHITE });
+      pagina.drawText((DIA_LABEL_PDF[dia.dia] ?? dia.dia).toUpperCase(), { x: x + PAD_X, y: y - 11, size: 7.5, font: fonteBold, color: WHITE });
       if (dia.datas.length > 0) {
-        pagina.drawText(dia.datas.join(" · "), { x: x + PAD_X, y: y - HEAD_ROW_H + 7, size: 7, font: fonte, color: rgb(0.75, 0.8, 0.9) });
+        pagina.drawText(dia.datas.join(" · "), { x: x + PAD_X, y: y - HEAD_ROW_H + 10, size: 7, font: fonte, color: rgb(0.75, 0.8, 0.9) });
       }
       x += colW;
     }
@@ -205,7 +205,7 @@ export async function gerarCardapioPdf({
       }
     });
 
-    y -= 5;
+    y -= 12;
   }
 
   for (const publico of publicos) {
