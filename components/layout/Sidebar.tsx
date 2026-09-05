@@ -33,14 +33,18 @@ import { getSupabaseRealtimeClient } from "@/lib/supabaseRealtimeClient";
 type NavItem = { label: string; href: string; icon: LucideIcon };
 type NavGroup = { label: string; items: NavItem[] };
 
-// De 7 grupos pra 3 — "Escola", "Direção" e "Sistema" só tinham 1 item cada,
-// só bagunçavam o menu, e "Pedagógico" também virou parte do Administrativo
+// De 7 grupos pra 4 — "Escola" e "Direção" só tinham 1 item cada, só
+// bagunçavam o menu, e "Pedagógico" também virou parte do Administrativo
 // (Acadêmico e Cardápio no dia a dia são tarefa da secretaria, junto com
-// Aniversariantes, Interessados, Documentos e Usuários). Dentro de cada
-// grupo, ordem alfabética — com 10 itens em Administrativo, ficou mais fácil
-// de escanear por posição do que por frequência de uso. "Dashboard" é a
-// única exceção, sempre primeiro no Principal (é a home, não faz sentido
-// ordenar ele no meio da lista).
+// Aniversariantes, Interessados e Documentos). Dentro de cada grupo, ordem
+// alfabética — com vários itens em Administrativo, ficou mais fácil de
+// escanear por posição do que por frequência de uso. "Dashboard" é a única
+// exceção, sempre primeiro no Principal (é a home, não faz sentido ordenar
+// ele no meio da lista).
+// "Sistema" separado do Administrativo (set/2026, pedido do dono): Usuários
+// e Log de Atividades são administração do PRÓPRIO ERP (quem acessa o quê,
+// auditoria de mudanças), não tarefa do dia a dia da secretaria — misturado
+// junto de Acadêmico/Cardápio/Estoque ficava difícil de achar.
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Principal",
@@ -63,8 +67,6 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Funcionários", href: "/funcionarios", icon: UserCog },
       { label: "Horários da Equipe", href: "/horarios-equipe", icon: CalendarClock },
       { label: "Interessados", href: "/interessados", icon: UserPlus },
-      { label: "Log de Atividades", href: "/log-atividades", icon: History },
-      { label: "Usuários", href: "/usuarios", icon: ShieldCheck },
     ],
   },
   {
@@ -73,6 +75,13 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Boletos", href: "/boletos", icon: Barcode },
       { label: "Notas Fiscais", href: "/notas-fiscais", icon: Receipt },
       { label: "Ponto", href: "/ponto", icon: Clock },
+    ],
+  },
+  {
+    label: "Sistema",
+    items: [
+      { label: "Log de Atividades", href: "/log-atividades", icon: History },
+      { label: "Usuários", href: "/usuarios", icon: ShieldCheck },
     ],
   },
 ];
