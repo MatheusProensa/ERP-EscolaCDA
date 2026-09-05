@@ -13,12 +13,15 @@ export type PublicoParaPdf = {
   semanas: SemanasCardapio;
 };
 
-const LABEL_COL_W = 116;
-const LINE_H = 10;
-const FONT_SIZE = 8;
-const PAD_X = 6;
-const PAD_Y = 6;
-const HEAD_ROW_H = 28;
+// Medidas apertadas de propósito (set/2026): o pedido foi caber os 2 padrões
+// de semana (1&3 e 2&4) de um público inteiro numa página só, sem quebrar —
+// cada pt economizado aqui é o que decide isso.
+const LABEL_COL_W = 108;
+const LINE_H = 9.5;
+const FONT_SIZE = 8.5;
+const PAD_X = 5;
+const PAD_Y = 4;
+const HEAD_ROW_H = 23;
 
 const DIA_LABEL_PDF: Record<string, string> = {
   SEGUNDA: "Segunda",
@@ -128,7 +131,7 @@ export async function gerarCardapioPdf({
   function novaPagina(tituloPublico: string) {
     pagina = pdf.addPage([PAGE_W, PAGE_H]);
     desenharCabecalho(tituloPublico);
-    y = PAGE_H - HEADER_H - 20;
+    y = PAGE_H - HEADER_H - 12;
   }
 
   const colW = (PAGE_W - MARGIN * 2 - LABEL_COL_W) / 5;
@@ -138,9 +141,9 @@ export async function gerarCardapioPdf({
     pagina.drawText("REFEIÇÃO", { x: MARGIN + PAD_X, y: y - HEAD_ROW_H / 2 - 3, size: 7.5, font: fonteBold, color: WHITE });
     let x = MARGIN + LABEL_COL_W;
     for (const dia of dias) {
-      pagina.drawText((DIA_LABEL_PDF[dia.dia] ?? dia.dia).toUpperCase(), { x: x + PAD_X, y: y - 12, size: 7.5, font: fonteBold, color: WHITE });
+      pagina.drawText((DIA_LABEL_PDF[dia.dia] ?? dia.dia).toUpperCase(), { x: x + PAD_X, y: y - 10, size: 7.5, font: fonteBold, color: WHITE });
       if (dia.datas.length > 0) {
-        pagina.drawText(dia.datas.join(" · "), { x: x + PAD_X, y: y - HEAD_ROW_H + 8, size: 6.5, font: fonte, color: rgb(0.75, 0.8, 0.9) });
+        pagina.drawText(dia.datas.join(" · "), { x: x + PAD_X, y: y - HEAD_ROW_H + 7, size: 7, font: fonte, color: rgb(0.75, 0.8, 0.9) });
       }
       x += colW;
     }
@@ -148,10 +151,10 @@ export async function gerarCardapioPdf({
   }
 
   function desenharPainel(titulo: string, dias: DiaCardapio[], tituloPublico: string) {
-    if (y - 16 - HEAD_ROW_H - (LINE_H * 2 + PAD_Y * 2) < MARGIN) novaPagina(tituloPublico);
+    if (y - 10 - HEAD_ROW_H - (LINE_H * 2 + PAD_Y * 2) < MARGIN) novaPagina(tituloPublico);
 
-    pagina.drawText(titulo, { x: MARGIN, y, size: 10.5, font: fonteBold, color: NAVY });
-    y -= 16;
+    pagina.drawText(titulo, { x: MARGIN, y, size: 9.5, font: fonteBold, color: NAVY });
+    y -= 10;
 
     // Sem cardápio cadastrado ainda pra esse padrão de semana — avisa em vez
     // de deixar a página em branco (nunca inventa conteúdo).
@@ -202,7 +205,7 @@ export async function gerarCardapioPdf({
       }
     });
 
-    y -= 16;
+    y -= 5;
   }
 
   for (const publico of publicos) {
@@ -211,13 +214,13 @@ export async function gerarCardapioPdf({
     // Nome do público em destaque na página (não só pequeno no canto do
     // cabeçalho) — mesmo ajuste feito na tela: sem isso, folheando o PDF
     // impresso não dá pra saber de cara qual público é cada página.
-    pagina.drawRectangle({ x: MARGIN, y: y - 20, width: 4, height: 22, color: corSolida(publico.corHex) });
-    pagina.drawText(publico.label, { x: MARGIN + 12, y: y - 15, size: 17, font: fonteBold, color: NAVY });
-    y -= 32;
+    pagina.drawRectangle({ x: MARGIN, y: y - 16, width: 4, height: 18, color: corSolida(publico.corHex) });
+    pagina.drawText(publico.label, { x: MARGIN + 12, y: y - 12, size: 15, font: fonteBold, color: NAVY });
+    y -= 21;
 
     if (publico.notaPublico) {
-      pagina.drawText(publico.notaPublico, { x: MARGIN, y, size: 8, font: fonte, color: TEXT2 });
-      y -= 18;
+      pagina.drawText(publico.notaPublico, { x: MARGIN, y, size: 7.5, font: fonte, color: TEXT2 });
+      y -= 12;
     }
     desenharPainel("Semanas 1 e 3", publico.semanas.impar, publico.label);
     desenharPainel("Semanas 2 e 4", publico.semanas.par, publico.label);
