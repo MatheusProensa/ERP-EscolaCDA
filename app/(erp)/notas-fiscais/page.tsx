@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
 import { NovaNotaFiscalModal } from "@/components/modules/notasfiscais/NovaNotaFiscalModal";
 import { NotasFiscaisTable } from "@/components/modules/notasfiscais/NotasFiscaisTable";
+import { NotasFiscaisExportButton } from "@/components/modules/notasfiscais/NotasFiscaisExportButton";
 import { issnetConfigurado } from "@/lib/issnet";
 
 export default async function NotasFiscaisPage() {
@@ -24,7 +25,12 @@ export default async function NotasFiscaisPage() {
         title="Notas Fiscais"
         subtitle="NFS-e via ISS.net (Prefeitura de Santa Maria)"
         breadcrumb={[{ label: "Notas Fiscais" }]}
-        action={<NovaNotaFiscalModal alunos={alunos} />}
+        action={
+          <>
+            {notas.length > 0 && <NotasFiscaisExportButton />}
+            <NovaNotaFiscalModal alunos={alunos} />
+          </>
+        }
       />
 
       {!configurado && (

@@ -7,6 +7,7 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatarDataHora } from "@/lib/utils";
+import { LogAtividadesExportButton } from "@/components/modules/log-atividades/LogAtividadesExportButton";
 import type { BadgeVariant } from "@/components/ui/Badge";
 
 const POR_PAGINA = 50;
@@ -81,6 +82,7 @@ export default async function LogAtividadesPage({
       <PageHeader
         title="Log de Atividades"
         subtitle="Histórico de quem fez o quê no sistema — pra rastrear e corrigir mudanças feitas sem querer"
+        action={total > 0 ? <LogAtividadesExportButton busca={busca} entidade={entidade} /> : undefined}
       />
 
       <Card className="mb-5 p-4">

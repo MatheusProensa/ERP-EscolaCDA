@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { InteressadosTable } from "@/components/modules/interessados/InteressadosTable";
 import { NovoInteressadoModal } from "@/components/modules/interessados/NovoInteressadoModal";
+import { InteressadosExportButton } from "@/components/modules/interessados/InteressadosExportButton";
 import { ordenarTurmas } from "@/lib/utils";
 
 export default async function InteressadosPage() {
@@ -34,7 +35,12 @@ export default async function InteressadosPage() {
         title="Interessados"
         subtitle="Funil de famílias interessadas — do primeiro contato até a matrícula"
         breadcrumb={[{ label: "Administrativo" }, { label: "Interessados" }]}
-        action={<NovoInteressadoModal turmas={turmas} />}
+        action={
+          <>
+            {itens.length > 0 && <InteressadosExportButton />}
+            <NovoInteressadoModal turmas={turmas} />
+          </>
+        }
       />
 
       <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">

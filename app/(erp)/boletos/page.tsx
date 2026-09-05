@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Alert } from "@/components/ui/Alert";
 import { NovoBoletoModal } from "@/components/modules/boletos/NovoBoletoModal";
 import { BoletosTable } from "@/components/modules/boletos/BoletosTable";
+import { BoletosExportButton } from "@/components/modules/boletos/BoletosExportButton";
 import { banrisulConfigurado } from "@/lib/banrisul";
 
 export default async function BoletosPage() {
@@ -24,7 +25,12 @@ export default async function BoletosPage() {
         title="Boletos"
         subtitle="Cobrança de mensalidade via API do Banrisul"
         breadcrumb={[{ label: "Boletos" }]}
-        action={<NovoBoletoModal alunos={alunos} />}
+        action={
+          <>
+            {boletos.length > 0 && <BoletosExportButton />}
+            <NovoBoletoModal alunos={alunos} />
+          </>
+        }
       />
 
       {!configurado && (

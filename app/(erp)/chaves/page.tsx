@@ -4,6 +4,7 @@ import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ChaveCard } from "@/components/modules/chaves/ChaveCard";
 import { NovaChaveModal } from "@/components/modules/chaves/NovaChaveModal";
+import { ChavesExportButton } from "@/components/modules/chaves/ChavesExportButton";
 
 export default async function ChavesPage() {
   const [chaves, funcionarios] = await Promise.all([
@@ -17,7 +18,16 @@ export default async function ChavesPage() {
 
   return (
     <div>
-      <PageHeader title="Chaves" subtitle="Controle de retirada e devolução de salas" action={<NovaChaveModal />} />
+      <PageHeader
+        title="Chaves"
+        subtitle="Controle de retirada e devolução de salas"
+        action={
+          <>
+            {chaves.length > 0 && <ChavesExportButton />}
+            <NovaChaveModal />
+          </>
+        }
+      />
 
       {chaves.length === 0 ? (
         <Card className="p-0">
