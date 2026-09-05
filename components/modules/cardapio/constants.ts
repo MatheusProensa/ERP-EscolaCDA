@@ -4,10 +4,10 @@ import type { BadgeVariant } from "@/components/ui/Badge";
  * documento que ela manda todo mês. Berçário I (sem sal, sem açúcar) e II (sem
  * açúcar, com sal) dividem a mesma tabela no original — é uma nota de dieta,
  * não um cardápio à parte por criança. */
-export const PUBLICOS_CARDAPIO: { valor: string; label: string; nota?: string }[] = [
-  { valor: "MATERNAL_PRE", label: "Maternal e Pré-escola" },
-  { valor: "BERCARIO", label: "Berçário I e II", nota: "Berçário I: sem sal, sem açúcar · Berçário II: sem açúcar, com sal" },
-  { valor: "FUNDAMENTAL", label: "Ensino Fundamental" },
+export const PUBLICOS_CARDAPIO: { valor: string; label: string; nota?: string; cor: BadgeVariant }[] = [
+  { valor: "MATERNAL_PRE", label: "Maternal e Pré-escola", cor: "cat1" },
+  { valor: "BERCARIO", label: "Berçário I e II", nota: "Berçário I: sem sal, sem açúcar · Berçário II: sem açúcar, com sal", cor: "cat4" },
+  { valor: "FUNDAMENTAL", label: "Ensino Fundamental", cor: "cat3" },
 ];
 
 export const DIAS_SEMANA_CARDAPIO = ["SEGUNDA", "TERCA", "QUARTA", "QUINTA", "SEXTA"] as const;

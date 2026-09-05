@@ -6,6 +6,7 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { CardapioPublicoCard } from "@/components/modules/cardapio/CardapioPublicoCard";
 import { PrepararMesButton } from "@/components/modules/cardapio/PrepararMesButton";
+import { ExcluirMesButton } from "@/components/modules/cardapio/ExcluirMesButton";
 import { PUBLICOS_CARDAPIO, MESES_CARDAPIO } from "@/components/modules/cardapio/constants";
 import type { ItemCardapioMes } from "@/components/modules/cardapio/types";
 
@@ -52,6 +53,9 @@ export default async function CardapioPage({
           <Button type="submit" variant="outline">
             Filtrar
           </Button>
+          {blocos.length > 0 && (
+            <ExcluirMesButton ano={ano} mes={mes} mesLabel={`${MESES_CARDAPIO[mes - 1]} de ${ano}`} />
+          )}
         </form>
       </Card>
 
@@ -68,7 +72,7 @@ export default async function CardapioPage({
           {PUBLICOS_CARDAPIO.map((p) => {
             const item = porPublico.get(p.valor);
             if (!item) return null;
-            return <CardapioPublicoCard key={p.valor} item={item} label={p.label} notaPublico={p.nota} />;
+            return <CardapioPublicoCard key={p.valor} item={item} label={p.label} notaPublico={p.nota} cor={p.cor} />;
           })}
         </div>
       )}

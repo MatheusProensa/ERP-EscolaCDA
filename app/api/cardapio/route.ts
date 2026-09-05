@@ -46,3 +46,21 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ ok: true }, { status: 201 });
 }
+
+/** Apaga os 3 blocos do mês inteiro (um por público) — desfaz o "Preparar
+ * este mês" ou some com um mês cadastrado errado. Volta a tela pro estado
+ * vazio (com o botão de preparar de novo). */
+export async function DELETE(req: NextRequest) {
+  const session = await auth();
+  if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const ano = Number(searchParams.get("ano"));
+  const mes = Number(searchParams.get("mes"));
+  if (!ano || !mes || mes < 1 || mes > 12) {
+    return NextResponse.json({ error: "Ano/mês inválidos" }, { status: 400 });
+  }
+
+  await prisma.cardapioMes.deleteMany({ where: { ano, mes } });
+  return NextResponse.json({ ok: true });
+}
