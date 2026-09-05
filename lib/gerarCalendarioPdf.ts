@@ -46,7 +46,9 @@ export async function gerarCalendarioPdf({
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
 
-  const geradoEm = new Date().toLocaleString("pt-BR");
+  // O servidor roda em UTC — sem timeZone explícito, "Gerado em" saía com a
+  // hora errada (3h a menos do horário de Brasília).
+  const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
   const totalPaginas = meses.length;
 
   function desenharCabecalho(pagina: PDFPage, tituloMes: string, numeroPagina: number) {

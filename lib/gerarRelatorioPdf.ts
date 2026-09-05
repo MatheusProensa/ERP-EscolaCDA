@@ -97,7 +97,9 @@ export async function gerarRelatorioPdf({
   const escala = Math.min(1, (PAGE_W - MARGIN * 2) / larguraTabela);
   const colunasEscaladas = colunas.map((c) => ({ ...c, largura: c.largura * escala }));
 
-  const geradoEm = new Date().toLocaleString("pt-BR");
+  // O servidor roda em UTC — sem timeZone explícito, "Gerado em" saía com a
+  // hora errada (3h a menos do horário de Brasília).
+  const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
   const linhasPorPagina = Math.max(1, Math.floor((PAGE_H - MARGIN * 2 - HEADER_H - HEAD_ROW_H - 24) / ROW_H));
   const totalPaginas = Math.max(1, Math.ceil(linhas.length / linhasPorPagina));
 
@@ -237,7 +239,9 @@ export async function gerarRelatorioPdfMultiSecao({
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
 
-  const geradoEm = new Date().toLocaleString("pt-BR");
+  // O servidor roda em UTC — sem timeZone explícito, "Gerado em" saía com a
+  // hora errada (3h a menos do horário de Brasília).
+  const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
   // Cada seção ocupa pelo menos 1 página, então o total é a soma de páginas por seção.
   const paginasPorSecao = secoes.map((secao) => {
@@ -368,7 +372,9 @@ export async function gerarRelatorioPdfSecoesEmpilhadas({
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
 
-  const geradoEm = new Date().toLocaleString("pt-BR");
+  // O servidor roda em UTC — sem timeZone explícito, "Gerado em" saía com a
+  // hora errada (3h a menos do horário de Brasília).
+  const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
   let paginaAtual = 1;
   let totalPaginas = 1;
 

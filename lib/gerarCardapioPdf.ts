@@ -107,7 +107,9 @@ export async function gerarCardapioPdf({
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
-  const geradoEm = new Date().toLocaleString("pt-BR");
+  // O servidor roda em UTC — sem timeZone explícito, "Gerado em" saía com a
+  // hora errada (3h a menos do horário de Brasília).
+  const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
 
   let pagina!: PDFPage;
   let y = 0;
@@ -141,12 +143,11 @@ export async function gerarCardapioPdf({
     pagina.drawText("REFEIÇÃO", { x: MARGIN + PAD_X, y: y - HEAD_ROW_H / 2 - 3, size: 7.5, font: fonteBold, color: WHITE });
     let x = MARGIN + LABEL_COL_W;
     for (const dia of dias) {
-      // As duas linhas (dia + datas) precisam de ~9pt de distância entre as
-      // bases pra não sobrepor (7.5pt de fonte só cabe apertado com esse
-      // espaçamento) — um valor perto disso já tinha ficado colado antes.
-      pagina.drawText((DIA_LABEL_PDF[dia.dia] ?? dia.dia).toUpperCase(), { x: x + PAD_X, y: y - 9, size: 7.5, font: fonteBold, color: WHITE });
+      // As duas linhas (dia + datas) precisam de ~10pt de distância entre as
+      // bases pra não sobrepor — data no mesmo tamanho do dia, bem legível.
+      pagina.drawText((DIA_LABEL_PDF[dia.dia] ?? dia.dia).toUpperCase(), { x: x + PAD_X, y: y - 10, size: 8, font: fonteBold, color: WHITE });
       if (dia.datas.length > 0) {
-        pagina.drawText(dia.datas.join(" · "), { x: x + PAD_X, y: y - 18, size: 7, font: fonte, color: rgb(0.75, 0.8, 0.9) });
+        pagina.drawText(dia.datas.join(" · "), { x: x + PAD_X, y: y - 20, size: 8, font: fonte, color: rgb(0.85, 0.89, 0.96) });
       }
       x += colW;
     }
