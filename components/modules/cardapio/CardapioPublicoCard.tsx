@@ -79,10 +79,16 @@ function TabelaSemana({ dias }: { dias: DiaCardapio[] }) {
 }
 
 function PainelSemana({
+  publicoLabel,
   titulo,
   dias,
   onEditar,
 }: {
+  /** Repete o nome do público aqui dentro (não só lá em cima no card) — numa
+   * tela comprida com os 3 públicos empilhados, rolar até o meio de um card
+   * já não mostra mais o cabeçalho de cima, e ficava fácil perder de vista
+   * qual público aquela tabela era. */
+  publicoLabel: string;
   titulo: string;
   dias: DiaCardapio[];
   onEditar: () => void;
@@ -90,7 +96,11 @@ function PainelSemana({
   return (
     <div className="overflow-hidden rounded-lg border border-cda-border">
       <div className="flex items-center justify-between gap-3 bg-cda-bg px-4 py-2.5">
-        <h4 className="text-xs font-semibold uppercase tracking-wide text-cda-text2">{titulo}</h4>
+        <h4 className="text-xs font-semibold text-cda-text2">
+          <span className="text-cda-text">{publicoLabel}</span>
+          <span className="mx-1.5 text-cda-text3">·</span>
+          <span className="uppercase tracking-wide">{titulo}</span>
+        </h4>
         <IconButton icon={Pencil} label={`Editar ${titulo.toLowerCase()}`} size="sm" onClick={onEditar} />
       </div>
       <TabelaSemana dias={dias} />
@@ -120,23 +130,26 @@ export function CardapioPublicoCard({
   const diasPar = item.semanas.par.length > 0 ? item.semanas.par : esqueleto.par;
 
   return (
-    <Card className="flex flex-col" style={{ borderLeft: `3px solid ${corBorda}` }}>
-      <div className="flex items-center justify-between gap-3 border-b border-cda-border px-5 py-4">
-        <div className="flex items-center gap-2.5">
+    <Card className="flex flex-col" style={{ borderLeft: `4px solid ${corBorda}` }}>
+      <div
+        className="flex items-center justify-between gap-3 border-b border-cda-border px-5 py-4"
+        style={{ backgroundColor: `color-mix(in oklch, ${corBorda} 6%, white)` }}
+      >
+        <div className="flex items-center gap-3">
           <span
-            className="flex h-7 w-7 items-center justify-center rounded-full"
-            style={{ backgroundColor: `color-mix(in oklch, ${corBorda} 15%, white)` }}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full"
+            style={{ backgroundColor: `color-mix(in oklch, ${corBorda} 18%, white)` }}
           >
-            <UtensilsCrossed className="h-3.5 w-3.5" style={{ color: corBorda }} />
+            <UtensilsCrossed className="h-5 w-5" style={{ color: corBorda }} />
           </span>
-          <h3 className="text-sm font-semibold text-cda-text">{label}</h3>
+          <h3 className="text-xl font-bold text-cda-text">{label}</h3>
         </div>
       </div>
       {notaPublico && <p className="border-b border-cda-border bg-cda-bg px-5 py-2 text-xs text-cda-text3">{notaPublico}</p>}
 
       <div className="flex flex-col gap-4 p-5">
-        <PainelSemana titulo="Semanas 1 e 3" dias={diasImpar} onEditar={() => setEditando("impar")} />
-        <PainelSemana titulo="Semanas 2 e 4" dias={diasPar} onEditar={() => setEditando("par")} />
+        <PainelSemana publicoLabel={label} titulo="Semanas 1 e 3" dias={diasImpar} onEditar={() => setEditando("impar")} />
+        <PainelSemana publicoLabel={label} titulo="Semanas 2 e 4" dias={diasPar} onEditar={() => setEditando("par")} />
       </div>
 
       <EditarSemanaModal

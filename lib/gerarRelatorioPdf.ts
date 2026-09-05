@@ -43,16 +43,18 @@ export async function embarcarCampanha(pdf: PDFDocument): Promise<PDFImage | nul
   }
 }
 
-/** Desenha o selo da campanha ao lado do logo, com a mesma altura — os dois
- * lado a lado leem como "logo da escola + selo da campanha do momento", sem
- * disputar espaço com o título do documento (que fica à direita). */
+/** Desenha o selo da campanha ao lado do logo — maior que o logo (a arte tem
+ * 3 linhas de texto empilhadas, cada uma fica ilegível se encolher pro mesmo
+ * tamanho do logo) e centralizado na altura da barra navy, com um respiro
+ * bem maior entre os dois — colados ficava com cara de bagunça, os dois são
+ * gráficos "carregados" (muita cor/contorno). */
 export function desenharCampanha(pagina: PDFPage, campanha: PDFImage | null, alturaPagina: number, xInicial: number) {
   if (!campanha) return;
-  const alturaSelo = 34;
+  const alturaSelo = 46;
   const escala = alturaSelo / campanha.height;
   const larguraSelo = campanha.width * escala;
-  const x = xInicial + 14;
-  const y = alturaPagina - 16 - alturaSelo;
+  const x = xInicial + 22;
+  const y = alturaPagina - HEADER_H + (HEADER_H - alturaSelo) / 2;
   pagina.drawImage(campanha, { x, y, width: larguraSelo, height: alturaSelo });
 }
 
