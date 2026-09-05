@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import {
-  Megaphone, Package, KeyRound, Users, GraduationCap, UtensilsCrossed, Cake, UserPlus,
+  Package, KeyRound, Users, GraduationCap, UtensilsCrossed, Cake, UserPlus,
   UserCog, CalendarClock, FileText, Barcode, Receipt, Clock, type LucideIcon,
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -15,8 +15,12 @@ import { primeiroNome } from "@/lib/utils";
 // atravessando esse limite quebra igual ao que já aconteceu antes com
 // CardapioExportButtons) — cada item com o ícone e a cor categórica que
 // melhor representa o setor, igual a Sidebar já usa.
+// Mural NÃO entra aqui de propósito: a rota /mural não tem regra de acesso
+// nenhuma (é liberada pra qualquer login, sempre foi) — colocar ela na lista
+// faria o atalho aparecer pra todo mundo que cai nesse dashboard, mesmo quem
+// a grade restringiu a um setor só. O widget de Mural mais embaixo continua
+// (aviso geral da escola cabe pra qualquer funcionário ver).
 const CANDIDATOS: { label: string; href: string; icon: LucideIcon; tone: Atalho["tone"] }[] = [
-  { label: "Mural", href: "/mural", icon: Megaphone, tone: "cat4" },
   { label: "Acadêmico", href: "/academico", icon: GraduationCap, tone: "cat3" },
   { label: "Alunos", href: "/alunos", icon: Users, tone: "cat1" },
   { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed, tone: "cat3" },
