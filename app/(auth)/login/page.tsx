@@ -41,8 +41,15 @@ export default function LoginPage() {
         <GradePontos className="relative" />
 
         <div className="relative flex flex-col gap-6">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo-cda-15anos.webp" alt="Escola CDA · 15 anos" className="h-auto w-52 drop-shadow-md" />
+          <div className="flex items-center gap-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-cda-15anos.webp" alt="Escola CDA · 15 anos" className="h-auto w-52 drop-shadow-md" />
+            {/* Selo da campanha atual — aqui tem espaço de sobra pra arte
+                aparecer no tamanho de verdade (diferente do timbrado do PDF,
+                que é uma faixa fininha e não coube legível). */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/campanha-2027.png" alt="Fundamental para aprender e crescer" className="h-auto w-24 drop-shadow-md" />
+          </div>
           <div>
             <h1 className="text-3xl font-extrabold leading-tight text-white">
               Bem-vindo ao painel <span className="text-cda-yellow">da Escola CDA</span>

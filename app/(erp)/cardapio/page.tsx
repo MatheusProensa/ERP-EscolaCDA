@@ -49,6 +49,17 @@ export default async function CardapioPage({
         action={blocos.length > 0 ? <CardapioExportButtons ano={ano} mes={mes} /> : undefined}
       />
 
+      {/* Selo da campanha atual — só nessa página tem espaço de sobra pra ele
+          aparecer no tamanho de verdade (o timbrado do PDF é uma faixa fininha
+          onde a arte não coube legível). */}
+      <div className="mb-5 flex items-center gap-4 rounded-[10px] bg-cda-navy px-5 py-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/campanha-2027.png" alt="Fundamental para aprender e crescer" className="h-14 w-auto shrink-0" />
+        <p className="text-sm font-medium text-white/85">
+          Cardápio pensado pra escola que é <span className="font-bold text-cda-yellow">fundamental</span> pra aprender e crescer.
+        </p>
+      </div>
+
       <Card className="mb-5 p-4">
         <form className="flex flex-wrap items-center gap-3">
           <Select name="mes" defaultValue={String(mes)} className="w-full sm:w-44">
