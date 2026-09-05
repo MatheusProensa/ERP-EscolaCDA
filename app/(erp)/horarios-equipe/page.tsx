@@ -6,6 +6,7 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { EscalaBlocoCard } from "@/components/modules/horarios-equipe/EscalaBlocoCard";
 import { NovoBlocoButton } from "@/components/modules/horarios-equipe/NovoBlocoButton";
+import { HorariosExportButtons } from "@/components/modules/horarios-equipe/HorariosExportButtons";
 import type { ItemEscalaBloco } from "@/components/modules/horarios-equipe/types";
 
 export default async function HorariosEquipePage({
@@ -37,6 +38,7 @@ export default async function HorariosEquipePage({
       <PageHeader
         title="Horários da Equipe"
         subtitle={`Entrada e saída por contraturno/turma — ano letivo ${ano}`}
+        action={blocos.length > 0 ? <HorariosExportButtons ano={ano} /> : undefined}
       />
 
       <Card className="mb-5 p-4">
