@@ -207,6 +207,14 @@ export async function gerarCardapioPdf({
 
   for (const publico of publicos) {
     novaPagina(publico.label);
+
+    // Nome do público em destaque na página (não só pequeno no canto do
+    // cabeçalho) — mesmo ajuste feito na tela: sem isso, folheando o PDF
+    // impresso não dá pra saber de cara qual público é cada página.
+    pagina.drawRectangle({ x: MARGIN, y: y - 20, width: 4, height: 22, color: corSolida(publico.corHex) });
+    pagina.drawText(publico.label, { x: MARGIN + 12, y: y - 15, size: 17, font: fonteBold, color: NAVY });
+    y -= 32;
+
     if (publico.notaPublico) {
       pagina.drawText(publico.notaPublico, { x: MARGIN, y, size: 8, font: fonte, color: TEXT2 });
       y -= 18;

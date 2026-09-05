@@ -5,8 +5,18 @@ import { paraCSV, respostaCSV } from "@/lib/csv";
 import { respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { gerarCardapioPdf, type PublicoParaPdf } from "@/lib/gerarCardapioPdf";
 import { PUBLICOS_CARDAPIO, MESES_CARDAPIO, DIA_LABEL_CARDAPIO } from "@/components/modules/cardapio/constants";
+import type { BadgeVariant } from "@/components/ui/Badge";
 import { gerarEsqueletoSemanas } from "@/components/modules/cardapio/esqueleto";
 import type { ItemCardapioMes, SemanasCardapio } from "@/components/modules/cardapio/types";
+
+// Mesma cor de identidade de cada público usada na tela (BADGE_VARIANT_STYLE
+// via CSS var) — convertida pro hex real, já que o PDF não lê variável CSS.
+const COR_PUBLICO_HEX: Record<BadgeVariant, string> = {
+  cat1: "#1a6fd8", cat2: "#0b7a70", cat3: "#7c3aed", cat4: "#be1e63", cat5: "#b5670c", cat6: "#4a5b7d",
+  success: "#16a34a", warning: "#d97706", critical: "#ea580c", danger: "#dc2626", info: "#1a6fd8", neutral: "#3d4a63",
+  green: "#16a34a", red: "#dc2626", amber: "#d97706", blue: "#1a6fd8", purple: "#7c3aed", teal: "#0b7a70", pink: "#be1e63", gray: "#3d4a63",
+  count: "#3d4a63",
+};
 
 /** Exporta o cardápio do mês — o "Cardápio completo" (os 3 públicos) ou só um
  * público específico (?publico=BERCARIO, por exemplo), em PDF (com o
@@ -43,7 +53,7 @@ export async function GET(req: NextRequest) {
       impar: item && item.semanas.impar.length > 0 ? item.semanas.impar : esqueleto.impar,
       par: item && item.semanas.par.length > 0 ? item.semanas.par : esqueleto.par,
     };
-    return { label: p.label, notaPublico: p.nota, corHex: "#0d1f4e", semanas };
+    return { label: p.label, notaPublico: p.nota, corHex: COR_PUBLICO_HEX[p.cor], semanas };
   });
 
   const subtitulo = publicoFiltro ? publicosAlvo[0].label : "Cardápio completo";
