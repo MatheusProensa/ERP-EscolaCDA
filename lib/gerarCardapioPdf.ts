@@ -1,7 +1,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import {
   NAVY, YELLOW, BORDER, TEXT2, WHITE, BLACK, PAGE_W, PAGE_H, MARGIN, HEADER_H,
-  embarcarLogo, desenharLogo, embarcarCampanha, desenharCampanha,
+  embarcarLogo, desenharLogo, desenharSlogan,
 } from "./gerarRelatorioPdf";
 import type { DiaCardapio, SemanasCardapio } from "@/components/modules/cardapio/types";
 
@@ -104,7 +104,6 @@ export async function gerarCardapioPdf({
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
   const logo = await embarcarLogo(pdf);
-  const campanha = await embarcarCampanha(pdf);
   const geradoEm = new Date().toLocaleString("pt-BR");
 
   let pagina!: PDFPage;
@@ -113,8 +112,8 @@ export async function gerarCardapioPdf({
   function desenharCabecalho(tituloPublico: string) {
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H, width: PAGE_W, height: HEADER_H, color: NAVY });
     pagina.drawRectangle({ x: 0, y: PAGE_H - HEADER_H - 3, width: PAGE_W, height: 3, color: YELLOW });
-    const larguraLogo = desenharLogo(pagina, logo, PAGE_H);
-    desenharCampanha(pagina, campanha, PAGE_H, larguraLogo);
+    desenharLogo(pagina, logo, PAGE_H);
+    desenharSlogan(pagina, fonte, PAGE_H);
 
     const titulo = `Cardápio · ${mesLabel} ${ano} · ${tituloPublico}`;
     const tituloLargura = fonteBold.widthOfTextAtSize(titulo, 13);
