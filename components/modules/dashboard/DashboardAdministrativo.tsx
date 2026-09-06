@@ -3,6 +3,7 @@ import { UserCog, TriangleAlert, CircleCheck, KeyRound } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { RelogioAtual } from "@/components/ui/RelogioAtual";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Card } from "@/components/ui/Card";
@@ -45,6 +46,7 @@ export async function DashboardAdministrativo({
 
   return (
     <div>
+      <EscutaAoVivo modulo="dashboard" />
       <PageHeader
         title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`}
         subtitle="Funcionários, estoque e chaves"

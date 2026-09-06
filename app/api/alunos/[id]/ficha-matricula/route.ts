@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gerarFichaMatriculaPdf } from "@/lib/gerarFichaMatriculaPdf";
 import { respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { montarDadosFichaMatricula } from "@/lib/montarFichaMatricula";
 import { formatarNomePessoa } from "@/lib/utils";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 const includeFicha = {
   responsaveis: true,
@@ -182,5 +183,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
   const pdf = await gerarFichaMatriculaPdf(montarDadosFichaMatricula(alunoAtualizado, matriculaId, turnoLabel));
 
+  after(() => avisarMudanca("alunos"));
   return respostaPDF(pdf, nomeArquivoPdf("Ficha de Matricula", alunoAtualizado.nome));
 }

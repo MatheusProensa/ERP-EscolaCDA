@@ -9,6 +9,7 @@ import { NovoDocumentoModal } from "@/components/modules/documentos/NovoDocument
 import { DocumentosLista } from "@/components/modules/documentos/DocumentosLista";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { CATEGORIAS_DOCUMENTO, formatarData, hojeBrasilia } from "@/lib/utils";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 
 export default async function DocumentosPage() {
   const session = await auth();
@@ -34,6 +35,7 @@ export default async function DocumentosPage() {
 
   return (
     <div>
+      <EscutaAoVivo modulo="documentos" />
       <PageHeader
         title="Documentos Institucionais"
         subtitle="Alvará, contratos, credenciamento e demais documentos da escola — acesso restrito à Direção"

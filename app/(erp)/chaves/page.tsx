@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { ChaveCard } from "@/components/modules/chaves/ChaveCard";
 import { NovaChaveModal } from "@/components/modules/chaves/NovaChaveModal";
 import { ChavesExportButton } from "@/components/modules/chaves/ChavesExportButton";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { podeEditarModulo } from "@/lib/permissoes";
 
 export default async function ChavesPage() {
@@ -22,6 +23,7 @@ export default async function ChavesPage() {
 
   return (
     <div>
+      <EscutaAoVivo modulo="chaves" />
       <PageHeader
         title="Chaves"
         subtitle="Controle de retirada e devolução de salas"

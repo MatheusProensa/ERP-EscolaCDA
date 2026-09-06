@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { SemanasCardapio } from "@/components/modules/cardapio/types";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 /** Atualiza só UM padrão de semana (ímpar = semanas 1 e 3, ou par = semanas 2
  * e 4) do bloco — o outro padrão fica intacto. Editar os dois juntos numa
@@ -25,5 +26,6 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   const semanas: SemanasCardapio = { ...semanasAtuais, [campo]: dias };
 
   const bloco = await prisma.cardapioMes.update({ where: { id }, data: { semanas } });
+  after(() => avisarMudanca("cardapio"));
   return NextResponse.json(bloco);
 }

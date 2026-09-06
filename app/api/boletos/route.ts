@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { registrarBoleto } from "@/lib/banrisul";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -95,6 +96,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    after(() => avisarMudanca("boletos"));
     return NextResponse.json(boletoAtualizado, { status: 201 });
   } catch (err) {
     return erroApi(err);

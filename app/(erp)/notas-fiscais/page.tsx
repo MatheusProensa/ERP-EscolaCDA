@@ -9,6 +9,7 @@ import { NotasFiscaisTable } from "@/components/modules/notasfiscais/NotasFiscai
 import { NotasFiscaisExportButton } from "@/components/modules/notasfiscais/NotasFiscaisExportButton";
 import { issnetConfigurado } from "@/lib/issnet";
 import { podeEditarModulo } from "@/lib/permissoes";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 
 export default async function NotasFiscaisPage() {
   const session = await auth();
@@ -25,6 +26,7 @@ export default async function NotasFiscaisPage() {
 
   return (
     <div>
+      <EscutaAoVivo modulo="notas-fiscais" />
       <PageHeader
         title="Notas Fiscais"
         subtitle="NFS-e via ISS.net (Prefeitura de Santa Maria)"

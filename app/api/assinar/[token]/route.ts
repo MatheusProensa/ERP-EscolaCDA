@@ -1,6 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { gerarContratoPdf } from "@/lib/gerarContratoPdf";
+import { hojeBrasilia } from "@/lib/utils";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 // Rota PÚBLICA (sem auth) — é o que o responsável acessa pelo link de
 // assinatura, ver proxy.ts pra a exceção de autenticação. Só aceita o POST
@@ -35,7 +37,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     responsavelCpf: contrato.responsavelCpfSnapshot,
     turmaNome: contrato.turmaNomeSnapshot ?? "",
     turnoLabel: (contrato.turnoLabelSnapshot as "Tarde" | "Integral" | "Contraturno") ?? "Tarde",
-    anoLetivo: contrato.anoLetivoSnapshot ?? agora.getFullYear(),
+    // hojeBrasilia() (não agora.getFullYear()): mesma causa raiz do "Gerado
+    // em" que já saiu errado nos PDFs — servidor roda em UTC.
+    anoLetivo: contrato.anoLetivoSnapshot ?? hojeBrasilia().getUTCFullYear(),
     valorMensalidade: contrato.valorMensalidadeSnapshot ?? 0,
     dataMatricula: contrato.dataMatriculaSnapshot,
     diaVencimento: contrato.diaVencimentoSnapshot ?? "",
@@ -64,5 +68,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ tok
     },
   });
 
+  after(() => avisarMudanca("alunos"));
   return NextResponse.json(atualizado);
 }

@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function GET() {
   const session = await auth();
@@ -33,5 +34,6 @@ export async function POST(request: NextRequest) {
     },
   });
 
+  after(() => avisarMudanca("documentos"));
   return NextResponse.json(documento, { status: 201 });
 }

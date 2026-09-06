@@ -5,6 +5,7 @@ import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { contarAlunosAtivos } from "@/lib/alunos";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { RelogioAtual } from "@/components/ui/RelogioAtual";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
@@ -49,6 +50,7 @@ export async function DashboardPedagogico({
 
   return (
     <div>
+      <EscutaAoVivo modulo="dashboard" />
       <PageHeader
         title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`}
         subtitle="Alunos, turmas e censo escolar"

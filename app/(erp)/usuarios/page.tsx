@@ -8,6 +8,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { NovoUsuarioModal } from "@/components/modules/usuarios/NovoUsuarioModal";
 import { UsuarioCard } from "@/components/modules/usuarios/UsuarioCard";
 import { podeEditarModulo } from "@/lib/permissoes";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 
 export default async function UsuariosPage() {
   const session = await auth();
@@ -23,6 +24,7 @@ export default async function UsuariosPage() {
 
   return (
     <div>
+      <EscutaAoVivo modulo="usuarios" />
       <PageHeader
         title="Usuários"
         subtitle="Quem tem acesso ao sistema — clique numa pessoa pra ver e editar o perfil"

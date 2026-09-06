@@ -13,6 +13,7 @@ import { AlunoTable } from "@/components/modules/alunos/AlunoTable";
 import { ImportarMenu } from "@/components/modules/alunos/ImportarMenu";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { ordenarTurmas } from "@/lib/utils";
 
@@ -76,6 +77,7 @@ export default async function AlunosPage({
 
   return (
     <div>
+      <EscutaAoVivo modulo="alunos" />
       <PageHeader
         title="Alunos"
         subtitle={`${matriculas.length} aluno(s) encontrado(s)`}

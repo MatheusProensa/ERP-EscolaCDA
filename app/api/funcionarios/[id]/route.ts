@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { horaParaMin } from "@/lib/ponto";
 import { erroApi } from "@/lib/apiError";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -30,6 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
     });
 
+    after(() => avisarMudanca("funcionarios"));
     return NextResponse.json(funcionario);
   } catch (err) {
     return erroApi(err);
@@ -58,6 +60,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       },
     });
 
+    after(() => avisarMudanca("funcionarios"));
     return new NextResponse(null, { status: 204 });
   } catch (err) {
     return erroApi(err);

@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -50,6 +51,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
     });
 
+    after(() => avisarMudanca("estoque"));
     return NextResponse.json(movimentacao, { status: 201 });
   } catch (err) {
     if (err instanceof Error && err.message === "ESTOQUE_INSUFICIENTE") {

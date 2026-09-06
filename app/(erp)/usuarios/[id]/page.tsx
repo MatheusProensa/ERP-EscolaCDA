@@ -6,6 +6,7 @@ import { PerfilUsuarioClient } from "@/components/modules/usuarios/PerfilUsuario
 import { PermissoesUsuarioSecao } from "@/components/modules/usuarios/PermissoesUsuarioSecao";
 import { AtividadeUsuarioSecao } from "@/components/modules/usuarios/AtividadeUsuarioSecao";
 import { podeEditarModulo } from "@/lib/permissoes";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 
 export default async function PerfilUsuarioPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,6 +30,7 @@ export default async function PerfilUsuarioPage({ params }: { params: Promise<{ 
 
   return (
     <div>
+      <EscutaAoVivo modulo="usuarios" />
       <PageHeader
         title={usuario.name}
         breadcrumb={[{ label: "Usuários", href: "/usuarios" }, { label: usuario.name }]}

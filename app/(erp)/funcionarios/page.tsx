@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { FuncionarioTable } from "@/components/modules/funcionarios/FuncionarioTable";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { SETORES, agruparPorSetor } from "@/lib/utils";
 
@@ -33,6 +34,7 @@ export default async function FuncionariosPage({
 
   return (
     <div>
+      <EscutaAoVivo modulo="funcionarios" />
       <PageHeader
         title="Funcionários"
         subtitle={`${funcionarios.length} funcionário(s) encontrado(s), organizados por setor`}

@@ -7,6 +7,7 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { InteressadosTable } from "@/components/modules/interessados/InteressadosTable";
 import { NovoInteressadoModal } from "@/components/modules/interessados/NovoInteressadoModal";
 import { InteressadosExportButton } from "@/components/modules/interessados/InteressadosExportButton";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { ordenarTurmas } from "@/lib/utils";
 
@@ -35,6 +36,7 @@ export default async function InteressadosPage() {
 
   return (
     <div>
+      <EscutaAoVivo modulo="interessados" />
       <PageHeader
         title="Interessados"
         subtitle="Funil de famílias interessadas — do primeiro contato até a matrícula"

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import bcrypt from "bcryptjs";
 import type { Role } from "@prisma/client";
 import { auth } from "@/lib/auth";
@@ -7,6 +7,7 @@ import { ROLES_ATIVAS, acessoPermitido } from "@/lib/permissoes";
 import { gerarSenhaAleatoria } from "@/lib/senha";
 import { validarUploadDataUri } from "@/lib/validarUpload";
 import { erroApi } from "@/lib/apiError";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 // Agora edita nome/email além do perfil — antes só dava pra trocar o perfil por
 // aqui, então as contas genéricas de seed ("Direção CDA" etc.) não tinham como
@@ -85,6 +86,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     });
   }
 
+  after(() => avisarMudanca("usuarios"));
   return NextResponse.json(usuario);
 }
 
@@ -149,6 +151,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       },
     });
 
+    after(() => avisarMudanca("usuarios"));
     return NextResponse.json({ ok: true });
   } catch (err) {
     return erroApi(err);

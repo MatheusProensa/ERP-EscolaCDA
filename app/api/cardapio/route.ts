@@ -1,10 +1,11 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PUBLICOS_CARDAPIO } from "@/components/modules/cardapio/constants";
 import { comDatasDoMes } from "@/components/modules/cardapio/esqueleto";
 import type { SemanasCardapio } from "@/components/modules/cardapio/types";
 import { hojeBrasilia } from "@/lib/utils";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 const SEMANAS_VAZIAS: SemanasCardapio = { impar: [], par: [] };
 
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
     )
   );
 
+  after(() => avisarMudanca("cardapio"));
   return NextResponse.json({ ok: true }, { status: 201 });
 }
 
@@ -75,5 +77,6 @@ export async function DELETE(req: NextRequest) {
   }
 
   await prisma.cardapioMes.deleteMany({ where: { ano, mes } });
+  after(() => avisarMudanca("cardapio"));
   return NextResponse.json({ ok: true });
 }

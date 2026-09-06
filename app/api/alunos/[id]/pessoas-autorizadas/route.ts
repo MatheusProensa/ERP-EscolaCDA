@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { formatarNomePessoa } from "@/lib/utils";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -24,6 +25,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
         parentesco: parentesco?.trim() || "Não informado",
       },
     });
+    after(() => avisarMudanca("alunos"));
     return NextResponse.json(pessoa, { status: 201 });
   } catch (err) {
     return erroApi(err);

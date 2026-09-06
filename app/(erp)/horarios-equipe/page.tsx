@@ -11,6 +11,7 @@ import { HorariosExportButtons } from "@/components/modules/horarios-equipe/Hora
 import type { ItemEscalaBloco } from "@/components/modules/horarios-equipe/types";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { hojeBrasilia } from "@/lib/utils";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 
 export default async function HorariosEquipePage({
   searchParams,
@@ -44,6 +45,7 @@ export default async function HorariosEquipePage({
 
   return (
     <div>
+      <EscutaAoVivo modulo="horarios-equipe" />
       <PageHeader
         title="Horários da Equipe"
         subtitle={`Entrada e saída por contraturno/turma — ano letivo ${ano}`}

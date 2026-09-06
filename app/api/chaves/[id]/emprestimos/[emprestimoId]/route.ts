@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function PATCH(
   _req: NextRequest,
@@ -15,5 +16,6 @@ export async function PATCH(
     data: { devolucao: new Date() },
   });
 
+  after(() => avisarMudanca("chaves"));
   return NextResponse.json(emprestimo);
 }

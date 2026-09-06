@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Avatar } from "@/components/ui/Avatar";
 import { DocumentosFuncionario } from "@/components/modules/funcionarios/DocumentosFuncionario";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { formatarCPF, formatarData, formatarTelefone } from "@/lib/utils";
 
@@ -23,6 +24,7 @@ export default async function FuncionarioPerfilPage({ params }: { params: Promis
 
   return (
     <div className="mx-auto flex max-w-2xl flex-col gap-5">
+      <EscutaAoVivo modulo="funcionarios" />
       <PageHeader
         title={funcionario.nome}
         breadcrumb={[{ label: "Funcionários", href: "/funcionarios" }, { label: funcionario.nome }]}

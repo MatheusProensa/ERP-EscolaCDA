@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { PontoMesForm } from "@/components/modules/ponto/PontoMesForm";
 import { ImportarPontoModal } from "@/components/modules/ponto/ImportarPontoModal";
 import { podeEditarModulo } from "@/lib/permissoes";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 
 export default async function PontoFuncionarioPage({
   params,
@@ -23,6 +24,7 @@ export default async function PontoFuncionarioPage({
 
   return (
     <div>
+      <EscutaAoVivo modulo="ponto" />
       <PageHeader
         title={`Ponto — ${funcionario.nome}`}
         subtitle={`${funcionario.cargo} · ${funcionario.setor}`}

@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calcularMes, type RegistroPontoDia } from "@/lib/ponto";
 import { inicioMes, fimMes, salvarRegistrosDoMes, type LinhaPonto } from "@/lib/pontoWrite";
 import { hojeBrasilia } from "@/lib/utils";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ funcionarioId: string }> }) {
   const session = await auth();
@@ -74,5 +75,6 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   // motivo de "Salvar" na folha de ponto demorar visivelmente.
   await salvarRegistrosDoMes(funcionarioId, mes, ano, linhas);
 
+  after(() => avisarMudanca("ponto"));
   return NextResponse.json({ ok: true });
 }

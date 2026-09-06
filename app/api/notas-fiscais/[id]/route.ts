@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { emitirNotaFiscal } from "@/lib/issnet";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 // Tenta emitir de novo uma nota que ficou com status ERRO (ex.: depois que o
 // certificado/autorização da prefeitura já estiverem configurados).
@@ -43,6 +44,7 @@ export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ i
         : { status: "ERRO", mensagemErro: resultado.erro },
     });
 
+    after(() => avisarMudanca("notas-fiscais"));
     return NextResponse.json(notaAtualizada);
   } catch (err) {
     return erroApi(err);
@@ -62,6 +64,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   try {
     await prisma.notaFiscal.delete({ where: { id } });
+    after(() => avisarMudanca("notas-fiscais"));
     return new NextResponse(null, { status: 204 });
   } catch (err) {
     return erroApi(err);

@@ -11,6 +11,7 @@ import { ResponsaveisSecao } from "@/components/modules/alunos/ResponsaveisSecao
 import { PessoasAutorizadasSecao } from "@/components/modules/alunos/PessoasAutorizadasSecao";
 import { NovaMatriculaModal } from "@/components/modules/alunos/NovaMatriculaModal";
 import { FichaMatriculaAcoes } from "@/components/modules/alunos/FichaMatriculaAcoes";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { ordenarTurmas, formatarData } from "@/lib/utils";
 import { turnoDoContrato } from "@/lib/contratoTexto";
@@ -65,6 +66,7 @@ export default async function AlunoPerfilPage({ params }: { params: Promise<{ id
 
   return (
     <div>
+      <EscutaAoVivo modulo="alunos" />
       <PageHeader
         title={aluno.nome}
         breadcrumb={[{ label: "Alunos", href: "/alunos" }, { label: aluno.nome }]}

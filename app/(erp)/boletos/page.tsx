@@ -9,6 +9,7 @@ import { BoletosTable } from "@/components/modules/boletos/BoletosTable";
 import { BoletosExportButton } from "@/components/modules/boletos/BoletosExportButton";
 import { banrisulConfigurado } from "@/lib/banrisul";
 import { podeEditarModulo } from "@/lib/permissoes";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 
 export default async function BoletosPage() {
   const session = await auth();
@@ -25,6 +26,7 @@ export default async function BoletosPage() {
 
   return (
     <div>
+      <EscutaAoVivo modulo="boletos" />
       <PageHeader
         title="Boletos"
         subtitle="Cobrança de mensalidade via API do Banrisul"

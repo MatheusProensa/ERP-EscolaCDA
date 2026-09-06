@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -21,6 +22,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     },
   });
 
+  after(() => avisarMudanca("documentos"));
   return NextResponse.json(documento);
 }
 
@@ -30,5 +32,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
   const { id } = await params;
   await prisma.documentoInstitucional.delete({ where: { id } });
+  after(() => avisarMudanca("documentos"));
   return NextResponse.json({ ok: true });
 }

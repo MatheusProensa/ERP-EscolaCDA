@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { validarPlanilhaDataUri } from "@/lib/planilha";
 import { processarFichaArquivo, type ResultadoImportacaoArquivo } from "@/lib/criarAlunoDaFicha";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 /**
  * Importa uma ou mais Fichas de Matrícula (.docx) direto pra um aluno novo —
@@ -49,6 +50,7 @@ export async function POST(req: NextRequest) {
       resultados.push(resultado);
     }
 
+    if (criados > 0) after(() => avisarMudanca("alunos"));
     return NextResponse.json({ criados, total: arquivos.length, resultados });
   } catch (err) {
     return erroApi(err);

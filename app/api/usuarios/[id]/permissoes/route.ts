@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { MODULOS, acessoPermitido, type NivelPermissao } from "@/lib/permissoes";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 const NIVEIS_VALIDOS = ["HERDAR", "NENHUM", "VER", "EDITAR"] as const;
 const CHAVES_VALIDAS = new Set(MODULOS.map((m) => m.chave));
@@ -74,6 +75,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       },
     });
 
+    after(() => avisarMudanca("usuarios"));
     return NextResponse.json({ ok: true });
   } catch (err) {
     return erroApi(err);

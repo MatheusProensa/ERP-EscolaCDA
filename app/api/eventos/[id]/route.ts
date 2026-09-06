@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIAS_EVENTO } from "@/lib/calendario";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 const GESTAO = ["ADMIN", "DIRECAO"];
 
@@ -28,6 +29,7 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       descricao: descricao !== undefined ? descricao || null : undefined,
     },
   });
+  after(() => avisarMudanca("calendario"));
   return NextResponse.json(evento);
 }
 
@@ -40,5 +42,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
   const { id } = await params;
   await prisma.eventoCalendario.delete({ where: { id } });
+  after(() => avisarMudanca("calendario"));
   return NextResponse.json({ ok: true });
 }

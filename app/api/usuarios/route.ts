@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import bcrypt from "bcryptjs";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ROLES_ATIVAS, acessoPermitido } from "@/lib/permissoes";
+import { avisarMudanca } from "@/lib/liveUpdate";
+import { erroApi } from "@/lib/apiError";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -47,10 +49,19 @@ export async function POST(req: NextRequest) {
   }
 
   const hash = await bcrypt.hash(password, 10);
-  const usuario = await prisma.user.create({
-    data: { name, email, password: hash, role },
-    select: { id: true, name: true, email: true, role: true, createdAt: true },
-  });
+  try {
+    const usuario = await prisma.user.create({
+      data: { name, email, password: hash, role },
+      select: { id: true, name: true, email: true, role: true, createdAt: true },
+    });
 
-  return NextResponse.json(usuario, { status: 201 });
+    after(() => avisarMudanca("usuarios"));
+    return NextResponse.json(usuario, { status: 201 });
+  } catch (err) {
+    // erroApi cobre P2002 (email duplicado) com mensagem amigável — a
+    // checagem acima (findUnique) já pega o caso comum, mas não fecha uma
+    // corrida de 2 requisições simultâneas criando o mesmo email; sem isso,
+    // a segunda esbarrava direto na constraint do banco e voltava erro 500 cru.
+    return erroApi(err);
+  }
 }

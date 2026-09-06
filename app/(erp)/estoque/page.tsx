@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { EstoquePainel } from "@/components/modules/estoque/EstoquePainel";
 import { NovoItemModal } from "@/components/modules/estoque/NovoItemModal";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { hojeBrasilia } from "@/lib/utils";
 
@@ -34,6 +35,7 @@ export default async function EstoquePage() {
 
   return (
     <div>
+      <EscutaAoVivo modulo="estoque" />
       <PageHeader
         title="Estoque"
         subtitle="Materiais e suprimentos da escola"

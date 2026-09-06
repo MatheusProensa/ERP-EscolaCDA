@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CATEGORIAS_EVENTO } from "@/lib/calendario";
 import { formatarData } from "@/lib/utils";
 import { erroApi } from "@/lib/apiError";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 const GESTAO = ["ADMIN", "DIRECAO"];
 
@@ -73,6 +74,10 @@ export async function POST(request: NextRequest) {
       return novoEvento;
     });
 
+    after(() => {
+      avisarMudanca("calendario");
+      if (publicarMural) avisarMudanca("mural");
+    });
     return NextResponse.json(evento, { status: 201 });
   } catch (err) {
     return erroApi(err);

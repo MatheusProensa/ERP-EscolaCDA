@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { registrarBoleto } from "@/lib/banrisul";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 // Tenta registrar de novo um boleto que ficou com status ERRO (ex.: depois que
 // o Convênio de Cobrança/credenciais da API já estiverem configurados).
@@ -41,6 +42,7 @@ export async function PATCH(_req: NextRequest, { params }: { params: Promise<{ i
         : { status: "ERRO", mensagemErro: resultado.erro },
     });
 
+    after(() => avisarMudanca("boletos"));
     return NextResponse.json(boletoAtualizado);
   } catch (err) {
     return erroApi(err);
@@ -60,6 +62,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   try {
     await prisma.boleto.delete({ where: { id } });
+    after(() => avisarMudanca("boletos"));
     return new NextResponse(null, { status: 204 });
   } catch (err) {
     return erroApi(err);

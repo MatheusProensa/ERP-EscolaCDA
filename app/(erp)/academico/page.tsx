@@ -10,6 +10,7 @@ import { NovaTurmaModal } from "@/components/modules/academico/NovaTurmaModal";
 import { AcademicoTabs } from "@/components/modules/academico/AcademicoTabs";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { ordenarTurmas } from "@/lib/utils";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 
 export default async function AcademicoPage() {
   const session = await auth();
@@ -28,6 +29,7 @@ export default async function AcademicoPage() {
 
   return (
     <div>
+      <EscutaAoVivo modulo="academico" />
       <PageHeader
         title="Acadêmico"
         subtitle={`Ano letivo ${anoLetivo?.ano ?? "—"}`}

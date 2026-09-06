@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import type { Diff } from "@/lib/importarAlunos";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 const CAMPOS_RESPONSAVEL = ["telefone", "cpf", "endereco", "email"] as const;
 
@@ -52,6 +53,7 @@ export async function POST(req: NextRequest) {
       }
     });
 
+    if (aplicados > 0) after(() => avisarMudanca("alunos"));
     return NextResponse.json({ aplicados });
   } catch (err) {
     return erroApi(err);

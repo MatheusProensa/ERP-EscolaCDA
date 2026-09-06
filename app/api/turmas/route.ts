@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function GET() {
   const session = await auth();
@@ -44,5 +45,6 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  after(() => avisarMudanca("academico"));
   return NextResponse.json(turma, { status: 201 });
 }

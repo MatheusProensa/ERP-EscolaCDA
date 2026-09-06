@@ -13,6 +13,7 @@ import { PUBLICOS_CARDAPIO, MESES_CARDAPIO, NUTRICIONISTA_CARDAPIO } from "@/com
 import type { ItemCardapioMes } from "@/components/modules/cardapio/types";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { hojeBrasilia } from "@/lib/utils";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 
 export default async function CardapioPage({
   searchParams,
@@ -54,6 +55,7 @@ export default async function CardapioPage({
 
   return (
     <div>
+      <EscutaAoVivo modulo="cardapio" />
       <PageHeader
         title="Cardápio"
         subtitle="Alimentação por público — o que a Nutricionista define pra cada mês, sempre em vigor"

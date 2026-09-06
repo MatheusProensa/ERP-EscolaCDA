@@ -1,9 +1,10 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { salvarRegistrosDoMes } from "@/lib/pontoWrite";
 import type { RegistroImportado } from "@/lib/importarPonto";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 /** Aplica de verdade a importação de Ponto pré-visualizada em .../importar —
  * substitui, mês a mês, os dias que vieram na planilha (mesma semântica do
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ fun
       },
     });
 
+    after(() => avisarMudanca("ponto"));
     return NextResponse.json({ ok: true, dias: registros.length });
   } catch (err) {
     return erroApi(err);

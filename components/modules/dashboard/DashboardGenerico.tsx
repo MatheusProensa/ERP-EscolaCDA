@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { RelogioAtual } from "@/components/ui/RelogioAtual";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { ProximosEventosWidget } from "@/components/modules/dashboard/ProximosEventosWidget";
 import { MuralWidget } from "@/components/modules/dashboard/MuralWidget";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
@@ -29,6 +30,7 @@ export async function DashboardGenerico({
 }) {
   return (
     <div>
+      <EscutaAoVivo modulo="dashboard" />
       <PageHeader title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`} subtitle="Seu painel" extra={<RelogioAtual />} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">

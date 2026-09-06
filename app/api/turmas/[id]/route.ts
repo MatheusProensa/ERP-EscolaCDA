@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -54,6 +55,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       },
     });
 
+    after(() => avisarMudanca("academico"));
     return NextResponse.json(turma);
   } catch (err) {
     return erroApi(err);
@@ -78,6 +80,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   try {
     await prisma.turma.delete({ where: { id } });
+    after(() => avisarMudanca("academico"));
     return NextResponse.json({ ok: true });
   } catch (err) {
     return erroApi(err);

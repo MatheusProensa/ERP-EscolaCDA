@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { GESTAO } from "@/lib/permissoes";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 async function podeGerenciar(avisoId: string, userId: string, role: string) {
   if (GESTAO.includes(role as (typeof GESTAO)[number])) return true;
@@ -32,6 +33,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     },
   });
 
+  after(() => avisarMudanca("mural"));
   return NextResponse.json(aviso);
 }
 
@@ -46,5 +48,6 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   await prisma.muralAviso.delete({ where: { id } });
 
+  after(() => avisarMudanca("mural"));
   return NextResponse.json({ ok: true });
 }

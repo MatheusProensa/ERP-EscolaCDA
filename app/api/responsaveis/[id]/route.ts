@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { formatarNomePessoa } from "@/lib/utils";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -24,6 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         autorizado: autorizado !== undefined ? !!autorizado : undefined,
       },
     });
+    after(() => avisarMudanca("alunos"));
     return NextResponse.json(responsavel);
   } catch (err) {
     return erroApi(err);
@@ -38,6 +40,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   try {
     await prisma.responsavel.delete({ where: { id } });
+    after(() => avisarMudanca("alunos"));
     return NextResponse.json({ ok: true });
   } catch (err) {
     return erroApi(err);

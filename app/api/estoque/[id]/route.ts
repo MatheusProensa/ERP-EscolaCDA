@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -24,6 +25,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
     });
 
+    after(() => avisarMudanca("estoque"));
     return NextResponse.json(item);
   } catch (err) {
     return erroApi(err);
@@ -41,6 +43,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
       prisma.movimentacaoEstoque.deleteMany({ where: { itemId: id } }),
       prisma.itemEstoque.delete({ where: { id } }),
     ]);
+    after(() => avisarMudanca("estoque"));
     return NextResponse.json({ ok: true });
   } catch (err) {
     return erroApi(err);

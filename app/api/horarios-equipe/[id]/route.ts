@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -28,6 +29,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ordem: typeof ordem === "number" ? ordem : undefined,
       },
     });
+    after(() => avisarMudanca("horarios-equipe"));
     return NextResponse.json(bloco);
   } catch (err) {
     return erroApi(err);
@@ -41,6 +43,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const { id } = await params;
   try {
     await prisma.escalaEquipeBloco.delete({ where: { id } });
+    after(() => avisarMudanca("horarios-equipe"));
     return NextResponse.json({ ok: true });
   } catch (err) {
     return erroApi(err);

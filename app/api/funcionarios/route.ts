@@ -1,8 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { horaParaMin } from "@/lib/ponto";
 import { erroApi } from "@/lib/apiError";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function GET() {
   const session = await auth();
@@ -39,6 +40,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    after(() => avisarMudanca("funcionarios"));
     return NextResponse.json(funcionario, { status: 201 });
   } catch (err) {
     return erroApi(err);

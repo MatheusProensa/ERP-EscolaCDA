@@ -14,6 +14,7 @@ import { JornadaPrevistaCell } from "@/components/modules/ponto/JornadaPrevistaC
 import { calcularMes, minParaHora, type RegistroPontoDia } from "@/lib/ponto";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { hojeBrasilia } from "@/lib/utils";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 
 const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -62,6 +63,7 @@ export default async function PontoPage({
 
   return (
     <div>
+      <EscutaAoVivo modulo="ponto" />
       <PageHeader
         title="Ponto"
         subtitle="Lançamento das folhas de ponto e cálculo automático de horas (tolerância CLT, adicional noturno e banco de horas)"

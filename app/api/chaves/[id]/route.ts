@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -15,6 +16,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   try {
     const chave = await prisma.chave.update({ where: { id }, data: { sala } });
+    after(() => avisarMudanca("chaves"));
     return NextResponse.json(chave);
   } catch (err) {
     return erroApi(err);
@@ -41,6 +43,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
     // Soft delete: mantém o histórico de empréstimos ligado, só some da
     // listagem.
     await prisma.chave.update({ where: { id }, data: { ativa: false } });
+    after(() => avisarMudanca("chaves"));
     return NextResponse.json({ ok: true });
   } catch (err) {
     return erroApi(err);

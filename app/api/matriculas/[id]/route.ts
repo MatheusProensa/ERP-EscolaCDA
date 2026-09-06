@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 // Transferência de turma de verdade: move a mesma matrícula (mantém histórico de
 // mensalidades) pra outra turma do mesmo ano letivo. Único uso do PATCH agora —
@@ -39,6 +40,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
     });
 
+    after(() => avisarMudanca("alunos"));
     return NextResponse.json(matricula);
   } catch (err) {
     return erroApi(err);
@@ -74,6 +76,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
       },
     });
 
+    after(() => avisarMudanca("alunos"));
     return NextResponse.json({ ok: true });
   } catch (err) {
     return erroApi(err);

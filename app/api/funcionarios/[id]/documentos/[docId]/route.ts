@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse, after } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { avisarMudanca } from "@/lib/liveUpdate";
 
 export async function DELETE(
   _req: NextRequest,
@@ -12,5 +13,6 @@ export async function DELETE(
   const { docId } = await params;
   await prisma.documentoFuncionario.delete({ where: { id: docId } });
 
+  after(() => avisarMudanca("funcionarios"));
   return NextResponse.json({ ok: true });
 }

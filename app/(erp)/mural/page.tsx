@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { AvisoCard } from "@/components/modules/mural/AvisoCard";
 import { NovoAvisoModal } from "@/components/modules/mural/NovoAvisoModal";
 import { GESTAO } from "@/lib/permissoes";
+import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 
 export default async function MuralPage() {
   const session = await auth();
@@ -20,6 +21,7 @@ export default async function MuralPage() {
 
   return (
     <div>
+      <EscutaAoVivo modulo="mural" />
       <PageHeader
         title="Mural de avisos"
         subtitle="Comunicados internos da equipe"
