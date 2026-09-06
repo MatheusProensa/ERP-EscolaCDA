@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
@@ -21,51 +22,66 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!aluno) return NextResponse.json({ error: "Aluno não encontrado" }, { status: 404 });
   if (!turma) return NextResponse.json({ error: "Turma não encontrada" }, { status: 400 });
 
-  const jaMatriculado = await prisma.matricula.findFirst({
-    where: { alunoId: id, turmaId, situacao: "ATIVA" },
-  });
-  if (jaMatriculado) {
-    return NextResponse.json({ error: "Esse aluno já está matriculado nessa turma" }, { status: 400 });
-  }
-
   // Controle de vagas por turma desativado por enquanto — os números de
   // capacidade cadastrados não são confiáveis ainda. Volta quando tiver o
   // valor real por turma.
   const valor = Number(valorMensalidade) || 450;
 
   try {
-    const matricula = await prisma.$transaction(async (tx) => {
-      const nova = await tx.matricula.create({
-        // dataMatricula explícito (não o @default(now()) do schema): now()
-        // grava o instante em UTC, mas é exibido em "Data de ingresso"/"Data
-        // da matrícula" via formatarData (lê o dia direto em UTC, sem passar
-        // por Brasília) — matrícula feita entre 21h e meia-noite (Brasília)
-        // gravava e mostrava o dia SEGUINTE. hojeBrasilia() é o mesmo helper
-        // já usado pros outros campos de "dia" do sistema.
-        data: {
-          alunoId: id,
-          turmaId,
-          anoLetivoId: turma.anoLetivoId,
-          situacao: "ATIVA",
-          valorMensalidade: valor,
-          dataMatricula: hojeBrasilia(),
-        },
-      });
+    const matricula = await prisma.$transaction(
+      async (tx) => {
+        // Checagem de duplicidade dentro da MESMA transação, em isolamento
+        // Serializable (achado da auditoria set/2026): antes era uma query
+        // solta antes da transação — 2 cliques rápidos no botão "Matricular"
+        // (ou 2 abas abertas) podiam ambos passar pela checagem antes de
+        // qualquer um criar a matrícula, duplicando o aluno na mesma turma.
+        // Serializable faz o Postgres abortar uma das duas transações
+        // concorrentes com erro de conflito (P2034) em vez de deixar as
+        // duas passarem.
+        const jaMatriculado = await tx.matricula.findFirst({
+          where: { alunoId: id, turmaId, situacao: "ATIVA" },
+        });
+        if (jaMatriculado) throw new Error("JA_MATRICULADO");
 
-      await tx.logAtividade.create({
-        data: {
-          acao: `Nova matrícula em ${turma.nome} - ${aluno.nome}`,
-          entidade: "Matricula",
-          entidadeId: nova.id,
-          usuario: session.user.name ?? "Usuário",
-        },
-      });
+        const nova = await tx.matricula.create({
+          // dataMatricula explícito (não o @default(now()) do schema): now()
+          // grava o instante em UTC, mas é exibido em "Data de ingresso"/"Data
+          // da matrícula" via formatarData (lê o dia direto em UTC, sem passar
+          // por Brasília) — matrícula feita entre 21h e meia-noite (Brasília)
+          // gravava e mostrava o dia SEGUINTE. hojeBrasilia() é o mesmo helper
+          // já usado pros outros campos de "dia" do sistema.
+          data: {
+            alunoId: id,
+            turmaId,
+            anoLetivoId: turma.anoLetivoId,
+            situacao: "ATIVA",
+            valorMensalidade: valor,
+            dataMatricula: hojeBrasilia(),
+          },
+        });
 
-      return nova;
-    });
+        await tx.logAtividade.create({
+          data: {
+            acao: `Nova matrícula em ${turma.nome} - ${aluno.nome}`,
+            entidade: "Matricula",
+            entidadeId: nova.id,
+            usuario: session.user.name ?? "Usuário",
+          },
+        });
+
+        return nova;
+      },
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
 
     return NextResponse.json(matricula, { status: 201 });
   } catch (err) {
+    if (err instanceof Error && err.message === "JA_MATRICULADO") {
+      return NextResponse.json({ error: "Esse aluno já está matriculado nessa turma" }, { status: 400 });
+    }
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2034") {
+      return NextResponse.json({ error: "Esse aluno já está matriculado nessa turma" }, { status: 400 });
+    }
     return erroApi(err);
   }
 }
