@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
+import { hojeBrasilia } from "@/lib/utils";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
@@ -35,7 +36,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   try {
     const matricula = await prisma.$transaction(async (tx) => {
       const nova = await tx.matricula.create({
-        data: { alunoId: id, turmaId, anoLetivoId: turma.anoLetivoId, situacao: "ATIVA", valorMensalidade: valor },
+        // dataMatricula explícito (não o @default(now()) do schema): now()
+        // grava o instante em UTC, mas é exibido em "Data de ingresso"/"Data
+        // da matrícula" via formatarData (lê o dia direto em UTC, sem passar
+        // por Brasília) — matrícula feita entre 21h e meia-noite (Brasília)
+        // gravava e mostrava o dia SEGUINTE. hojeBrasilia() é o mesmo helper
+        // já usado pros outros campos de "dia" do sistema.
+        data: {
+          alunoId: id,
+          turmaId,
+          anoLetivoId: turma.anoLetivoId,
+          situacao: "ATIVA",
+          valorMensalidade: valor,
+          dataMatricula: hojeBrasilia(),
+        },
       });
 
       await tx.logAtividade.create({

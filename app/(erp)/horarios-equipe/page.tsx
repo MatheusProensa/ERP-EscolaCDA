@@ -10,6 +10,7 @@ import { NovoBlocoButton } from "@/components/modules/horarios-equipe/NovoBlocoB
 import { HorariosExportButtons } from "@/components/modules/horarios-equipe/HorariosExportButtons";
 import type { ItemEscalaBloco } from "@/components/modules/horarios-equipe/types";
 import { podeEditarModulo } from "@/lib/permissoes";
+import { hojeBrasilia } from "@/lib/utils";
 
 export default async function HorariosEquipePage({
   searchParams,
@@ -19,7 +20,11 @@ export default async function HorariosEquipePage({
   const { ano: anoParam } = await searchParams;
   const session = await auth();
   const podeEditar = podeEditarModulo("/horarios-equipe", session?.user.role ?? "", session?.user.permissoes);
-  const ano = Number(anoParam) || new Date().getFullYear();
+  // hojeBrasilia() (não new Date()): o ano padrão/atual do seletor viraria o
+  // ANO SEGUINTE pra quem acessa entre 21h e meia-noite de 31/dez (Brasília)
+  // — servidor roda em UTC, mesma causa raiz do "Gerado em" que já saiu
+  // errado nos PDFs.
+  const ano = Number(anoParam) || hojeBrasilia().getUTCFullYear();
 
   const blocosRaw = await prisma.escalaEquipeBloco.findMany({
     where: { ano },
@@ -30,7 +35,7 @@ export default async function HorariosEquipePage({
   const turnos = blocos.filter((b) => b.tipo === "TURNO");
   const notas = blocos.filter((b) => b.tipo === "NOTA");
 
-  const anoAtual = new Date().getFullYear();
+  const anoAtual = hojeBrasilia().getUTCFullYear();
   const anos = [anoAtual - 1, anoAtual, anoAtual + 1];
   // Evita sumir a opção do ano que está sendo visto se ele já saiu da janela
   // padrão (ex.: alguém guardou o link de um ano bem antigo ou futuro).

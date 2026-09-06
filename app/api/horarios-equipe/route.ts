@@ -2,12 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
+import { hojeBrasilia } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
-  const ano = Number(req.nextUrl.searchParams.get("ano")) || new Date().getFullYear();
+  // hojeBrasilia() (não new Date()): sem "ano" na URL, cairia no ANO
+  // SEGUINTE pra quem acessa entre 21h e meia-noite de 31/dez (Brasília) —
+  // servidor roda em UTC.
+  const ano = Number(req.nextUrl.searchParams.get("ano")) || hojeBrasilia().getUTCFullYear();
   const blocos = await prisma.escalaEquipeBloco.findMany({
     where: { ano },
     orderBy: { ordem: "asc" },

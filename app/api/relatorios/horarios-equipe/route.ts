@@ -5,6 +5,7 @@ import { paraCSV, respostaCSV } from "@/lib/csv";
 import { respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { gerarHorariosEquipePdf } from "@/lib/gerarHorariosEquipePdf";
 import type { ItemEscalaBloco } from "@/components/modules/horarios-equipe/types";
+import { hojeBrasilia } from "@/lib/utils";
 
 /** Exporta a escala do ano — PDF com o timbrado oficial (igual ao Cardápio) ou
  * CSV (uma linha por pessoa/entrada-saída, pra quem quiser abrir numa
@@ -15,7 +16,10 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const params = req.nextUrl.searchParams;
-  const ano = Number(params.get("ano")) || new Date().getFullYear();
+  // hojeBrasilia() (não new Date()): mesma causa raiz do "Gerado em" que já
+  // saiu errado nos PDFs — sem "ano" na URL, cairia no ano seguinte pra quem
+  // exporta entre 21h e meia-noite de 31/dez (Brasília).
+  const ano = Number(params.get("ano")) || hojeBrasilia().getUTCFullYear();
 
   const blocosRaw = await prisma.escalaEquipeBloco.findMany({ where: { ano }, orderBy: { ordem: "asc" } });
   const blocos = blocosRaw as unknown as ItemEscalaBloco[];

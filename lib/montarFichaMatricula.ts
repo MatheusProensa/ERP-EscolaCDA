@@ -2,6 +2,7 @@ import type { Aluno, Responsavel, PessoaAutorizada, Matricula, Turma, AnoLetivo 
 import { turnoDoContrato } from "@/lib/contratoTexto";
 import { RACA_COR_LABEL } from "@/lib/censo";
 import type { DadosFichaMatricula, DadosResponsavelFicha } from "@/lib/gerarFichaMatriculaPdf";
+import { hojeBrasilia } from "@/lib/utils";
 
 type AlunoComRelacoes = Aluno & {
   responsaveis: Responsavel[];
@@ -51,8 +52,11 @@ export function montarDadosFichaMatricula(
     .join(" · ");
 
   return {
-    anoLetivo: matricula?.anoLetivo.ano ?? new Date().getFullYear(),
-    dataIngresso: matricula?.dataMatricula ?? new Date(),
+    // hojeBrasilia() nos dois fallbacks (não new Date()): só entram em jogo
+    // quando o aluno não tem matrícula ativa (raro), mas mesma causa raiz do
+    // "Gerado em" que já saiu errado nos PDFs — servidor roda em UTC.
+    anoLetivo: matricula?.anoLetivo.ano ?? hojeBrasilia().getUTCFullYear(),
+    dataIngresso: matricula?.dataMatricula ?? hojeBrasilia(),
     turnoLabel:
       turnoLabelOverride || (matricula ? turnoDoContrato(matricula.turma.nome, matricula.turma.turno) : "Não informado"),
     alunoNome: aluno.nome,

@@ -3,7 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { validarUploadDataUri } from "@/lib/validarUpload";
-import { formatarNomePessoa } from "@/lib/utils";
+import { formatarNomePessoa, hojeBrasilia } from "@/lib/utils";
 
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -140,6 +140,14 @@ export async function POST(req: NextRequest) {
           anoLetivoId: turma.anoLetivoId,
           situacao: "ATIVA",
           valorMensalidade: valor,
+          // Explícito em vez do @default(now()) do schema: now() grava o
+          // instante em UTC, mas "Data de ingresso" no perfil e "Data da
+          // matrícula" no contrato são exibidas com formatarData (que lê o
+          // dia direto em UTC, sem passar por Brasília). Matrícula feita
+          // entre 21h e meia-noite (Brasília) gravava e mostrava o dia
+          // SEGUINTE. hojeBrasilia() já resolve isso — é o mesmo helper
+          // usado pros outros campos de "dia" do sistema.
+          dataMatricula: hojeBrasilia(),
         },
       });
 

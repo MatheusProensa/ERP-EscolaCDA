@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { parsarFichaMatricula, type ResultadoFicha } from "@/lib/importarFichaMatricula";
+import { hojeBrasilia } from "@/lib/utils";
 
 export type ResultadoImportacaoArquivo = {
   arquivo: string;
@@ -112,7 +113,11 @@ export async function processarFichaArquivo(
           turmaId: turma.id,
           anoLetivoId: turma.anoLetivoId,
           situacao: "ATIVA",
-          dataMatricula: ficha.dataMatricula ? new Date(ficha.dataMatricula) : new Date(),
+          // hojeBrasilia() no fallback (não new Date()): mesma causa raiz do
+          // "Gerado em" que já saiu errado nos PDFs — se a ficha não trouxer
+          // data e a importação rodar entre 21h e meia-noite (Brasília), o
+          // servidor (UTC) já teria virado o dia.
+          dataMatricula: ficha.dataMatricula ? new Date(ficha.dataMatricula) : hojeBrasilia(),
         },
       });
 

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { montarClausulas } from "@/lib/contratoTexto";
-import { formatarData, formatarMoeda } from "@/lib/utils";
+import { formatarData, formatarMoeda, hojeBrasilia } from "@/lib/utils";
 import { AssinarContratoForm } from "@/components/modules/assinatura/AssinarContratoForm";
 
 export const metadata = { title: "Assinar contrato — Escola CDA" };
@@ -13,7 +13,10 @@ export default async function AssinarContratoPage({ params }: { params: Promise<
   if (!contrato || !contrato.alunoNomeSnapshot || !contrato.dataMatriculaSnapshot) notFound();
 
   const turnoLabel = (contrato.turnoLabelSnapshot as "Tarde" | "Integral" | "Contraturno") ?? "Tarde";
-  const anoLetivo = contrato.anoLetivoSnapshot ?? new Date().getFullYear();
+  // hojeBrasilia() (não new Date()): só entra em jogo se o contrato não tiver
+  // snapshot de ano letivo (raro), mas mesma causa raiz do "Gerado em" que já
+  // saiu errado nos PDFs — servidor roda em UTC.
+  const anoLetivo = contrato.anoLetivoSnapshot ?? hojeBrasilia().getUTCFullYear();
   const valorMensalidade = contrato.valorMensalidadeSnapshot ?? 0;
 
   const clausulas = montarClausulas({
