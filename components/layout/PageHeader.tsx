@@ -15,6 +15,9 @@ export function PageHeader({
   // Conteúdo livre embaixo do subtítulo — hoje só o RelogioAtual do
   // Dashboard, mas fica genérico pra qualquer página que precise de uma
   // segunda linha ali (não é ação clicável, por isso separado de `action`).
+  // Fica ACIMA do subtítulo (não embaixo) — pedido do dono ao ver o relógio
+  // do Dashboard: o texto fixo da tela ("Visão geral...") é menos importante
+  // pra bater o olho do que o relógio ao vivo, então o relógio vem primeiro.
   extra?: React.ReactNode;
 }) {
   return (
@@ -39,9 +42,9 @@ export function PageHeader({
           </div>
         )}
         <h1 className="text-2xl font-bold text-cda-text">{title}</h1>
+        {extra}
         {/* Etapa 4.9 do handoff: text-base tinha o mesmo tamanho do corpo, hierarquia fraca */}
         {subtitle && <p className="mt-1 text-sm text-cda-text2">{subtitle}</p>}
-        {extra}
       </div>
       {action && <div className="flex flex-wrap items-center gap-2 sm:shrink-0">{action}</div>}
     </div>
