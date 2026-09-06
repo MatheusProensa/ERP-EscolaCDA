@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { contarAlunosAtivos } from "@/lib/alunos";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { RelogioAtual } from "@/components/ui/RelogioAtual";
 import { WidgetFallback } from "@/components/modules/dashboard/WidgetFallback";
 import { MetricasGerais } from "@/components/modules/dashboard/MetricasGerais";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
@@ -47,7 +48,11 @@ export async function DashboardAdmin({
 
   return (
     <div>
-      <PageHeader title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`} subtitle="Visão geral da Escola CDA — todos os setores" />
+      <PageHeader
+        title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`}
+        subtitle="Visão geral da Escola CDA — todos os setores"
+        extra={<RelogioAtual />}
+      />
 
       {/* Atalhos (Chat/Novo aluno/Novo funcionário) removidos — duplicavam a
           navegação (Chat já tem ícone na topbar) e misturavam ações raras

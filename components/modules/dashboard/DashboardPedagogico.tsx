@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { contarAlunosAtivos } from "@/lib/alunos";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { RelogioAtual } from "@/components/ui/RelogioAtual";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { CensoAlerta } from "@/components/modules/dashboard/CensoAlerta";
 import { FeedAtividade } from "@/components/modules/dashboard/FeedAtividade";
@@ -48,7 +49,11 @@ export async function DashboardPedagogico({
 
   return (
     <div>
-      <PageHeader title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`} subtitle="Alunos, turmas e censo escolar" />
+      <PageHeader
+        title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`}
+        subtitle="Alunos, turmas e censo escolar"
+        extra={<RelogioAtual />}
+      />
 
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {podeAlunos && (

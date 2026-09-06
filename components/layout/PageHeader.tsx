@@ -6,11 +6,16 @@ export function PageHeader({
   subtitle,
   breadcrumb,
   action,
+  extra,
 }: {
   title: string;
   subtitle?: string;
   breadcrumb?: { label: string; href?: string }[];
   action?: React.ReactNode;
+  // Conteúdo livre embaixo do subtítulo — hoje só o RelogioAtual do
+  // Dashboard, mas fica genérico pra qualquer página que precise de uma
+  // segunda linha ali (não é ação clicável, por isso separado de `action`).
+  extra?: React.ReactNode;
 }) {
   return (
     // NOVO: empilha (título em cima, ação embaixo, largura livre pra quebrar linha) no celular —
@@ -36,6 +41,7 @@ export function PageHeader({
         <h1 className="text-2xl font-bold text-cda-text">{title}</h1>
         {/* Etapa 4.9 do handoff: text-base tinha o mesmo tamanho do corpo, hierarquia fraca */}
         {subtitle && <p className="mt-1 text-sm text-cda-text2">{subtitle}</p>}
+        {extra}
       </div>
       {action && <div className="flex flex-wrap items-center gap-2 sm:shrink-0">{action}</div>}
     </div>

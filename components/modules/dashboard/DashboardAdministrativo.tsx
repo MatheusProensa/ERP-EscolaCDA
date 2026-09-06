@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { UserCog, TriangleAlert, CircleCheck, KeyRound } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { RelogioAtual } from "@/components/ui/RelogioAtual";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Card } from "@/components/ui/Card";
@@ -44,7 +45,11 @@ export async function DashboardAdministrativo({
 
   return (
     <div>
-      <PageHeader title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`} subtitle="Funcionários, estoque e chaves" />
+      <PageHeader
+        title={`Bem-vindo(a) de volta, ${primeiroNome(nome)}!`}
+        subtitle="Funcionários, estoque e chaves"
+        extra={<RelogioAtual />}
+      />
 
       {(podeFuncionarios || podeEstoque || podeChaves) && (
         <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
