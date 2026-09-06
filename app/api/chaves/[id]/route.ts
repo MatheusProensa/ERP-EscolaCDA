@@ -38,8 +38,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   }
 
   try {
-    // Soft delete (mesmo padrão do Funcionario.ativo): mantém o histórico de
-    // empréstimos ligado, só some da listagem.
+    // Soft delete: mantém o histórico de empréstimos ligado, só some da
+    // listagem.
     await prisma.chave.update({ where: { id }, data: { ativa: false } });
     return NextResponse.json({ ok: true });
   } catch (err) {

@@ -17,7 +17,7 @@ export default async function ChavesPage() {
       include: { emprestimos: { where: { devolucao: null } } },
       orderBy: { sala: "asc" },
     }),
-    prisma.funcionario.findMany({ where: { ativo: true }, select: { id: true, nome: true }, orderBy: { nome: "asc" } }),
+    prisma.funcionario.findMany({ select: { id: true, nome: true }, orderBy: { nome: "asc" } }),
   ]);
 
   return (

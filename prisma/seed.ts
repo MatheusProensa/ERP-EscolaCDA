@@ -472,7 +472,6 @@ async function main() {
         telefone: null,
         email: null,
         admissao: ADMISSAO_REAL[f.nome] ? new Date(ADMISSAO_REAL[f.nome]) : new Date(ANO - (1 + (i % 5)), i % 12, 1),
-        ativo: true,
       },
     });
   }

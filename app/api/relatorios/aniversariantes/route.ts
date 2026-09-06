@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
       include: { aluno: true, turma: true },
     }),
-    prisma.funcionario.findMany({ where: { ativo: true } }),
+    prisma.funcionario.findMany(),
   ]);
 
   const porAluno = new Map<string, { nome: string; dataNascimento: Date; turmas: string[] }>();

@@ -32,8 +32,8 @@ export async function DashboardAdministrativo({
   const podeEstoque = podeVerModulo("/estoque", role, permissoes);
   const podeChaves = podeVerModulo("/chaves", role, permissoes);
 
-  const [funcionariosAtivos, itens, chavesEmprestadas] = await Promise.all([
-    podeFuncionarios ? prisma.funcionario.count({ where: { ativo: true } }) : Promise.resolve(0),
+  const [totalFuncionarios, itens, chavesEmprestadas] = await Promise.all([
+    podeFuncionarios ? prisma.funcionario.count() : Promise.resolve(0),
     podeEstoque ? prisma.itemEstoque.findMany({ orderBy: { nome: "asc" } }) : Promise.resolve([]),
     podeChaves ? prisma.emprestimoChave.count({ where: { devolucao: null } }) : Promise.resolve(0),
   ]);
@@ -49,7 +49,7 @@ export async function DashboardAdministrativo({
       {(podeFuncionarios || podeEstoque || podeChaves) && (
         <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {podeFuncionarios && (
-            <MetricCard icon={UserCog} tone="cat5" value={funcionariosAtivos} label="Funcionários ativos" href="/funcionarios" />
+            <MetricCard icon={UserCog} tone="cat5" value={totalFuncionarios} label="Funcionários" href="/funcionarios" />
           )}
           {/* NOVO: ícone também troca junto com a cor — triângulo de alerta cinza
               com selo verde "Em dia" ficava contraditório (parece aviso, mas não é). */}

@@ -15,8 +15,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   // Vincula a um Funcionario cadastrado em vez de aceitar nome digitado à mão —
   // evita duplicidade/erro de digitação ("matheus" vs "Matheus Proensa").
   const funcionario = await prisma.funcionario.findUnique({ where: { id: funcionarioId } });
-  if (!funcionario || !funcionario.ativo) {
-    return NextResponse.json({ error: "Funcionário não encontrado ou inativo" }, { status: 400 });
+  if (!funcionario) {
+    return NextResponse.json({ error: "Funcionário não encontrado" }, { status: 400 });
   }
 
   const emprestimoAberto = await prisma.emprestimoChave.findFirst({

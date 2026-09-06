@@ -23,13 +23,6 @@ export default async function FuncionariosPage({
 
   const funcionarios = await prisma.funcionario.findMany({
     where: {
-      // Pedido explícito do dono do sistema (set/2026): tirou o botão de
-      // Desativar/Reativar (só importa se a pessoa está na escola ou não —
-      // quem sai é excluído de vez, não tem "meio termo"). Esse filtro cobre
-      // quem já tinha sido desativado ANTES dessa mudança, pra não aparecer
-      // na lista sem nenhuma indicação de status — sem apagar o histórico
-      // de ponto/documentos dessas pessoas, só parar de listar.
-      ativo: true,
       setor: setor || undefined,
       nome: busca ? { contains: busca, mode: "insensitive" } : undefined,
     },

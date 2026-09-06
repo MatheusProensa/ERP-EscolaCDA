@@ -34,7 +34,6 @@ export default async function PontoPage({
   const anoAtual = hoje.getUTCFullYear();
 
   const todosFuncionarios = await prisma.funcionario.findMany({
-    where: { ativo: true },
     orderBy: { nome: "asc" },
     select: { id: true, nome: true, cargo: true, setor: true, participaPonto: true, jornadaPrevistaMinutos: true },
   });

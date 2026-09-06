@@ -63,7 +63,7 @@ export default async function AniversariantesPage({
     // Sem filtro por dataNascimento aqui — esse mesmo funcionario serve tanto
     // pro aniversário de nascimento quanto pro de empresa (que usa admissao,
     // sempre preenchida), e nem todo mundo tem data de nascimento cadastrada.
-    prisma.funcionario.findMany({ where: { ativo: true } }),
+    prisma.funcionario.findMany(),
   ]);
 
   const porAluno = new Map<string, Pessoa & { turmas: string[] }>();

@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
   const fim = fimMes(mes, ano);
 
   const funcionarios = await prisma.funcionario.findMany({
-    where: { ativo: true, ...(funcionarioId ? { id: funcionarioId } : { participaPonto: true }) },
+    where: funcionarioId ? { id: funcionarioId } : { participaPonto: true },
     orderBy: { nome: "asc" },
   });
 

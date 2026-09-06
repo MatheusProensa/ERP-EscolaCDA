@@ -14,7 +14,6 @@ export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
 
   const funcionarios = await prisma.funcionario.findMany({
-    where: { ativo: true },
     orderBy: { nome: "asc" },
   });
   const grupos = agruparPorSetor(funcionarios).sort(

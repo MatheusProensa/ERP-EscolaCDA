@@ -445,7 +445,11 @@ model Funcionario {
   email                  String?
   dataNascimento         DateTime?
   admissao               DateTime
-  ativo                  Boolean                @default(true)
+  // Campo "ativo" removido do schema (set/2026, pedido do dono do sistema:
+  // não existe meio-termo reversível — quem sai é excluído de vez). A
+  // coluna ainda existe fisicamente no banco (DEFAULT true, sem migração
+  // rodada pra apagá-la — esse ambiente não alcança o banco de produção
+  // pra migrar), só não é mais lida/gravada por aqui.
   participaPonto         Boolean                @default(false)
   jornadaPrevistaMinutos Int?
   documentos             DocumentoFuncionario[]

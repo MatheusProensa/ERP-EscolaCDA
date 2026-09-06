@@ -27,7 +27,6 @@ export async function GET(request: NextRequest) {
     { chave: "Telefone", label: "Telefone", largura: 100 },
     { chave: "Email", label: "E-mail", largura: 150 },
     { chave: "Admissao", label: "Admissão", largura: 75 },
-    { chave: "Status", label: "Status", largura: 60 },
   ];
 
   const linhas = funcionarios.map((f) => ({
@@ -37,7 +36,6 @@ export async function GET(request: NextRequest) {
     Telefone: f.telefone ? formatarTelefone(f.telefone) : "",
     Email: f.email ?? "",
     Admissao: formatarData(f.admissao),
-    Status: f.ativo ? "Ativo" : "Inativo",
   }));
 
   if (params.get("formato") === "pdf") {
@@ -50,6 +48,6 @@ export async function GET(request: NextRequest) {
     return respostaPDF(pdf, nomeArquivoPdf("Funcionarios", dataArquivo()));
   }
 
-  const csv = paraCSV(linhas, ["Nome", "Setor", "Cargo", "Telefone", "Email", "Admissao", "Status"]);
+  const csv = paraCSV(linhas, ["Nome", "Setor", "Cargo", "Telefone", "Email", "Admissao"]);
   return respostaCSV(csv, `Funcionarios - ${dataArquivo()}.csv`);
 }

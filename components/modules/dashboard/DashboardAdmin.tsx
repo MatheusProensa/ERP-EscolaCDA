@@ -30,7 +30,7 @@ export async function DashboardAdmin({
   const podeFuncionarios = podeVerModulo("/funcionarios", role, permissoes);
   const anoLetivo = await getAnoLetivoAtivo();
 
-  const [totalAlunos, turmasAtivas, censoIncompleto, funcionariosAtivos, contratosPendentes] = await Promise.all([
+  const [totalAlunos, turmasAtivas, censoIncompleto, totalFuncionarios, contratosPendentes] = await Promise.all([
     podeAlunos ? contarAlunosAtivos(anoLetivo?.id) : Promise.resolve(0),
     podeAcademico ? prisma.turma.count({ where: { anoLetivoId: anoLetivo?.id } }) : Promise.resolve(0),
     podeAlunos
@@ -41,7 +41,7 @@ export async function DashboardAdmin({
           },
         })
       : Promise.resolve(0),
-    podeFuncionarios ? prisma.funcionario.count({ where: { ativo: true } }) : Promise.resolve(0),
+    podeFuncionarios ? prisma.funcionario.count() : Promise.resolve(0),
     podeAlunos ? prisma.contrato.count({ where: { assinado: false } }) : Promise.resolve(0),
   ]);
 
@@ -57,7 +57,7 @@ export async function DashboardAdmin({
         <MetricasGerais
           totalAlunos={totalAlunos}
           turmasAtivas={turmasAtivas}
-          funcionariosAtivos={funcionariosAtivos}
+          totalFuncionarios={totalFuncionarios}
           contratosPendentes={contratosPendentes}
           podeAlunos={podeAlunos}
           podeAcademico={podeAcademico}

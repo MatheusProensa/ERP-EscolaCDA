@@ -8,7 +8,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const funcionarios = await prisma.funcionario.findMany({
-    where: { ativo: true, participaPonto: true },
+    where: { participaPonto: true },
     orderBy: { nome: "asc" },
   });
 
