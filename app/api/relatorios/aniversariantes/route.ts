@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { paraCSV, respostaCSV } from "@/lib/csv";
 import { gerarRelatorioPdfSecoesEmpilhadas, respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
+import { podeVerModulo } from "@/lib/permissoes";
 import { hojeBrasilia } from "@/lib/utils";
 
 const MESES = [
@@ -25,13 +26,21 @@ export async function GET(request: NextRequest) {
   const anoAtual = hoje.getUTCFullYear();
   const nomeMes = MESES[mesFiltro - 1];
 
+  // Mesmo achado da tela (app/(erp)/aniversariantes/page.tsx): esse export
+  // trazia aluno E funcionário pra qualquer um com acesso a "Aniversariantes"
+  // na grade, mesmo sem acesso de verdade a Alunos ou a Funcionários.
+  const podeAlunos = podeVerModulo("/alunos", session.user.role, session.user.permissoes);
+  const podeFuncionarios = podeVerModulo("/funcionarios", session.user.role, session.user.permissoes);
+
   const anoLetivo = await getAnoLetivoAtivo();
   const [matriculas, funcionarios] = await Promise.all([
-    prisma.matricula.findMany({
-      where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
-      include: { aluno: true, turma: true },
-    }),
-    prisma.funcionario.findMany(),
+    podeAlunos
+      ? prisma.matricula.findMany({
+          where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
+          include: { aluno: true, turma: true },
+        })
+      : Promise.resolve([]),
+    podeFuncionarios ? prisma.funcionario.findMany() : Promise.resolve([]),
   ]);
 
   const porAluno = new Map<string, { nome: string; dataNascimento: Date; turmas: string[] }>();
@@ -98,29 +107,42 @@ export async function GET(request: NextRequest) {
       { chave: "Data", label: "Data", largura: 60 },
       { chave: "Completa", label: "Completa", largura: 90 },
     ];
+    const secoes = [
+      ...(podeAlunos
+        ? [
+            {
+              titulo: "Alunos",
+              subtitulo: `${nomeMes}/${anoAtual} — ${aniversariantesAlunos.length} aluno(s)`,
+              colunas: colunasAluno,
+              linhas: aniversariantesAlunos,
+            },
+          ]
+        : []),
+      ...(podeFuncionarios
+        ? [
+            {
+              titulo: "Funcionários",
+              subtitulo: `${nomeMes}/${anoAtual} — ${aniversariantesFuncionarios.length} funcionário(s)`,
+              colunas: colunasFuncionario,
+              linhas: aniversariantesFuncionarios,
+            },
+            {
+              titulo: "Aniversário de empresa",
+              subtitulo: `${nomeMes}/${anoAtual} — ${aniversariosEmpresa.length} pessoa(s)`,
+              colunas: colunasFuncionario,
+              linhas: aniversariosEmpresa,
+            },
+          ]
+        : []),
+    ];
+    const totalGeral = aniversariantesAlunos.length + aniversariantesFuncionarios.length;
     const pdf = await gerarRelatorioPdfSecoesEmpilhadas({
       titulo: `Aniversariantes de ${nomeMes}`,
-      subtitulo: `${nomeMes}/${anoAtual} — ${aniversariantesAlunos.length + aniversariantesFuncionarios.length} aniversariante(s), alunos e funcionários`,
-      secoes: [
-        {
-          titulo: "Alunos",
-          subtitulo: `${nomeMes}/${anoAtual} — ${aniversariantesAlunos.length} aluno(s)`,
-          colunas: colunasAluno,
-          linhas: aniversariantesAlunos,
-        },
-        {
-          titulo: "Funcionários",
-          subtitulo: `${nomeMes}/${anoAtual} — ${aniversariantesFuncionarios.length} funcionário(s)`,
-          colunas: colunasFuncionario,
-          linhas: aniversariantesFuncionarios,
-        },
-        {
-          titulo: "Aniversário de empresa",
-          subtitulo: `${nomeMes}/${anoAtual} — ${aniversariosEmpresa.length} pessoa(s)`,
-          colunas: colunasFuncionario,
-          linhas: aniversariosEmpresa,
-        },
-      ],
+      subtitulo:
+        podeAlunos && podeFuncionarios
+          ? `${nomeMes}/${anoAtual} — ${totalGeral} aniversariante(s), alunos e funcionários`
+          : `${nomeMes}/${anoAtual} — ${totalGeral} aniversariante(s)`,
+      secoes,
     });
     return respostaPDF(pdf, nomeArquivoPdf("Aniversariantes", `${nomeMes} ${anoAtual}`));
   }

@@ -1,6 +1,7 @@
 import { Cake } from "lucide-react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -11,6 +12,7 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { ExportButtons } from "@/components/ui/ExportButtons";
+import { podeVerModulo } from "@/lib/permissoes";
 import { hojeBrasilia } from "@/lib/utils";
 
 const MESES = [
@@ -47,23 +49,38 @@ export default async function AniversariantesPage({
   const mesFiltro = mes ? Number(mes) : hoje.getUTCMonth() + 1;
   const anoAtual = hoje.getUTCFullYear();
 
+  // Achado real (mesma classe do bug já corrigido nos Dashboards, set/2026):
+  // essa tela mostrava aniversariante de Aluno E de Funcionário pra qualquer
+  // um que tivesse acesso a "Aniversariantes" na grade, mesmo sem acesso a
+  // Alunos ou a Funcionários de verdade (ex.: nutricionista com grade só em
+  // Aniversariantes+Cardápio via "Só visualizar" via Role Administrativo
+  // via grade). Cada seção agora confere o setor de verdade antes de buscar
+  // e de mostrar.
+  const session = await auth();
+  const role = session?.user.role ?? "";
+  const permissoes = session?.user.permissoes;
+  const podeAlunos = podeVerModulo("/alunos", role, permissoes);
+  const podeFuncionarios = podeVerModulo("/funcionarios", role, permissoes);
+
   const anoLetivo = await getAnoLetivoAtivo();
   // NOVO: a foto (base64, pode pesar MB por aluno) só é buscada depois, e só de
   // quem realmente faz aniversário no mês filtrado — antes trazia a foto de todo
   // mundo matriculado só pra descartar a maioria no filtro em JS logo abaixo.
   const [matriculas, funcionarios] = await Promise.all([
-    prisma.matricula.findMany({
-      where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
-      select: {
-        alunoId: true,
-        aluno: { select: { nome: true, dataNascimento: true } },
-        turma: { select: { nome: true } },
-      },
-    }),
+    podeAlunos
+      ? prisma.matricula.findMany({
+          where: { situacao: "ATIVA", anoLetivoId: anoLetivo?.id },
+          select: {
+            alunoId: true,
+            aluno: { select: { nome: true, dataNascimento: true } },
+            turma: { select: { nome: true } },
+          },
+        })
+      : Promise.resolve([]),
     // Sem filtro por dataNascimento aqui — esse mesmo funcionario serve tanto
     // pro aniversário de nascimento quanto pro de empresa (que usa admissao,
     // sempre preenchida), e nem todo mundo tem data de nascimento cadastrada.
-    prisma.funcionario.findMany(),
+    podeFuncionarios ? prisma.funcionario.findMany() : Promise.resolve([]),
   ]);
 
   const porAluno = new Map<string, Pessoa & { turmas: string[] }>();
@@ -166,33 +183,39 @@ export default async function AniversariantesPage({
       </Card>
 
       <div className="flex flex-col gap-5">
-        <ListaAniversariantes
-          titulo="Alunos"
-          colunaDetalhe="Turma"
-          pessoas={alunosAniversariantes}
-          hoje={hoje}
-          anoAtual={anoAtual}
-          mesFiltro={mesFiltro}
-        />
-        <ListaAniversariantes
-          titulo="Funcionários"
-          colunaDetalhe="Cargo"
-          pessoas={funcionariosAniversariantes}
-          hoje={hoje}
-          anoAtual={anoAtual}
-          mesFiltro={mesFiltro}
-        />
-        <ListaAniversariantes
-          titulo="Aniversário de empresa"
-          colunaDetalhe="Cargo"
-          colunaData="Admissão"
-          colunaCompleta="Completa"
-          sufixoCompleta=" de empresa"
-          pessoas={funcionariosEmpresa}
-          hoje={hoje}
-          anoAtual={anoAtual}
-          mesFiltro={mesFiltro}
-        />
+        {podeAlunos && (
+          <ListaAniversariantes
+            titulo="Alunos"
+            colunaDetalhe="Turma"
+            pessoas={alunosAniversariantes}
+            hoje={hoje}
+            anoAtual={anoAtual}
+            mesFiltro={mesFiltro}
+          />
+        )}
+        {podeFuncionarios && (
+          <>
+            <ListaAniversariantes
+              titulo="Funcionários"
+              colunaDetalhe="Cargo"
+              pessoas={funcionariosAniversariantes}
+              hoje={hoje}
+              anoAtual={anoAtual}
+              mesFiltro={mesFiltro}
+            />
+            <ListaAniversariantes
+              titulo="Aniversário de empresa"
+              colunaDetalhe="Cargo"
+              colunaData="Admissão"
+              colunaCompleta="Completa"
+              sufixoCompleta=" de empresa"
+              pessoas={funcionariosEmpresa}
+              hoje={hoje}
+              anoAtual={anoAtual}
+              mesFiltro={mesFiltro}
+            />
+          </>
+        )}
       </div>
     </div>
   );

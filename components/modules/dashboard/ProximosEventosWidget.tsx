@@ -1,12 +1,23 @@
 import Link from "next/link";
 import { CalendarDays } from "lucide-react";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { corCategoria, MESES } from "@/lib/calendario";
+import { podeVerModulo } from "@/lib/permissoes";
 import { hojeBrasilia } from "@/lib/utils";
 
+/** Achado real (mesma classe do bug já corrigido em outros lugares, set/2026):
+ * esse widget aparece nos 4 Dashboards e buscava eventos direto, sem conferir
+ * se a pessoa tem acesso a Calendário pela grade — alguém com "calendario"
+ * marcado como NENHUM/sem marcação (bloqueado até de abrir /calendario direto)
+ * ainda via os próximos eventos vazando aqui. Confere e some (sem placeholder
+ * visível) igual ao AtividadeRecenteWidget faz pro Log de Atividades. */
 export async function ProximosEventosWidget() {
+  const session = await auth();
+  if (!podeVerModulo("/calendario", session?.user.role ?? "", session?.user.permissoes)) return null;
+
   // hojeBrasilia() (não new Date()) — o servidor roda em UTC, e usar a data
   // "agora" direto excluía os eventos de HOJE da lista entre 21h e meia-noite
   // no horário de Brasília (o corte ficava marcado como amanhã).
