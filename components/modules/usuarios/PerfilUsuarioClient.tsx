@@ -170,7 +170,11 @@ export function PerfilUsuarioClient({
           <div className="grid flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
             <Input label="Nome" value={name} onChange={(e) => setName(e.target.value)} />
             <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <Select label="Setor" value={role} onChange={(e) => setRole(e.target.value)} disabled={souEu}>
+            {/* Achado real (auditoria de UX externa, set/2026): "Setor" aqui
+                confundia com a grade "Acesso por setor" logo abaixo — só ela
+                decide o que a pessoa vê/edita. "Perfil" é o nome honesto:
+                pacote padrão + variante de Dashboard, nada além disso. */}
+            <Select label="Perfil" value={role} onChange={(e) => setRole(e.target.value)} disabled={souEu}>
               {perfilInvalido && <option value={usuario.role}>{ROLE_LABEL[usuario.role] ?? usuario.role}</option>}
               {ROLES_ATIVAS.map((r) => (
                 <option key={r} value={r}>
@@ -179,7 +183,7 @@ export function PerfilUsuarioClient({
               ))}
             </Select>
             {souEu && (
-              <p className="self-end text-xs text-cda-text3">Você não pode trocar seu próprio setor.</p>
+              <p className="self-end text-xs text-cda-text3">Você não pode trocar seu próprio perfil.</p>
             )}
 
             {erroSalvar && <p className="sm:col-span-2 text-sm text-cda-red">{erroSalvar}</p>}

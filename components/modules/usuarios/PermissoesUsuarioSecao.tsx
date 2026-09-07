@@ -117,7 +117,7 @@ export function PermissoesUsuarioSecao({
       {aberto && (
         <>
           <p className="border-y border-cda-border px-5 py-3 text-sm text-cda-text2">
-            É isto aqui que decide o que <strong>{usuarioNome}</strong> vê e edita — o Setor lá em cima é só uma
+            É isto aqui que decide o que <strong>{usuarioNome}</strong> vê e edita — o Perfil lá em cima é só uma
             etiqueta, não libera nada sozinho. Setor sem marcação fica sem acesso.
           </p>
           <div className="flex flex-col divide-y divide-cda-border">

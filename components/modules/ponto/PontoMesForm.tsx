@@ -246,7 +246,13 @@ export function PontoMesForm({
           <div className="flex flex-col gap-1.5">
             <span className="text-xs font-medium text-cda-text2">Saldo Banco de Horas</span>
             <div className="flex h-10 items-center">
-              <Badge variant={saldoFinal < 0 ? "red" : saldoFinal > 0 ? "green" : "gray"}>{minParaHora(saldoFinal)}</Badge>
+              {/* Achado real (auditoria de UX externa, set/2026): verde/vermelho
+                  aqui lia como "bom"/"ruim", mas saldo de banco de horas não é
+                  estado — é só um número (pode estar negativo por um dia de
+                  folga já aprovado, sem nada de errado). O saldo diário na
+                  grade abaixo já é neutro (texto simples); a variante
+                  "neutral" alinha esse resumo com o resto da tela. */}
+              <Badge variant="neutral">{minParaHora(saldoFinal)}</Badge>
             </div>
           </div>
         </div>
@@ -410,24 +416,32 @@ export function PontoMesForm({
           </div>
         ) : (
           <table className="w-full min-w-[1500px] text-sm">
+            {/* Achado real (auditoria de UX externa, set/2026): mês inteiro é
+                até 31 linhas — rolando a página, o cabeçalho sumia e sobrava
+                só números sem legenda (3 pares de Entrada/Saída idênticos
+                visualmente), o que já tinha causado gente digitar horário no
+                par errado. `sticky` no `<th>` (não no `<thead>`, suporte
+                inconsistente entre navegadores) mantém a legenda visível —
+                gruda no topo do `<main>` que rola (ver AppShell), não da
+                página inteira. */}
             <thead>
               <tr className="border-b border-cda-border bg-cda-bg text-left text-xs font-semibold uppercase text-cda-text2">
-                <th className="px-3 py-2">Data</th>
-                <th className="px-3 py-2">Entrada</th>
-                <th className="px-3 py-2">Saída</th>
-                <th className="px-3 py-2">Entrada</th>
-                <th className="px-3 py-2">Saída</th>
-                <th className="px-3 py-2">Entrada</th>
-                <th className="px-3 py-2">Saída</th>
-                <th className="px-3 py-2">Ocorrência</th>
-                <th className="px-3 py-2">Observação</th>
-                <th className="px-3 py-2">Horas Previstas</th>
-                <th className="px-3 py-2">Horas Trabalhadas</th>
-                <th className="px-3 py-2">Atraso/Falta</th>
-                <th className="px-3 py-2">Hora Extra</th>
-                <th className="px-3 py-2">Adicional Noturno</th>
-                <th className="px-3 py-2">Saldo Banco de Horas</th>
-                <th className="px-3 py-2"></th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Data</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Entrada</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Saída</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Entrada</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Saída</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Entrada</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Saída</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Ocorrência</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Observação</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Horas Previstas</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Horas Trabalhadas</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Atraso/Falta</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Hora Extra</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Adicional Noturno</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2">Saldo Banco de Horas</th>
+                <th className="sticky top-0 z-10 bg-cda-bg px-3 py-2"></th>
               </tr>
             </thead>
             <tbody>

@@ -56,7 +56,13 @@ export function NovoUsuarioModal() {
           <Input label="Nome" name="name" required placeholder="Nome completo" />
           <Input label="Email" name="email" type="email" required placeholder="nome@escolacda.com.br" />
           <Input label="Senha" name="password" type="password" required minLength={6} placeholder="Mínimo 6 caracteres" />
-          <Select label="Setor" name="role" required defaultValue="">
+          {/* Achado real (auditoria de UX externa, set/2026): rotular esse
+              campo "Setor" dava a entender que ele já dá acesso a um setor da
+              escola — quem decide isso de verdade é a grade "Acesso por
+              setor" (PermissoesUsuarioSecao), configurada depois de criar o
+              usuário. "Perfil" é o nome honesto: só define o pacote padrão
+              de acesso e qual variante de Dashboard a pessoa vê. */}
+          <Select label="Perfil" name="role" required defaultValue="">
             <option value="" disabled>
               Selecione...
             </option>
