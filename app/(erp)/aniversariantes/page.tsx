@@ -9,8 +9,7 @@ import { Table, TableHead, Th, TableBody, Tr, Td } from "@/components/ui/Table";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
-import { Select } from "@/components/ui/Select";
-import { Button } from "@/components/ui/Button";
+import { BarraFiltro } from "@/components/ui/BarraFiltro";
 import { Alert } from "@/components/ui/Alert";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { podeVerModulo } from "@/lib/permissoes";
@@ -168,20 +167,16 @@ export default async function AniversariantesPage({
         </Alert>
       )}
 
-      <Card className="mb-5 p-4">
-        <form className="flex flex-wrap items-center gap-3">
-          <Select name="mes" defaultValue={String(mesFiltro)} className="w-full sm:w-48">
-            {MESES.map((m, i) => (
-              <option key={m} value={i + 1}>
-                {m}
-              </option>
-            ))}
-          </Select>
-          <Button type="submit" variant="outline">
-            Filtrar
-          </Button>
-        </form>
-      </Card>
+      <BarraFiltro
+        selects={[
+          {
+            paramName: "mes",
+            placeholder: "Mês",
+            valorPadrao: String(mesFiltro),
+            options: MESES.map((m, i) => ({ value: String(i + 1), label: m })),
+          },
+        ]}
+      />
 
       <div className="flex flex-col gap-5">
         {podeAlunos && (

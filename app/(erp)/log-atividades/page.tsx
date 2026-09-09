@@ -2,9 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
-import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { BarraFiltro } from "@/components/ui/BarraFiltro";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { formatarDataHora } from "@/lib/utils";
 import { LogAtividadesExportButton } from "@/components/modules/log-atividades/LogAtividadesExportButton";
@@ -56,7 +55,7 @@ export default async function LogAtividadesPage({
     ],
   };
 
-  const [logs, total, entidades] = await Promise.all([
+  const [logs, total, totalGeral, entidades] = await Promise.all([
     prisma.logAtividade.findMany({
       where,
       orderBy: { createdAt: "desc" },
@@ -64,6 +63,7 @@ export default async function LogAtividadesPage({
       take: POR_PAGINA,
     }),
     prisma.logAtividade.count({ where }),
+    prisma.logAtividade.count(),
     prisma.logAtividade.findMany({ distinct: ["entidade"], select: { entidade: true }, orderBy: { entidade: "asc" } }),
   ]);
 
@@ -85,22 +85,22 @@ export default async function LogAtividadesPage({
         action={total > 0 ? <LogAtividadesExportButton busca={busca} entidade={entidade} /> : undefined}
       />
 
-      <Card className="mb-5 p-4">
-        <form className="grid grid-cols-1 gap-3 sm:grid-cols-4">
-          <Input name="busca" placeholder="Buscar por ação ou pessoa..." defaultValue={busca} className="sm:col-span-2" />
-          <Select name="entidade" defaultValue={entidade ?? ""}>
-            <option value="">Todos os tipos</option>
-            {entidades.map((e) => (
-              <option key={e.entidade} value={e.entidade}>
-                {ENTIDADE_LABEL[e.entidade] ?? e.entidade}
-              </option>
-            ))}
-          </Select>
-          <Button type="submit" variant="outline">
-            Filtrar
-          </Button>
-        </form>
-      </Card>
+      <BarraFiltro
+        buscaPlaceholder="Buscar por ação ou pessoa..."
+        selects={[
+          {
+            paramName: "entidade",
+            placeholder: "Todos os tipos",
+            options: [
+              { value: "", label: "Todos os tipos" },
+              ...entidades.map((e) => ({ value: e.entidade, label: ENTIDADE_LABEL[e.entidade] ?? e.entidade })),
+            ],
+          },
+        ]}
+        total={total}
+        totalGeral={totalGeral}
+        paginaParam="page"
+      />
 
       <Card>
         {logs.length === 0 ? (

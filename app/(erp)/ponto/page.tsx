@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Select } from "@/components/ui/Select";
+import { BarraFiltro } from "@/components/ui/BarraFiltro";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { GerenciarParticipantesModal } from "@/components/modules/ponto/GerenciarParticipantesModal";
 import { JornadaPrevistaCell } from "@/components/modules/ponto/JornadaPrevistaCell";
@@ -80,23 +80,22 @@ export default async function PontoPage({
         }
       />
 
-      <Card className="mb-5 p-4">
-        <form className="flex flex-wrap items-end gap-3">
-          <Select label="Mês" name="mes" defaultValue={String(mesFiltro)} className="w-40">
-            {MESES.map((m, i) => (
-              <option key={m} value={i + 1}>{m}</option>
-            ))}
-          </Select>
-          <Select label="Ano" name="ano" defaultValue={String(ano)} className="w-28">
-            {[anoAtual - 1, anoAtual, anoAtual + 1].map((a) => (
-              <option key={a} value={a}>{a}</option>
-            ))}
-          </Select>
-          <Button type="submit" variant="outline">
-            Filtrar
-          </Button>
-        </form>
-      </Card>
+      <BarraFiltro
+        selects={[
+          {
+            paramName: "mes",
+            placeholder: "Mês",
+            valorPadrao: String(mesFiltro),
+            options: MESES.map((m, i) => ({ value: String(i + 1), label: m })),
+          },
+          {
+            paramName: "ano",
+            placeholder: "Ano",
+            valorPadrao: String(ano),
+            options: [anoAtual - 1, anoAtual, anoAtual + 1].map((a) => ({ value: String(a), label: String(a) })),
+          },
+        ]}
+      />
 
       <Card>
         <Table>

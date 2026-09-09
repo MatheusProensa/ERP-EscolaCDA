@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { Select } from "@/components/ui/Select";
-import { Button } from "@/components/ui/Button";
+import { BarraFiltro } from "@/components/ui/BarraFiltro";
 import { CardapioPublicoCard } from "@/components/modules/cardapio/CardapioPublicoCard";
 import { PrepararMesButton } from "@/components/modules/cardapio/PrepararMesButton";
 import { ExcluirMesButton } from "@/components/modules/cardapio/ExcluirMesButton";
@@ -62,30 +61,28 @@ export default async function CardapioPage({
         action={blocos.length > 0 ? <CardapioExportButtons ano={ano} mes={mes} /> : undefined}
       />
 
-      <Card className="mb-5 p-4">
-        <form className="flex flex-wrap items-center gap-3">
-          <Select name="mes" defaultValue={String(mes)} className="w-full sm:w-44">
-            {MESES_CARDAPIO.map((m, i) => (
-              <option key={m} value={i + 1}>
-                {m}
-              </option>
-            ))}
-          </Select>
-          <Select name="ano" defaultValue={String(ano)} className="w-full sm:w-28">
-            {anos.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </Select>
-          <Button type="submit" variant="outline">
-            Filtrar
-          </Button>
-          {blocos.length > 0 && podeEditar && (
-            <ExcluirMesButton ano={ano} mes={mes} mesLabel={`${MESES_CARDAPIO[mes - 1]} de ${ano}`} />
-          )}
-        </form>
-      </Card>
+      <BarraFiltro
+        selects={[
+          {
+            paramName: "mes",
+            placeholder: "Mês",
+            valorPadrao: String(mes),
+            options: MESES_CARDAPIO.map((m, i) => ({ value: String(i + 1), label: m })),
+          },
+          {
+            paramName: "ano",
+            placeholder: "Ano",
+            valorPadrao: String(ano),
+            options: anos.map((a) => ({ value: String(a), label: String(a) })),
+          },
+        ]}
+      />
+
+      {blocos.length > 0 && podeEditar && (
+        <div className="mb-5 flex justify-end">
+          <ExcluirMesButton ano={ano} mes={mes} mesLabel={`${MESES_CARDAPIO[mes - 1]} de ${ano}`} />
+        </div>
+      )}
 
       {blocos.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-cda-border bg-white py-16 text-center">

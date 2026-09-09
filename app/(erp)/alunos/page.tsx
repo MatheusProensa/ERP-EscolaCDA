@@ -1,14 +1,11 @@
 import { UserPlus } from "lucide-react";
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
+import { BarraFiltro } from "@/components/ui/BarraFiltro";
 import { AlunoTable } from "@/components/modules/alunos/AlunoTable";
 import { ImportarMenu } from "@/components/modules/alunos/ImportarMenu";
 import { ExportButtons } from "@/components/ui/ExportButtons";
@@ -33,6 +30,20 @@ export default async function AlunosPage({
 
   const anoLetivo = await getAnoLetivoAtivo();
   const turmas = ordenarTurmas(await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } }));
+
+  // Total sem filtro nenhum — pra a barra dizer "N de M" (achado de auditoria
+  // externa, set/2026: "N resultados" sozinho não diz se o filtro pegou pouco
+  // porque filtrou bem, ou porque o cadastro é que tá vazio).
+  const totalGeral = await prisma.matricula.count({ where: { anoLetivoId: anoLetivo?.id, situacao: "ATIVA" } });
+
+  // Contagem por turma pro rótulo do filtro ("3º Ano (12)") — mesmo padrão do
+  // kit de referência do Claude Design (Screens2.babel, turmasOpts).
+  const contagemPorTurma = await prisma.matricula.groupBy({
+    by: ["turmaId"],
+    where: { anoLetivoId: anoLetivo?.id, situacao: "ATIVA" },
+    _count: true,
+  });
+  const contagemPorTurmaId = new Map(contagemPorTurma.map((c) => [c.turmaId, c._count]));
 
   // Só quem está na escola hoje — não existe filtro pra ver quem já saiu.
   const matriculas = await prisma.matricula.findMany({
@@ -80,7 +91,6 @@ export default async function AlunosPage({
       <EscutaAoVivo modulo="alunos" />
       <PageHeader
         title="Alunos"
-        subtitle={`${matriculas.length} aluno(s) encontrado(s)`}
         action={
           <div className="flex flex-wrap items-center gap-2">
             <ExportButtons href="/api/relatorios/alunos" label="Relatório" params={{ turma, busca, censo, contrato }} />
@@ -98,52 +108,25 @@ export default async function AlunosPage({
 
       <AcademicoTabs active="alunos" totalAlunos={matriculas.length} />
 
-      {(censoIncompleto || contratoPendente) && (
-        <div className="mb-5 flex flex-wrap items-center gap-2">
-          {censoIncompleto && <Badge variant="warning">Filtro: dados incompletos para o censo</Badge>}
-          {contratoPendente && <Badge variant="danger">Filtro: contrato aguardando assinatura</Badge>}
-          <Link href="/alunos" className="text-sm font-medium text-cda-blue hover:underline">
-            Limpar filtro
-          </Link>
-        </div>
-      )}
-
-      <Card className="mb-5 p-4">
-        <form className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Input name="busca" placeholder="Buscar por nome, CPF ou responsável..." defaultValue={busca} />
-          <Select name="turma" defaultValue={turma ?? ""}>
-            <option value="">Todas as turmas</option>
-            {turmas.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.nome}
-              </option>
-            ))}
-          </Select>
-          <Button type="submit" variant="outline">
-            Filtrar
-          </Button>
-          <label className="flex items-center gap-2 text-sm text-cda-text2 sm:col-span-3">
-            <input
-              type="checkbox"
-              name="censo"
-              value="incompleto"
-              defaultChecked={censoIncompleto}
-              className="h-4 w-4 rounded border-cda-border"
-            />
-            Só alunos com dados incompletos pro censo
-          </label>
-          <label className="flex items-center gap-2 text-sm text-cda-text2 sm:col-span-3">
-            <input
-              type="checkbox"
-              name="contrato"
-              value="pendente"
-              defaultChecked={contratoPendente}
-              className="h-4 w-4 rounded border-cda-border"
-            />
-            Só alunos com contrato aguardando assinatura
-          </label>
-        </form>
-      </Card>
+      <BarraFiltro
+        buscaPlaceholder="Buscar por nome, CPF ou responsável..."
+        selects={[
+          {
+            paramName: "turma",
+            placeholder: "Todas as turmas",
+            options: [
+              { value: "", label: `Todas as turmas (${totalGeral})` },
+              ...turmas.map((t) => ({ value: t.id, label: `${t.nome} (${contagemPorTurmaId.get(t.id) ?? 0})` })),
+            ],
+          },
+        ]}
+        checkboxes={[
+          { paramName: "censo", value: "incompleto", label: "Só alunos com dados incompletos pro censo" },
+          { paramName: "contrato", value: "pendente", label: "Só alunos com contrato aguardando assinatura" },
+        ]}
+        total={matriculas.length}
+        totalGeral={totalGeral}
+      />
 
       <Card>
         <AlunoTable matriculas={matriculas} />

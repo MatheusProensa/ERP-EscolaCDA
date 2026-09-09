@@ -2,9 +2,7 @@ import { Clock } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { Card } from "@/components/ui/Card";
-import { Select } from "@/components/ui/Select";
-import { Button } from "@/components/ui/Button";
+import { BarraFiltro } from "@/components/ui/BarraFiltro";
 import { EscalaBlocoCard } from "@/components/modules/horarios-equipe/EscalaBlocoCard";
 import { NovoBlocoButton } from "@/components/modules/horarios-equipe/NovoBlocoButton";
 import { HorariosExportButtons } from "@/components/modules/horarios-equipe/HorariosExportButtons";
@@ -52,20 +50,16 @@ export default async function HorariosEquipePage({
         action={blocos.length > 0 ? <HorariosExportButtons ano={ano} /> : undefined}
       />
 
-      <Card className="mb-5 p-4">
-        <form className="flex flex-wrap items-center gap-3">
-          <Select name="ano" defaultValue={String(ano)} className="w-full sm:w-28">
-            {anos.map((a) => (
-              <option key={a} value={a}>
-                {a}
-              </option>
-            ))}
-          </Select>
-          <Button type="submit" variant="outline">
-            Filtrar
-          </Button>
-        </form>
-      </Card>
+      <BarraFiltro
+        selects={[
+          {
+            paramName: "ano",
+            placeholder: "Ano",
+            valorPadrao: String(ano),
+            options: anos.map((a) => ({ value: String(a), label: String(a) })),
+          },
+        ]}
+      />
 
       {blocos.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed border-cda-border bg-white py-16 text-center">
