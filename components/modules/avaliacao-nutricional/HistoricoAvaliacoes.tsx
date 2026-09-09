@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { Card } from "@/components/ui/Card";
-import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty, ThActions, TdActions } from "@/components/ui/Table";
+import { Table, TableHead, Th, TableBody, Tr, Td, ThActions, TdActions } from "@/components/ui/Table";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { IconButton } from "@/components/ui/IconButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { showToast } from "@/components/ui/Toast";
@@ -90,7 +91,7 @@ export function HistoricoAvaliacoes({
 
       {calculadas.length === 0 ? (
         <Card>
-          <TableEmpty colSpan={1}>Nenhuma avaliação registrada ainda.</TableEmpty>
+          <EmptyState title="Nenhuma avaliação registrada ainda." />
         </Card>
       ) : (
         <>

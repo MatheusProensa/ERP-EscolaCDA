@@ -5,7 +5,8 @@ import { auth } from "@/lib/auth";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
+import { Table, TableHead, Th, TableBody, Tr, Td } from "@/components/ui/Table";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Select";
@@ -245,9 +246,45 @@ function ListaAniversariantes({
   anoAtual: number;
   mesFiltro: number;
 }) {
+  if (pessoas.length === 0) {
+    return (
+      <Card title={titulo} action={<Badge variant="count">0</Badge>}>
+        <EmptyState title={`Ninguém em ${MESES[mesFiltro - 1]}.`} />
+      </Card>
+    );
+  }
+
   return (
     <Card title={titulo} action={<Badge variant="count">{pessoas.length}</Badge>}>
-      <Table>
+      {/* Celular: cartões — mesma razão de sempre, 4 colunas não cabem legíveis
+          numa tela estreita (ver Avaliação Nutricional/Aluno, mesmo padrão). */}
+      <div className="divide-y divide-cda-border sm:hidden">
+        {pessoas.map((p) => (
+          <Link key={p.id} href={p.href} className="flex items-center gap-3 p-4 active:bg-cda-bg">
+            <Avatar nome={p.nome} foto={p.foto} size="md" />
+            <div className="min-w-0 flex-1">
+              <p className="flex items-center gap-1.5 truncate font-medium text-cda-text">
+                {p.nome}
+                {eHoje(p.dataNascimento, hoje) && <Badge variant="amber">Hoje</Badge>}
+              </p>
+              <p className="truncate text-xs text-cda-text3">{p.detalhe}</p>
+            </div>
+            <div className="shrink-0 text-right text-xs text-cda-text2">
+              <p className="font-medium text-cda-text">
+                {String(p.dataNascimento.getUTCDate()).padStart(2, "0")}/
+                {String(p.dataNascimento.getUTCMonth() + 1).padStart(2, "0")}
+              </p>
+              <p>
+                {idadeCompletando(p.dataNascimento, anoAtual)} {idadeCompletando(p.dataNascimento, anoAtual) === 1 ? "ano" : "anos"}
+                {sufixoCompleta}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Computador: tabela normal */}
+      <Table className="hidden sm:table">
         <TableHead>
           <Th>Nome</Th>
           <Th>{colunaDetalhe}</Th>
@@ -255,9 +292,6 @@ function ListaAniversariantes({
           <Th>{colunaCompleta}</Th>
         </TableHead>
         <TableBody>
-          {pessoas.length === 0 && (
-            <TableEmpty colSpan={4}>Ninguém em {MESES[mesFiltro - 1]}.</TableEmpty>
-          )}
           {pessoas.map((p) => (
             <Tr key={p.id}>
               <Td>

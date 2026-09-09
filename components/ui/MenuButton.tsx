@@ -54,7 +54,7 @@ export function MenuButton({
   iconOnly?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [pos, setPos] = useState({ top: 0, right: 0 });
+  const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -66,17 +66,26 @@ export function MenuButton({
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, [open]);
 
-  // Achado real (relatado pelo dono do sistema, set/2026): ancorar pela borda
-  // esquerda do botão (left: r.left) estourava a tela toda vez que o gatilho
-  // ficava perto da borda direita — que é o caso mais comum, já que quase todo
-  // uso desse menu é o botão "Exportar"/"Ações" no canto direito do cabeçalho
-  // da página. Mesma solução que o ItemMenu do Estoque ("Mais ações") já usa:
-  // ancora pela borda direita do botão, abrindo pra esquerda — cabe na tela
-  // não importa o quão perto da borda o gatilho esteja.
+  // Achado real (relatado pelo dono do sistema, set/2026): ancorar só pela borda
+  // direita do botão (right: innerWidth - r.right) resolvia o gatilho perto da
+  // borda DIREITA (caso mais comum, ex.: "Exportar" no canto do cabeçalho) mas
+  // estourava pro lado ESQUERDO da tela quando o gatilho ficava perto da borda
+  // esquerda — o que acontece em telas de celular, onde o PageHeader empilha
+  // título/ação e a ação já não fica mais grudada no canto direito. Achado 2
+  // (mesmo dia): no Aniversariantes, com o menu assim, "CSV"/"PDF" apareciam
+  // cortados saindo da tela.
+  // Fix: calcula `left` sempre alinhado à borda direita do botão (== antes) mas
+  // agora GRUDA (clamp) dentro da viewport nos dois lados — cabe na tela não
+  // importa de qual lado o gatilho estiver perto.
   function toggle() {
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 4, right: window.innerWidth - r.right });
+      const larguraMenu = 224; // w-56
+      const margem = 8;
+      let left = r.right - larguraMenu;
+      left = Math.min(left, window.innerWidth - larguraMenu - margem);
+      left = Math.max(left, margem);
+      setPos({ top: r.bottom + 4, left });
     }
     setOpen((v) => !v);
   }
@@ -102,7 +111,7 @@ export function MenuButton({
         createPortal(
           <div
             data-menu-button
-            style={{ position: "fixed", top: pos.top, right: pos.right }}
+            style={{ position: "fixed", top: pos.top, left: pos.left }}
             className="z-50 w-56 rounded-lg border border-cda-border bg-white p-1.5 shadow-lg"
           >
             {items.map((item, i) => {
