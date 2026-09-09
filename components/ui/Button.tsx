@@ -11,7 +11,10 @@ const VARIANT_CLASSES: Record<Variant, string> = {
   // NOVO: variante navy — antes cada tela que precisava disso forçava
   // className="bg-cda-navy hover:bg-cda-navy/90" no Button (handoff 2.5).
   secondary: "bg-surface-nav text-white hover:bg-surface-nav/90",
-  ghost: "bg-transparent text-cda-text2 hover:bg-cda-bg",
+  // Achado da auditoria: ghost e outline usavam o mesmo hover:bg-cda-bg —
+  // dentro de um card cinza (que já tem essa cor de fundo) ficavam
+  // indistinguíveis no hover. Ghost usa uma sobreposição neutra própria.
+  ghost: "bg-transparent text-cda-text2 hover:bg-cda-text/[0.06]",
   danger: "bg-cda-red text-white hover:bg-cda-red/90",
   outline: "bg-white text-cda-text border border-cda-border hover:bg-cda-bg",
 };

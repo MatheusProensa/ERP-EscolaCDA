@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import { Card } from "./Card";
 import { Badge, type BadgeVariant } from "./Badge";
+import { cn } from "@/lib/utils";
 
 /** NOVO: sparkline decorativo opcional — tendência dos últimos pontos, sem eixo/legenda. */
 function Sparkline({ points, color }: { points: number[]; color: string }) {
@@ -87,7 +88,13 @@ export function MetricCard({
     // e o rótulo já basta pra bater o olho; os dois continuam no computador.
     <Card
       href={href}
-      className="group relative flex items-center gap-3 p-3 transition-[transform,border-color,box-shadow] duration-500 ease-out sm:flex-col sm:gap-0 sm:p-5 sm:text-center hover:sm:scale-[1.015] hover:[border-color:var(--metric-border)] hover:shadow-[0_4px_16px_-4px_var(--metric-border)]"
+      // O "levanta no hover" (escala/sombra/borda) só faz sentido quando o
+      // card é clicável — achado da auditoria: sem href ele animava do mesmo
+      // jeito, sugerindo um clique que não existe.
+      className={cn(
+        "relative flex items-center gap-3 p-3 transition-[transform,border-color,box-shadow] duration-500 ease-out sm:flex-col sm:gap-0 sm:p-5 sm:text-center",
+        href && "group hover:sm:scale-[1.015] hover:[border-color:var(--metric-border)] hover:shadow-[0_4px_16px_-4px_var(--metric-border)]"
+      )}
       style={{ ["--metric-border" as string]: `color-mix(in oklch, ${cor} 45%, transparent)` }}
     >
       {/* NOVO: badge agora é um selinho encostado no canto do círculo do ícone

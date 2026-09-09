@@ -18,6 +18,11 @@ export function RelogioAtual() {
   const [agora, setAgora] = useState<Date | null>(null);
 
   useEffect(() => {
+    // É exatamente o padrão "renderiza null no servidor, valor real só
+    // depois do mount" descrito no comentário do componente, pra evitar
+    // hydration mismatch (hora do servidor != hora de quando o navegador
+    // hidrata) — supressão proposital, não descuido.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setAgora(new Date());
     const intervalo = setInterval(() => setAgora(new Date()), 1000);
     return () => clearInterval(intervalo);
@@ -25,13 +30,18 @@ export function RelogioAtual() {
 
   if (!agora) return null;
 
-  const data = agora.toLocaleDateString("pt-BR", {
+  // toLocaleDateString devolve tudo minúsculo ("segunda-feira, 7 de..."); em
+  // português só a primeira letra deve subir — text-transform: capitalize
+  // (achado da auditoria) sobe a inicial de CADA palavra, virando
+  // "Segunda-Feira, 7 De Setembro De 2026".
+  const dataBruta = agora.toLocaleDateString("pt-BR", {
     timeZone: "America/Sao_Paulo",
     weekday: "long",
     day: "numeric",
     month: "long",
     year: "numeric",
   });
+  const data = dataBruta.charAt(0).toUpperCase() + dataBruta.slice(1);
   const hora = agora.toLocaleTimeString("pt-BR", {
     timeZone: "America/Sao_Paulo",
     hour: "2-digit",
@@ -42,7 +52,7 @@ export function RelogioAtual() {
   return (
     <p className="mt-1 flex items-center gap-1.5 text-sm text-cda-text2">
       <Clock className="h-3.5 w-3.5 shrink-0 text-cda-text3" />
-      <span className="capitalize">{data}</span>
+      <span>{data}</span>
       <span className="text-cda-text3">·</span>
       <span className="tabular-nums">{hora}</span>
     </p>

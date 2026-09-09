@@ -101,7 +101,11 @@ export function TableEmpty({
   action,
 }: {
   colSpan: number;
-  children: React.ReactNode;
+  // Texto puro, não ReactNode — antes aceitava qualquer JSX e passava pra
+  // EmptyState via String(children), que vira "[object Object]" pra
+  // qualquer coisa além de uma string (achado da auditoria); todo uso atual
+  // já era texto puro, então o tipo só passa a garantir isso.
+  children: string;
   icon?: LucideIcon;
   subtitle?: string;
   action?: React.ReactNode;
@@ -109,7 +113,7 @@ export function TableEmpty({
   return (
     <tr>
       <td colSpan={colSpan} className="p-0">
-        <EmptyState icon={icon} title={String(children)} subtitle={subtitle} action={action} />
+        <EmptyState icon={icon} title={children} subtitle={subtitle} action={action} />
       </td>
     </tr>
   );

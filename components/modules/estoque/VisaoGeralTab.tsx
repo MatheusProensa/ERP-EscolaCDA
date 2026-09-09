@@ -50,7 +50,7 @@ export function VisaoGeralTab({
         <Card
           title="Estoque baixo"
           action={
-            <button onClick={onVerMateriais} className="text-xs font-medium text-cda-blue hover:underline">
+            <button onClick={onVerMateriais} className="text-sm font-medium text-cda-blue hover:underline">
               Ver todos
             </button>
           }
@@ -81,7 +81,7 @@ export function VisaoGeralTab({
         <Card
           title="Últimas movimentações"
           action={
-            <button onClick={onVerMovimentacoes} className="text-xs font-medium text-cda-blue hover:underline">
+            <button onClick={onVerMovimentacoes} className="text-sm font-medium text-cda-blue hover:underline">
               Ver todas
             </button>
           }

@@ -6,7 +6,6 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { BarraFiltro } from "@/components/ui/BarraFiltro";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { GerenciarParticipantesModal } from "@/components/modules/ponto/GerenciarParticipantesModal";
@@ -103,13 +102,16 @@ export default async function PontoPage({
             <Th>Funcionário</Th>
             <Th>Cargo</Th>
             <Th>Jornada prevista</Th>
-            <Th>Lançamentos em {MESES[mesFiltro - 1]}</Th>
+            {/* Texto fixo (não repete o mês, que já está no filtro acima) —
+                achado da auditoria: "Lançamentos em Setembro" vs "Lançamentos
+                em Maio" tem larguras diferentes e deslocava as colunas
+                seguintes ao trocar o filtro. */}
+            <Th>Lançamentos no mês</Th>
             <Th>Saldo acumulado</Th>
-            <Th>{""}</Th>
           </TableHead>
           <TableBody>
             {linhas.length === 0 && (
-              <TableEmpty colSpan={6}>
+              <TableEmpty colSpan={5}>
                 Nenhum funcionário participando do Ponto ainda. Use &quot;Gerenciar participantes&quot; pra adicionar.
               </TableEmpty>
             )}
@@ -131,11 +133,6 @@ export default async function PontoPage({
                       ajuste do resumo em PontoMesForm.tsx — saldo de banco
                       de horas não é estado (bom/ruim), é só um número. */}
                   <Badge variant="neutral">{minParaHora(saldoAtual)}</Badge>
-                </Td>
-                <Td>
-                  <Button href={`/ponto/${f.id}`} size="sm" variant="outline" className="whitespace-nowrap">
-                    {podeEditar ? "Lançar ponto" : "Ver ponto"}
-                  </Button>
                 </Td>
               </Tr>
             ))}
