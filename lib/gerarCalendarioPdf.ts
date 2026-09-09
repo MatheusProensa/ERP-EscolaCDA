@@ -18,7 +18,7 @@ import {
   MARGIN,
   HEADER_H,
 } from "@/lib/gerarRelatorioPdf";
-import { CATEGORIAS_EVENTO, DIAS_SEMANA_ABREV, MESES, corCategoria, gerarGradeMes } from "@/lib/calendario";
+import { CATEGORIAS_EVENTO, DIAS_SEMANA_ABREV, MESES, corCategoriaHex, gerarGradeMes } from "@/lib/calendario";
 
 function hexParaRgb(hex: string) {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
@@ -86,7 +86,7 @@ export async function gerarCalendarioPdf({
     let x = MARGIN;
     const y = MARGIN - 6;
     for (const categoria of CATEGORIAS_EVENTO) {
-      const cor = corCategoria(categoria);
+      const cor = corCategoriaHex(categoria);
       pagina.drawCircle({ x: x + 3, y: y + 3, size: 3, color: hexParaRgb(cor.dot) });
       pagina.drawText(categoria, { x: x + 10, y, size: 7.5, font: fonte, color: TEXT2 });
       x += fonte.widthOfTextAtSize(categoria, 7.5) + 28;
@@ -156,7 +156,7 @@ export async function gerarCalendarioPdf({
       const eventosDoDia = eventosPorDia.get(chave) ?? [];
       const maxLinhas = Math.max(0, Math.floor((alturaCelula - 16) / 9));
       eventosDoDia.slice(0, maxLinhas).forEach((e, j) => {
-        const cor = corCategoria(e.categoria);
+        const cor = corCategoriaHex(e.categoria);
         const yLinha = yTopo - 20 - j * 9;
         pagina.drawRectangle({ x: x + 3, y: yLinha - 6, width: larguraCelula - 6, height: 8, color: hexParaRgb(cor.bg) });
         pagina.drawText(truncar(fonte, e.titulo, 6.5, larguraCelula - 10), {

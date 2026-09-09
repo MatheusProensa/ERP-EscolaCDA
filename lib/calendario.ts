@@ -32,6 +32,29 @@ export function corCategoria(categoria: string) {
   return COR_CATEGORIA[categoria] ?? FALLBACK_CATEGORIA;
 }
 
+/**
+ * Mesma paleta que COR_CATEGORIA, mas em hex literal em vez de `var(--cat-N-*)`
+ * — pro PDF do calendário (lib/gerarCalendarioPdf.ts), que roda no servidor e
+ * não tem DOM/CSS pra resolver a variável (bug real, set/2026: gerar o PDF
+ * quebrava com "green must be of type number, but was NaN", porque tentava
+ * ler dígito hex de dentro de "var(--cat-5-dot)"). Valores copiados direto de
+ * app/globals.css — se a paleta mudar lá, precisa atualizar aqui também.
+ */
+export const COR_CATEGORIA_HEX: Record<string, { bg: string; text: string; dot: string }> = {
+  "Organização Interna": { bg: "#fdf1e0", text: "#b5670c", dot: "#f5a524" },
+  "Eventos e Atividades": { bg: "#e6f0fd", text: "#1a6fd8", dot: "#1a6fd8" },
+  Marketing: { bg: "#f3e8fd", text: "#7c3aed", dot: "#7c3aed" },
+  Reuniões: { bg: "#e0f5f2", text: "#0b7a70", dot: "#0d9488" },
+  "Datas Comemorativas": { bg: "#fce7f3", text: "#be1e63", dot: "#db2777" },
+  "Recesso/Feriado": { bg: "#f1f3f7", text: "#4a5b7d", dot: "#5a6a85" },
+};
+
+const FALLBACK_CATEGORIA_HEX = { bg: "#f1f3f7", text: "#4a5b7d", dot: "#5a6a85" };
+
+export function corCategoriaHex(categoria: string) {
+  return COR_CATEGORIA_HEX[categoria] ?? FALLBACK_CATEGORIA_HEX;
+}
+
 export const MESES = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
