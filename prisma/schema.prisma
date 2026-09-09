@@ -237,13 +237,14 @@ model Aluno {
   brincadeirasPrediletas String?
   reacoesContrariado    String?
 
-  matriculas         Matricula[]
-  responsaveis       Responsavel[]
-  pessoasAutorizadas PessoaAutorizada[]
-  notasFiscais       NotaFiscal[]
-  boletos            Boleto[]
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
+  matriculas             Matricula[]
+  responsaveis           Responsavel[]
+  pessoasAutorizadas     PessoaAutorizada[]
+  notasFiscais           NotaFiscal[]
+  boletos                Boleto[]
+  avaliacoesNutricionais AvaliacaoNutricional[]
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
 
   @@index([nome])
 }
@@ -293,6 +294,29 @@ model PessoaAutorizada {
   parentesco String
   aluno      Aluno  @relation(fields: [alunoId], references: [id], onDelete: Cascade)
   alunoId    String
+}
+
+/// Um registro de peso/altura da criança numa data — a Nutricionista lança e o
+/// sistema classifica sozinho (curva de IMC por idade da OMS, ver
+/// lib/avaliacaoNutricional.ts). pesoKg/alturaCm ficam salvos crus; a
+/// classificação (percentil, diagnóstico) é sempre recalculada na hora de
+/// exibir, não gravada aqui — assim, se a tabela de referência for revisada um
+/// dia, o histórico já cadastrado se ajusta sozinho, sem precisar reprocessar
+/// nada no banco.
+model AvaliacaoNutricional {
+  id          String   @id @default(cuid())
+  aluno       Aluno    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  alunoId     String
+  data        DateTime
+  pesoKg      Float
+  alturaCm    Float
+  observacoes String?
+  /// Snapshot de quem lançou (mesmo padrão do LogAtividade.usuario) — não
+  /// aponta pro User, então continua legível mesmo se a conta for excluída depois.
+  usuario     String
+  createdAt   DateTime @default(now())
+
+  @@index([alunoId])
 }
 
 model Matricula {

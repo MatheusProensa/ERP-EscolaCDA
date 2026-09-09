@@ -128,9 +128,10 @@ export default async function PontoPage({
                 </Td>
                 <Td>{registrosNoMes} dia(s)</Td>
                 <Td>
-                  <Badge variant={saldoAtual < 0 ? "red" : saldoAtual > 0 ? "green" : "gray"}>
-                    {minParaHora(saldoAtual)}
-                  </Badge>
+                  {/* Achado real (auditoria de UX externa, set/2026): mesmo
+                      ajuste do resumo em PontoMesForm.tsx — saldo de banco
+                      de horas não é estado (bom/ruim), é só um número. */}
+                  <Badge variant="neutral">{minParaHora(saldoAtual)}</Badge>
                 </Td>
                 <Td>
                   <Button href={`/ponto/${f.id}`} size="sm" variant="outline" className="whitespace-nowrap">

@@ -44,6 +44,9 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/alunos", roles: PEDAGOGICO },
   { prefixo: "/academico", roles: PEDAGOGICO },
   { prefixo: "/cardapio", roles: PEDAGOGICO },
+  // Mesmo pacote do Cardápio: é a Nutricionista que usa (Role Administrativo
+  // ou Pedagógico, dependendo de quem — a grade que decide de verdade).
+  { prefixo: "/avaliacao-nutricional", roles: PEDAGOGICO },
   { prefixo: "/aniversariantes", roles: ANIVERSARIANTES },
   { prefixo: "/interessados", roles: ANIVERSARIANTES },
   { prefixo: "/funcionarios", roles: ADMINISTRATIVO },
@@ -81,6 +84,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/api/responsaveis", roles: PEDAGOGICO },
   { prefixo: "/api/turmas", roles: PEDAGOGICO },
   { prefixo: "/api/cardapio", roles: PEDAGOGICO },
+  { prefixo: "/api/avaliacao-nutricional", roles: PEDAGOGICO },
   { prefixo: "/api/contratos", roles: PEDAGOGICO },
   { prefixo: "/api/funcionarios", roles: ADMINISTRATIVO },
   { prefixo: "/api/horarios-equipe", roles: ADMINISTRATIVO },
@@ -121,6 +125,7 @@ export const MODULOS: { chave: string; label: string; prefixos: string[] }[] = [
   { chave: "calendario", label: "Calendário", prefixos: ["/calendario", "/api/eventos"] },
   { chave: "academico", label: "Acadêmico", prefixos: ["/academico", "/api/turmas"] },
   { chave: "cardapio", label: "Cardápio", prefixos: ["/cardapio", "/api/cardapio", "/api/relatorios/cardapio"] },
+  { chave: "avaliacao-nutricional", label: "Avaliação Nutricional", prefixos: ["/avaliacao-nutricional", "/api/avaliacao-nutricional"] },
   { chave: "aniversariantes", label: "Aniversariantes", prefixos: ["/aniversariantes", "/api/relatorios/aniversariantes"] },
   { chave: "interessados", label: "Interessados", prefixos: ["/interessados", "/api/interessados", "/api/relatorios/interessados"] },
   { chave: "funcionarios", label: "Funcionários", prefixos: ["/funcionarios", "/api/funcionarios", "/api/relatorios/funcionarios", "/api/relatorios/funcionarios-contatos"] },

@@ -22,6 +22,7 @@ import {
   Receipt,
   Barcode,
   History,
+  Ruler,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -60,6 +61,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Acadêmico", href: "/academico", icon: GraduationCap },
       { label: "Aniversariantes", href: "/aniversariantes", icon: Cake },
+      { label: "Avaliação Nutricional", href: "/avaliacao-nutricional", icon: Ruler },
       { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
       { label: "Chaves", href: "/chaves", icon: KeyRound },
       { label: "Documentos", href: "/documentos", icon: FileText },
