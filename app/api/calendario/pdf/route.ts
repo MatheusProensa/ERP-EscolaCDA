@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { gerarCalendarioPdf, type EventoLevePdf } from "@/lib/gerarCalendarioPdf";
+import { gerarCalendarioPdf, type EventoCalendarioPdf } from "@/lib/gerarCalendarioPdf";
 import { respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { MESES } from "@/lib/calendario";
 
@@ -30,11 +30,11 @@ export async function GET(req: NextRequest) {
 
   const eventos = await prisma.eventoCalendario.findMany({
     where: { data: { gte: inicio, lt: fim } },
-    select: { titulo: true, categoria: true, data: true },
+    select: { titulo: true, data: true },
     orderBy: { data: "asc" },
   });
 
-  const eventosPorMes = new Map<string, EventoLevePdf[]>();
+  const eventosPorMes = new Map<string, EventoCalendarioPdf[]>();
   for (const e of eventos) {
     const chave = `${e.data.getUTCFullYear()}-${e.data.getUTCMonth() + 1}`;
     const lista = eventosPorMes.get(chave) ?? [];
