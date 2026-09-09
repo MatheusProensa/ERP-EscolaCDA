@@ -3,16 +3,22 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import { Select } from "@/components/ui/Select";
+import { BarraFiltro } from "@/components/ui/BarraFiltro";
 import { ExportButtons } from "@/components/ui/ExportButtons";
 import { FuncionarioTable } from "@/components/modules/funcionarios/FuncionarioTable";
 import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { podeEditarModulo } from "@/lib/permissoes";
-import { SETORES, agruparPorSetor } from "@/lib/utils";
+import { SETORES } from "@/lib/utils";
 
+/** Achado de auditoria externa (set/2026): a listagem era N Cards, um por
+ * setor (10 setores = 10 cabeçalhos de Card + 10 tabelas) — a tarefa
+ * dominante aqui é achar UMA pessoa, e dez listas custam mais do que uma só
+ * (dez cabeçalhos ocupam altura que não carrega informação, e um filtro que
+ * corta pra 3 pessoas de setores diferentes deixa 3 Cards de uma linha cada).
+ * Vira 1 Card + 1 tabela, mesmo padrão que Alunos já usava — a visão de
+ * "organização por setor" que os 10 Cards davam de graça agora mora no
+ * filtro (as opções levam a contagem no rótulo: "Pedagógico (5)"). */
 export default async function FuncionariosPage({
   searchParams,
 }: {
@@ -22,22 +28,24 @@ export default async function FuncionariosPage({
   const session = await auth();
   const podeEditar = podeEditarModulo("/funcionarios", session?.user.role ?? "", session?.user.permissoes);
 
-  const funcionarios = await prisma.funcionario.findMany({
-    where: {
-      setor: setor || undefined,
-      nome: busca ? { contains: busca, mode: "insensitive" } : undefined,
-    },
-    orderBy: { nome: "asc" },
-  });
-
-  const grupos = agruparPorSetor(funcionarios);
+  const [funcionarios, totalGeral, contagemPorSetor] = await Promise.all([
+    prisma.funcionario.findMany({
+      where: {
+        setor: setor || undefined,
+        nome: busca ? { contains: busca, mode: "insensitive" } : undefined,
+      },
+      orderBy: [{ setor: "asc" }, { nome: "asc" }],
+    }),
+    prisma.funcionario.count(),
+    prisma.funcionario.groupBy({ by: ["setor"], _count: true }),
+  ]);
+  const contagemPorSetorNome = new Map(contagemPorSetor.map((c) => [c.setor, c._count]));
 
   return (
     <div>
       <EscutaAoVivo modulo="funcionarios" />
       <PageHeader
         title="Funcionários"
-        subtitle={`${funcionarios.length} funcionário(s) encontrado(s), organizados por setor`}
         action={
           <div className="flex flex-wrap items-center gap-2">
             <ExportButtons href="/api/relatorios/funcionarios" label="Lista completa" params={{ setor }} />
@@ -52,40 +60,25 @@ export default async function FuncionariosPage({
         }
       />
 
-      <Card className="mb-5 p-4">
-        <form className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Input name="busca" placeholder="Buscar por nome..." defaultValue={busca} />
-          <Select name="setor" defaultValue={setor ?? ""}>
-            <option value="">Todos os setores</option>
-            {SETORES.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </Select>
-          <Button type="submit" variant="outline">
-            Filtrar
-          </Button>
-        </form>
+      <BarraFiltro
+        buscaPlaceholder="Buscar por nome..."
+        selects={[
+          {
+            paramName: "setor",
+            placeholder: "Todos os setores",
+            options: [
+              { value: "", label: `Todos os setores (${totalGeral})` },
+              ...SETORES.map((s) => ({ value: s, label: `${s} (${contagemPorSetorNome.get(s) ?? 0})` })),
+            ],
+          },
+        ]}
+        total={funcionarios.length}
+        totalGeral={totalGeral}
+      />
+
+      <Card>
+        <FuncionarioTable funcionarios={funcionarios} podeEditar={podeEditar} />
       </Card>
-
-      {grupos.length === 0 && (
-        <Card>
-          <FuncionarioTable funcionarios={[]} podeEditar={podeEditar} />
-        </Card>
-      )}
-
-      <div className="flex flex-col gap-5">
-        {grupos.map((grupo) => (
-          <Card
-            key={grupo.setor}
-            title={grupo.setor}
-            action={<Badge variant="count">{grupo.itens.length}</Badge>}
-          >
-            <FuncionarioTable funcionarios={grupo.itens} mostrarSetor={false} podeEditar={podeEditar} />
-          </Card>
-        ))}
-      </div>
     </div>
   );
 }
