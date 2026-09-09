@@ -14,11 +14,11 @@ import { MESES } from "@/lib/calendario";
  * do PDF de referência com pdfimages e reaproveitados aqui, não redesenhados
  * — é a arte de verdade, não uma aproximação).
  *
- * Vale pra QUALQUER período exportado (1/3/6/12 meses), não só o ano
- * completo — pedido do dono pra não ter dois formatos de calendário no
- * sistema. Não mostra categoria por cor (só destaca o dia em amarelo +
- * legenda embaixo de cada mês, igual à referência) — pensado pra
- * imprimir/pendurar, não pra consulta detalhada.
+ * Vale tanto pro ano completo (12 meses numa página só) quanto pra um único
+ * mês exportado avulso — mesmo formato pros dois casos, pedido do dono pra
+ * não ter dois formatos de calendário no sistema. Não mostra categoria por
+ * cor (só destaca o dia em amarelo + legenda embaixo de cada mês, igual à
+ * referência) — pensado pra imprimir/pendurar, não pra consulta detalhada.
  */
 
 const PAGE_W = 595; // A4 retrato (pt) — os outros PDFs do sistema são paisagem;
@@ -250,6 +250,13 @@ function desenharMiniMes(
   const yFimDisponivel = yTopo - cardH - LEGENDA_HEADROOM * e;
   let yLegenda = yTopo - cardH - 10 * e;
   let desenhados = 0;
+  // Altura da pílula/"slot" de cada item e deslocamento do topo do slot (yLegenda)
+  // até a linha de base do texto — usado tanto pro título de cada item quanto
+  // pro "+N eventos", que precisa alinhar exatamente igual. Bug real (set/2026):
+  // "+N eventos" usava `y: yLegenda` puro (o topo do próximo slot, não a linha
+  // de base), ficando ~1 linha alto demais e sobrepondo o texto do item anterior.
+  const chipAltura = 9 * e;
+  const deslocamentoLinhaBase = -chipAltura + (chipAltura - fonteLegendaTam) / 2 + 1 * e;
   for (const g of gruposTodos) {
     const chipLargura = Math.max(14 * e, fonteBold.widthOfTextAtSize(g.rotulo, fonteLegendaTam) + 6 * e);
     const larguraTitulo = largura - chipLargura - 6 * e;
@@ -257,12 +264,11 @@ function desenharMiniMes(
     const alturaItem = Math.max(9 * e, linhasTitulo.length * alturaLinha);
     if (yLegenda - alturaItem < yFimDisponivel - 8 * e) break; // não cabe mais — vira "+N eventos"
 
-    const chipAltura = 9 * e;
     desenharPilula(pagina, { x, yTopo: yLegenda, largura: chipLargura, altura: chipAltura, color: YELLOW });
     const chipTextoLargura = fonteBold.widthOfTextAtSize(g.rotulo, fonteLegendaTam);
     pagina.drawText(g.rotulo, {
       x: x + (chipLargura - chipTextoLargura) / 2,
-      y: yLegenda - chipAltura + (chipAltura - fonteLegendaTam) / 2 + 1 * e,
+      y: yLegenda + deslocamentoLinhaBase,
       size: fonteLegendaTam,
       font: fonteBold,
       color: NAVY_TEXT,
@@ -274,7 +280,7 @@ function desenharMiniMes(
     linhasTitulo.forEach((linha, li) => {
       pagina.drawText(linha, {
         x: x + chipLargura + 5 * e,
-        y: yLegenda - chipAltura + (chipAltura - fonteLegendaTam) / 2 + 1 * e - li * alturaLinha,
+        y: yLegenda + deslocamentoLinhaBase - li * alturaLinha,
         size: fonteLegendaTam,
         font: fonteBold,
         color: WHITE,
@@ -287,7 +293,7 @@ function desenharMiniMes(
   if (restantes > 0) {
     pagina.drawText(`+${restantes} evento${restantes > 1 ? "s" : ""}`, {
       x,
-      y: yLegenda,
+      y: yLegenda + deslocamentoLinhaBase,
       size: fonteLegendaTam,
       font: fonte,
       color: rgb(0.75, 0.8, 0.92),

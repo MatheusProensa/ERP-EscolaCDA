@@ -10,19 +10,23 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const params = req.nextUrl.searchParams;
+  const modo = params.get("modo") === "mes" ? "mes" : "ano";
   const ano = Number(params.get("ano"));
   const mes = Number(params.get("mes"));
-  const quantidade = Math.min(24, Math.max(1, Number(params.get("quantidade")) || 1));
 
-  if (!ano || !mes || mes < 1 || mes > 12) {
-    return NextResponse.json({ error: "Informe ano e mês iniciais válidos" }, { status: 400 });
+  if (!ano) {
+    return NextResponse.json({ error: "Informe um ano válido" }, { status: 400 });
+  }
+  if (modo === "mes" && (!mes || mes < 1 || mes > 12)) {
+    return NextResponse.json({ error: "Informe um mês válido" }, { status: 400 });
   }
 
-  const meses: { ano: number; mes: number }[] = [];
-  for (let i = 0; i < quantidade; i++) {
-    const totalMeses = (mes - 1) + i;
-    meses.push({ ano: ano + Math.floor(totalMeses / 12), mes: (totalMeses % 12) + 1 });
-  }
+  // "Ano" sempre é o ano civil completo (Jan-Dez) — nada de calcular a partir
+  // de um mês inicial arbitrário, que podia empurrar meses pro ano seguinte
+  // (ex.: Set/2026 + 12 meses incluía Jan-Ago/2027, calendário que nem existe
+  // ainda). "Mês" é só o mês escolhido.
+  const meses: { ano: number; mes: number }[] =
+    modo === "mes" ? [{ ano, mes }] : Array.from({ length: 12 }, (_, i) => ({ ano, mes: i + 1 }));
 
   const inicio = new Date(Date.UTC(meses[0].ano, meses[0].mes - 1, 1));
   const ultimoMes = meses[meses.length - 1];
@@ -45,9 +49,7 @@ export async function GET(req: NextRequest) {
   const dataUri = await gerarCalendarioPdf({ meses, eventosPorMes });
 
   const nomeArquivo =
-    quantidade === 1
-      ? nomeArquivoPdf("Calendario", `${MESES[mes - 1]} ${ano}`)
-      : nomeArquivoPdf("Calendario", `${MESES[mes - 1]} ${ano} a ${MESES[ultimoMes.mes - 1]} ${ultimoMes.ano}`);
+    modo === "mes" ? nomeArquivoPdf("Calendario", `${MESES[mes - 1]} ${ano}`) : nomeArquivoPdf("Calendario", `${ano}`);
 
   return respostaPDF(dataUri, nomeArquivo);
 }
