@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Users, ClipboardCheck, ClipboardX, TriangleAlert } from "lucide-react";
 import { prisma } from "@/lib/prisma";
+import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Table, TableHead, Th, TableBody, Tr, Td } from "@/components/ui/Table";
@@ -8,19 +9,36 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
+import { Select } from "@/components/ui/Select";
+import { Button } from "@/components/ui/Button";
 import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { ClassificacaoBadge } from "@/components/modules/avaliacao-nutricional/ClassificacaoBadge";
 import { avaliarImcPorIdade, formatarIdade } from "@/lib/avaliacaoNutricional";
-import { formatarData, hojeBrasilia } from "@/lib/utils";
+import { formatarData, hojeBrasilia, ordenarTurmas } from "@/lib/utils";
 
 /** Lista todo aluno com matrícula ativa (independente de já ter avaliação ou
  * não) — é a Nutricionista batendo os olhos em quem ainda falta avaliar,
- * não só em quem já tem histórico. */
-export default async function AvaliacaoNutricionalPage() {
+ * não só em quem já tem histórico. Filtro por turma (pedido do dono, set/2026):
+ * a professora quer ir anotando turma por turma, em vez de caçar cada criança
+ * numa lista alfabética de 100+ alunos da escola inteira. */
+export default async function AvaliacaoNutricionalPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ turma?: string }>;
+}) {
+  const { turma: turmaId } = await searchParams;
   const hoje = hojeBrasilia();
 
+  const anoLetivo = await getAnoLetivoAtivo();
+  const turmasRaw = await prisma.turma.findMany({ where: { anoLetivoId: anoLetivo?.id } });
+  const turmas = ordenarTurmas(turmasRaw);
+
   const alunos = await prisma.aluno.findMany({
-    where: { matriculas: { some: { situacao: "ATIVA" } } },
+    where: {
+      matriculas: {
+        some: { situacao: "ATIVA", ...(turmaId ? { turmaId } : {}) },
+      },
+    },
     select: {
       id: true,
       nome: true,
@@ -73,9 +91,28 @@ export default async function AvaliacaoNutricionalPage() {
         </div>
       )}
 
+      <Card className="mb-5 p-4">
+        <form className="flex flex-wrap items-center gap-3">
+          <Select name="turma" defaultValue={turmaId ?? ""} className="w-full sm:w-56">
+            <option value="">Todas as turmas</option>
+            {turmas.map((t) => (
+              <option key={t.id} value={t.id}>
+                {t.nome}
+              </option>
+            ))}
+          </Select>
+          <Button type="submit" variant="outline">
+            Filtrar
+          </Button>
+        </form>
+      </Card>
+
       {alunos.length === 0 ? (
         <Card>
-          <EmptyState title="Nenhum aluno matriculado ainda" subtitle="Assim que houver matrícula ativa, ela aparece aqui pra avaliação." />
+          <EmptyState
+            title={turmaId ? "Nenhum aluno dessa turma" : "Nenhum aluno matriculado ainda"}
+            subtitle={turmaId ? undefined : "Assim que houver matrícula ativa, ela aparece aqui pra avaliação."}
+          />
         </Card>
       ) : (
         <>
