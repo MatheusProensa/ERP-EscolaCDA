@@ -89,7 +89,7 @@ export function PermissoesUsuarioSecao({
       <Card>
         <div className="flex items-center gap-2 px-5 py-4">
           <h3 className="text-sm font-semibold text-cda-text">Acesso por setor</h3>
-          <Badge variant="green">Acesso total</Badge>
+          <Badge variant="success">Acesso total</Badge>
         </div>
         <p className="border-t border-cda-border px-5 py-3 text-sm text-cda-text2">
           <strong>{usuarioNome}</strong> é Admin — tem acesso completo a todos os setores, essa grade não se aplica.
@@ -107,7 +107,12 @@ export function PermissoesUsuarioSecao({
       >
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-cda-text">Acesso por setor</h3>
-          <Badge variant={liberados > 0 ? "green" : "red"}>
+          {/* Achado de auditoria externa (set/2026): "N setores liberados" é uma
+              CONTAGEM, não um elogio — verde ali transformava um número neutro em
+              sucesso. "Nenhum setor liberado" continua com cor de alarme de
+              propósito: é uma condição real a resolver (usuário sem acesso a
+              nada), não decoração. */}
+          <Badge variant={liberados > 0 ? "count" : "danger"}>
             {liberados > 0 ? `${liberados} setor(es) liberado(s)` : "Nenhum setor liberado"}
           </Badge>
         </div>

@@ -32,7 +32,7 @@ export async function MuralWidget() {
 
   return (
     <Card
-      className={temFixado ? "border-l-4 border-l-cda-amber" : undefined}
+      emphasis={temFixado ? "warning" : undefined}
       title={
         <span className="flex items-center gap-2">
           <Megaphone className="h-[15px] w-[15px] text-cda-blue" />

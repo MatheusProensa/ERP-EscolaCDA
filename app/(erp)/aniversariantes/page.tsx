@@ -265,7 +265,7 @@ function ListaAniversariantes({
             <div className="min-w-0 flex-1">
               <p className="flex items-center gap-1.5 truncate font-medium text-cda-text">
                 {p.nome}
-                {eHoje(p.dataNascimento, hoje) && <Badge variant="amber">Hoje</Badge>}
+                {eHoje(p.dataNascimento, hoje) && <Badge variant="warning">Hoje</Badge>}
               </p>
               <p className="truncate text-xs text-cda-text3">{p.detalhe}</p>
             </div>
@@ -298,7 +298,7 @@ function ListaAniversariantes({
                 <Link href={p.href} className="flex items-center gap-2.5 hover:text-cda-blue">
                   <Avatar nome={p.nome} foto={p.foto} size="sm" />
                   {p.nome}
-                  {eHoje(p.dataNascimento, hoje) && <Badge variant="amber">Hoje</Badge>}
+                  {eHoje(p.dataNascimento, hoje) && <Badge variant="warning">Hoje</Badge>}
                 </Link>
               </Td>
               <Td>{p.detalhe}</Td>

@@ -8,10 +8,10 @@ import type { BadgeVariant } from "@/components/ui/Badge";
  */
 
 export const STATUS_ESTOQUE_BADGE: Record<string, { variant: BadgeVariant; label: string }> = {
-  ok: { variant: "green", label: "Normal" },
-  baixa: { variant: "amber", label: "Atenção" },
-  crit: { variant: "red", label: "Crítico" },
-  zero: { variant: "red", label: "Zerado" },
+  ok: { variant: "success", label: "Normal" },
+  baixa: { variant: "warning", label: "Atenção" },
+  crit: { variant: "critical", label: "Crítico" },
+  zero: { variant: "critical", label: "Zerado" },
 };
 
 // Ordem pensada pro fluxo real de ligação da secretaria (Interessados), não a

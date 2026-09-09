@@ -134,7 +134,7 @@ export function ContratoSecao({
       ) : (
         <div className="flex flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={contrato.assinado ? "green" : "amber"}>
+            <Badge variant={contrato.assinado ? "success" : "warning"}>
               {contrato.assinado ? "Assinado" : "Pendente de assinatura"}
             </Badge>
             {contrato.assinado && contrato.nomeAssinante && (

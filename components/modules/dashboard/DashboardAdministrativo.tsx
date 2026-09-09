@@ -86,7 +86,7 @@ export async function DashboardAdministrativo({
               <Th>Situação</Th>
             </TableHead>
             <TableBody>
-              {criticos.length === 0 && <TableEmpty colSpan={3}>Nenhum item abaixo do mínimo 🎉</TableEmpty>}
+              {criticos.length === 0 && <TableEmpty colSpan={3}>Nenhum item abaixo do mínimo</TableEmpty>}
               {criticos.slice(0, 8).map((item) => (
                 <Tr key={item.id}>
                   <Td className="font-medium">{item.nome}</Td>

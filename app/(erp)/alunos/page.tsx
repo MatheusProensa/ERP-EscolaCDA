@@ -100,8 +100,8 @@ export default async function AlunosPage({
 
       {(censoIncompleto || contratoPendente) && (
         <div className="mb-5 flex flex-wrap items-center gap-2">
-          {censoIncompleto && <Badge variant="amber">Filtro: dados incompletos para o censo</Badge>}
-          {contratoPendente && <Badge variant="red">Filtro: contrato aguardando assinatura</Badge>}
+          {censoIncompleto && <Badge variant="warning">Filtro: dados incompletos para o censo</Badge>}
+          {contratoPendente && <Badge variant="danger">Filtro: contrato aguardando assinatura</Badge>}
           <Link href="/alunos" className="text-sm font-medium text-cda-blue hover:underline">
             Limpar filtro
           </Link>

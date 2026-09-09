@@ -32,8 +32,11 @@ export function VisaoGeralTab({
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <MetricCard icon={Boxes} tone="cat6" label="Itens cadastrados" value={itens.length} subtext="No catálogo" />
-        <MetricCard icon={ArrowDownToLine} tone="success" label="Entradas (mês)" value={entradasMes} subtext="Unidades recebidas" />
-        <MetricCard icon={ArrowUpFromLine} tone="warning" label="Saídas (mês)" value={saidasMes} subtext="Unidades retiradas" />
+        {/* Achado de auditoria externa (set/2026): entrada/saída de material é
+            CATEGORIA de movimentação, não estado — success/warning aqui eram
+            decoração (saída não é "atenção", é só o outro sentido do fluxo). */}
+        <MetricCard icon={ArrowDownToLine} tone="cat1" label="Entradas (mês)" value={entradasMes} subtext="Unidades recebidas" />
+        <MetricCard icon={ArrowUpFromLine} tone="cat2" label="Saídas (mês)" value={saidasMes} subtext="Unidades retiradas" />
         <MetricCard
           icon={criticos.length > 0 ? TriangleAlert : CircleCheck}
           tone={criticos.length > 0 ? "danger" : "success"}

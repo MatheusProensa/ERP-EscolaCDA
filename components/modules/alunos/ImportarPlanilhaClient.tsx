@@ -135,12 +135,12 @@ export function ImportarPlanilhaClient() {
             <h3 className="mb-2 text-sm font-semibold text-cda-text">Colunas reconhecidas</h3>
             <div className="flex flex-wrap gap-2">
               {colunasReconhecidas.map(([campo, coluna]) => (
-                <Badge key={campo} variant="green">
+                <Badge key={campo} variant="success">
                   {campo}: &quot;{coluna}&quot;
                 </Badge>
               ))}
               {colunasNaoReconhecidas.map((campo) => (
-                <Badge key={campo} variant="amber">
+                <Badge key={campo} variant="warning">
                   {campo}: não encontrada
                 </Badge>
               ))}

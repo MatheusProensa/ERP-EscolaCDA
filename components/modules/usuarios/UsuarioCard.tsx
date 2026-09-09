@@ -39,7 +39,7 @@ export function UsuarioCard({ usuario, souEu }: { usuario: UsuarioCardDados; sou
         )}
       </div>
       <div className="flex items-center justify-between">
-        <Badge variant={ROLE_BADGE_VARIANT[usuario.role] ?? "gray"}>{ROLE_LABEL[usuario.role] ?? usuario.role}</Badge>
+        <Badge variant={ROLE_BADGE_VARIANT[usuario.role] ?? "neutral"}>{ROLE_LABEL[usuario.role] ?? usuario.role}</Badge>
         <span className="text-xs text-cda-text3">desde {formatarData(usuario.createdAt)}</span>
       </div>
     </Link>

@@ -22,7 +22,7 @@ function Campo({
         <span className="text-cda-text3">{label}: </span>
         <span className="text-cda-text">{value}</span>
       </div>
-      {faltando && <Badge variant="amber">Faltando para o censo</Badge>}
+      {faltando && <Badge variant="warning">Faltando para o censo</Badge>}
     </div>
   );
 }
@@ -36,7 +36,7 @@ export function CensoSecao({ aluno, podeEditar = true }: { aluno: Aluno; podeEdi
       <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold text-cda-text">Dados do Censo Escolar</h3>
-          {pendencias > 0 && <Badge variant="amber">{pendencias} pendente(s)</Badge>}
+          {pendencias > 0 && <Badge variant="warning">{pendencias} pendente(s)</Badge>}
         </div>
         <div className="flex items-center gap-3">
           {podeEditar && (

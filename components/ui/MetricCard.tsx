@@ -60,7 +60,7 @@ export function MetricCard({
   label,
   subtext,
   badge,
-  badgeVariant = "gray",
+  badgeVariant = "neutral",
   trend,
   href,
 }: {

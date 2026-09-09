@@ -11,8 +11,13 @@ export function Table({ children, className }: { children: React.ReactNode; clas
 }
 
 export function TableHead({ children }: { children: React.ReactNode }) {
+  // Achado de auditoria externa (set/2026, prioridade alta): sem cabeçalho fixo,
+  // rolar uma tabela longa (Alunos, folha de Ponto) faz perder a referência de
+  // qual coluna está preenchendo — na folha de ponto isso é risco de erro de
+  // digitação, não só desconforto. bg-cda-surface (mesmo tom do Card por trás)
+  // pra não deixar o conteúdo "vazar" por baixo do cabeçalho ao rolar.
   return (
-    <thead>
+    <thead className="sticky top-0 z-10 bg-cda-surface">
       <tr className="border-b border-cda-border text-left text-xs font-medium uppercase tracking-wide text-cda-text3">
         {children}
       </tr>

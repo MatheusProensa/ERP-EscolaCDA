@@ -144,7 +144,7 @@ export function ResponsaveisSecao({
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm font-semibold text-cda-text">{r.nome}</span>
               <div className="flex shrink-0 items-center gap-1">
-                {r.autorizado && <Badge variant="green">Autorizado</Badge>}
+                {r.autorizado && <Badge variant="success">Autorizado</Badge>}
                 {podeEditar && (
                   <>
                     <IconButton icon={Pencil} label="Editar responsável" size="sm" onClick={() => setEditando(r)} />

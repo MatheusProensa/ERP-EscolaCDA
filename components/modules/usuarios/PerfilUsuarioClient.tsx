@@ -70,7 +70,7 @@ export function PerfilUsuarioClient({
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
           <div className="flex flex-col items-start gap-2">
             <Avatar nome={usuario.name} foto={usuario.foto} size="lg" />
-            <Badge variant={ROLE_BADGE_VARIANT[usuario.role] ?? "gray"}>
+            <Badge variant={ROLE_BADGE_VARIANT[usuario.role] ?? "neutral"}>
               {ROLE_LABEL[usuario.role] ?? usuario.role}
             </Badge>
             <span className="text-xs text-cda-text3">Desde {formatarData(usuario.createdAt)}</span>
@@ -161,7 +161,7 @@ export function PerfilUsuarioClient({
         <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
           <div className="flex flex-col items-start gap-2">
             <PhotoUpload value={foto} onChange={setFoto} nome={name || usuario.name} />
-            <Badge variant={ROLE_BADGE_VARIANT[usuario.role] ?? "gray"}>
+            <Badge variant={ROLE_BADGE_VARIANT[usuario.role] ?? "neutral"}>
               {ROLE_LABEL[usuario.role] ?? usuario.role}
             </Badge>
             <span className="text-xs text-cda-text3">Desde {formatarData(usuario.createdAt)}</span>
@@ -199,7 +199,7 @@ export function PerfilUsuarioClient({
                 <KeyRound className="h-4 w-4" />
                 Redefinir senha
               </button>
-              {usuario.pedidoResetSenhaEm && <Badge variant="amber">Pediu redefinição</Badge>}
+              {usuario.pedidoResetSenhaEm && <Badge variant="warning">Pediu redefinição</Badge>}
               <button
                 onClick={() => setConfirmandoExclusao(true)}
                 disabled={souEu || excluindo}

@@ -377,11 +377,11 @@ export function PontoMesForm({
                     </div>
                     <div>
                       <p className="text-xs text-cda-text3">Atraso/Falta</p>
-                      {dia && dia.atrasoFalta > 0 ? <Badge variant="red">{minParaHora(dia.atrasoFalta)}</Badge> : <p className="text-sm text-cda-text3">—</p>}
+                      {dia && dia.atrasoFalta > 0 ? <Badge variant="danger">{minParaHora(dia.atrasoFalta)}</Badge> : <p className="text-sm text-cda-text3">—</p>}
                     </div>
                     <div>
                       <p className="text-xs text-cda-text3">Hora Extra</p>
-                      {dia && dia.horaExtra > 0 ? <Badge variant="green">{minParaHora(dia.horaExtra)}</Badge> : <p className="text-sm text-cda-text3">—</p>}
+                      {dia && dia.horaExtra > 0 ? <Badge variant="count">{minParaHora(dia.horaExtra)}</Badge> : <p className="text-sm text-cda-text3">—</p>}
                     </div>
                     <div>
                       <p className="text-xs text-cda-text3">Ad. Noturno</p>
@@ -491,10 +491,10 @@ export function PontoMesForm({
                     <td className="px-3 py-1.5 text-sm text-cda-text2">{dia ? minParaHora(dia.horasPrevistas) : "—"}</td>
                     <td className="px-3 py-1.5 text-sm text-cda-text2">{dia ? minParaHora(dia.horasTrabalhadas) : "—"}</td>
                     <td className="px-3 py-1.5">
-                      {dia && dia.atrasoFalta > 0 && <Badge variant="red">{minParaHora(dia.atrasoFalta)}</Badge>}
+                      {dia && dia.atrasoFalta > 0 && <Badge variant="danger">{minParaHora(dia.atrasoFalta)}</Badge>}
                     </td>
                     <td className="px-3 py-1.5">
-                      {dia && dia.horaExtra > 0 && <Badge variant="green">{minParaHora(dia.horaExtra)}</Badge>}
+                      {dia && dia.horaExtra > 0 && <Badge variant="count">{minParaHora(dia.horaExtra)}</Badge>}
                     </td>
                     <td className="px-3 py-1.5 text-sm text-cda-text2">{dia && dia.adicionalNoturno > 0 ? minParaHora(dia.adicionalNoturno) : "—"}</td>
                     <td className="px-3 py-1.5 text-sm font-medium text-cda-text">{dia ? minParaHora(dia.saldoAcumulado) : "—"}</td>

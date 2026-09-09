@@ -128,7 +128,7 @@ export function ChaveCard({
         {chave.sala}
       </p>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <Badge variant={emprestimo ? "amber" : "green"}>{emprestimo ? "Emprestada" : "Disponível"}</Badge>
+        <Badge variant={emprestimo ? "warning" : "success"}>{emprestimo ? "Emprestada" : "Disponível"}</Badge>
         {podeEditar && (
           <div className="flex shrink-0 items-center gap-1">
             <IconButton icon={Pencil} label="Editar chave" onClick={() => setEditando(true)} />
