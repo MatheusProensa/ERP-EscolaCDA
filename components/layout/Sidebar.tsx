@@ -46,6 +46,10 @@ type NavGroup = { label: string; items: NavItem[] };
 // e Log de Atividades são administração do PRÓPRIO ERP (quem acessa o quê,
 // auditoria de mudanças), não tarefa do dia a dia da secretaria — misturado
 // junto de Acadêmico/Cardápio/Estoque ficava difícil de achar.
+// "Nutrição" separado do Administrativo (set/2026, pedido do dono): Cardápio
+// e Avaliação Nutricional são a área da nutricionista, não da secretaria —
+// vieram juntos pra não reintroduzir grupo de 1 item só (motivo da limpeza
+// de 7→4 grupos, comentário acima).
 const NAV_GROUPS: NavGroup[] = [
   {
     label: "Principal",
@@ -61,14 +65,19 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Acadêmico", href: "/academico", icon: GraduationCap },
       { label: "Aniversariantes", href: "/aniversariantes", icon: Cake },
-      { label: "Avaliação Nutricional", href: "/avaliacao-nutricional", icon: Ruler },
-      { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
       { label: "Chaves", href: "/chaves", icon: KeyRound },
       { label: "Documentos", href: "/documentos", icon: FileText },
       { label: "Estoque", href: "/estoque", icon: Package },
       { label: "Funcionários", href: "/funcionarios", icon: UserCog },
       { label: "Horários da Equipe", href: "/horarios-equipe", icon: CalendarClock },
       { label: "Interessados", href: "/interessados", icon: UserPlus },
+    ],
+  },
+  {
+    label: "Nutrição",
+    items: [
+      { label: "Avaliação Nutricional", href: "/avaliacao-nutricional", icon: Ruler },
+      { label: "Cardápio", href: "/cardapio", icon: UtensilsCrossed },
     ],
   },
   {

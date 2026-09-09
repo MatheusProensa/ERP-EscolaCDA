@@ -1,9 +1,13 @@
 import Link from "next/link";
+import { Users, ClipboardCheck, ClipboardX, TriangleAlert } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
-import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
+import { Table, TableHead, Th, TableBody, Tr, Td } from "@/components/ui/Table";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { MetricCard } from "@/components/ui/MetricCard";
 import { Avatar } from "@/components/ui/Avatar";
+import { Badge } from "@/components/ui/Badge";
 import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 import { ClassificacaoBadge } from "@/components/modules/avaliacao-nutricional/ClassificacaoBadge";
 import { avaliarImcPorIdade, formatarIdade } from "@/lib/avaliacaoNutricional";
@@ -33,6 +37,25 @@ export default async function AvaliacaoNutricionalPage() {
     orderBy: { nome: "asc" },
   });
 
+  const linhas = alunos.map((a) => {
+    const ultima = a.avaliacoesNutricionais[0];
+    const resultado =
+      ultima && a.sexo
+        ? avaliarImcPorIdade({
+            sexo: a.sexo,
+            dataNascimento: a.dataNascimento,
+            dataAvaliacao: ultima.data,
+            pesoKg: ultima.pesoKg,
+            alturaCm: ultima.alturaCm,
+          })
+        : null;
+    return { aluno: a, ultima, resultado };
+  });
+
+  const avaliados = linhas.filter((l) => l.ultima).length;
+  const pendentes = alunos.length - avaliados;
+  const emAlerta = linhas.filter((l) => l.resultado && l.resultado.classificacao !== "EUTROFICO").length;
+
   return (
     <div>
       <EscutaAoVivo modulo="avaliacao-nutricional" />
@@ -41,30 +64,29 @@ export default async function AvaliacaoNutricionalPage() {
         subtitle="Peso, altura e classificação de IMC por idade (curva da OMS) — histórico por aluno"
       />
 
+      {alunos.length > 0 && (
+        <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <MetricCard icon={Users} tone="cat1" value={alunos.length} label="Alunos matriculados" />
+          <MetricCard icon={ClipboardCheck} tone="success" value={avaliados} label="Já avaliados" />
+          <MetricCard icon={ClipboardX} tone="warning" value={pendentes} label="Sem avaliação ainda" />
+          <MetricCard icon={TriangleAlert} tone="critical" value={emAlerta} label="Fora do eutrófico" subtext="Baixo peso, sobrepeso ou obesidade" />
+        </div>
+      )}
+
       <Card>
-        <Table>
-          <TableHead>
-            <Th>Aluno</Th>
-            <Th>Turma</Th>
-            <Th>Idade</Th>
-            <Th>Última avaliação</Th>
-            <Th>Diagnóstico</Th>
-          </TableHead>
-          <TableBody>
-            {alunos.length === 0 && <TableEmpty colSpan={5}>Nenhum aluno matriculado ainda.</TableEmpty>}
-            {alunos.map((a) => {
-              const ultima = a.avaliacoesNutricionais[0];
-              const resultado =
-                ultima && a.sexo
-                  ? avaliarImcPorIdade({
-                      sexo: a.sexo,
-                      dataNascimento: a.dataNascimento,
-                      dataAvaliacao: ultima.data,
-                      pesoKg: ultima.pesoKg,
-                      alturaCm: ultima.alturaCm,
-                    })
-                  : null;
-              return (
+        {alunos.length === 0 ? (
+          <EmptyState title="Nenhum aluno matriculado ainda" subtitle="Assim que houver matrícula ativa, ela aparece aqui pra avaliação." />
+        ) : (
+          <Table>
+            <TableHead>
+              <Th>Aluno</Th>
+              <Th>Turma</Th>
+              <Th>Idade</Th>
+              <Th>Última avaliação</Th>
+              <Th>Diagnóstico</Th>
+            </TableHead>
+            <TableBody>
+              {linhas.map(({ aluno: a, ultima, resultado }) => (
                 <Tr key={a.id}>
                   <Td>
                     <Link href={`/avaliacao-nutricional/${a.id}`} className="flex items-center gap-2.5 font-medium text-cda-text hover:text-cda-blue">
@@ -74,10 +96,10 @@ export default async function AvaliacaoNutricionalPage() {
                   </Td>
                   <Td>{a.matriculas[0]?.turma.nome ?? "—"}</Td>
                   <Td>{formatarIdade(a.dataNascimento, hoje)}</Td>
-                  <Td>{ultima ? formatarData(ultima.data) : <span className="text-cda-text3">Nenhuma ainda</span>}</Td>
+                  <Td>{ultima ? formatarData(ultima.data) : <span className="text-cda-text3">—</span>}</Td>
                   <Td>
                     {!ultima ? (
-                      <span className="text-cda-text3">—</span>
+                      <Badge variant="neutral">Sem avaliação</Badge>
                     ) : !a.sexo ? (
                       <span className="text-xs text-cda-amber">Falta &quot;Sexo&quot; no Censo</span>
                     ) : resultado ? (
@@ -85,10 +107,10 @@ export default async function AvaliacaoNutricionalPage() {
                     ) : null}
                   </Td>
                 </Tr>
-              );
-            })}
-          </TableBody>
-        </Table>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </Card>
     </div>
   );
