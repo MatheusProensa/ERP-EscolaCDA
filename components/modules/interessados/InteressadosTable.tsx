@@ -11,7 +11,7 @@ import { FilterSelect } from "@/components/ui/FilterSelect";
 import { IconButton } from "@/components/ui/IconButton";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge, BADGE_VARIANT_STYLE, type BadgeVariant } from "@/components/ui/Badge";
-import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty } from "@/components/ui/Table";
+import { Table, TableHead, Th, TableBody, Tr, Td, TableEmpty, ThActions, TdActions } from "@/components/ui/Table";
 import { showToast } from "@/components/ui/Toast";
 import { formatarData, formatarTelefone, linkWhatsApp } from "@/lib/utils";
 import { STATUS_INTERESSADO_BADGE } from "@/lib/statusVisual";
@@ -178,7 +178,7 @@ export function InteressadosTable({
             <Th>1º contato</Th>
             <Th>Visita</Th>
             <Th>Status</Th>
-            <Th>{""}</Th>
+            <ThActions />
           </TableHead>
           <TableBody>
             {filtrados.length === 0 && <TableEmpty colSpan={8}>Nenhum interessado encontrado.</TableEmpty>}
@@ -271,11 +271,11 @@ export function InteressadosTable({
                       <Badge variant={badge.variant}>{badge.label}</Badge>
                     )}
                   </Td>
-                  <Td>
+                  <TdActions>
                     {podeEditar && (
                       <IconButton icon={Pencil} label="Editar interessado" size="sm" onClick={() => setEditando(item)} />
                     )}
-                  </Td>
+                  </TdActions>
                 </Tr>
               );
             })}
