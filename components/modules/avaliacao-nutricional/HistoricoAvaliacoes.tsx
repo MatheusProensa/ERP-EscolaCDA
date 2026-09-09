@@ -88,44 +88,74 @@ export function HistoricoAvaliacoes({
         />
       </Card>
 
-      <Card>
-        <Table>
-          <TableHead>
-            <Th>Data</Th>
-            <Th>Peso</Th>
-            <Th>Altura</Th>
-            <Th>IMC</Th>
-            <Th>Diagnóstico</Th>
-            {podeEditar && <ThActions />}
-          </TableHead>
-          <TableBody>
-            {calculadas.length === 0 && (
-              <TableEmpty colSpan={podeEditar ? 6 : 5}>Nenhuma avaliação registrada ainda.</TableEmpty>
-            )}
+      {calculadas.length === 0 ? (
+        <Card>
+          <TableEmpty colSpan={1}>Nenhuma avaliação registrada ainda.</TableEmpty>
+        </Card>
+      ) : (
+        <>
+          {/* Celular: cartões — mesma razão da lista de alunos (page.tsx), 5-6
+              colunas não cabem legíveis numa tela estreita. */}
+          <Card className="divide-y divide-cda-border sm:hidden">
             {calculadas.map((a) => (
-              <Tr key={a.id}>
-                <Td className="font-medium">{formatarData(a.data)}</Td>
-                <Td>{a.pesoKg} kg</Td>
-                <Td>{a.alturaCm} cm</Td>
-                <Td>{a.resultado.imc.toFixed(1)}</Td>
-                <Td>
-                  <div className="flex flex-col gap-1">
-                    <ClassificacaoBadge classificacao={a.resultado.classificacao} />
-                    {a.resultado.foraDaFaixaEtaria && (
-                      <span className="text-xs text-cda-text3">Fora da faixa 0-5 anos — aproximado</span>
-                    )}
-                  </div>
-                </Td>
-                {podeEditar && (
-                  <TdActions>
+              <div key={a.id} className="flex items-start justify-between gap-3 p-4">
+                <div className="min-w-0">
+                  <p className="font-medium text-cda-text">{formatarData(a.data)}</p>
+                  <p className="mt-0.5 text-xs text-cda-text2">
+                    {a.pesoKg}kg · {a.alturaCm}cm · IMC {a.resultado.imc.toFixed(1)}
+                  </p>
+                  {a.resultado.foraDaFaixaEtaria && (
+                    <p className="mt-0.5 text-xs text-cda-text3">Fora da faixa 0-5 anos — aproximado</p>
+                  )}
+                </div>
+                <div className="flex shrink-0 items-center gap-1">
+                  <ClassificacaoBadge classificacao={a.resultado.classificacao} />
+                  {podeEditar && (
                     <IconButton icon={Trash2} label="Excluir avaliação" variant="danger" onClick={() => setExcluindo(a)} />
-                  </TdActions>
-                )}
-              </Tr>
+                  )}
+                </div>
+              </div>
             ))}
-          </TableBody>
-        </Table>
-      </Card>
+          </Card>
+
+          {/* Computador: tabela normal */}
+          <Card className="hidden sm:block">
+            <Table>
+              <TableHead>
+                <Th>Data</Th>
+                <Th>Peso</Th>
+                <Th>Altura</Th>
+                <Th>IMC</Th>
+                <Th>Diagnóstico</Th>
+                {podeEditar && <ThActions />}
+              </TableHead>
+              <TableBody>
+                {calculadas.map((a) => (
+                  <Tr key={a.id}>
+                    <Td className="font-medium">{formatarData(a.data)}</Td>
+                    <Td>{a.pesoKg} kg</Td>
+                    <Td>{a.alturaCm} cm</Td>
+                    <Td>{a.resultado.imc.toFixed(1)}</Td>
+                    <Td>
+                      <div className="flex flex-col gap-1">
+                        <ClassificacaoBadge classificacao={a.resultado.classificacao} />
+                        {a.resultado.foraDaFaixaEtaria && (
+                          <span className="text-xs text-cda-text3">Fora da faixa 0-5 anos — aproximado</span>
+                        )}
+                      </div>
+                    </Td>
+                    {podeEditar && (
+                      <TdActions>
+                        <IconButton icon={Trash2} label="Excluir avaliação" variant="danger" onClick={() => setExcluindo(a)} />
+                      </TdActions>
+                    )}
+                  </Tr>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </>
+      )}
 
       <ConfirmDialog
         open={!!excluindo}

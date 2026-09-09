@@ -73,45 +73,81 @@ export default async function AvaliacaoNutricionalPage() {
         </div>
       )}
 
-      <Card>
-        {alunos.length === 0 ? (
+      {alunos.length === 0 ? (
+        <Card>
           <EmptyState title="Nenhum aluno matriculado ainda" subtitle="Assim que houver matrícula ativa, ela aparece aqui pra avaliação." />
-        ) : (
-          <Table>
-            <TableHead>
-              <Th>Aluno</Th>
-              <Th>Turma</Th>
-              <Th>Idade</Th>
-              <Th>Última avaliação</Th>
-              <Th>Diagnóstico</Th>
-            </TableHead>
-            <TableBody>
-              {linhas.map(({ aluno: a, ultima, resultado }) => (
-                <Tr key={a.id}>
-                  <Td>
-                    <Link href={`/avaliacao-nutricional/${a.id}`} className="flex items-center gap-2.5 font-medium text-cda-text hover:text-cda-blue">
-                      <Avatar nome={a.nome} foto={a.foto} size="sm" />
-                      {a.nome}
-                    </Link>
-                  </Td>
-                  <Td>{a.matriculas[0]?.turma.nome ?? "—"}</Td>
-                  <Td>{formatarIdade(a.dataNascimento, hoje)}</Td>
-                  <Td>{ultima ? formatarData(ultima.data) : <span className="text-cda-text3">—</span>}</Td>
-                  <Td>
-                    {!ultima ? (
-                      <Badge variant="neutral">Sem avaliação</Badge>
-                    ) : !a.sexo ? (
-                      <span className="text-xs text-cda-amber">Falta &quot;Sexo&quot; no Censo</span>
-                    ) : resultado ? (
-                      <ClassificacaoBadge classificacao={resultado.classificacao} />
-                    ) : null}
-                  </Td>
-                </Tr>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </Card>
+        </Card>
+      ) : (
+        <>
+          {/* Celular: lista de cartões (mesma info da tabela, sem precisar rolar de lado
+              pra ler 5 colunas numa tela de ~360px). Computador continua com a tabela —
+              ver Table.tsx, que já embrulha em overflow-x-auto como rede de segurança. */}
+          <Card className="divide-y divide-cda-border p-0 sm:hidden">
+            {linhas.map(({ aluno: a, ultima, resultado }) => (
+              <Link
+                key={a.id}
+                href={`/avaliacao-nutricional/${a.id}`}
+                className="flex items-center gap-3 p-4 active:bg-cda-bg"
+              >
+                <Avatar nome={a.nome} foto={a.foto} size="md" />
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-cda-text">{a.nome}</p>
+                  <p className="truncate text-xs text-cda-text3">
+                    {a.matriculas[0]?.turma.nome ?? "—"} · {formatarIdade(a.dataNascimento, hoje)}
+                  </p>
+                </div>
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  {!ultima ? (
+                    <Badge variant="neutral">Sem avaliação</Badge>
+                  ) : !a.sexo ? (
+                    <span className="text-right text-xs text-cda-amber">Falta &quot;Sexo&quot;</span>
+                  ) : resultado ? (
+                    <ClassificacaoBadge classificacao={resultado.classificacao} />
+                  ) : null}
+                  {ultima && <span className="text-[11px] text-cda-text3">{formatarData(ultima.data)}</span>}
+                </div>
+              </Link>
+            ))}
+          </Card>
+
+          {/* Computador: tabela normal */}
+          <Card className="hidden sm:block">
+            <Table>
+              <TableHead>
+                <Th>Aluno</Th>
+                <Th>Turma</Th>
+                <Th>Idade</Th>
+                <Th>Última avaliação</Th>
+                <Th>Diagnóstico</Th>
+              </TableHead>
+              <TableBody>
+                {linhas.map(({ aluno: a, ultima, resultado }) => (
+                  <Tr key={a.id}>
+                    <Td>
+                      <Link href={`/avaliacao-nutricional/${a.id}`} className="flex items-center gap-2.5 font-medium text-cda-text hover:text-cda-blue">
+                        <Avatar nome={a.nome} foto={a.foto} size="sm" />
+                        {a.nome}
+                      </Link>
+                    </Td>
+                    <Td>{a.matriculas[0]?.turma.nome ?? "—"}</Td>
+                    <Td>{formatarIdade(a.dataNascimento, hoje)}</Td>
+                    <Td>{ultima ? formatarData(ultima.data) : <span className="text-cda-text3">—</span>}</Td>
+                    <Td>
+                      {!ultima ? (
+                        <Badge variant="neutral">Sem avaliação</Badge>
+                      ) : !a.sexo ? (
+                        <span className="text-xs text-cda-amber">Falta &quot;Sexo&quot; no Censo</span>
+                      ) : resultado ? (
+                        <ClassificacaoBadge classificacao={resultado.classificacao} />
+                      ) : null}
+                    </Td>
+                  </Tr>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        </>
+      )}
     </div>
   );
 }
