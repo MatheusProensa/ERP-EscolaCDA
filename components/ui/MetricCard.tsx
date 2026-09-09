@@ -79,9 +79,15 @@ export function MetricCard({
 }) {
   const cor = TONE_COLOR[tone];
   return (
+    // Celular: linha compacta (ícone pequeno + texto do lado) — a versão empilhada
+    // e centralizada (computador, a partir do sm:) tomava quase a tela toda com 4
+    // cards, empurrando a lista de verdade pra baixo da dobra (achado do dono,
+    // set/2026, olhando o Avaliação Nutricional no próprio celular). Subtexto e
+    // sparkline somem no celular — não cabem legíveis nesse formato mais estreito,
+    // e o rótulo já basta pra bater o olho; os dois continuam no computador.
     <Card
       href={href}
-      className="group relative flex flex-col items-center p-5 text-center transition-[transform,border-color,box-shadow] duration-500 ease-out hover:scale-[1.015] hover:[border-color:var(--metric-border)] hover:shadow-[0_4px_16px_-4px_var(--metric-border)]"
+      className="group relative flex items-center gap-3 p-3 transition-[transform,border-color,box-shadow] duration-500 ease-out sm:flex-col sm:p-5 sm:text-center hover:sm:scale-[1.015] hover:[border-color:var(--metric-border)] hover:shadow-[0_4px_16px_-4px_var(--metric-border)]"
       style={{ ["--metric-border" as string]: `color-mix(in oklch, ${cor} 45%, transparent)` }}
     >
       {/* NOVO: badge agora é um selinho encostado no canto do círculo do ícone
@@ -92,25 +98,27 @@ export function MetricCard({
           {badge}
         </Badge>
       )}
-      <div className="relative mb-4">
+      <div className="relative shrink-0 sm:mb-4">
         {/* NOVO: chip circular com anel + sombra suave na cor do tom, em vez do
             quadrado com tinta chapada — visual mais rico/"premium". */}
         <div
-          className="flex h-12 w-12 items-center justify-center rounded-full border transition-transform duration-500 ease-out group-hover:scale-110"
+          className="flex h-9 w-9 items-center justify-center rounded-full border transition-transform duration-500 ease-out group-hover:scale-110 sm:h-12 sm:w-12"
           style={{
             backgroundColor: `color-mix(in oklch, ${cor} 14%, white)`,
             borderColor: `color-mix(in oklch, ${cor} 22%, transparent)`,
             boxShadow: `0 2px 8px color-mix(in oklch, ${cor} 18%, transparent)`,
           }}
         >
-          <Icon className="h-[22px] w-[22px]" style={{ color: cor }} strokeWidth={2.25} />
+          <Icon className="h-[18px] w-[18px] sm:h-[22px] sm:w-[22px]" style={{ color: cor }} strokeWidth={2.25} />
         </div>
       </div>
-      <div className="text-2xl font-bold text-cda-text">{value}</div>
-      <div className="mt-1 text-sm text-cda-text2">{label}</div>
-      {subtext && <div className="mt-0.5 text-xs text-cda-text3">{subtext}</div>}
+      <div className="min-w-0 flex-1 sm:flex-none">
+        <div className="text-lg font-bold text-cda-text sm:text-2xl">{value}</div>
+        <div className="text-xs leading-tight text-cda-text2 sm:mt-1 sm:text-sm sm:leading-normal">{label}</div>
+        {subtext && <div className="hidden text-xs text-cda-text3 sm:mt-0.5 sm:block">{subtext}</div>}
+      </div>
       {trend && (
-        <div className="mt-3 w-full">
+        <div className="hidden sm:mt-3 sm:block sm:w-full">
           <Sparkline points={trend} color={cor} />
         </div>
       )}
