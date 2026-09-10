@@ -57,7 +57,12 @@ async function embarcarImagemPublica(pdf: PDFDocument, arquivo: string): Promise
   try {
     const bytes = await readFile(path.join(process.cwd(), "public", arquivo));
     return await pdf.embedPng(bytes);
-  } catch {
+  } catch (err) {
+    // Bug real (set/2026): falha aqui virava fallback silencioso (fundo navy
+    // sólido em vez do gradiente, por exemplo) sem deixar rastro nenhum nos
+    // logs — quem via o PDF não tinha como saber SE uma imagem faltou ou se
+    // era assim mesmo. Loga pra dar pra investigar pelos logs da Vercel.
+    console.error(`[gerarCalendarioPdf] Falha ao embutir "${arquivo}":`, err);
     return null;
   }
 }
