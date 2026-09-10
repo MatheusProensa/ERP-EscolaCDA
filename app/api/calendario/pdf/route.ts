@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { gerarCalendarioPdf, type EventoCalendarioPdf } from "@/lib/gerarCalendarioPdf";
+import { gerarCalendarioSimplesPdf } from "@/lib/gerarCalendarioSimplesPdf";
 import { respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import { MESES } from "@/lib/calendario";
 
@@ -10,7 +11,13 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
 
   const params = req.nextUrl.searchParams;
-  const modo = params.get("modo") === "mes" ? "mes" : "ano";
+  // "equipe" (padrão) é o pôster completo de sempre — cor por categoria,
+  // mês clicável, legenda que nunca corta nada. "simples" é o modelo novo
+  // (out/2026, pedido do dono depois de conversar com a diretora): folha
+  // única pro mural/família, réplica de uma referência real do Canva — só
+  // existe pro ano inteiro (não tem "mês específico" nesse modelo).
+  const modelo = params.get("modelo") === "simples" ? "simples" : "equipe";
+  const modo = modelo === "simples" ? "ano" : params.get("modo") === "mes" ? "mes" : "ano";
   const ano = Number(params.get("ano"));
   const mes = Number(params.get("mes"));
 
@@ -46,10 +53,13 @@ export async function GET(req: NextRequest) {
     eventosPorMes.set(chave, lista);
   }
 
-  const dataUri = await gerarCalendarioPdf({ meses, eventosPorMes });
+  const dataUri =
+    modelo === "simples" ? await gerarCalendarioSimplesPdf({ ano, eventosPorMes }) : await gerarCalendarioPdf({ meses, eventosPorMes });
 
   const nomeArquivo =
-    modo === "mes" ? nomeArquivoPdf("Calendario", `${MESES[mes - 1]} ${ano}`) : nomeArquivoPdf("Calendario", `${ano}`);
+    modo === "mes"
+      ? nomeArquivoPdf("Calendario", `${MESES[mes - 1]} ${ano}`)
+      : nomeArquivoPdf("Calendario", modelo === "simples" ? `${ano} Simples` : `${ano}`);
 
   return respostaPDF(dataUri, nomeArquivo);
 }

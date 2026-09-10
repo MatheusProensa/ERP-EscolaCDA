@@ -1086,7 +1086,7 @@ function desenharPagina(
 // usa o logo liso ("logo-cda-sem-selo.png", extraído do próprio pôster
 // original) porque em 2027 a escola não completa mais 15 anos. Só 2026 leva
 // o selo; qualquer outro ano (passado ou futuro) usa o logo liso.
-const ANO_ANIVERSARIO_15 = 2026;
+export const ANO_ANIVERSARIO_15 = 2026;
 
 export async function gerarCalendarioPdf({
   meses,
