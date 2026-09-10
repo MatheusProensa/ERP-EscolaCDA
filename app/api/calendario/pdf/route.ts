@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
   const eventos = await prisma.eventoCalendario.findMany({
     where: { data: { gte: inicio, lt: fim } },
-    select: { titulo: true, data: true },
+    select: { titulo: true, data: true, categoria: true },
     orderBy: { data: "asc" },
   });
 

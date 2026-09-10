@@ -3,7 +3,7 @@ import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { truncar } from "@/lib/gerarRelatorioPdf";
-import { MESES } from "@/lib/calendario";
+import { MESES, CATEGORIAS_EVENTO, corCategoriaHex } from "@/lib/calendario";
 
 /**
  * Design único de calendário em PDF — cópia fiel do pôster que o Marketing
@@ -17,9 +17,18 @@ import { MESES } from "@/lib/calendario";
  *
  * Vale tanto pro ano completo (12 meses numa página só) quanto pra um único
  * mês exportado avulso — mesmo formato pros dois casos, pedido do dono pra
- * não ter dois formatos de calendário no sistema. Não mostra categoria por
- * cor (só destaca o dia em amarelo + legenda embaixo de cada mês, igual à
- * referência) — pensado pra imprimir/pendurar, não pra consulta detalhada.
+ * não ter dois formatos de calendário no sistema.
+ *
+ * Cor por categoria (set/2026): o destaque do dia na grade e a pílula da
+ * legenda usam a cor da CATEGORIA do evento (COR_CATEGORIA_HEX, a mesma
+ * paleta da tela /calendario) em vez de amarelo fixo pra todo mundo — com
+ * muito evento por mês (pedido real do dono), cor por categoria é o que
+ * deixa o pôster escaneável à distância em vez de virar uma parede de texto
+ * amarelo. Um dia com mais de um evento de categorias diferentes usa a cor
+ * da categoria que vem primeiro em ordem alfabética (ver corDoDia) — é uma
+ * simplificação deliberada: é pôster de parede pra visão geral, não relatório
+ * detalhado, e o caso de dois eventos de categorias diferentes no mesmo dia é
+ * raro. Uma legenda de categorias (cor + nome) fica no rodapé da página.
  */
 
 const PAGE_W = 595; // A4 retrato (pt) — os outros PDFs do sistema são paisagem;
@@ -54,7 +63,29 @@ const LEGENDA_HEADROOM = 8 + MAX_LEGENDA_ITENS * 9; // piso mínimo de espaço p
 const GAP = 14;
 const ESCALA_MAXIMA = 2.4; // trava pra "1 mês" não virar um cartão gigante desproporcional
 
-export type EventoCalendarioPdf = { titulo: string; data: Date };
+export type EventoCalendarioPdf = { titulo: string; data: Date; categoria: string };
+
+/** Converte hex ("#f5a524") pro formato 0-1 que rgb() do pdf-lib espera. */
+function hexParaRgb(hex: string): ReturnType<typeof rgb> {
+  const limpo = hex.replace("#", "");
+  const r = parseInt(limpo.substring(0, 2), 16) / 255;
+  const g = parseInt(limpo.substring(2, 4), 16) / 255;
+  const b = parseInt(limpo.substring(4, 6), 16) / 255;
+  return rgb(r, g, b);
+}
+
+/** Escolhe branco ou o navy do pôster pro texto em cima de uma cor sólida de
+ * categoria — algumas são claras (laranja), outras escuras (roxo, magenta),
+ * então não dá pra cravar uma cor de texto só (luminância relativa, fórmula
+ * padrão de contraste percebido). */
+function corTextoContraste(hex: string): ReturnType<typeof rgb> {
+  const limpo = hex.replace("#", "");
+  const r = parseInt(limpo.substring(0, 2), 16);
+  const g = parseInt(limpo.substring(2, 4), 16);
+  const b = parseInt(limpo.substring(4, 6), 16);
+  const luminancia = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luminancia > 150 ? NAVY_TEXT : WHITE;
+}
 
 async function embarcarImagemPublica(pdf: PDFDocument, arquivo: string): Promise<PDFImage | null> {
   try {
@@ -119,20 +150,25 @@ function quebrarEm2Linhas(fonte: PDFFont, texto: string, tamanho: number, largur
   return [linha1, truncar(fonte, resto, tamanho, larguraMax)];
 }
 
-/** Agrupa dias consecutivos com o mesmo título num intervalo só, pra legenda
- * não repetir a mesma frase várias vezes (ex.: recesso de vários dias, hoje
- * gravado como um EventoCalendario por dia). Rótulo do intervalo segue a
- * referência: 2 dias usa hífen ("11-12"), 3 ou mais usa "A" por extenso
- * ("21 A 30") — confirmado nos dois casos reais do pôster original. */
-function agruparEventosDoMes(eventos: { dia: number; titulo: string }[]): { rotulo: string; titulo: string }[] {
+/** Agrupa dias consecutivos com o MESMO título E categoria num intervalo só,
+ * pra legenda não repetir a mesma frase várias vezes (ex.: recesso de vários
+ * dias, hoje gravado como um EventoCalendario por dia). Rótulo do intervalo
+ * segue a referência: 2 dias usa hífen ("11-12"), 3 ou mais usa "A" por
+ * extenso ("21 A 30") — confirmado nos dois casos reais do pôster original.
+ * Exige a mesma categoria pra juntar (não só o mesmo título) porque agora a
+ * pílula do item é colorida pela categoria — juntar dias de categorias
+ * diferentes teria que escolher uma cor só e mentir sobre a outra. */
+function agruparEventosDoMes(
+  eventos: { dia: number; titulo: string; categoria: string }[]
+): { rotulo: string; titulo: string; categoria: string }[] {
   const ordenados = [...eventos].sort((a, b) => a.dia - b.dia || a.titulo.localeCompare(b.titulo, "pt-BR"));
-  const grupos: { inicio: number; fim: number; titulo: string }[] = [];
+  const grupos: { inicio: number; fim: number; titulo: string; categoria: string }[] = [];
   for (const e of ordenados) {
     const ultimo = grupos[grupos.length - 1];
-    if (ultimo && ultimo.titulo === e.titulo && e.dia === ultimo.fim + 1) {
+    if (ultimo && ultimo.titulo === e.titulo && ultimo.categoria === e.categoria && e.dia === ultimo.fim + 1) {
       ultimo.fim = e.dia;
     } else {
-      grupos.push({ inicio: e.dia, fim: e.dia, titulo: e.titulo });
+      grupos.push({ inicio: e.dia, fim: e.dia, titulo: e.titulo, categoria: e.categoria });
     }
   }
   return grupos.map((g) => {
@@ -140,8 +176,23 @@ function agruparEventosDoMes(eventos: { dia: number; titulo: string }[]): { rotu
     if (g.fim !== g.inicio) {
       rotulo = g.fim - g.inicio === 1 ? `${g.inicio}-${g.fim}` : `${g.inicio} A ${g.fim}`;
     }
-    return { rotulo, titulo: g.titulo };
+    return { rotulo, titulo: g.titulo, categoria: g.categoria };
   });
+}
+
+/** Cor de cada dia do mês que tem evento, pro destaque na grade — um dia
+ * às vezes tem mais de um evento (possivelmente de categorias diferentes);
+ * usa a categoria alfabeticamente primeira pra decidir a cor desse dia (ver
+ * comentário no topo do arquivo sobre essa simplificação ser deliberada). */
+function corPorDiaDoMes(eventos: { dia: number; categoria: string }[]): Map<number, string> {
+  const porDia = new Map<number, string>();
+  const ordenados = [...eventos].sort((a, b) => a.categoria.localeCompare(b.categoria, "pt-BR"));
+  for (const e of ordenados) {
+    if (!porDia.has(e.dia)) porDia.set(e.dia, e.categoria);
+  }
+  const cores = new Map<number, string>();
+  for (const [dia, categoria] of porDia) cores.set(dia, corCategoriaHex(categoria).dot);
+  return cores;
 }
 
 /** Caminho SVG (origem no canto superior-esquerdo, Y pra baixo — convenção
@@ -188,7 +239,7 @@ function desenharMiniMes(
     ano,
     fonte,
     fonteBold,
-    eventosDoDia,
+    corPorDia,
     eventosDoMes,
   }: {
     x: number;
@@ -200,8 +251,8 @@ function desenharMiniMes(
     ano: number;
     fonte: PDFFont;
     fonteBold: PDFFont;
-    eventosDoDia: Set<number>;
-    eventosDoMes: { dia: number; titulo: string }[];
+    corPorDia: Map<number, string>;
+    eventosDoMes: { dia: number; titulo: string; categoria: string }[];
   }
 ) {
   const e = escala;
@@ -252,11 +303,13 @@ function desenharMiniMes(
   });
 
   // Destaque dos dias com evento — UMA barra arredondada por sequência de
-  // dias seguidos na mesma linha da grade (não um círculo por dia). Réplica
-  // fiel da referência: "11-12" ou "21-30" viram uma barra contínua (cantos
-  // arredondados só nas pontas de fora, reta entre os dias do meio — é um
-  // retângulo arredondado só, não vários círculos emendados), e um dia
-  // avulso vira um quadrado arredondado do tamanho da própria célula.
+  // dias seguidos NA MESMA COR na mesma linha da grade (não um círculo por
+  // dia). Réplica fiel da referência: "11-12" ou "21-30" viram uma barra
+  // contínua (cantos arredondados só nas pontas de fora, reta entre os dias
+  // do meio — é um retângulo arredondado só, não vários círculos emendados),
+  // e um dia avulso vira um quadrado arredondado do tamanho da própria
+  // célula. A cor agora vem da categoria (corPorDia) — a barra só emenda
+  // dias consecutivos que têm a MESMA cor; muda a categoria, quebra a barra.
   const margemH = colunaW * 0.1;
   const margemV = linhaH * 0.14;
   const raioDestaque = Math.min(colunaW, linhaH) * 0.22;
@@ -265,14 +318,15 @@ function desenharMiniMes(
     let ci = 0;
     while (ci < linha.length) {
       const dia = linha[ci];
-      if (dia === null || !eventosDoDia.has(dia)) {
+      const cor = dia === null ? undefined : corPorDia.get(dia);
+      if (dia === null || !cor) {
         ci++;
         continue;
       }
       let fimRun = ci;
       while (fimRun + 1 < linha.length) {
         const proximo = linha[fimRun + 1];
-        if (proximo === null || !eventosDoDia.has(proximo)) break;
+        if (proximo === null || corPorDia.get(proximo) !== cor) break;
         fimRun++;
       }
       const xIni = x + ci * colunaW + margemH;
@@ -283,7 +337,7 @@ function desenharMiniMes(
         largura: xFim - xIni,
         altura: linhaH - 2 * margemV,
         raio: raioDestaque,
-        color: YELLOW,
+        color: hexParaRgb(cor),
       });
       ci = fimRun + 1;
     }
@@ -297,13 +351,19 @@ function desenharMiniMes(
       const cx = x + ci * colunaW + colunaW / 2;
       const texto = String(dia);
       const l = fonte.widthOfTextAtSize(texto, fonteDiaTam);
-      pagina.drawText(texto, { x: cx - l / 2, y: yLinha + linhaH / 2 - fonteDiaTam * 0.35, size: fonteDiaTam, font: fonte, color: NAVY_TEXT });
+      // Algumas cores de categoria são escuras (roxo, magenta) — texto navy
+      // fixo ficaria ilegível em cima delas, por isso usa a mesma escolha de
+      // contraste da pílula da legenda pros dias destacados.
+      const cor = corPorDia.get(dia);
+      const corTexto = cor ? corTextoContraste(cor) : NAVY_TEXT;
+      pagina.drawText(texto, { x: cx - l / 2, y: yLinha + linhaH / 2 - fonteDiaTam * 0.35, size: fonteDiaTam, font: fonte, color: corTexto });
     });
   });
 
-  // Legenda — cada item com uma pílula amarela (dia/intervalo) + o título em
-  // caixa alta, igual à referência (que quebra título comprido em 2 linhas
-  // em vez de cortar). Pára de desenhar (resumindo o resto num "+N eventos")
+  // Legenda — cada item com uma pílula colorida pela CATEGORIA do evento
+  // (dia/intervalo) + o título em caixa alta, igual à referência (que quebra
+  // título comprido em 2 linhas em vez de cortar). Pára de desenhar (resumindo
+  // o resto num "+N eventos")
   // quando o espaço reservado pro cartão acaba — nenhum cartão nunca invade
   // o espaço do vizinho, não importa quantos eventos o mês real tenha.
   const gruposTodos = agruparEventosDoMes(eventosDoMes).slice(0, MAX_LEGENDA_ITENS + 2);
@@ -336,14 +396,15 @@ function desenharMiniMes(
     const margemNecessaria = ehUltimoGrupo ? 0 : alturaResumoReservada; // último item não precisa deixar espaço pro resumo, porque não vai sobrar resto nenhum
     if (yLegenda - alturaItem < yFimDisponivel + margemNecessaria) break; // não cabe mais (+ resumo, se houver resto) — vira "+N eventos"
 
-    desenharPilula(pagina, { x, yTopo: yLegenda, largura: chipLargura, altura: chipAltura, color: YELLOW });
+    const corCategoria = corCategoriaHex(g.categoria).dot;
+    desenharPilula(pagina, { x, yTopo: yLegenda, largura: chipLargura, altura: chipAltura, color: hexParaRgb(corCategoria) });
     const chipTextoLargura = fonteBold.widthOfTextAtSize(g.rotulo, fonteLegendaTam);
     pagina.drawText(g.rotulo, {
       x: x + (chipLargura - chipTextoLargura) / 2,
       y: yLegenda + deslocamentoLinhaBase,
       size: fonteLegendaTam,
       font: fonteBold,
-      color: NAVY_TEXT,
+      color: corTextoContraste(corCategoria),
     });
     // A pílula tem fundo próprio (texto navy fica legível nela), mas o
     // título ao lado fica direto sobre o fundo navy da página — bug real
@@ -417,7 +478,7 @@ function desenharPagina(
     totalPaginas,
   }: {
     meses: { ano: number; mes: number }[];
-    eventosPorMes: Map<string, { dia: number; titulo: string }[]>;
+    eventosPorMes: Map<string, { dia: number; titulo: string; categoria: string }[]>;
     fonte: PDFFont;
     fonteBold: PDFFont;
     fonteTitulo: PDFFont;
@@ -487,7 +548,8 @@ function desenharPagina(
   // o espaço que sobra vira headroom EXTRA pra legenda (mais eventos visíveis
   // por mês antes de precisar resumir em "+N eventos").
   const gridTopo = PAGE_H - 112;
-  const gridBaseMax = 92; // espaço reservado pro rodapé (logo + ilustração)
+  const LEGENDA_CATEGORIAS_H = 18; // faixa reservada pra legenda de categorias, colada acima do rodapé
+  const gridBaseMax = 92 + LEGENDA_CATEGORIAS_H; // espaço reservado pro rodapé (legenda + logo + ilustração)
   const availW = PAGE_W - MARGEM_LATERAL * 2;
   const availH = gridTopo - gridBaseMax;
 
@@ -521,8 +583,41 @@ function desenharPagina(
     const x = inicioX + col * (cardW + gap);
     const yTopo = inicioYTopo - row * (linhaAltura + gap);
     const eventosDoMes = eventosPorMes.get(`${ano}-${mes}`) ?? [];
-    const eventosDoDia = new Set(eventosDoMes.map((ev) => ev.dia));
-    desenharMiniMes(pagina, { x, yTopo, largura: cardW, escala, legendaHeadroom, mes, ano, fonte, fonteBold, eventosDoDia, eventosDoMes });
+    const corPorDia = corPorDiaDoMes(eventosDoMes);
+    desenharMiniMes(pagina, { x, yTopo, largura: cardW, escala, legendaHeadroom, mes, ano, fonte, fonteBold, corPorDia, eventosDoMes });
+  });
+
+  // Legenda de categorias — uma fileira com bolinha + nome de cada categoria
+  // (mesma paleta da tela /calendario), colada acima do rodapé. Sem isso a
+  // cor por categoria na grade/legenda de cada mês não tem como ser lida.
+  const legendaCategoriasFonteTam = 6.5;
+  const legendaCategoriasDot = 5;
+  const itensLegendaCategorias = CATEGORIAS_EVENTO.map((cat) => ({
+    cat,
+    largura: legendaCategoriasDot + 4 + fonte.widthOfTextAtSize(cat, legendaCategoriasFonteTam),
+  }));
+  const espacoEntreItens = 12;
+  const larguraTotalLegenda =
+    itensLegendaCategorias.reduce((soma, it) => soma + it.largura, 0) + espacoEntreItens * (itensLegendaCategorias.length - 1);
+  let xLegendaCategorias = (PAGE_W - larguraTotalLegenda) / 2;
+  const yLegendaCategorias = gridBaseMax - LEGENDA_CATEGORIAS_H / 2;
+  itensLegendaCategorias.forEach(({ cat, largura: larguraItem }) => {
+    const corDot = corCategoriaHex(cat).dot;
+    pagina.drawEllipse({
+      x: xLegendaCategorias + legendaCategoriasDot / 2,
+      y: yLegendaCategorias - legendaCategoriasFonteTam * 0.32,
+      xScale: legendaCategoriasDot / 2,
+      yScale: legendaCategoriasDot / 2,
+      color: hexParaRgb(corDot),
+    });
+    pagina.drawText(cat, {
+      x: xLegendaCategorias + legendaCategoriasDot + 4,
+      y: yLegendaCategorias - legendaCategoriasFonteTam * 0.72,
+      size: legendaCategoriasFonteTam,
+      font: fonte,
+      color: rgb(0.75, 0.8, 0.92),
+    });
+    xLegendaCategorias += larguraItem + espacoEntreItens;
   });
 
   // Rodapé: ilustração (canto inferior esquerdo, sangrando) + logo (centralizada)
@@ -565,11 +660,11 @@ export async function gerarCalendarioPdf({
   const decoracaoRodape = await embarcarImagemPublica(pdf, "calendario-decoracao-rodape.png");
 
   // Agrupa eventos por dia dentro de cada mês (chave "ano-mes")
-  const eventosPorMesDia = new Map<string, { dia: number; titulo: string }[]>();
+  const eventosPorMesDia = new Map<string, { dia: number; titulo: string; categoria: string }[]>();
   for (const [chave, eventos] of eventosPorMes) {
     eventosPorMesDia.set(
       chave,
-      eventos.map((e) => ({ dia: e.data.getUTCDate(), titulo: e.titulo }))
+      eventos.map((e) => ({ dia: e.data.getUTCDate(), titulo: e.titulo, categoria: e.categoria }))
     );
   }
 
