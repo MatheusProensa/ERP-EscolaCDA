@@ -150,6 +150,30 @@ function quebrarEm2Linhas(fonte: PDFFont, texto: string, tamanho: number, largur
   return [linha1, truncar(fonte, resto, tamanho, larguraMax)];
 }
 
+/** Igual a quebrarEm2Linhas, mas SEM limite de linhas — usada na legenda
+ * completa da página de detalhe (desenharLegendaCompleta), que promete
+ * nunca cortar/resumir evento nenhum. Bug real (achado testando abril/2026,
+ * 39 eventos: "FIM DO CADASTRO DAS PROFS. NO SITE DO SUPER AUTOR" e outros
+ * títulos longos): o cap de 2 linhas do quebrarEm2Linhas cortava com "..."
+ * mesmo no tamanho mínimo de fonte/coluna, contradizendo a própria razão
+ * desta página existir. */
+function quebrarLinhas(fonte: PDFFont, texto: string, tamanho: number, larguraMax: number): string[] {
+  const palavras = texto.split(" ");
+  const linhas: string[] = [];
+  let atual = "";
+  for (const palavra of palavras) {
+    const tentativa = atual ? `${atual} ${palavra}` : palavra;
+    if (fonte.widthOfTextAtSize(tentativa, tamanho) > larguraMax && atual) {
+      linhas.push(atual);
+      atual = palavra;
+    } else {
+      atual = tentativa;
+    }
+  }
+  if (atual) linhas.push(atual);
+  return linhas.length > 0 ? linhas : [""];
+}
+
 /** Agrupa dias consecutivos com o MESMO título E categoria num intervalo só,
  * pra legenda não repetir a mesma frase várias vezes (ex.: recesso de vários
  * dias, hoje gravado como um EventoCalendario por dia). Rótulo do intervalo
@@ -539,22 +563,33 @@ function desenharLegendaCompleta(
     return;
   }
 
-  const fonteTam = 7.5;
-  const alturaLinha = fonteTam + 3.5;
-  const chipAltura = 10.5;
-  const deslocamentoLinhaBase = -chipAltura + (chipAltura - fonteTam) / 2 + 1;
-  const gapItem = 4;
-  const gapColuna = 14;
+  // Métricas da legenda (fonte/chip/espaçamento) na escala 1× — escaladas
+  // abaixo pra decidir o tamanho final (ver ESCALAS_LEGENDA).
+  const metricas = (escala: number) => {
+    const fonteTam = 7.5 * escala;
+    const chipAltura = 10.5 * escala;
+    return {
+      fonteTam,
+      chipAltura,
+      alturaLinha: fonteTam + 3.5 * escala,
+      deslocamentoLinhaBase: -chipAltura + (chipAltura - fonteTam) / 2 + 1 * escala,
+      gapItem: 4 * escala,
+      gapColuna: 14 * escala,
+      chipMin: 16 * escala,
+      chipPad: 7 * escala,
+    };
+  };
+  type Metricas = ReturnType<typeof metricas>;
 
-  const alturasParaLargura = (largColuna: number) =>
+  const alturasParaLargura = (largColuna: number, m: Metricas) =>
     grupos.map((g) => {
-      const chipLargura = Math.max(16, fonteBold.widthOfTextAtSize(g.rotulo, fonteTam) + 7);
-      const linhasTitulo = quebrarEm2Linhas(fonteBold, g.titulo.toUpperCase(), fonteTam, largColuna - chipLargura - 7);
-      return Math.max(chipAltura, linhasTitulo.length * alturaLinha);
+      const chipLargura = Math.max(m.chipMin, fonteBold.widthOfTextAtSize(g.rotulo, m.fonteTam) + m.chipPad);
+      const linhasTitulo = quebrarLinhas(fonteBold, g.titulo.toUpperCase(), m.fonteTam, largColuna - chipLargura - m.chipPad);
+      return Math.max(m.chipAltura, linhasTitulo.length * m.alturaLinha);
     });
 
-  // Quantas colunas usar — dois bugs reais encontrados revisando com o
-  // calendário completo, corrigidos juntos aqui:
+  // Quantas colunas usar E em que tamanho — três bugs reais encontrados
+  // revisando com o calendário completo, corrigidos juntos aqui:
   // 1) Uma coluna só com MUITOS eventos (ex.: 34 em março) virava parede de
   //    texto alinhada à esquerda com metade da página vazia ("tá muito
   //    amador"). Corrigido com um piso de colunas baseado na QUANTIDADE de
@@ -568,37 +603,96 @@ function desenharLegendaCompleta(
   //    caminho diferente. Corrigido calculando a altura TOTAL do conteúdo
   //    primeiro e DIVIDINDO pelo número de colunas — cada coluna recebe uma
   //    fatia-alvo do conteúdo, não "o que sobrar" depois que a 1ª encheu.
+  // 3) Mesmo balanceada, uma legenda com poucos eventos (ex.: 14 em
+  //    fevereiro) sobrava MUITO espaço vazio embaixo — o texto sempre
+  //    desenhava no tamanho fixo de 7.5pt, então um mês leve ficava com um
+  //    blocão pequeno de texto boiando no meio de uma página grande ("veja
+  //    quanto espaço vazio em baixo", pedido real do dono). Corrigido do
+  //    mesmo jeito que a moldura da página já faz com a grade (escala
+  //    adaptativa): tenta fontes/espaçamentos cada vez MAIORES (mantendo o
+  //    piso de colunas do item 1) até achar a maior que ainda cabe no
+  //    espaço todo (`altura`) — só cai pro tamanho padrão se nem isso coubesse.
   const minimoColunasPorQuantidade = (n: number) => (n > 36 ? 4 : n > 22 ? 3 : n > 10 ? 2 : 1);
-  let colunas = Math.max(1, minimoColunasPorQuantidade(grupos.length));
-  let largColuna = (largura - (colunas - 1) * gapColuna) / colunas;
-  let alturas = alturasParaLargura(largColuna);
-  let alturaTotal = alturas.reduce((soma, h) => soma + h + gapItem, 0) - gapItem;
-  while (alturaTotal / colunas > altura && colunas < 4) {
-    colunas++;
-    largColuna = (largura - (colunas - 1) * gapColuna) / colunas;
-    alturas = alturasParaLargura(largColuna);
-    alturaTotal = alturas.reduce((soma, h) => soma + h + gapItem, 0) - gapItem;
+  const ESCALAS_LEGENDA = [2.3, 2.15, 2, 1.85, 1.7, 1.55, 1.4, 1.25, 1.1, 1];
+  const colunasMinimo = Math.max(1, minimoColunasPorQuantidade(grupos.length));
+
+  let colunas = colunasMinimo;
+  let m: Metricas = metricas(1);
+  let largColuna = 0;
+  let alturas: number[] = [];
+  let alturaTotal = 0;
+  let achou = false;
+  // Loop rotulado: precisa parar o `for` de fora assim que achar um encaixe,
+  // não só o `for` de dentro — bug real (achado testando fevereiro/2026):
+  // sem o `break buscaColunas`, o `colunas++` do laço de fora rodava mais
+  // uma vez ANTES de checar `!achou`, então o layout final sempre usava uma
+  // coluna a mais do que a que realmente coube — a coluna extra vazava pra
+  // fora da margem direita da página (texto cortado na borda).
+  buscaColunas: for (colunas = colunasMinimo; colunas <= 4; colunas++) {
+    for (const escala of ESCALAS_LEGENDA) {
+      const candidata = metricas(escala);
+      const largTeste = (largura - (colunas - 1) * candidata.gapColuna) / colunas;
+      const alturasTeste = alturasParaLargura(largTeste, candidata);
+      const totalTeste = alturasTeste.reduce((soma, h) => soma + h + candidata.gapItem, 0) - candidata.gapItem;
+      if (totalTeste / colunas <= altura) {
+        m = candidata;
+        largColuna = largTeste;
+        alturas = alturasTeste;
+        alturaTotal = totalTeste;
+        achou = true;
+        break buscaColunas;
+      }
+    }
   }
+  if (!achou) {
+    // Nem no tamanho mínimo (escala 1×) com 4 colunas coube tudo — caso
+    // extremo (mês com dezenas e dezenas de eventos); desenha do jeito que
+    // couber mesmo assim, nunca escondendo evento nenhum em "+N eventos"
+    // (é o motivo desta página existir).
+    colunas = 4;
+    m = metricas(1);
+    largColuna = (largura - (colunas - 1) * m.gapColuna) / colunas;
+    alturas = alturasParaLargura(largColuna, m);
+    alturaTotal = alturas.reduce((soma, h) => soma + h + m.gapItem, 0) - m.gapItem;
+  }
+  const { fonteTam, chipAltura, gapItem, gapColuna, deslocamentoLinhaBase, chipPad, chipMin, alturaLinha } = m;
   const alturaAlvoPorColuna = alturaTotal / colunas;
 
-  let col = 0;
-  let y = yTopo;
-  let alturaUsadaNaColuna = 0;
+  // Pré-passo: decide em qual coluna cada item cai (preenchimento
+  // balanceado, mesma regra de sempre) e mede a altura de conteúdo real de
+  // cada coluna — usado a seguir só pra CENTRALIZAR o bloco verticalmente
+  // no espaço disponível (`altura`) em vez de grudar tudo no topo. Mesmo
+  // com a fonte maior do passo anterior, um mês leve ainda pode sobrar
+  // bastante vão vazio; centralizar divide essa folga em cima/embaixo, o
+  // que lê como projetado — não como "o conteúdo acabou aqui" (queixa real
+  // do dono, "veja quanto espaço vazio em baixo").
+  const colDoItem: number[] = [];
+  const alturaPorColuna = new Array(colunas).fill(0);
+  {
+    let col = 0;
+    let usada = 0;
+    grupos.forEach((_, i) => {
+      const h = alturas[i];
+      if (usada + h > alturaAlvoPorColuna && col < colunas - 1) {
+        col++;
+        usada = 0;
+      }
+      usada += h + gapItem;
+      colDoItem.push(col);
+      alturaPorColuna[col] = usada - gapItem;
+    });
+  }
+  const alturaConteudo = Math.max(...alturaPorColuna);
+  const yInicio = yTopo - Math.max(0, (altura - alturaConteudo) / 2);
+  const yPorColuna: number[] = new Array(colunas).fill(yInicio);
+
   grupos.forEach((g, i) => {
     const h = alturas[i];
-    // Passa pra próxima coluna ao ultrapassar a fatia-alvo dela (não só ao
-    // estourar a altura disponível da página) — é isso que faz o conteúdo
-    // se espalhar pelas colunas de verdade, equilibrado, em vez de empilhar
-    // tudo na primeira coluna só porque cabia.
-    if (alturaUsadaNaColuna + h > alturaAlvoPorColuna && col < colunas - 1) {
-      col++;
-      y = yTopo;
-      alturaUsadaNaColuna = 0;
-    }
-    alturaUsadaNaColuna += h + gapItem;
+    const col = colDoItem[i];
+    const y = yPorColuna[col];
     const xCol = x + col * (largColuna + gapColuna);
     const corCategoria = corCategoriaHex(g.categoria).dot;
-    const chipLargura = Math.max(16, fonteBold.widthOfTextAtSize(g.rotulo, fonteTam) + 7);
+    const chipLargura = Math.max(chipMin, fonteBold.widthOfTextAtSize(g.rotulo, fonteTam) + chipPad);
     desenharPilula(pagina, { x: xCol, yTopo: y, largura: chipLargura, altura: chipAltura, color: hexParaRgb(corCategoria) });
     const chipTextoLargura = fonteBold.widthOfTextAtSize(g.rotulo, fonteTam);
     pagina.drawText(g.rotulo, {
@@ -608,17 +702,17 @@ function desenharLegendaCompleta(
       font: fonteBold,
       color: corTextoContraste(corCategoria),
     });
-    const linhasTitulo = quebrarEm2Linhas(fonteBold, g.titulo.toUpperCase(), fonteTam, largColuna - chipLargura - 7);
+    const linhasTitulo = quebrarLinhas(fonteBold, g.titulo.toUpperCase(), fonteTam, largColuna - chipLargura - chipPad);
     linhasTitulo.forEach((linha, li) => {
       pagina.drawText(linha, {
-        x: xCol + chipLargura + 7,
+        x: xCol + chipLargura + chipPad,
         y: y + deslocamentoLinhaBase - li * alturaLinha,
         size: fonteTam,
         font: fonteBold,
         color: WHITE,
       });
     });
-    y -= h + gapItem;
+    yPorColuna[col] = y - h - gapItem;
   });
 }
 
