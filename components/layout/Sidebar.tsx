@@ -23,6 +23,7 @@ import {
   Barcode,
   History,
   Ruler,
+  PartyPopper,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -68,6 +69,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Chaves", href: "/chaves", icon: KeyRound },
       { label: "Documentos", href: "/documentos", icon: FileText },
       { label: "Estoque", href: "/estoque", icon: Package },
+      { label: "Festa da Família", href: "/festa-familia", icon: PartyPopper },
       { label: "Funcionários", href: "/funcionarios", icon: UserCog },
       { label: "Horários da Equipe", href: "/horarios-equipe", icon: CalendarClock },
       { label: "Interessados", href: "/interessados", icon: UserPlus },
