@@ -33,18 +33,25 @@ const HEADER_BLUE = rgb(0x29 / 255, 0xab / 255, 0xe2 / 255);
 const CARD_RADIUS = 10;
 const PAD_CARD = 14; // respiro entre a borda do cartão branco e o conteúdo
 
-// Medidas apertadas de propósito (igual antes do redesenho): o pedido é
-// caber os 2 padrões de semana (1&3 e 2&4) de um público inteiro numa
-// página só — cada pt economizado aqui é o que decide isso. FONT_SIZE
-// menor que antes (8→8.5) reduz quantas células quebram linha sozinhas
-// dentro da coluna estreita, que é o que mais come espaço vertical com
-// cardápio de verdade (achado real testando com conteúdo denso).
-const LABEL_COL_W = 104;
-const LINE_H = 8.5;
-const FONT_SIZE = 8;
-const PAD_X = 4;
-const PAD_Y = 2.5;
-const HEAD_ROW_H = 22;
+/**
+ * Densidade da tabela — o pedido é caber os 2 padrões de semana (1&3 e 2&4)
+ * de um público inteiro numa página só, mas quanto espaço cada célula
+ * precisa varia MUITO de público pra público (achado real, set/2026: um
+ * público com 4 tipos de refeição — manhã/almoço/tarde 1/tarde 2 — e
+ * células de 5-6 itens cada estourava até a densidade mais apertada antes
+ * disso, sobrando só a ÚLTIMA linha da 2ª tabela sozinha numa 2ª página,
+ * desperdiçando ela quase inteira). Em vez de uma densidade fixa, calcula a
+ * altura que CADA público precisaria em cada nível abaixo (do mais espaçoso
+ * pro mais compacto) e usa o primeiro que couber — a maioria dos públicos
+ * (conteúdo mais enxuto) continua no nível normal, só o público realmente
+ * denso aperta de verdade. Ver escolherDensidade.
+ */
+type Densidade = { fontSize: number; lineH: number; padX: number; padY: number; headRowH: number; labelColW: number };
+const DENSIDADES: Densidade[] = [
+  { fontSize: 8, lineH: 8.5, padX: 4, padY: 2.5, headRowH: 22, labelColW: 104 }, // normal
+  { fontSize: 7.3, lineH: 7.6, padX: 3.5, padY: 2, headRowH: 19, labelColW: 96 }, // compacta
+  { fontSize: 6.6, lineH: 6.9, padX: 3, padY: 1.6, headRowH: 16, labelColW: 88 }, // ultracompacta
+];
 
 const DIA_LABEL_PDF: Record<string, string> = {
   SEGUNDA: "Segunda",
@@ -267,28 +274,72 @@ export async function gerarCardapioPdf({
     y = CARD_TOPO - PAD_CARD;
   }
 
-  const colW = (CARD_W - PAD_CARD * 2 - LABEL_COL_W) / 5;
+  const colWPara = (dens: Densidade) => (CARD_W - PAD_CARD * 2 - dens.labelColW) / 5;
 
-  function desenharCabecalhoTabela(dias: DiaCardapio[]) {
+  // Altura que uma tabela (padrão de semana) ocupa numa densidade dada, sem
+  // desenhar nada — usada tanto pra ESCOLHER a densidade (dry-run, ver
+  // escolherDensidade) quanto, na hora de desenhar de verdade, precisa bater
+  // exatamente com o que desenharCabecalhoTabela/o loop de linhas fazem.
+  function alturaTabela(dias: DiaCardapio[], dens: Densidade): number {
+    if (dias.length === 0 || dias.every((d) => d.refeicoes.length === 0)) return 28;
+    const colW = colWPara(dens);
+    let altura = dens.headRowH;
+    const refeicoesBase = dias[0].refeicoes;
+    refeicoesBase.forEach((refBase) => {
+      const linhasPorDia = dias.map((dia) => {
+        const ref = dia.refeicoes.find((r) => r.tipo === refBase.tipo);
+        return quebrarLinhas(fonte, ref?.itens || "—", dens.fontSize, colW - dens.padX * 2);
+      });
+      const maxLinhas = Math.max(1, ...linhasPorDia.map((l) => l.length));
+      altura += maxLinhas * dens.lineH + dens.padY * 2;
+    });
+    return altura;
+  }
+
+  function alturaPublico(publico: PublicoParaPdf, dens: Densidade): number {
+    let altura = publico.notaPublico ? 17 + 13 : 0;
+    altura += 6 + alturaTabela(publico.semanas.impar, dens) + 7;
+    altura += 6 + alturaTabela(publico.semanas.par, dens) + 7;
+    return altura;
+  }
+
+  // Escolhe a densidade mais espaçosa (das 3 em DENSIDADES, da mais solta
+  // pra mais apertada) que faz o público inteiro caber numa página só —
+  // bug real (set/2026): com densidade fixa, um público de conteúdo bem
+  // cheio (4 tipos de refeição, células de várias linhas) sobrava só a
+  // ÚLTIMA linha da 2ª tabela numa 2ª página sozinha, quase em branco. Se
+  // nem a mais apertada couber (caso extremo), usa ela mesmo assim — melhor
+  // que ela sozinha, o resto ainda pagina normalmente pelo fallback abaixo.
+  function escolherDensidade(publico: PublicoParaPdf): Densidade {
+    const disponivel = CARD_ALTURA - PAD_CARD;
+    for (const candidata of DENSIDADES) {
+      if (alturaPublico(publico, candidata) <= disponivel) return candidata;
+    }
+    return DENSIDADES[DENSIDADES.length - 1];
+  }
+
+  function desenharCabecalhoTabela(dias: DiaCardapio[], dens: Densidade) {
+    const colW = colWPara(dens);
     const x0 = CARD_X + PAD_CARD;
-    pagina.drawRectangle({ x: x0, y: y - HEAD_ROW_H, width: CARD_W - PAD_CARD * 2, height: HEAD_ROW_H, color: HEADER_BLUE });
-    pagina.drawText("REFEIÇÃO", { x: x0 + PAD_X, y: y - HEAD_ROW_H / 2 - 2.5, size: 7, font: fonteBold, color: WHITE });
-    let x = x0 + LABEL_COL_W;
+    pagina.drawRectangle({ x: x0, y: y - dens.headRowH, width: CARD_W - PAD_CARD * 2, height: dens.headRowH, color: HEADER_BLUE });
+    pagina.drawText("REFEIÇÃO", { x: x0 + dens.padX, y: y - dens.headRowH / 2 - 2.5, size: dens.fontSize - 1, font: fonteBold, color: WHITE });
+    let x = x0 + dens.labelColW;
     for (const dia of dias) {
       // As duas linhas (dia + datas) precisam de ~9pt de distância entre as
       // bases pra não sobrepor — data um pouco menor que o dia, ainda legível.
-      pagina.drawText((DIA_LABEL_PDF[dia.dia] ?? dia.dia).toUpperCase(), { x: x + PAD_X, y: y - 9, size: 7.5, font: fonteBold, color: WHITE });
+      pagina.drawText((DIA_LABEL_PDF[dia.dia] ?? dia.dia).toUpperCase(), { x: x + dens.padX, y: y - 9, size: dens.fontSize - 0.5, font: fonteBold, color: WHITE });
       if (dia.datas.length > 0) {
-        pagina.drawText(dia.datas.join(" · "), { x: x + PAD_X, y: y - 18, size: 7, font: fonte, color: rgb(0.9, 0.95, 1) });
+        pagina.drawText(dia.datas.join(" · "), { x: x + dens.padX, y: y - 18, size: dens.fontSize - 1, font: fonte, color: rgb(0.9, 0.95, 1) });
       }
       x += colW;
     }
-    y -= HEAD_ROW_H;
+    y -= dens.headRowH;
   }
 
-  function desenharPainel(titulo: string, dias: DiaCardapio[], tituloPublico: string) {
+  function desenharPainel(titulo: string, dias: DiaCardapio[], tituloPublico: string, dens: Densidade) {
+    const colW = colWPara(dens);
     const x0 = CARD_X + PAD_CARD;
-    if (y - 6 - HEAD_ROW_H - (LINE_H * 2 + PAD_Y * 2) < CARD_BASE + PAD_CARD) novaPagina(tituloPublico);
+    if (y - 6 - dens.headRowH - (dens.lineH * 2 + dens.padY * 2) < CARD_BASE + PAD_CARD) novaPagina(tituloPublico);
 
     pagina.drawText(titulo, { x: x0, y, size: 9, font: fonteBold, color: NAVY });
     y -= 6;
@@ -303,14 +354,14 @@ export async function gerarCardapioPdf({
       return;
     }
 
-    desenharCabecalhoTabela(dias);
+    desenharCabecalhoTabela(dias, dens);
 
     const refeicoesBase = dias[0].refeicoes;
     refeicoesBase.forEach((refBase, idx) => {
       const corHex = COR_REFEICAO_HEX[refBase.tipo] ?? COR_REFEICAO_PADRAO;
       const linhasPorDia = dias.map((dia) => {
         const ref = dia.refeicoes.find((r) => r.tipo === refBase.tipo);
-        return quebrarLinhas(fonte, ref?.itens || "—", FONT_SIZE, colW - PAD_X * 2);
+        return quebrarLinhas(fonte, ref?.itens || "—", dens.fontSize, colW - dens.padX * 2);
       });
       // 1 linha mínima, não 2: label + horário ficam lado a lado na mesma
       // linha agora (não mais empilhados) — a maioria das refeições reais
@@ -318,33 +369,33 @@ export async function gerarCardapioPdf({
       // linha só, e forçar 2 linhas de altura pra essas desperdiçava um
       // bocado de espaço que faz falta com cardápio cheio.
       const maxLinhas = Math.max(1, ...linhasPorDia.map((l) => l.length));
-      const alturaLinha = maxLinhas * LINE_H + PAD_Y * 2;
+      const alturaLinha = maxLinhas * dens.lineH + dens.padY * 2;
 
       if (y - alturaLinha < CARD_BASE + PAD_CARD) {
         novaPagina(tituloPublico);
-        desenharCabecalhoTabela(dias);
+        desenharCabecalhoTabela(dias, dens);
       }
 
       pagina.drawRectangle({ x: x0, y: y - alturaLinha, width: CARD_W - PAD_CARD * 2, height: alturaLinha, color: misturarComBranco(corHex, 0.06) });
       pagina.drawRectangle({ x: x0, y: y - alturaLinha, width: 2.5, height: alturaLinha, color: corSolida(corHex) });
 
       const labelTexto = linhaUnica(refBase.label);
-      pagina.drawText(labelTexto, { x: x0 + PAD_X + 4, y: y - PAD_Y - 7, size: 8, font: fonteBold, color: BLACK });
+      pagina.drawText(labelTexto, { x: x0 + dens.padX + 4, y: y - dens.padY - 7, size: dens.fontSize, font: fonteBold, color: BLACK });
       if (refBase.horario) {
-        const labelLargura = fonteBold.widthOfTextAtSize(labelTexto, 8);
+        const labelLargura = fonteBold.widthOfTextAtSize(labelTexto, dens.fontSize);
         pagina.drawText(`· ${linhaUnica(refBase.horario)}`, {
-          x: x0 + PAD_X + 4 + labelLargura + 3,
-          y: y - PAD_Y - 7,
-          size: 7,
+          x: x0 + dens.padX + 4 + labelLargura + 3,
+          y: y - dens.padY - 7,
+          size: dens.fontSize - 1,
           font: fonte,
           color: TEXT2,
         });
       }
 
-      let x = x0 + LABEL_COL_W;
+      let x = x0 + dens.labelColW;
       linhasPorDia.forEach((linhas) => {
         linhas.forEach((linha, li) => {
-          pagina.drawText(linha, { x: x + PAD_X, y: y - PAD_Y - 8 - li * LINE_H, size: FONT_SIZE, font: fonte, color: BLACK });
+          pagina.drawText(linha, { x: x + dens.padX, y: y - dens.padY - 8 - li * dens.lineH, size: dens.fontSize, font: fonte, color: BLACK });
         });
         x += colW;
       });
@@ -359,6 +410,7 @@ export async function gerarCardapioPdf({
   }
 
   for (const publico of publicos) {
+    const dens = escolherDensidade(publico);
     novaPagina(publico.label);
 
     if (publico.notaPublico) {
@@ -376,8 +428,8 @@ export async function gerarCardapioPdf({
       // na caixa (erro já cometido antes). 13pt garante uns 5-6pt de vão real.
       y -= alturaNota + 13;
     }
-    desenharPainel("Semanas 1 e 3", publico.semanas.impar, publico.label);
-    desenharPainel("Semanas 2 e 4", publico.semanas.par, publico.label);
+    desenharPainel("Semanas 1 e 3", publico.semanas.impar, publico.label, dens);
+    desenharPainel("Semanas 2 e 4", publico.semanas.par, publico.label, dens);
   }
 
   const bytes = await pdf.save();
