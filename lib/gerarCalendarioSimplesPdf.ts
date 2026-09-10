@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { MESES } from "@/lib/calendario";
 import { desenharPilula, desenharRetanguloArredondado } from "@/lib/pdfFormas";
-import { ANO_ANIVERSARIO_15, type EventoCalendarioPdf } from "@/lib/gerarCalendarioPdf";
+import { ANO_ANIVERSARIO_15 } from "@/lib/gerarCalendarioPdf";
 
 /**
  * Segundo modelo de calendário em PDF — "folha única", pedido do dono depois
@@ -14,13 +14,13 @@ import { ANO_ANIVERSARIO_15, type EventoCalendarioPdf } from "@/lib/gerarCalenda
  * o modelo mais simples/enxuto (mural, comunicação com família): réplica
  * fiel de uma referência real feita no Canva pela própria escola
  * ("cda_calendario_2027_folha_única.pdf", enviada pelo dono) — fundo
- * branco, 12 mini-meses numa grade 4x3 numa página só, sem cor por
- * categoria (só um destaque amarelo pro dia com evento).
+ * branco, 12 mini-meses numa grade 4x3 numa página só.
  *
- * SEM lista de eventos embaixo dos meses (pedido do dono, revisando a
- * primeira versão: "pode deixar aquele sem os eventos" — o texto dos
- * eventos fica só no modelo colorido/equipe; esse aqui é só o calendário
- * visual com os dias marcados).
+ * SEM NADA de evento — nem lista, nem destaque de dia (pedido do dono,
+ * revisando duas vezes: primeiro "pode deixar aquele sem os eventos" tirou
+ * a listinha; depois, insistindo "quero que tu tire os eventos", tirou
+ * também a bolinha amarela que marcava o dia — o evento fica só no modelo
+ * colorido/equipe; esse aqui é só a grade do calendário, pura).
  *
  * A decoração do canto superior direito (círculo navy + traços tracejados)
  * foi extraída da referência (pdftoppm em alta resolução + recorte) porque
@@ -89,9 +89,9 @@ function diasDoMes(ano: number, mes: number): (number | null)[][] {
 }
 
 /** Um mini-mês completo: cabeçalho navy (nome do mês) + corpo azul-claro
- * (dias da semana + grade), com uma bolinha amarela nos dias com evento —
- * sem listar o que é o evento (pedido do dono: a lista de eventos fica só
- * no modelo colorido/equipe; esse aqui é só o calendário visual). */
+ * (dias da semana + grade) — sem NENHUMA marcação de evento (pedido do
+ * dono: nem lista, nem destaque de dia; isso fica só no modelo colorido/
+ * equipe, esse aqui é só a grade do calendário, pura). */
 function desenharCardMes(
   pagina: PDFPage,
   {
@@ -101,7 +101,6 @@ function desenharCardMes(
     ano,
     fonte,
     fonteBold,
-    diasComEvento,
   }: {
     x: number;
     yTopo: number;
@@ -109,7 +108,6 @@ function desenharCardMes(
     ano: number;
     fonte: PDFFont;
     fonteBold: PDFFont;
-    diasComEvento: Set<number>;
   }
 ) {
   // Cabeçalho navy — pílula com cantos totalmente arredondados, nome do mês
@@ -157,30 +155,20 @@ function desenharCardMes(
     linha.forEach((dia, ci) => {
       if (dia === null) return;
       const cx = x + ci * colunaW + colunaW / 2;
-      if (diasComEvento.has(dia)) {
-        const raio = Math.min(colunaW, linhaH) * 0.32;
-        pagina.drawEllipse({ x: cx, y: yLinha + linhaH / 2, xScale: raio, yScale: raio, color: AMARELO_S });
-      }
       const texto = String(dia);
       const l = fonte.widthOfTextAtSize(texto, fonteDiaTam);
       pagina.drawText(texto, {
         x: cx - l / 2,
         y: yLinha + linhaH / 2 - fonteDiaTam * 0.35,
         size: fonteDiaTam,
-        font: diasComEvento.has(dia) ? fonteBold : fonte,
+        font: fonte,
         color: NAVY_S,
       });
     });
   });
 }
 
-export async function gerarCalendarioSimplesPdf({
-  ano,
-  eventosPorMes,
-}: {
-  ano: number;
-  eventosPorMes: Map<string, EventoCalendarioPdf[]>;
-}): Promise<string> {
+export async function gerarCalendarioSimplesPdf({ ano }: { ano: number }): Promise<string> {
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
   pdf.setTitle(`Calendário ${ano} — Escola CDA`);
@@ -263,10 +251,7 @@ export async function gerarCalendarioSimplesPdf({
     const x = MARGEM_LATERAL + col * (COL_W + GAP_COL);
     const yTopo = gridTopo - row * rowPitch - folgaPorLinha;
 
-    const eventosDoMes = (eventosPorMes.get(`${ano}-${mes}`) ?? []).map((e) => ({ dia: e.data.getUTCDate(), titulo: e.titulo }));
-    const diasComEvento = new Set(eventosDoMes.map((e) => e.dia));
-
-    desenharCardMes(pagina, { x, yTopo, mes, ano, fonte, fonteBold, diasComEvento });
+    desenharCardMes(pagina, { x, yTopo, mes, ano, fonte, fonteBold });
   }
 
   const bytes = await pdf.save();
