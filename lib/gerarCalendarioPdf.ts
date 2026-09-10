@@ -47,8 +47,10 @@ const GRADE_LINHAS_FIXAS = 6;
 const LINHA_H = 10.5;
 const GRADE_ALTURA = CABECALHO_SEMANA_H + GRADE_LINHAS_FIXAS * LINHA_H;
 const CARD_H = HEADER_H + GRADE_ALTURA; // altura fixa do cartão branco (sem a legenda, que fica fora/embaixo)
-const MAX_LEGENDA_ITENS = 6; // acima disso, agrupa o resto num "+N eventos"
-const LEGENDA_HEADROOM = 8 + MAX_LEGENDA_ITENS * 9; // espaço reservado pra legenda embaixo do cartão
+const MAX_LEGENDA_ITENS = 8; // acima disso, agrupa o resto num "+N eventos"
+const LEGENDA_HEADROOM = 8 + MAX_LEGENDA_ITENS * 9; // piso mínimo de espaço pra legenda — desenharPagina
+// normalmente passa um valor MAIOR que esse (ver legendaHeadroom em desenharPagina): esse aqui só
+// entra em jogo como fallback pra layouts hipotéticos fora de 1/3/6/12 meses onde sobra pouca altura.
 const GAP = 14;
 const ESCALA_MAXIMA = 2.4; // trava pra "1 mês" não virar um cartão gigante desproporcional
 
@@ -181,6 +183,7 @@ function desenharMiniMes(
     yTopo,
     largura,
     escala,
+    legendaHeadroom,
     mes,
     ano,
     fonte,
@@ -192,6 +195,7 @@ function desenharMiniMes(
     yTopo: number;
     largura: number;
     escala: number;
+    legendaHeadroom: number;
     mes: number;
     ano: number;
     fonte: PDFFont;
@@ -305,7 +309,7 @@ function desenharMiniMes(
   const gruposTodos = agruparEventosDoMes(eventosDoMes).slice(0, MAX_LEGENDA_ITENS + 2);
   const fonteLegendaTam = 6.5 * e;
   const alturaLinha = (fonteLegendaTam + 2.5 * e) * 1;
-  const yFimDisponivel = yTopo - cardH - LEGENDA_HEADROOM * e;
+  const yFimDisponivel = yTopo - cardH - legendaHeadroom;
   let yLegenda = yTopo - cardH - 10 * e;
   let desenhados = 0;
   // Altura da pílula/"slot" de cada item e deslocamento do topo do slot (yLegenda)
@@ -315,12 +319,22 @@ function desenharMiniMes(
   // de base), ficando ~1 linha alto demais e sobrepondo o texto do item anterior.
   const chipAltura = 9 * e;
   const deslocamentoLinhaBase = -chipAltura + (chipAltura - fonteLegendaTam) / 2 + 1 * e;
+  // Bug real (set/2026, achado testando com dados reais): o corte "cabe mais um
+  // item?" não reservava espaço pra linha "+N eventos" que vem DEPOIS do loop —
+  // o último item entrava mesmo deixando só uma sobra menor que uma linha de
+  // texto, e o "+N eventos" acabava desenhado já dentro da faixa de espaçamento
+  // até o próximo cartão, sobrepondo o cabeçalho azul do mês seguinte. Reserva
+  // a altura de uma linha (mesmo orçamento de um item de 1 linha) pro resumo
+  // ANTES de aceitar mais um item — se não sobrar isso, já vira "+N eventos".
+  const alturaResumoReservada = alturaLinha;
   for (const g of gruposTodos) {
     const chipLargura = Math.max(14 * e, fonteBold.widthOfTextAtSize(g.rotulo, fonteLegendaTam) + 6 * e);
     const larguraTitulo = largura - chipLargura - 6 * e;
     const linhasTitulo = quebrarEm2Linhas(fonteBold, g.titulo.toUpperCase(), fonteLegendaTam, larguraTitulo);
     const alturaItem = Math.max(9 * e, linhasTitulo.length * alturaLinha);
-    if (yLegenda - alturaItem < yFimDisponivel - 8 * e) break; // não cabe mais — vira "+N eventos"
+    const ehUltimoGrupo = desenhados === gruposTodos.length - 1;
+    const margemNecessaria = ehUltimoGrupo ? 0 : alturaResumoReservada; // último item não precisa deixar espaço pro resumo, porque não vai sobrar resto nenhum
+    if (yLegenda - alturaItem < yFimDisponivel + margemNecessaria) break; // não cabe mais (+ resumo, se houver resto) — vira "+N eventos"
 
     desenharPilula(pagina, { x, yTopo: yLegenda, largura: chipLargura, altura: chipAltura, color: YELLOW });
     const chipTextoLargura = fonteBold.widthOfTextAtSize(g.rotulo, fonteLegendaTam);
@@ -337,14 +351,14 @@ function desenharMiniMes(
     // cima de fundo navy, invisível. Aqui precisa ser branco.
     linhasTitulo.forEach((linha, li) => {
       pagina.drawText(linha, {
-        x: x + chipLargura + 5 * e,
+        x: x + chipLargura + 6 * e,
         y: yLegenda + deslocamentoLinhaBase - li * alturaLinha,
         size: fonteLegendaTam,
         font: fonteBold,
         color: WHITE,
       });
     });
-    yLegenda -= alturaItem + 3 * e;
+    yLegenda -= alturaItem + 4 * e;
     desenhados++;
   }
   const restantes = gruposTodos.length - desenhados;
@@ -461,23 +475,45 @@ function desenharPagina(
   }
 
   const MARGEM_LATERAL = 24;
-  const gridTopoMax = PAGE_H - 150;
+  // Bug real (set/2026, reportado com o PDF gerado em mãos): sobrava uma faixa
+  // enorme de navy vazio entre o subtítulo e a grade de meses. Duas causas
+  // somadas: (1) a margem de topo reservada (gridTopoMax) era maior do que o
+  // subtítulo realmente precisa, e (2) a grade ficava CENTRALIZADA dentro da
+  // faixa disponível sempre que a altura não era o fator limitante — e nesse
+  // pôster a largura é que limita a escala dos cartões em todos os layouts
+  // do modal (1/3/6/12 meses), então sempre sobrava altura, e metade dela
+  // virava margem morta em cima (empurrando a grade pra baixo) e a outra
+  // metade em baixo. Agora a grade começa colada logo abaixo do subtítulo, e
+  // o espaço que sobra vira headroom EXTRA pra legenda (mais eventos visíveis
+  // por mês antes de precisar resumir em "+N eventos").
+  const gridTopo = PAGE_H - 112;
   const gridBaseMax = 92; // espaço reservado pro rodapé (logo + ilustração)
   const availW = PAGE_W - MARGEM_LATERAL * 2;
-  const availH = gridTopoMax - gridBaseMax;
+  const availH = gridTopo - gridBaseMax;
 
   const { cols, rows } = layoutPara(meses.length);
   const naiveW = cols * CARD_W + (cols - 1) * GAP;
-  const naiveH = rows * (CARD_H + LEGENDA_HEADROOM) + (rows - 1) * GAP;
-  const escala = Math.min(availW / naiveW, availH / naiveH, ESCALA_MAXIMA);
+  // A escala do cartão depende só da largura disponível (é sempre o fator
+  // limitante nos layouts expostos no modal — ver comentário acima); a altura
+  // não entra mais aqui, ela decide o headroom da legenda logo abaixo.
+  const escala = Math.min(availW / naiveW, ESCALA_MAXIMA);
 
   const cardW = CARD_W * escala;
-  const linhaAltura = (CARD_H + LEGENDA_HEADROOM) * escala;
+  const cardHEscalado = CARD_H * escala;
   const gap = GAP * escala;
+  // Altura de linha da grade: cartão + o que sobrar de availH pra legenda,
+  // dividido entre as linhas — nunca menos que o piso mínimo (LEGENDA_HEADROOM),
+  // pra sobrar espaço decente mesmo em layouts hipotéticos com muitas linhas.
+  const alturaDisponivelPorLinha = (availH - (rows - 1) * gap) / rows;
+  const legendaHeadroom = Math.max(LEGENDA_HEADROOM * escala, alturaDisponivelPorLinha - cardHEscalado);
+  const linhaAltura = cardHEscalado + legendaHeadroom;
   const gridW = cols * cardW + (cols - 1) * gap;
   const gridH = rows * linhaAltura + (rows - 1) * gap;
   const inicioX = MARGEM_LATERAL + (availW - gridW) / 2;
-  const inicioYTopo = gridTopoMax - (availH - gridH) / 2;
+  // Só sobra alguma folga verticalmente se o piso mínimo "venceu" o cálculo
+  // acima (caso raro, layout hipotético fora de 1/3/6/12 meses) — nesse caso
+  // ainda centraliza, em vez de deixar a diferença acumulada só embaixo.
+  const inicioYTopo = gridTopo - (availH - gridH) / 2;
 
   meses.forEach(({ ano, mes }, idx) => {
     const col = idx % cols;
@@ -486,7 +522,7 @@ function desenharPagina(
     const yTopo = inicioYTopo - row * (linhaAltura + gap);
     const eventosDoMes = eventosPorMes.get(`${ano}-${mes}`) ?? [];
     const eventosDoDia = new Set(eventosDoMes.map((ev) => ev.dia));
-    desenharMiniMes(pagina, { x, yTopo, largura: cardW, escala, mes, ano, fonte, fonteBold, eventosDoDia, eventosDoMes });
+    desenharMiniMes(pagina, { x, yTopo, largura: cardW, escala, legendaHeadroom, mes, ano, fonte, fonteBold, eventosDoDia, eventosDoMes });
   });
 
   // Rodapé: ilustração (canto inferior esquerdo, sangrando) + logo (centralizada)
