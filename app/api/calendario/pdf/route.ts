@@ -35,32 +35,31 @@ export async function GET(req: NextRequest) {
   const meses: { ano: number; mes: number }[] =
     modo === "mes" ? [{ ano, mes }] : Array.from({ length: 12 }, (_, i) => ({ ano, mes: i + 1 }));
 
-  // O modelo "simples" não mostra evento nenhum (nem lista, nem destaque de
-  // dia — pedido do dono) — não precisa nem consultar o banco.
-  let dataUri: string;
-  if (modelo === "simples") {
-    dataUri = await gerarCalendarioSimplesPdf({ ano });
-  } else {
-    const inicio = new Date(Date.UTC(meses[0].ano, meses[0].mes - 1, 1));
-    const ultimoMes = meses[meses.length - 1];
-    const fim = new Date(Date.UTC(ultimoMes.ano, ultimoMes.mes, 1));
+  const inicio = new Date(Date.UTC(meses[0].ano, meses[0].mes - 1, 1));
+  const ultimoMes = meses[meses.length - 1];
+  const fim = new Date(Date.UTC(ultimoMes.ano, ultimoMes.mes, 1));
 
-    const eventos = await prisma.eventoCalendario.findMany({
-      where: { data: { gte: inicio, lt: fim } },
-      select: { titulo: true, data: true, categoria: true },
-      orderBy: { data: "asc" },
-    });
+  // O modelo "simples" replica uma referência real do Canva que só traz
+  // feriado/recesso (~20 no ano todo) — bem diferente dos ~380 eventos reais
+  // do banco (a maioria coisa interna tipo "PRAZO PLANO EI"). Filtra pela
+  // categoria já na consulta, em vez de trazer tudo e cortar na hora de
+  // desenhar — pedido do dono, revisando a 1ª versão que trazia tudo.
+  const eventos = await prisma.eventoCalendario.findMany({
+    where: { data: { gte: inicio, lt: fim }, ...(modelo === "simples" ? { categoria: "Recesso/Feriado" } : {}) },
+    select: { titulo: true, data: true, categoria: true },
+    orderBy: { data: "asc" },
+  });
 
-    const eventosPorMes = new Map<string, EventoCalendarioPdf[]>();
-    for (const e of eventos) {
-      const chave = `${e.data.getUTCFullYear()}-${e.data.getUTCMonth() + 1}`;
-      const lista = eventosPorMes.get(chave) ?? [];
-      lista.push(e);
-      eventosPorMes.set(chave, lista);
-    }
-
-    dataUri = await gerarCalendarioPdf({ meses, eventosPorMes });
+  const eventosPorMes = new Map<string, EventoCalendarioPdf[]>();
+  for (const e of eventos) {
+    const chave = `${e.data.getUTCFullYear()}-${e.data.getUTCMonth() + 1}`;
+    const lista = eventosPorMes.get(chave) ?? [];
+    lista.push(e);
+    eventosPorMes.set(chave, lista);
   }
+
+  const dataUri =
+    modelo === "simples" ? await gerarCalendarioSimplesPdf({ ano, eventosPorMes }) : await gerarCalendarioPdf({ meses, eventosPorMes });
 
   const nomeArquivo =
     modo === "mes"
