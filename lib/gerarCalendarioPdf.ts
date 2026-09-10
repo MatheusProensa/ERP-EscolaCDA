@@ -1,6 +1,8 @@
 import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont, type PDFImage } from "pdf-lib";
-import { truncar, embarcarImagemPublica } from "@/lib/gerarRelatorioPdf";
-import { desenharRetanguloArredondado, desenharPilula, retanguloTopoArredondadoPath } from "@/lib/pdfFormas";
+import fontkit from "@pdf-lib/fontkit";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { truncar } from "@/lib/gerarRelatorioPdf";
 import { MESES } from "@/lib/calendario";
 
 /**
@@ -13,11 +15,11 @@ import { MESES } from "@/lib/calendario";
  * do PDF de referência com pdfimages e reaproveitados aqui, não redesenhados
  * — é a arte de verdade, não uma aproximação).
  *
- * Vale pra QUALQUER período exportado (1/3/6/12 meses), não só o ano
- * completo — pedido do dono pra não ter dois formatos de calendário no
- * sistema. Não mostra categoria por cor (só destaca o dia em amarelo +
- * legenda embaixo de cada mês, igual à referência) — pensado pra
- * imprimir/pendurar, não pra consulta detalhada.
+ * Vale tanto pro ano completo (12 meses numa página só) quanto pra um único
+ * mês exportado avulso — mesmo formato pros dois casos, pedido do dono pra
+ * não ter dois formatos de calendário no sistema. Não mostra categoria por
+ * cor (só destaca o dia em amarelo + legenda embaixo de cada mês, igual à
+ * referência) — pensado pra imprimir/pendurar, não pra consulta detalhada.
  */
 
 const PAGE_W = 595; // A4 retrato (pt) — os outros PDFs do sistema são paisagem;
@@ -52,6 +54,40 @@ const ESCALA_MAXIMA = 2.4; // trava pra "1 mês" não virar um cartão gigante d
 
 export type EventoCalendarioPdf = { titulo: string; data: Date };
 
+async function embarcarImagemPublica(pdf: PDFDocument, arquivo: string): Promise<PDFImage | null> {
+  try {
+    const bytes = await readFile(path.join(process.cwd(), "public", arquivo));
+    return await pdf.embedPng(bytes);
+  } catch (err) {
+    // Bug real (set/2026): falha aqui virava fallback silencioso (fundo navy
+    // sólido em vez do gradiente, por exemplo) sem deixar rastro nenhum nos
+    // logs — quem via o PDF não tinha como saber SE uma imagem faltou ou se
+    // era assim mesmo. Loga pra dar pra investigar pelos logs da Vercel.
+    console.error(`[gerarCalendarioPdf] Falha ao embutir "${arquivo}":`, err);
+    return null;
+  }
+}
+
+/**
+ * Fonte do título "CALENDÁRIO" na referência não é Helvetica — é a Poppins
+ * Bold do Canva (confirmado comparando letra a letra com o pôster original,
+ * set/2026: "R" com perna reta, "Á" com o acento em bloco, "O"/"D" bem
+ * circulares). Só o título/subtítulo usam essa fonte; o resto do pôster
+ * (cabeçalho dos mini-meses, números dos dias) já bate com Helvetica, então
+ * não mexe no resto pra não trocar um descompasso por outro.
+ * Cai pra Helvetica Bold (fonteBold) se o arquivo faltar — título feio é
+ * melhor que PDF quebrado.
+ */
+async function embarcarFonteTitulo(pdf: PDFDocument, fallback: PDFFont): Promise<PDFFont> {
+  try {
+    const bytes = await readFile(path.join(process.cwd(), "public/fonts", "Poppins-Bold.ttf"));
+    return await pdf.embedFont(bytes, { subset: true });
+  } catch (err) {
+    console.error(`[gerarCalendarioPdf] Falha ao embutir a fonte do título:`, err);
+    return fallback;
+  }
+}
+
 function diasDoMes(ano: number, mes: number): (number | null)[][] {
   const primeiroDiaSemana = new Date(Date.UTC(ano, mes - 1, 1)).getUTCDay(); // 0=Dom
   const totalDias = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
@@ -81,9 +117,11 @@ function quebrarEm2Linhas(fonte: PDFFont, texto: string, tamanho: number, largur
   return [linha1, truncar(fonte, resto, tamanho, larguraMax)];
 }
 
-/** Agrupa dias consecutivos com o mesmo título num intervalo só ("11-12"),
- * pra legenda não repetir a mesma frase várias vezes (ex.: recesso de vários
- * dias, hoje gravado como um EventoCalendario por dia). */
+/** Agrupa dias consecutivos com o mesmo título num intervalo só, pra legenda
+ * não repetir a mesma frase várias vezes (ex.: recesso de vários dias, hoje
+ * gravado como um EventoCalendario por dia). Rótulo do intervalo segue a
+ * referência: 2 dias usa hífen ("11-12"), 3 ou mais usa "A" por extenso
+ * ("21 A 30") — confirmado nos dois casos reais do pôster original. */
 function agruparEventosDoMes(eventos: { dia: number; titulo: string }[]): { rotulo: string; titulo: string }[] {
   const ordenados = [...eventos].sort((a, b) => a.dia - b.dia || a.titulo.localeCompare(b.titulo, "pt-BR"));
   const grupos: { inicio: number; fim: number; titulo: string }[] = [];
@@ -95,10 +133,45 @@ function agruparEventosDoMes(eventos: { dia: number; titulo: string }[]): { rotu
       grupos.push({ inicio: e.dia, fim: e.dia, titulo: e.titulo });
     }
   }
-  return grupos.map((g) => ({
-    rotulo: g.inicio === g.fim ? String(g.inicio) : `${g.inicio}-${g.fim}`,
-    titulo: g.titulo,
-  }));
+  return grupos.map((g) => {
+    let rotulo = String(g.inicio);
+    if (g.fim !== g.inicio) {
+      rotulo = g.fim - g.inicio === 1 ? `${g.inicio}-${g.fim}` : `${g.inicio} A ${g.fim}`;
+    }
+    return { rotulo, titulo: g.titulo };
+  });
+}
+
+/** Caminho SVG (origem no canto superior-esquerdo, Y pra baixo — convenção
+ * SVG, que é o que page.drawSvgPath espera) de um retângulo com os 4 cantos
+ * arredondados. */
+function retanguloArredondadoPath(w: number, h: number, r: number): string {
+  const raio = Math.max(0, Math.min(r, w / 2, h / 2));
+  return `M ${raio},0 H ${w - raio} Q ${w},0 ${w},${raio} V ${h - raio} Q ${w},${h} ${w - raio},${h} H ${raio} Q 0,${h} 0,${h - raio} V ${raio} Q 0,0 ${raio},0 Z`;
+}
+
+/** Igual ao anterior, mas só os cantos de CIMA são arredondados (base reta)
+ * — usado no cabeçalho azul do mini-mês, que fica colado na grade branca
+ * embaixo dele. */
+function retanguloTopoArredondadoPath(w: number, h: number, r: number): string {
+  const raio = Math.max(0, Math.min(r, w / 2, h));
+  return `M 0,${raio} Q 0,0 ${raio},0 H ${w - raio} Q ${w},0 ${w},${raio} V ${h} H 0 V ${raio} Z`;
+}
+
+function desenharRetanguloArredondado(
+  pagina: PDFPage,
+  { x, yTopo, largura, altura, raio, color, opacity }: { x: number; yTopo: number; largura: number; altura: number; raio: number; color: ReturnType<typeof rgb>; opacity?: number }
+) {
+  pagina.drawSvgPath(retanguloArredondadoPath(largura, altura, raio), { x, y: yTopo, color, opacity });
+}
+
+/** Pílula (retângulo com os cantos totalmente arredondados) — usada nos
+ * chips da legenda e no destaque de dia com evento, igual à referência. */
+function desenharPilula(
+  pagina: PDFPage,
+  { x, yTopo, largura, altura, color }: { x: number; yTopo: number; largura: number; altura: number; color: ReturnType<typeof rgb> }
+) {
+  desenharRetanguloArredondado(pagina, { x, yTopo, largura, altura, raio: altura / 2, color });
 }
 
 function desenharMiniMes(
@@ -174,23 +247,50 @@ function desenharMiniMes(
     });
   });
 
+  // Destaque dos dias com evento — UMA barra arredondada por sequência de
+  // dias seguidos na mesma linha da grade (não um círculo por dia). Réplica
+  // fiel da referência: "11-12" ou "21-30" viram uma barra contínua (cantos
+  // arredondados só nas pontas de fora, reta entre os dias do meio — é um
+  // retângulo arredondado só, não vários círculos emendados), e um dia
+  // avulso vira um quadrado arredondado do tamanho da própria célula.
+  const margemH = colunaW * 0.1;
+  const margemV = linhaH * 0.14;
+  const raioDestaque = Math.min(colunaW, linhaH) * 0.22;
+  linhas.forEach((linha, li) => {
+    const yLinha = gradeTopo - cabecalhoSemanaH - (li + 1) * linhaH;
+    let ci = 0;
+    while (ci < linha.length) {
+      const dia = linha[ci];
+      if (dia === null || !eventosDoDia.has(dia)) {
+        ci++;
+        continue;
+      }
+      let fimRun = ci;
+      while (fimRun + 1 < linha.length) {
+        const proximo = linha[fimRun + 1];
+        if (proximo === null || !eventosDoDia.has(proximo)) break;
+        fimRun++;
+      }
+      const xIni = x + ci * colunaW + margemH;
+      const xFim = x + (fimRun + 1) * colunaW - margemH;
+      desenharRetanguloArredondado(pagina, {
+        x: xIni,
+        yTopo: yLinha + linhaH - margemV,
+        largura: xFim - xIni,
+        altura: linhaH - 2 * margemV,
+        raio: raioDestaque,
+        color: YELLOW,
+      });
+      ci = fimRun + 1;
+    }
+  });
+
   const fonteDiaTam = 6 * e;
   linhas.forEach((linha, li) => {
     const yLinha = gradeTopo - cabecalhoSemanaH - (li + 1) * linhaH;
     linha.forEach((dia, ci) => {
       if (dia === null) return;
       const cx = x + ci * colunaW + colunaW / 2;
-      const destacado = eventosDoDia.has(dia);
-      if (destacado) {
-        const alturaPilula = Math.min(linhaH - 2 * e, colunaW - 4 * e);
-        desenharPilula(pagina, {
-          x: cx - alturaPilula / 2,
-          yTopo: yLinha + linhaH / 2 + alturaPilula / 2,
-          largura: alturaPilula,
-          altura: alturaPilula,
-          color: YELLOW,
-        });
-      }
       const texto = String(dia);
       const l = fonte.widthOfTextAtSize(texto, fonteDiaTam);
       pagina.drawText(texto, { x: cx - l / 2, y: yLinha + linhaH / 2 - fonteDiaTam * 0.35, size: fonteDiaTam, font: fonte, color: NAVY_TEXT });
@@ -208,6 +308,13 @@ function desenharMiniMes(
   const yFimDisponivel = yTopo - cardH - LEGENDA_HEADROOM * e;
   let yLegenda = yTopo - cardH - 10 * e;
   let desenhados = 0;
+  // Altura da pílula/"slot" de cada item e deslocamento do topo do slot (yLegenda)
+  // até a linha de base do texto — usado tanto pro título de cada item quanto
+  // pro "+N eventos", que precisa alinhar exatamente igual. Bug real (set/2026):
+  // "+N eventos" usava `y: yLegenda` puro (o topo do próximo slot, não a linha
+  // de base), ficando ~1 linha alto demais e sobrepondo o texto do item anterior.
+  const chipAltura = 9 * e;
+  const deslocamentoLinhaBase = -chipAltura + (chipAltura - fonteLegendaTam) / 2 + 1 * e;
   for (const g of gruposTodos) {
     const chipLargura = Math.max(14 * e, fonteBold.widthOfTextAtSize(g.rotulo, fonteLegendaTam) + 6 * e);
     const larguraTitulo = largura - chipLargura - 6 * e;
@@ -215,12 +322,11 @@ function desenharMiniMes(
     const alturaItem = Math.max(9 * e, linhasTitulo.length * alturaLinha);
     if (yLegenda - alturaItem < yFimDisponivel - 8 * e) break; // não cabe mais — vira "+N eventos"
 
-    const chipAltura = 9 * e;
     desenharPilula(pagina, { x, yTopo: yLegenda, largura: chipLargura, altura: chipAltura, color: YELLOW });
     const chipTextoLargura = fonteBold.widthOfTextAtSize(g.rotulo, fonteLegendaTam);
     pagina.drawText(g.rotulo, {
       x: x + (chipLargura - chipTextoLargura) / 2,
-      y: yLegenda - chipAltura + (chipAltura - fonteLegendaTam) / 2 + 1 * e,
+      y: yLegenda + deslocamentoLinhaBase,
       size: fonteLegendaTam,
       font: fonteBold,
       color: NAVY_TEXT,
@@ -232,7 +338,7 @@ function desenharMiniMes(
     linhasTitulo.forEach((linha, li) => {
       pagina.drawText(linha, {
         x: x + chipLargura + 5 * e,
-        y: yLegenda - chipAltura + (chipAltura - fonteLegendaTam) / 2 + 1 * e - li * alturaLinha,
+        y: yLegenda + deslocamentoLinhaBase - li * alturaLinha,
         size: fonteLegendaTam,
         font: fonteBold,
         color: WHITE,
@@ -245,7 +351,7 @@ function desenharMiniMes(
   if (restantes > 0) {
     pagina.drawText(`+${restantes} evento${restantes > 1 ? "s" : ""}`, {
       x,
-      y: yLegenda,
+      y: yLegenda + deslocamentoLinhaBase,
       size: fonteLegendaTam,
       font: fonte,
       color: rgb(0.75, 0.8, 0.92),
@@ -288,8 +394,9 @@ function desenharPagina(
     eventosPorMes,
     fonte,
     fonteBold,
+    fonteTitulo,
     logo,
-    decoracaoCanto,
+    fundoCompleto,
     decoracaoRodape,
     tituloPagina,
     numeroPagina,
@@ -299,32 +406,40 @@ function desenharPagina(
     eventosPorMes: Map<string, { dia: number; titulo: string }[]>;
     fonte: PDFFont;
     fonteBold: PDFFont;
+    fonteTitulo: PDFFont;
     logo: PDFImage | null;
-    decoracaoCanto: PDFImage | null;
+    fundoCompleto: PDFImage | null;
     decoracaoRodape: PDFImage | null;
     tituloPagina: string;
     numeroPagina: number;
     totalPaginas: number;
   }
 ) {
-  pagina.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: NAVY });
-
-  // Decoração do canto superior direito (arte real extraída do pôster do
-  // Marketing) — sangrando pro canto, atrás do título.
-  if (decoracaoCanto) {
-    const larguraAlvo = 175;
-    const alturaAlvo = (decoracaoCanto.height / decoracaoCanto.width) * larguraAlvo;
-    pagina.drawImage(decoracaoCanto, { x: PAGE_W - larguraAlvo, y: PAGE_H - alturaAlvo, width: larguraAlvo, height: alturaAlvo });
+  // Fundo: gradiente + decoração do canto superior direito já vêm PRÉ-COMPOSTOS
+  // numa imagem só (gerada offline, não em runtime — ver script de geração do
+  // asset). Bug real (set/2026): desenhar a decoração do canto como uma imagem
+  // PNG com transparência separada, deslocada do canto da página (drawImage
+  // com x/y != 0), faz o pdf-lib corromper a máscara de transparência — a
+  // curva vira um triângulo de canto reto na hora de renderizar (reproduzido
+  // igual em pypdfium2 E poppler, então é bug real de conteúdo do PDF gerado,
+  // não só do visualizador). Fundir as duas imagens ANTES de embutir no PDF
+  // evita o bug inteiro: só sobra UMA imagem opaca (sem canal alfa), desenhada
+  // sem deslocamento nenhum de transparência em runtime.
+  if (fundoCompleto) {
+    pagina.drawImage(fundoCompleto, { x: 0, y: 0, width: PAGE_W, height: PAGE_H });
+  } else {
+    pagina.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: NAVY });
   }
 
-  // Título
+  // Título — fonteTitulo (Poppins Bold), não fonteBold (Helvetica): é a
+  // fonte de verdade do pôster original, só usada aqui e no subtítulo.
   const titulo = "CALENDÁRIO";
   const tituloTam = 40;
-  const tituloLargura = fonteBold.widthOfTextAtSize(titulo, tituloTam);
-  pagina.drawText(titulo, { x: (PAGE_W - tituloLargura) / 2, y: PAGE_H - 62, size: tituloTam, font: fonteBold, color: YELLOW });
+  const tituloLargura = fonteTitulo.widthOfTextAtSize(titulo, tituloTam);
+  pagina.drawText(titulo, { x: (PAGE_W - tituloLargura) / 2, y: PAGE_H - 62, size: tituloTam, font: fonteTitulo, color: YELLOW });
   const subtituloTam = 16;
-  const subtituloLargura = fonteBold.widthOfTextAtSize(tituloPagina, subtituloTam);
-  pagina.drawText(tituloPagina, { x: (PAGE_W - subtituloLargura) / 2, y: PAGE_H - 84, size: subtituloTam, font: fonteBold, color: WHITE });
+  const subtituloLargura = fonteTitulo.widthOfTextAtSize(tituloPagina, subtituloTam);
+  pagina.drawText(tituloPagina, { x: (PAGE_W - subtituloLargura) / 2, y: PAGE_H - 84, size: subtituloTam, font: fonteTitulo, color: WHITE });
   if (totalPaginas > 1) {
     const paginacao = `página ${numeroPagina}/${totalPaginas}`;
     const paginacaoTam = 8.5;
@@ -380,6 +495,12 @@ function desenharPagina(
   }
 }
 
+// Selo "15 anos" só faz sentido no ano de aniversário — a referência de 2027
+// usa o logo liso ("logo-cda-sem-selo.png", extraído do próprio pôster
+// original) porque em 2027 a escola não completa mais 15 anos. Só 2026 leva
+// o selo; qualquer outro ano (passado ou futuro) usa o logo liso.
+const ANO_ANIVERSARIO_15 = 2026;
+
 export async function gerarCalendarioPdf({
   meses,
   eventosPorMes,
@@ -388,13 +509,16 @@ export async function gerarCalendarioPdf({
   eventosPorMes: Map<string, EventoCalendarioPdf[]>;
 }): Promise<string> {
   const pdf = await PDFDocument.create();
+  pdf.registerFontkit(fontkit);
   const primeiro = meses[0];
   pdf.setTitle(`Calendário — ${MESES[primeiro.mes - 1]} ${primeiro.ano} — Escola CDA`);
   pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const logo = await embarcarImagemPublica(pdf, "logo-cda.png");
-  const decoracaoCanto = await embarcarImagemPublica(pdf, "calendario-decoracao-canto.png");
+  const fonteTitulo = await embarcarFonteTitulo(pdf, fonteBold);
+  const logoComSelo = await embarcarImagemPublica(pdf, "logo-cda.png");
+  const logoSemSelo = await embarcarImagemPublica(pdf, "logo-cda-sem-selo.png");
+  const fundoCompleto = await embarcarImagemPublica(pdf, "calendario-fundo-completo.png");
   const decoracaoRodape = await embarcarImagemPublica(pdf, "calendario-decoracao-rodape.png");
 
   // Agrupa eventos por dia dentro de cada mês (chave "ano-mes")
@@ -416,13 +540,15 @@ export async function gerarCalendarioPdf({
 
   paginas.forEach((mesesDaPagina, indice) => {
     const pagina = pdf.addPage([PAGE_W, PAGE_H]);
+    const logo = mesesDaPagina[0].ano === ANO_ANIVERSARIO_15 ? logoComSelo : logoSemSelo;
     desenharPagina(pagina, {
       meses: mesesDaPagina,
       eventosPorMes: eventosPorMesDia,
       fonte,
       fonteBold,
+      fonteTitulo,
       logo,
-      decoracaoCanto,
+      fundoCompleto,
       decoracaoRodape,
       tituloPagina: construirSubtitulo(mesesDaPagina),
       numeroPagina: indice + 1,
