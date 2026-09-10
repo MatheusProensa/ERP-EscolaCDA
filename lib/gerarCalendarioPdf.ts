@@ -396,8 +396,7 @@ function desenharPagina(
     fonteBold,
     fonteTitulo,
     logo,
-    fundoGradiente,
-    decoracaoCanto,
+    fundoCompleto,
     decoracaoRodape,
     tituloPagina,
     numeroPagina,
@@ -409,35 +408,27 @@ function desenharPagina(
     fonteBold: PDFFont;
     fonteTitulo: PDFFont;
     logo: PDFImage | null;
-    fundoGradiente: PDFImage | null;
-    decoracaoCanto: PDFImage | null;
+    fundoCompleto: PDFImage | null;
     decoracaoRodape: PDFImage | null;
     tituloPagina: string;
     numeroPagina: number;
     totalPaginas: number;
   }
 ) {
-  // Fundo: a imagem real do gradiente (extraída do pôster original com
-  // pdfimages, igual às outras decorações) em vez de um azul sólido — bug
-  // real (set/2026): o navy chapado que a gente desenhava não é a cor nem o
-  // efeito do pôster de verdade, que tem um brilho radial sutil no canto
-  // superior esquerdo. Escala tipo "cover" (cobre a página inteira, corta o
-  // excesso) porque a proporção da imagem não bate exatamente com A4.
-  if (fundoGradiente) {
-    const escala = Math.max(PAGE_W / fundoGradiente.width, PAGE_H / fundoGradiente.height);
-    const w = fundoGradiente.width * escala;
-    const h = fundoGradiente.height * escala;
-    pagina.drawImage(fundoGradiente, { x: (PAGE_W - w) / 2, y: (PAGE_H - h) / 2, width: w, height: h });
+  // Fundo: gradiente + decoração do canto superior direito já vêm PRÉ-COMPOSTOS
+  // numa imagem só (gerada offline, não em runtime — ver script de geração do
+  // asset). Bug real (set/2026): desenhar a decoração do canto como uma imagem
+  // PNG com transparência separada, deslocada do canto da página (drawImage
+  // com x/y != 0), faz o pdf-lib corromper a máscara de transparência — a
+  // curva vira um triângulo de canto reto na hora de renderizar (reproduzido
+  // igual em pypdfium2 E poppler, então é bug real de conteúdo do PDF gerado,
+  // não só do visualizador). Fundir as duas imagens ANTES de embutir no PDF
+  // evita o bug inteiro: só sobra UMA imagem opaca (sem canal alfa), desenhada
+  // sem deslocamento nenhum de transparência em runtime.
+  if (fundoCompleto) {
+    pagina.drawImage(fundoCompleto, { x: 0, y: 0, width: PAGE_W, height: PAGE_H });
   } else {
     pagina.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: NAVY });
-  }
-
-  // Decoração do canto superior direito (arte real extraída do pôster do
-  // Marketing) — sangrando pro canto, atrás do título.
-  if (decoracaoCanto) {
-    const larguraAlvo = 175;
-    const alturaAlvo = (decoracaoCanto.height / decoracaoCanto.width) * larguraAlvo;
-    pagina.drawImage(decoracaoCanto, { x: PAGE_W - larguraAlvo, y: PAGE_H - alturaAlvo, width: larguraAlvo, height: alturaAlvo });
   }
 
   // Título — fonteTitulo (Poppins Bold), não fonteBold (Helvetica): é a
@@ -527,8 +518,7 @@ export async function gerarCalendarioPdf({
   const fonteTitulo = await embarcarFonteTitulo(pdf, fonteBold);
   const logoComSelo = await embarcarImagemPublica(pdf, "logo-cda.png");
   const logoSemSelo = await embarcarImagemPublica(pdf, "logo-cda-sem-selo.png");
-  const fundoGradiente = await embarcarImagemPublica(pdf, "calendario-fundo-gradiente.png");
-  const decoracaoCanto = await embarcarImagemPublica(pdf, "calendario-decoracao-canto.png");
+  const fundoCompleto = await embarcarImagemPublica(pdf, "calendario-fundo-completo.png");
   const decoracaoRodape = await embarcarImagemPublica(pdf, "calendario-decoracao-rodape.png");
 
   // Agrupa eventos por dia dentro de cada mês (chave "ano-mes")
@@ -558,8 +548,7 @@ export async function gerarCalendarioPdf({
       fonteBold,
       fonteTitulo,
       logo,
-      fundoGradiente,
-      decoracaoCanto,
+      fundoCompleto,
       decoracaoRodape,
       tituloPagina: construirSubtitulo(mesesDaPagina),
       numeroPagina: indice + 1,
