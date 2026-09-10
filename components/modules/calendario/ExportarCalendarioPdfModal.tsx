@@ -58,7 +58,7 @@ export function ExportarCalendarioPdfModal() {
             />
             <p className="text-xs text-cda-text3">
               {modelo === "simples"
-                ? "Folha única com o ano inteiro, visual leve — feriados e eventos principais, sem detalhar tudo."
+                ? "Folha única com o ano inteiro, visual leve — só os dias marcados, sem listar os eventos."
                 : "Pôster com cor por categoria e mês clicável pro detalhe — mostra todos os eventos, sem cortar nada."}
             </p>
           </div>

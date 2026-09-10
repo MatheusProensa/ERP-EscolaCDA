@@ -2,7 +2,6 @@ import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont, type PDFIm
 import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { truncar } from "@/lib/gerarRelatorioPdf";
 import { MESES } from "@/lib/calendario";
 import { desenharPilula, desenharRetanguloArredondado } from "@/lib/pdfFormas";
 import { ANO_ANIVERSARIO_15, type EventoCalendarioPdf } from "@/lib/gerarCalendarioPdf";
@@ -16,10 +15,12 @@ import { ANO_ANIVERSARIO_15, type EventoCalendarioPdf } from "@/lib/gerarCalenda
  * fiel de uma referência real feita no Canva pela própria escola
  * ("cda_calendario_2027_folha_única.pdf", enviada pelo dono) — fundo
  * branco, 12 mini-meses numa grade 4x3 numa página só, sem cor por
- * categoria (só um destaque amarelo pro dia com evento) e uma listinha
- * enxuta de eventos embaixo de cada mês (corta em "+N eventos" se não
- * couber — ao contrário do modelo da equipe, aqui é esperado não caber
- * tudo, por desenho).
+ * categoria (só um destaque amarelo pro dia com evento).
+ *
+ * SEM lista de eventos embaixo dos meses (pedido do dono, revisando a
+ * primeira versão: "pode deixar aquele sem os eventos" — o texto dos
+ * eventos fica só no modelo colorido/equipe; esse aqui é só o calendário
+ * visual com os dias marcados).
  *
  * A decoração do canto superior direito (círculo navy + traços tracejados)
  * foi extraída da referência (pdftoppm em alta resolução + recorte) porque
@@ -38,7 +39,6 @@ const AZUL_CARTAO = rgb(143 / 255, 219 / 255, 248 / 255); // #8FDBF8 — corpo d
 const AMARELO_S = rgb(252 / 255, 205 / 255, 10 / 255); // #FCCD0A — destaque de dia com evento + pílula do ano
 const SOMBRA_TITULO = rgb(167 / 255, 212 / 255, 242 / 255); // #A7D4F2 — sombra clara atrás do título
 const WHITE = rgb(1, 1, 1);
-const CINZA_TEXTO = rgb(0.42, 0.46, 0.56);
 
 const MARGEM_LATERAL = 24;
 const COLS = 4;
@@ -88,34 +88,10 @@ function diasDoMes(ano: number, mes: number): (number | null)[][] {
   return linhas;
 }
 
-/** Agrupa dias consecutivos com o MESMO título num intervalo só (ex.: recesso
- * de vários dias vira "21 A 30" em vez de repetir a frase). Mais simples que
- * a versão do modelo da equipe: não precisa considerar categoria, porque
- * aqui não existe cor por categoria — só um destaque amarelo. */
-function agruparEventosDoMes(eventos: { dia: number; titulo: string }[]): { rotulo: string; titulo: string }[] {
-  const ordenados = [...eventos].sort((a, b) => a.dia - b.dia || a.titulo.localeCompare(b.titulo, "pt-BR"));
-  const grupos: { inicio: number; fim: number; titulo: string }[] = [];
-  for (const e of ordenados) {
-    const ultimo = grupos[grupos.length - 1];
-    if (ultimo && ultimo.titulo === e.titulo && e.dia === ultimo.fim + 1) {
-      ultimo.fim = e.dia;
-    } else {
-      grupos.push({ inicio: e.dia, fim: e.dia, titulo: e.titulo });
-    }
-  }
-  return grupos.map((g) => {
-    let rotulo = String(g.inicio);
-    if (g.fim !== g.inicio) {
-      rotulo = g.fim - g.inicio === 1 ? `${g.inicio}-${g.fim}` : `${g.inicio} A ${g.fim}`;
-    }
-    return { rotulo, titulo: g.titulo };
-  });
-}
-
 /** Um mini-mês completo: cabeçalho navy (nome do mês) + corpo azul-claro
- * (dias da semana + grade) + listinha de eventos embaixo, cortando em
- * "+N eventos" se não couber no espaço reservado (ao contrário do modelo da
- * equipe, aqui é esperado não caber tudo — é o modelo "enxuto"). */
+ * (dias da semana + grade), com uma bolinha amarela nos dias com evento —
+ * sem listar o que é o evento (pedido do dono: a lista de eventos fica só
+ * no modelo colorido/equipe; esse aqui é só o calendário visual). */
 function desenharCardMes(
   pagina: PDFPage,
   {
@@ -126,8 +102,6 @@ function desenharCardMes(
     fonte,
     fonteBold,
     diasComEvento,
-    eventosDoMes,
-    alturaListaDisponivel,
   }: {
     x: number;
     yTopo: number;
@@ -136,8 +110,6 @@ function desenharCardMes(
     fonte: PDFFont;
     fonteBold: PDFFont;
     diasComEvento: Set<number>;
-    eventosDoMes: { dia: number; titulo: string }[];
-    alturaListaDisponivel: number;
   }
 ) {
   // Cabeçalho navy — pílula com cantos totalmente arredondados, nome do mês
@@ -200,54 +172,6 @@ function desenharCardMes(
       });
     });
   });
-
-  // Listinha de eventos — pequena pílula amarela com o dia/intervalo +
-  // título em 1 linha só (trunca com reticências se não couber; ao contrário
-  // do modelo da equipe, aqui é por desenho que nem tudo cabe). Corta em
-  // "+N eventos" quando o espaço reservado acaba.
-  const grupos = agruparEventosDoMes(eventosDoMes);
-  const fonteListaTam = 7;
-  const alturaLinha = 12.5;
-  const chipAltura = 9.5;
-  let yLista = bodyTopo - BODY_H - 10;
-  const yFimDisponivel = yTopo - CARD_TOTAL_H - alturaListaDisponivel;
-  let desenhados = 0;
-  for (const g of grupos) {
-    const ehUltimo = desenhados === grupos.length - 1;
-    const margemNecessaria = ehUltimo ? 0 : alturaLinha; // reserva espaço pro "+N eventos" antes de aceitar mais um item, se sobrar resto
-    if (yLista - alturaLinha < yFimDisponivel + margemNecessaria) break;
-
-    const chipLargura = Math.max(14, fonteBold.widthOfTextAtSize(g.rotulo, fonteListaTam) + 6);
-    desenharPilula(pagina, { x, yTopo: yLista, largura: chipLargura, altura: chipAltura, color: AMARELO_S });
-    const chipTextoLargura = fonteBold.widthOfTextAtSize(g.rotulo, fonteListaTam);
-    pagina.drawText(g.rotulo, {
-      x: x + (chipLargura - chipTextoLargura) / 2,
-      y: yLista - chipAltura + (chipAltura - fonteListaTam) / 2 + 1,
-      size: fonteListaTam,
-      font: fonteBold,
-      color: NAVY_S,
-    });
-    const tituloTexto = truncar(fonteBold, g.titulo.toUpperCase(), fonteListaTam, COL_W - chipLargura - 6);
-    pagina.drawText(tituloTexto, {
-      x: x + chipLargura + 6,
-      y: yLista - chipAltura + (chipAltura - fonteListaTam) / 2 + 1,
-      size: fonteListaTam,
-      font: fonteBold,
-      color: NAVY_S,
-    });
-    yLista -= alturaLinha;
-    desenhados++;
-  }
-  const restantes = grupos.length - desenhados;
-  if (restantes > 0) {
-    pagina.drawText(`+${restantes} evento${restantes > 1 ? "s" : ""}`, {
-      x,
-      y: yLista - chipAltura + (chipAltura - fonteListaTam) / 2 + 1,
-      size: fonteListaTam,
-      font: fonte,
-      color: CINZA_TEXTO,
-    });
-  }
 }
 
 export async function gerarCalendarioSimplesPdf({
@@ -322,23 +246,27 @@ export async function gerarCalendarioSimplesPdf({
     pagina.drawImage(logo, { x: (PAGE_W - larguraAlvo) / 2, y: 14, width: larguraAlvo, height: alturaAlvo });
   }
 
-  // Grade de 12 mini-meses, 4 colunas x 3 linhas.
+  // Grade de 12 mini-meses, 4 colunas x 3 linhas. Sem lista de eventos
+  // embaixo, cada linha tem bem mais espaço do que o card precisa — em vez
+  // de deixar a folga toda embaixo (cards grudados no topo da própria
+  // faixa), centraliza o card verticalmente na faixa da linha, pra folga
+  // ficar dividida em cima/embaixo e o conjunto ficar bem distribuído.
   const gridTopo = pilulaYTopo - pilulaAltura - 26;
   const gridBase = RODAPE_H;
   const rowPitch = (gridTopo - gridBase) / ROWS;
-  const alturaListaDisponivel = rowPitch - CARD_TOTAL_H - 10;
+  const folgaPorLinha = (rowPitch - CARD_TOTAL_H) / 2;
 
   for (let mes = 1; mes <= 12; mes++) {
     const idx = mes - 1;
     const col = idx % COLS;
     const row = Math.floor(idx / COLS);
     const x = MARGEM_LATERAL + col * (COL_W + GAP_COL);
-    const yTopo = gridTopo - row * rowPitch;
+    const yTopo = gridTopo - row * rowPitch - folgaPorLinha;
 
     const eventosDoMes = (eventosPorMes.get(`${ano}-${mes}`) ?? []).map((e) => ({ dia: e.data.getUTCDate(), titulo: e.titulo }));
     const diasComEvento = new Set(eventosDoMes.map((e) => e.dia));
 
-    desenharCardMes(pagina, { x, yTopo, mes, ano, fonte, fonteBold, diasComEvento, eventosDoMes, alturaListaDisponivel });
+    desenharCardMes(pagina, { x, yTopo, mes, ano, fonte, fonteBold, diasComEvento });
   }
 
   const bytes = await pdf.save();
