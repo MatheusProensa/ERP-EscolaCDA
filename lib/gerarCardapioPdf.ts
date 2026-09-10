@@ -230,9 +230,14 @@ export async function gerarCardapioPdf({
   // estação) — no rodapé, ao lado da ilustração/logo, sobre o fundo navy.
   function desenharRodape(paginaLocal: PDFPage) {
     if (decoracaoRodape) {
+      // Bug real (set/2026): a maçã ficava quase toda sangrando pra fora da
+      // página (y bem negativo), sobrando espaço vazio entre ela e a base do
+      // cartão branco e "colando" no bloco de texto da nutricionista, que
+      // fica logo acima. Subida pra usar esse espaço — topo perto da base do
+      // cartão (com uma folguinha), sem mais sangrar tanto embaixo.
       const larguraAlvo = 68;
       const alturaAlvo = (decoracaoRodape.height / decoracaoRodape.width) * larguraAlvo;
-      paginaLocal.drawImage(decoracaoRodape, { x: -8, y: -10, width: larguraAlvo, height: alturaAlvo });
+      paginaLocal.drawImage(decoracaoRodape, { x: -8, y: CARD_BASE - 6 - alturaAlvo, width: larguraAlvo, height: alturaAlvo });
     }
     if (logo) {
       const larguraAlvo = 82;
