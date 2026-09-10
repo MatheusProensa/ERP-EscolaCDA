@@ -553,40 +553,49 @@ function desenharLegendaCompleta(
       return Math.max(chipAltura, linhasTitulo.length * alturaLinha);
     });
 
-  // Testa de 1 a 4 colunas, fica com a primeira que cabe tudo dentro de `altura`.
-  let colunas = 4;
-  for (let tentativa = 1; tentativa <= 4; tentativa++) {
-    const largColuna = (largura - (tentativa - 1) * gapColuna) / tentativa;
-    const alturas = alturasParaLargura(largColuna);
-    let col = 0;
-    let y = 0;
-    let coube = true;
-    for (const h of alturas) {
-      if (y + h > altura) {
-        col++;
-        y = 0;
-        if (col >= tentativa) {
-          coube = false;
-          break;
-        }
-      }
-      y += h + gapItem;
-    }
-    colunas = tentativa;
-    if (coube) break;
+  // Quantas colunas usar — dois bugs reais encontrados revisando com o
+  // calendário completo, corrigidos juntos aqui:
+  // 1) Uma coluna só com MUITOS eventos (ex.: 34 em março) virava parede de
+  //    texto alinhada à esquerda com metade da página vazia ("tá muito
+  //    amador"). Corrigido com um piso de colunas baseado na QUANTIDADE de
+  //    eventos (mês leve continua em 1 coluna só, como no exemplo que o
+  //    dono aprovou — forçar 2+ colunas por causa só da largura da página
+  //    deixava até meses levíssimos fragmentados à toa).
+  // 2) Com esse piso, o preenchimento GULOSO (enche a coluna 1 até estourar
+  //    `altura`, só aí passa pra próxima) fazia a 2ª coluna calculada ficar
+  //    vazia na prática sempre que a altura generosa do mês "cheio" desse
+  //    conta de tudo numa coluna só — resultado idêntico ao bug 1, por um
+  //    caminho diferente. Corrigido calculando a altura TOTAL do conteúdo
+  //    primeiro e DIVIDINDO pelo número de colunas — cada coluna recebe uma
+  //    fatia-alvo do conteúdo, não "o que sobrar" depois que a 1ª encheu.
+  const minimoColunasPorQuantidade = (n: number) => (n > 36 ? 4 : n > 22 ? 3 : n > 10 ? 2 : 1);
+  let colunas = Math.max(1, minimoColunasPorQuantidade(grupos.length));
+  let largColuna = (largura - (colunas - 1) * gapColuna) / colunas;
+  let alturas = alturasParaLargura(largColuna);
+  let alturaTotal = alturas.reduce((soma, h) => soma + h + gapItem, 0) - gapItem;
+  while (alturaTotal / colunas > altura && colunas < 4) {
+    colunas++;
+    largColuna = (largura - (colunas - 1) * gapColuna) / colunas;
+    alturas = alturasParaLargura(largColuna);
+    alturaTotal = alturas.reduce((soma, h) => soma + h + gapItem, 0) - gapItem;
   }
-
-  const largColuna = (largura - (colunas - 1) * gapColuna) / colunas;
-  const alturas = alturasParaLargura(largColuna);
+  const alturaAlvoPorColuna = alturaTotal / colunas;
 
   let col = 0;
   let y = yTopo;
+  let alturaUsadaNaColuna = 0;
   grupos.forEach((g, i) => {
     const h = alturas[i];
-    if (y - h < yTopo - altura && col < colunas - 1) {
+    // Passa pra próxima coluna ao ultrapassar a fatia-alvo dela (não só ao
+    // estourar a altura disponível da página) — é isso que faz o conteúdo
+    // se espalhar pelas colunas de verdade, equilibrado, em vez de empilhar
+    // tudo na primeira coluna só porque cabia.
+    if (alturaUsadaNaColuna + h > alturaAlvoPorColuna && col < colunas - 1) {
       col++;
       y = yTopo;
+      alturaUsadaNaColuna = 0;
     }
+    alturaUsadaNaColuna += h + gapItem;
     const xCol = x + col * (largColuna + gapColuna);
     const corCategoria = corCategoriaHex(g.categoria).dot;
     const chipLargura = Math.max(16, fonteBold.widthOfTextAtSize(g.rotulo, fonteTam) + 7);
@@ -680,16 +689,27 @@ function desenharPaginaDetalheMes(
     );
   }
 
-  // Cabeçalho compacto (bem menor que o da visão geral — a prioridade aqui é
-  // deixar espaço pra legenda completa, não a "arte" do pôster).
+  // Tamanho do cabeçalho/grade/rodapé é ADAPTATIVO pela quantidade de
+  // eventos do mês — não sempre pequeno. Pedido real do dono, revisando com
+  // dados reais: "se tem vários eventos, diminui a arte" (só encolhe quando
+  // PRECISA) — um mês leve (poucos eventos) deve continuar com a "arte"
+  // grande e generosa igual ao pôster de visão geral; só um mês cheio (30+
+  // eventos agrupados, ex.: setembro com 50) precisa ceder espaço da grade/
+  // cabeçalho/rodapé pra legenda completa nunca cortar nada.
+  const numGrupos = agruparEventosDoMes(eventosDoMes).length;
+  const nivel = numGrupos > 30 ? "cheio" : numGrupos > 15 ? "medio" : "leve";
+  const params = {
+    leve: { tituloTam: 30, yTitulo: 58, subtituloTam: 16, ySubtitulo: 78, yCategorias: 96, escalaGrade: 2.0, yGrade: 116, rodapeH: 85, ilustracaoW: 90, logoW: 100 },
+    medio: { tituloTam: 25, yTitulo: 50, subtituloTam: 14, ySubtitulo: 68, yCategorias: 86, escalaGrade: 1.65, yGrade: 104, rodapeH: 62, ilustracaoW: 58, logoW: 78 },
+    cheio: { tituloTam: 20, yTitulo: 46, subtituloTam: 13, ySubtitulo: 63, yCategorias: 80, escalaGrade: 1.35, yGrade: 98, rodapeH: 46, ilustracaoW: 42, logoW: 62 },
+  }[nivel];
+
   const titulo = "CALENDÁRIO";
-  const tituloTam = 20;
-  const tituloLargura = fonteTitulo.widthOfTextAtSize(titulo, tituloTam);
-  pagina.drawText(titulo, { x: (PAGE_W - tituloLargura) / 2, y: PAGE_H - 46, size: tituloTam, font: fonteTitulo, color: YELLOW });
+  const tituloLargura = fonteTitulo.widthOfTextAtSize(titulo, params.tituloTam);
+  pagina.drawText(titulo, { x: (PAGE_W - tituloLargura) / 2, y: PAGE_H - params.yTitulo, size: params.tituloTam, font: fonteTitulo, color: YELLOW });
   const subtitulo = `${MESES[mes - 1]}/${ano}`;
-  const subtituloTam = 13;
-  const subtituloLargura = fonteTitulo.widthOfTextAtSize(subtitulo, subtituloTam);
-  pagina.drawText(subtitulo, { x: (PAGE_W - subtituloLargura) / 2, y: PAGE_H - 63, size: subtituloTam, font: fonteTitulo, color: WHITE });
+  const subtituloLargura = fonteTitulo.widthOfTextAtSize(subtitulo, params.subtituloTam);
+  pagina.drawText(subtitulo, { x: (PAGE_W - subtituloLargura) / 2, y: PAGE_H - params.ySubtitulo, size: params.subtituloTam, font: fonteTitulo, color: WHITE });
 
   // Legenda de categorias — mesma faixa da visão geral, só reposicionada.
   const legendaCategoriasFonteTam = 6.5;
@@ -702,7 +722,7 @@ function desenharPaginaDetalheMes(
   const larguraTotalLegenda =
     itensLegendaCategorias.reduce((soma, it) => soma + it.largura, 0) + espacoEntreItens * (itensLegendaCategorias.length - 1);
   let xLegendaCategorias = (PAGE_W - larguraTotalLegenda) / 2;
-  const yLegendaCategorias = PAGE_H - 80;
+  const yLegendaCategorias = PAGE_H - params.yCategorias;
   itensLegendaCategorias.forEach(({ cat, largura: larguraItem }) => {
     const corDot = corCategoriaHex(cat).dot;
     pagina.drawEllipse({
@@ -722,27 +742,25 @@ function desenharPaginaDetalheMes(
     xLegendaCategorias += larguraItem + espacoEntreItens;
   });
 
-  // Grade do mês — tamanho moderado e fixo (não precisa mais ser gigante:
-  // a legenda completa embaixo é o conteúdo principal desta página agora).
+  // Grade do mês — tamanho tirado do nível calculado acima.
   const corPorDia = corPorDiaDoMes(eventosDoMes);
-  const escalaGrade = 1.35;
+  const escalaGrade = params.escalaGrade;
   const cardW = CARD_W * escalaGrade;
   const cardH = CARD_H * escalaGrade;
   const gradeX = (PAGE_W - cardW) / 2;
-  const gradeTopo = PAGE_H - 98;
+  const gradeTopo = PAGE_H - params.yGrade;
   desenharGradeMes(pagina, { x: gradeX, yTopo: gradeTopo, largura: cardW, escala: escalaGrade, mes, ano, fonte, fonteBold, corPorDia });
 
-  // Rodapé BEM menor que o da visão geral (pedido do dono: "diminui a arte"
-  // quando tem muito evento) — sobra o máximo de espaço vertical possível
-  // pra legenda completa, que nunca pode cortar nada.
-  const RODAPE_H = 46;
+  // Rodapé — também do nível calculado acima (só encolhe de verdade quando
+  // o mês é cheio; leve/médio mantêm a ilustração e a logo com presença).
+  const RODAPE_H = params.rodapeH;
   if (decoracaoRodape) {
-    const larguraAlvo = 42;
+    const larguraAlvo = params.ilustracaoW;
     const alturaAlvo = (decoracaoRodape.height / decoracaoRodape.width) * larguraAlvo;
-    pagina.drawImage(decoracaoRodape, { x: -6, y: -8, width: larguraAlvo, height: alturaAlvo });
+    pagina.drawImage(decoracaoRodape, { x: -larguraAlvo * 0.08, y: -alturaAlvo * 0.1, width: larguraAlvo, height: alturaAlvo });
   }
   if (logo) {
-    const larguraAlvo = 62;
+    const larguraAlvo = params.logoW;
     const alturaAlvo = (logo.height / logo.width) * larguraAlvo;
     pagina.drawImage(logo, { x: (PAGE_W - larguraAlvo) / 2, y: 10, width: larguraAlvo, height: alturaAlvo });
   }
