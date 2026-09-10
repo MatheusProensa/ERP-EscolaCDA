@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont, type PDFImage } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, PDFName, type PDFPage, type PDFFont, type PDFImage } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
@@ -225,6 +225,36 @@ function desenharPilula(
   { x, yTopo, largura, altura, color }: { x: number; yTopo: number; largura: number; altura: number; color: ReturnType<typeof rgb> }
 ) {
   desenharRetanguloArredondado(pagina, { x, yTopo, largura, altura, raio: altura / 2, color });
+}
+
+/**
+ * Link interno de PDF (clicar num mini-mês do pôster e ir pra página de
+ * detalhe daquele mês) — pdf-lib não tem um `addLink` de alto nível, só a
+ * API de baixo nível de anotações (`Annots` na página + um dicionário de
+ * anotação `Link` com uma ação `Dest` apontando pra `PDFRef` da página de
+ * destino), então monta isso na mão. Padrão documentado em vários exemplos
+ * da comunidade pdf-lib pra link interno entre páginas do mesmo documento.
+ */
+function adicionarLinkInterno(
+  pdf: PDFDocument,
+  pagina: PDFPage,
+  rect: { x: number; y: number; largura: number; altura: number },
+  paginaDestino: PDFPage
+) {
+  const anotacao = pdf.context.obj({
+    Type: "Annot",
+    Subtype: "Link",
+    Rect: [rect.x, rect.y, rect.x + rect.largura, rect.y + rect.altura],
+    Border: [0, 0, 0],
+    Dest: [paginaDestino.ref, "Fit"],
+  });
+  const anotacaoRef = pdf.context.register(anotacao);
+  const anotsExistentes = pagina.node.Annots();
+  if (anotsExistentes) {
+    anotsExistentes.push(anotacaoRef);
+  } else {
+    pagina.node.set(PDFName.of("Annots"), pdf.context.obj([anotacaoRef]));
+  }
 }
 
 function desenharMiniMes(
@@ -489,7 +519,7 @@ function desenharPagina(
     numeroPagina: number;
     totalPaginas: number;
   }
-) {
+): { ano: number; mes: number; x: number; y: number; largura: number; altura: number }[] {
   // Fundo: gradiente + decoração do canto superior direito já vêm PRÉ-COMPOSTOS
   // numa imagem só (gerada offline, não em runtime — ver script de geração do
   // asset). Bug real (set/2026): desenhar a decoração do canto como uma imagem
@@ -535,6 +565,40 @@ function desenharPagina(
     });
   }
 
+  // Legenda de categorias — uma fileira com bolinha + nome de cada categoria
+  // (mesma paleta da tela /calendario), logo abaixo do subtítulo/paginação.
+  // Pedido do dono: no topo (perto do título), não no rodapé — sem isso a
+  // cor por categoria na grade/legenda de cada mês não tem como ser lida.
+  const legendaCategoriasFonteTam = 6.5;
+  const legendaCategoriasDot = 5;
+  const itensLegendaCategorias = CATEGORIAS_EVENTO.map((cat) => ({
+    cat,
+    largura: legendaCategoriasDot + 4 + fonte.widthOfTextAtSize(cat, legendaCategoriasFonteTam),
+  }));
+  const espacoEntreItens = 12;
+  const larguraTotalLegenda =
+    itensLegendaCategorias.reduce((soma, it) => soma + it.largura, 0) + espacoEntreItens * (itensLegendaCategorias.length - 1);
+  let xLegendaCategorias = (PAGE_W - larguraTotalLegenda) / 2;
+  const yLegendaCategorias = PAGE_H - 108;
+  itensLegendaCategorias.forEach(({ cat, largura: larguraItem }) => {
+    const corDot = corCategoriaHex(cat).dot;
+    pagina.drawEllipse({
+      x: xLegendaCategorias + legendaCategoriasDot / 2,
+      y: yLegendaCategorias - legendaCategoriasFonteTam * 0.32,
+      xScale: legendaCategoriasDot / 2,
+      yScale: legendaCategoriasDot / 2,
+      color: hexParaRgb(corDot),
+    });
+    pagina.drawText(cat, {
+      x: xLegendaCategorias + legendaCategoriasDot + 4,
+      y: yLegendaCategorias - legendaCategoriasFonteTam * 0.72,
+      size: legendaCategoriasFonteTam,
+      font: fonte,
+      color: rgb(0.75, 0.8, 0.92),
+    });
+    xLegendaCategorias += larguraItem + espacoEntreItens;
+  });
+
   const MARGEM_LATERAL = 24;
   // Bug real (set/2026, reportado com o PDF gerado em mãos): sobrava uma faixa
   // enorme de navy vazio entre o subtítulo e a grade de meses. Duas causas
@@ -544,12 +608,11 @@ function desenharPagina(
   // pôster a largura é que limita a escala dos cartões em todos os layouts
   // do modal (1/3/6/12 meses), então sempre sobrava altura, e metade dela
   // virava margem morta em cima (empurrando a grade pra baixo) e a outra
-  // metade em baixo. Agora a grade começa colada logo abaixo do subtítulo, e
-  // o espaço que sobra vira headroom EXTRA pra legenda (mais eventos visíveis
-  // por mês antes de precisar resumir em "+N eventos").
-  const gridTopo = PAGE_H - 112;
-  const LEGENDA_CATEGORIAS_H = 18; // faixa reservada pra legenda de categorias, colada acima do rodapé
-  const gridBaseMax = 92 + LEGENDA_CATEGORIAS_H; // espaço reservado pro rodapé (legenda + logo + ilustração)
+  // metade em baixo. Agora a grade começa colada logo abaixo da legenda de
+  // categorias, e o espaço que sobra vira headroom EXTRA pra legenda de cada
+  // mês (mais eventos visíveis antes de precisar resumir em "+N eventos").
+  const gridTopo = PAGE_H - 128;
+  const gridBaseMax = 92; // espaço reservado pro rodapé (logo + ilustração)
   const availW = PAGE_W - MARGEM_LATERAL * 2;
   const availH = gridTopo - gridBaseMax;
 
@@ -577,6 +640,11 @@ function desenharPagina(
   // ainda centraliza, em vez de deixar a diferença acumulada só embaixo.
   const inicioYTopo = gridTopo - (availH - gridH) / 2;
 
+  // Retângulo (card + legenda) de cada mini-mês desenhado — devolvido pro
+  // chamador poder sobrepor um link clicável ali em cima (ver "click no mês
+  // pra abrir o detalhe", gerarCalendarioPdf), só faz sentido quando a
+  // página mostra vários meses de uma vez (não no export de 1 mês só).
+  const retangulosMeses: { ano: number; mes: number; x: number; y: number; largura: number; altura: number }[] = [];
   meses.forEach(({ ano, mes }, idx) => {
     const col = idx % cols;
     const row = Math.floor(idx / cols);
@@ -585,39 +653,7 @@ function desenharPagina(
     const eventosDoMes = eventosPorMes.get(`${ano}-${mes}`) ?? [];
     const corPorDia = corPorDiaDoMes(eventosDoMes);
     desenharMiniMes(pagina, { x, yTopo, largura: cardW, escala, legendaHeadroom, mes, ano, fonte, fonteBold, corPorDia, eventosDoMes });
-  });
-
-  // Legenda de categorias — uma fileira com bolinha + nome de cada categoria
-  // (mesma paleta da tela /calendario), colada acima do rodapé. Sem isso a
-  // cor por categoria na grade/legenda de cada mês não tem como ser lida.
-  const legendaCategoriasFonteTam = 6.5;
-  const legendaCategoriasDot = 5;
-  const itensLegendaCategorias = CATEGORIAS_EVENTO.map((cat) => ({
-    cat,
-    largura: legendaCategoriasDot + 4 + fonte.widthOfTextAtSize(cat, legendaCategoriasFonteTam),
-  }));
-  const espacoEntreItens = 12;
-  const larguraTotalLegenda =
-    itensLegendaCategorias.reduce((soma, it) => soma + it.largura, 0) + espacoEntreItens * (itensLegendaCategorias.length - 1);
-  let xLegendaCategorias = (PAGE_W - larguraTotalLegenda) / 2;
-  const yLegendaCategorias = gridBaseMax - LEGENDA_CATEGORIAS_H / 2;
-  itensLegendaCategorias.forEach(({ cat, largura: larguraItem }) => {
-    const corDot = corCategoriaHex(cat).dot;
-    pagina.drawEllipse({
-      x: xLegendaCategorias + legendaCategoriasDot / 2,
-      y: yLegendaCategorias - legendaCategoriasFonteTam * 0.32,
-      xScale: legendaCategoriasDot / 2,
-      yScale: legendaCategoriasDot / 2,
-      color: hexParaRgb(corDot),
-    });
-    pagina.drawText(cat, {
-      x: xLegendaCategorias + legendaCategoriasDot + 4,
-      y: yLegendaCategorias - legendaCategoriasFonteTam * 0.72,
-      size: legendaCategoriasFonteTam,
-      font: fonte,
-      color: rgb(0.75, 0.8, 0.92),
-    });
-    xLegendaCategorias += larguraItem + espacoEntreItens;
+    retangulosMeses.push({ ano, mes, x, y: yTopo - linhaAltura, largura: cardW, altura: linhaAltura });
   });
 
   // Rodapé: ilustração (canto inferior esquerdo, sangrando) + logo (centralizada)
@@ -631,6 +667,8 @@ function desenharPagina(
     const alturaAlvo = (logo.height / logo.width) * larguraAlvo;
     pagina.drawImage(logo, { x: (PAGE_W - larguraAlvo) / 2, y: 24, width: larguraAlvo, height: alturaAlvo });
   }
+
+  return retangulosMeses;
 }
 
 // Selo "15 anos" só faz sentido no ano de aniversário — a referência de 2027
@@ -676,10 +714,23 @@ export async function gerarCalendarioPdf({
     paginas.push(meses.slice(i, i + MESES_POR_PAGINA));
   }
 
+  // Retângulos dos mini-meses de cada página de visão geral, coletados pra
+  // virar link clicável depois que as páginas de detalhe existirem (o link
+  // aponta pra `PDFRef` de uma página que só é criada no passo seguinte).
+  const retangulosParaLink: {
+    paginaOverview: PDFPage;
+    ano: number;
+    mes: number;
+    x: number;
+    y: number;
+    largura: number;
+    altura: number;
+  }[] = [];
+
   paginas.forEach((mesesDaPagina, indice) => {
     const pagina = pdf.addPage([PAGE_W, PAGE_H]);
     const logo = mesesDaPagina[0].ano === ANO_ANIVERSARIO_15 ? logoComSelo : logoSemSelo;
-    desenharPagina(pagina, {
+    const retangulos = desenharPagina(pagina, {
       meses: mesesDaPagina,
       eventosPorMes: eventosPorMesDia,
       fonte,
@@ -692,7 +743,46 @@ export async function gerarCalendarioPdf({
       numeroPagina: indice + 1,
       totalPaginas: paginas.length,
     });
+    // Só faz sentido linkar quando a página mostra VÁRIOS meses — no export
+    // de 1 mês só a própria página já É o detalhe, não tem pra onde "expandir".
+    if (mesesDaPagina.length > 1) {
+      retangulos.forEach((r) => retangulosParaLink.push({ paginaOverview: pagina, ...r }));
+    }
   });
+
+  // Clicar num mini-mês da visão geral abre uma página de detalhe cheia
+  // (mesmo layout do export de 1 mês só, sem "+N eventos" escondendo nada)
+  // — pedido do dono: "clico em janeiro e ele abre". Uma página de detalhe
+  // por mês distinto pedido, anexada no fim do documento.
+  if (retangulosParaLink.length > 0) {
+    const mesesUnicos = new Map<string, { ano: number; mes: number }>();
+    for (const r of retangulosParaLink) mesesUnicos.set(`${r.ano}-${r.mes}`, { ano: r.ano, mes: r.mes });
+
+    const paginaDetalhePorMes = new Map<string, PDFPage>();
+    for (const { ano, mes } of mesesUnicos.values()) {
+      const paginaDetalhe = pdf.addPage([PAGE_W, PAGE_H]);
+      const logo = ano === ANO_ANIVERSARIO_15 ? logoComSelo : logoSemSelo;
+      desenharPagina(paginaDetalhe, {
+        meses: [{ ano, mes }],
+        eventosPorMes: eventosPorMesDia,
+        fonte,
+        fonteBold,
+        fonteTitulo,
+        logo,
+        fundoCompleto,
+        decoracaoRodape,
+        tituloPagina: construirSubtitulo([{ ano, mes }]),
+        numeroPagina: 1,
+        totalPaginas: 1,
+      });
+      paginaDetalhePorMes.set(`${ano}-${mes}`, paginaDetalhe);
+    }
+
+    for (const r of retangulosParaLink) {
+      const destino = paginaDetalhePorMes.get(`${r.ano}-${r.mes}`);
+      if (destino) adicionarLinkInterno(pdf, r.paginaOverview, r, destino);
+    }
+  }
 
   const bytes = await pdf.save();
   const base64 = Buffer.from(bytes).toString("base64");
