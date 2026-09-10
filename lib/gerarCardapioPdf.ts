@@ -40,10 +40,10 @@ const PAD_CARD = 14; // respiro entre a borda do cartão branco e o conteúdo
 // dentro da coluna estreita, que é o que mais come espaço vertical com
 // cardápio de verdade (achado real testando com conteúdo denso).
 const LABEL_COL_W = 104;
-const LINE_H = 8.8;
+const LINE_H = 8.5;
 const FONT_SIZE = 8;
 const PAD_X = 4;
-const PAD_Y = 3;
+const PAD_Y = 2.5;
 const HEAD_ROW_H = 22;
 
 const DIA_LABEL_PDF: Record<string, string> = {
@@ -172,7 +172,10 @@ export async function gerarCardapioPdf({
   // versão paisagem gerada offline a partir da mesma arte extraída do PDF
   // de referência do Marketing.
   const fundoCompleto = await embarcarImagemPublica(pdf, "cardapio-fundo-completo.png");
-  const decoracaoRodape = await embarcarImagemPublica(pdf, "calendario-decoracao-rodape.png");
+  // Ícone próprio do cardápio (maçã, na mesma paleta navy/amarelo/branco do
+  // pôster) — antes reaproveitava o desenho de calendário+check do PDF do
+  // calendário, o que não fazia sentido temático aqui.
+  const decoracaoRodape = await embarcarImagemPublica(pdf, "cardapio-decoracao-rodape.png");
   // O servidor roda em UTC — sem timeZone explícito, "Gerado em" saía com a
   // hora errada (3h a menos do horário de Brasília).
   const geradoEm = new Date().toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" });
@@ -180,18 +183,16 @@ export async function gerarCardapioPdf({
   let pagina!: PDFPage;
   let y = 0;
 
-  // O cardápio precisa de MUITO mais altura de tabela que o calendário (é
-  // conteúdo real denso — Almoço/Lanche chegam a 5-6 linhas por dia), então
-  // o cabeçalho/rodapé aqui são mais enxutos que os do pôster do calendário
-  // (achado real, set/2026: com o cabeçalho grande igual ao calendário, um
-  // público com cardápio cheio não cabia mais numa página só como antes).
-  // A decoração amarela do fundo (cardapio-fundo-completo.png, versão MENOR
-  // que a do calendário) desce até ~89pt do topo — o cartão branco começa
-  // depois disso com uma folga pequena, senão a borda arredondada do cartão
-  // deixa um pedaço triangular da decoração visível por baixo dele perto do
-  // canto (mesmo achado real de antes, só que agora com a decoração menor).
-  const CARD_TOPO = PAGE_H - 82;
-  const CARD_BASE = 54; // espaço reservado pro rodapé (ilustração + logo + crédito)
+  // Decoração do canto do MESMO tamanho do calendário (pedido do dono: tem
+  // que ser exatamente igual, não uma versão encolhida) — desce até ~137pt
+  // do topo. O cartão branco começa depois disso com uma folga pequena,
+  // senão a borda arredondada do cartão deixa um pedaço triangular da
+  // decoração visível por baixo dele perto do canto (achado real testando
+  // o próprio PDF). Pra ainda caber 1 página por público com essa decoração
+  // grande, quem ficou mais enxuto foi só a TABELA (fonte, altura de linha,
+  // label+horário lado a lado em vez de empilhado) — não o elemento visual.
+  const CARD_TOPO = PAGE_H - 148;
+  const CARD_BASE = 76; // espaço reservado pro rodapé (ilustração + logo + crédito)
   const CARD_ALTURA = CARD_TOPO - CARD_BASE;
   const CARD_X = MARGIN;
   const CARD_W = PAGE_W - MARGIN * 2;
@@ -209,16 +210,14 @@ export async function gerarCardapioPdf({
     }
 
     // fonteTitulo (Poppins Bold) — mesma fonte de verdade do pôster
-    // original, igual ao calendário; não fonteBold (Helvetica). Tamanho
-    // menor que no calendário (20 vs 40) — cabeçalho bem mais enxuto, pra
-    // sobrar altura pra tabela.
+    // original, igual ao calendário; não fonteBold (Helvetica).
     const titulo = "CARDÁPIO";
-    const tituloTam = 20;
-    pagina.drawText(titulo, { x: MARGIN, y: PAGE_H - 26, size: tituloTam, font: fonteTitulo, color: YELLOW });
+    const tituloTam = 28;
+    pagina.drawText(titulo, { x: MARGIN, y: PAGE_H - 42, size: tituloTam, font: fonteTitulo, color: YELLOW });
     const subtitulo = `${mesLabel} ${ano} · ${tituloPublico}`;
-    pagina.drawText(subtitulo, { x: MARGIN, y: PAGE_H - 39, size: 10, font: fonteTitulo, color: WHITE });
+    pagina.drawText(subtitulo, { x: MARGIN, y: PAGE_H - 62, size: 13, font: fonteTitulo, color: WHITE });
     const geradoTexto = `Gerado em ${geradoEm}`;
-    pagina.drawText(geradoTexto, { x: MARGIN, y: PAGE_H - 49, size: 7, font: fonte, color: rgb(0.75, 0.8, 0.9) });
+    pagina.drawText(geradoTexto, { x: MARGIN, y: PAGE_H - 78, size: 8, font: fonte, color: rgb(0.75, 0.8, 0.9) });
 
     // Cartão branco arredondado — todo o conteúdo (tabela) desenha em cima
     // dele; altura fixa por página, igual à referência do calendário.
@@ -231,14 +230,14 @@ export async function gerarCardapioPdf({
   // estação) — no rodapé, ao lado da ilustração/logo, sobre o fundo navy.
   function desenharRodape(paginaLocal: PDFPage) {
     if (decoracaoRodape) {
-      const larguraAlvo = 46;
+      const larguraAlvo = 68;
       const alturaAlvo = (decoracaoRodape.height / decoracaoRodape.width) * larguraAlvo;
-      paginaLocal.drawImage(decoracaoRodape, { x: -6, y: -8, width: larguraAlvo, height: alturaAlvo });
+      paginaLocal.drawImage(decoracaoRodape, { x: -8, y: -10, width: larguraAlvo, height: alturaAlvo });
     }
     if (logo) {
-      const larguraAlvo = 58;
+      const larguraAlvo = 82;
       const alturaAlvo = (logo.height / logo.width) * larguraAlvo;
-      paginaLocal.drawImage(logo, { x: (PAGE_W - larguraAlvo) / 2, y: 8, width: larguraAlvo, height: alturaAlvo });
+      paginaLocal.drawImage(logo, { x: (PAGE_W - larguraAlvo) / 2, y: 16, width: larguraAlvo, height: alturaAlvo });
     }
     // Faixa própria ACIMA da ilustração/logo (não ao lado) — as observações
     // são frases completas, longas demais pra uma coluna estreita ao lado da
@@ -247,12 +246,12 @@ export async function gerarCardapioPdf({
     // largura inteira da página disponível.
     const credito = `Nutricionista: ${NUTRICIONISTA_CARDAPIO.nome} · ${NUTRICIONISTA_CARDAPIO.registro}`;
     const linhas = [credito, NUTRICIONISTA_CARDAPIO.observacoes[0], NUTRICIONISTA_CARDAPIO.observacoes[1]];
-    const tamanhos = [7, 6, 6];
+    const tamanhos = [7.5, 6.5, 6.5];
     const fontes = [fonteBold, fonte, fonte];
-    let yCredito = 46;
+    let yCredito = 68;
     linhas.forEach((linha, i) => {
-      paginaLocal.drawText(linha, { x: 68, y: yCredito, size: tamanhos[i], font: fontes[i], color: rgb(0.75, 0.8, 0.92) });
-      yCredito -= 8.5;
+      paginaLocal.drawText(linha, { x: 96, y: yCredito, size: tamanhos[i], font: fontes[i], color: rgb(0.75, 0.8, 0.92) });
+      yCredito -= 10;
     });
   }
 
@@ -284,10 +283,10 @@ export async function gerarCardapioPdf({
 
   function desenharPainel(titulo: string, dias: DiaCardapio[], tituloPublico: string) {
     const x0 = CARD_X + PAD_CARD;
-    if (y - 8 - HEAD_ROW_H - (LINE_H * 2 + PAD_Y * 2) < CARD_BASE + PAD_CARD) novaPagina(tituloPublico);
+    if (y - 6 - HEAD_ROW_H - (LINE_H * 2 + PAD_Y * 2) < CARD_BASE + PAD_CARD) novaPagina(tituloPublico);
 
-    pagina.drawText(titulo, { x: x0, y, size: 9.5, font: fonteBold, color: NAVY });
-    y -= 8;
+    pagina.drawText(titulo, { x: x0, y, size: 9, font: fonteBold, color: NAVY });
+    y -= 6;
 
     // Sem cardápio cadastrado ainda pra esse padrão de semana — avisa em vez
     // de deixar a página em branco (nunca inventa conteúdo).
@@ -351,7 +350,7 @@ export async function gerarCardapioPdf({
       }
     });
 
-    y -= 11;
+    y -= 7;
   }
 
   for (const publico of publicos) {
