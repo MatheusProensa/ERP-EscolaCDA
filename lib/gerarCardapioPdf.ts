@@ -1,5 +1,8 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
-import { PAGE_W, PAGE_H, MARGIN, TEXT2, BLACK, embarcarLogo, embarcarImagemPublica } from "./gerarRelatorioPdf";
+import fontkit from "@pdf-lib/fontkit";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { PAGE_W, PAGE_H, MARGIN, TEXT2, BLACK, embarcarImagemPublica } from "./gerarRelatorioPdf";
 import { desenharRetanguloArredondado } from "@/lib/pdfFormas";
 import { NUTRICIONISTA_CARDAPIO } from "@/components/modules/cardapio/constants";
 import type { DiaCardapio, SemanasCardapio } from "@/components/modules/cardapio/types";
@@ -55,6 +58,26 @@ const COR_REFEICAO_HEX: Record<string, string> = {
   LANCHE_2: "#be1e63", // cat4
 };
 const COR_REFEICAO_PADRAO = "#5a6a85";
+
+/**
+ * Fonte do título "CARDÁPIO" — mesma Poppins Bold do pôster do calendário
+ * (lib/gerarCalendarioPdf.ts), confirmada letra a letra contra o pôster
+ * original do Marketing. Duplicada aqui (não exportada de lá) pra não mexer
+ * naquele arquivo — cai pra Helvetica Bold se o arquivo faltar.
+ */
+async function embarcarFonteTitulo(pdf: PDFDocument, fallback: PDFFont): Promise<PDFFont> {
+  try {
+    const bytes = await readFile(path.join(process.cwd(), "public/fonts", "Poppins-Bold.ttf"));
+    return await pdf.embedFont(bytes, { subset: true });
+  } catch (err) {
+    console.error(`[gerarCardapioPdf] Falha ao embutir a fonte do título:`, err);
+    return fallback;
+  }
+}
+
+// Selo "15 anos" só faz sentido no ano de aniversário — mesma regra do
+// calendário (lib/gerarCalendarioPdf.ts, ANO_ANIVERSARIO_15).
+const ANO_ANIVERSARIO_15 = 2026;
 
 function hexParaRgb(hex: string) {
   const n = parseInt(hex.replace("#", ""), 16);
@@ -130,12 +153,19 @@ export async function gerarCardapioPdf({
   publicos: PublicoParaPdf[];
 }): Promise<string> {
   const pdf = await PDFDocument.create();
+  pdf.registerFontkit(fontkit);
   pdf.setTitle(`Cardápio ${mesLabel} ${ano} — Escola CDA`);
   pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const logo = await embarcarLogo(pdf);
-  const decoracaoCanto = await embarcarImagemPublica(pdf, "calendario-decoracao-canto.png");
+  const fonteTitulo = await embarcarFonteTitulo(pdf, fonteBold);
+  const logo = await embarcarImagemPublica(pdf, ano === ANO_ANIVERSARIO_15 ? "logo-cda.png" : "logo-cda-sem-selo.png");
+  // Fundo pré-composto (gradiente + decoração do canto numa imagem só, sem
+  // transparência em runtime) — mesma técnica do calendário (ver comentário
+  // em gerarCalendarioPdf.ts sobre o bug de transparência que isso evita),
+  // versão paisagem gerada offline a partir da mesma arte extraída do PDF
+  // de referência do Marketing.
+  const fundoCompleto = await embarcarImagemPublica(pdf, "cardapio-fundo-completo.png");
   const decoracaoRodape = await embarcarImagemPublica(pdf, "calendario-decoracao-rodape.png");
   // O servidor roda em UTC — sem timeZone explícito, "Gerado em" saía com a
   // hora errada (3h a menos do horário de Brasília).
@@ -144,26 +174,30 @@ export async function gerarCardapioPdf({
   let pagina!: PDFPage;
   let y = 0;
 
-  const CARD_TOPO = PAGE_H - 92;
+  // A decoração amarela do fundo desce até ~137pt do topo — o cartão
+  // branco precisa começar ABAIXO disso (com folga), senão a borda
+  // arredondada do cartão deixa um pedaço triangular da decoração visível
+  // por baixo dele perto do canto (achado real testando o próprio PDF).
+  const CARD_TOPO = PAGE_H - 148;
   const CARD_BASE = 76; // espaço reservado pro rodapé (ilustração + logo + crédito)
   const CARD_ALTURA = CARD_TOPO - CARD_BASE;
   const CARD_X = MARGIN;
   const CARD_W = PAGE_W - MARGIN * 2;
 
   function desenharCabecalho(tituloPublico: string) {
-    pagina.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: NAVY });
-
-    if (decoracaoCanto) {
-      const larguraAlvo = 110;
-      const alturaAlvo = (decoracaoCanto.height / decoracaoCanto.width) * larguraAlvo;
-      pagina.drawImage(decoracaoCanto, { x: PAGE_W - larguraAlvo, y: PAGE_H - alturaAlvo, width: larguraAlvo, height: alturaAlvo });
+    if (fundoCompleto) {
+      pagina.drawImage(fundoCompleto, { x: 0, y: 0, width: PAGE_W, height: PAGE_H });
+    } else {
+      pagina.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: NAVY });
     }
 
+    // fonteTitulo (Poppins Bold) — mesma fonte de verdade do pôster
+    // original, igual ao calendário; não fonteBold (Helvetica).
     const titulo = "CARDÁPIO";
     const tituloTam = 28;
-    pagina.drawText(titulo, { x: MARGIN, y: PAGE_H - 42, size: tituloTam, font: fonteBold, color: YELLOW });
+    pagina.drawText(titulo, { x: MARGIN, y: PAGE_H - 42, size: tituloTam, font: fonteTitulo, color: YELLOW });
     const subtitulo = `${mesLabel} ${ano} · ${tituloPublico}`;
-    pagina.drawText(subtitulo, { x: MARGIN, y: PAGE_H - 62, size: 13, font: fonteBold, color: WHITE });
+    pagina.drawText(subtitulo, { x: MARGIN, y: PAGE_H - 62, size: 13, font: fonteTitulo, color: WHITE });
     const geradoTexto = `Gerado em ${geradoEm}`;
     pagina.drawText(geradoTexto, { x: MARGIN, y: PAGE_H - 78, size: 8, font: fonte, color: rgb(0.75, 0.8, 0.9) });
 
