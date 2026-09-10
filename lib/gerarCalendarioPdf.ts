@@ -1,4 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont, type PDFImage } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { truncar } from "@/lib/gerarRelatorioPdf";
@@ -64,6 +65,26 @@ async function embarcarImagemPublica(pdf: PDFDocument, arquivo: string): Promise
     // era assim mesmo. Loga pra dar pra investigar pelos logs da Vercel.
     console.error(`[gerarCalendarioPdf] Falha ao embutir "${arquivo}":`, err);
     return null;
+  }
+}
+
+/**
+ * Fonte do título "CALENDÁRIO" na referência não é Helvetica — é a Poppins
+ * Bold do Canva (confirmado comparando letra a letra com o pôster original,
+ * set/2026: "R" com perna reta, "Á" com o acento em bloco, "O"/"D" bem
+ * circulares). Só o título/subtítulo usam essa fonte; o resto do pôster
+ * (cabeçalho dos mini-meses, números dos dias) já bate com Helvetica, então
+ * não mexe no resto pra não trocar um descompasso por outro.
+ * Cai pra Helvetica Bold (fonteBold) se o arquivo faltar — título feio é
+ * melhor que PDF quebrado.
+ */
+async function embarcarFonteTitulo(pdf: PDFDocument, fallback: PDFFont): Promise<PDFFont> {
+  try {
+    const bytes = await readFile(path.join(process.cwd(), "public/fonts", "Poppins-Bold.ttf"));
+    return await pdf.embedFont(bytes, { subset: true });
+  } catch (err) {
+    console.error(`[gerarCalendarioPdf] Falha ao embutir a fonte do título:`, err);
+    return fallback;
   }
 }
 
@@ -373,6 +394,7 @@ function desenharPagina(
     eventosPorMes,
     fonte,
     fonteBold,
+    fonteTitulo,
     logo,
     fundoGradiente,
     decoracaoCanto,
@@ -385,6 +407,7 @@ function desenharPagina(
     eventosPorMes: Map<string, { dia: number; titulo: string }[]>;
     fonte: PDFFont;
     fonteBold: PDFFont;
+    fonteTitulo: PDFFont;
     logo: PDFImage | null;
     fundoGradiente: PDFImage | null;
     decoracaoCanto: PDFImage | null;
@@ -417,14 +440,15 @@ function desenharPagina(
     pagina.drawImage(decoracaoCanto, { x: PAGE_W - larguraAlvo, y: PAGE_H - alturaAlvo, width: larguraAlvo, height: alturaAlvo });
   }
 
-  // Título
+  // Título — fonteTitulo (Poppins Bold), não fonteBold (Helvetica): é a
+  // fonte de verdade do pôster original, só usada aqui e no subtítulo.
   const titulo = "CALENDÁRIO";
   const tituloTam = 40;
-  const tituloLargura = fonteBold.widthOfTextAtSize(titulo, tituloTam);
-  pagina.drawText(titulo, { x: (PAGE_W - tituloLargura) / 2, y: PAGE_H - 62, size: tituloTam, font: fonteBold, color: YELLOW });
+  const tituloLargura = fonteTitulo.widthOfTextAtSize(titulo, tituloTam);
+  pagina.drawText(titulo, { x: (PAGE_W - tituloLargura) / 2, y: PAGE_H - 62, size: tituloTam, font: fonteTitulo, color: YELLOW });
   const subtituloTam = 16;
-  const subtituloLargura = fonteBold.widthOfTextAtSize(tituloPagina, subtituloTam);
-  pagina.drawText(tituloPagina, { x: (PAGE_W - subtituloLargura) / 2, y: PAGE_H - 84, size: subtituloTam, font: fonteBold, color: WHITE });
+  const subtituloLargura = fonteTitulo.widthOfTextAtSize(tituloPagina, subtituloTam);
+  pagina.drawText(tituloPagina, { x: (PAGE_W - subtituloLargura) / 2, y: PAGE_H - 84, size: subtituloTam, font: fonteTitulo, color: WHITE });
   if (totalPaginas > 1) {
     const paginacao = `página ${numeroPagina}/${totalPaginas}`;
     const paginacaoTam = 8.5;
@@ -494,11 +518,13 @@ export async function gerarCalendarioPdf({
   eventosPorMes: Map<string, EventoCalendarioPdf[]>;
 }): Promise<string> {
   const pdf = await PDFDocument.create();
+  pdf.registerFontkit(fontkit);
   const primeiro = meses[0];
   pdf.setTitle(`Calendário — ${MESES[primeiro.mes - 1]} ${primeiro.ano} — Escola CDA`);
   pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  const fonteTitulo = await embarcarFonteTitulo(pdf, fonteBold);
   const logoComSelo = await embarcarImagemPublica(pdf, "logo-cda.png");
   const logoSemSelo = await embarcarImagemPublica(pdf, "logo-cda-sem-selo.png");
   const fundoGradiente = await embarcarImagemPublica(pdf, "calendario-fundo-gradiente.png");
@@ -530,6 +556,7 @@ export async function gerarCalendarioPdf({
       eventosPorMes: eventosPorMesDia,
       fonte,
       fonteBold,
+      fonteTitulo,
       logo,
       fundoGradiente,
       decoracaoCanto,
