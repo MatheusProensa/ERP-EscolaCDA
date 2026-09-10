@@ -5,8 +5,8 @@ import type { BadgeVariant } from "@/components/ui/Badge";
  * açúcar, com sal) dividem a mesma tabela no original — é uma nota de dieta,
  * não um cardápio à parte por criança. */
 export const PUBLICOS_CARDAPIO: { valor: string; label: string; nota?: string; cor: BadgeVariant }[] = [
-  { valor: "MATERNAL_PRE", label: "Maternal e Pré-escola", cor: "cat1" },
   { valor: "BERCARIO", label: "Berçário I e II", nota: "Berçário I: sem sal, sem açúcar · Berçário II: sem açúcar, com sal", cor: "cat4" },
+  { valor: "MATERNAL_PRE", label: "Maternal e Pré-escola", cor: "cat1" },
   { valor: "FUNDAMENTAL", label: "Ensino Fundamental", cor: "cat3" },
 ];
 
