@@ -527,9 +527,9 @@ function desenharPagina(
 
   // Rodapé: ilustração (canto inferior esquerdo, sangrando) + logo (centralizada)
   if (decoracaoRodape) {
-    const larguraAlvo = 150;
+    const larguraAlvo = 105;
     const alturaAlvo = (decoracaoRodape.height / decoracaoRodape.width) * larguraAlvo;
-    pagina.drawImage(decoracaoRodape, { x: -12, y: -14, width: larguraAlvo, height: alturaAlvo });
+    pagina.drawImage(decoracaoRodape, { x: -8, y: -10, width: larguraAlvo, height: alturaAlvo });
   }
   if (logo) {
     const larguraAlvo = 110;
