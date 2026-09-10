@@ -91,9 +91,11 @@ function quebrarEm2Linhas(fonte: PDFFont, texto: string, tamanho: number, largur
   return [linha1, truncar(fonte, resto, tamanho, larguraMax)];
 }
 
-/** Agrupa dias consecutivos com o mesmo título num intervalo só ("11-12"),
- * pra legenda não repetir a mesma frase várias vezes (ex.: recesso de vários
- * dias, hoje gravado como um EventoCalendario por dia). */
+/** Agrupa dias consecutivos com o mesmo título num intervalo só, pra legenda
+ * não repetir a mesma frase várias vezes (ex.: recesso de vários dias, hoje
+ * gravado como um EventoCalendario por dia). Rótulo do intervalo segue a
+ * referência: 2 dias usa hífen ("11-12"), 3 ou mais usa "A" por extenso
+ * ("21 A 30") — confirmado nos dois casos reais do pôster original. */
 function agruparEventosDoMes(eventos: { dia: number; titulo: string }[]): { rotulo: string; titulo: string }[] {
   const ordenados = [...eventos].sort((a, b) => a.dia - b.dia || a.titulo.localeCompare(b.titulo, "pt-BR"));
   const grupos: { inicio: number; fim: number; titulo: string }[] = [];
@@ -105,10 +107,13 @@ function agruparEventosDoMes(eventos: { dia: number; titulo: string }[]): { rotu
       grupos.push({ inicio: e.dia, fim: e.dia, titulo: e.titulo });
     }
   }
-  return grupos.map((g) => ({
-    rotulo: g.inicio === g.fim ? String(g.inicio) : `${g.inicio}-${g.fim}`,
-    titulo: g.titulo,
-  }));
+  return grupos.map((g) => {
+    let rotulo = String(g.inicio);
+    if (g.fim !== g.inicio) {
+      rotulo = g.fim - g.inicio === 1 ? `${g.inicio}-${g.fim}` : `${g.inicio} A ${g.fim}`;
+    }
+    return { rotulo, titulo: g.titulo };
+  });
 }
 
 /** Caminho SVG (origem no canto superior-esquerdo, Y pra baixo — convenção
@@ -216,23 +221,50 @@ function desenharMiniMes(
     });
   });
 
+  // Destaque dos dias com evento — UMA barra arredondada por sequência de
+  // dias seguidos na mesma linha da grade (não um círculo por dia). Réplica
+  // fiel da referência: "11-12" ou "21-30" viram uma barra contínua (cantos
+  // arredondados só nas pontas de fora, reta entre os dias do meio — é um
+  // retângulo arredondado só, não vários círculos emendados), e um dia
+  // avulso vira um quadrado arredondado do tamanho da própria célula.
+  const margemH = colunaW * 0.1;
+  const margemV = linhaH * 0.14;
+  const raioDestaque = Math.min(colunaW, linhaH) * 0.22;
+  linhas.forEach((linha, li) => {
+    const yLinha = gradeTopo - cabecalhoSemanaH - (li + 1) * linhaH;
+    let ci = 0;
+    while (ci < linha.length) {
+      const dia = linha[ci];
+      if (dia === null || !eventosDoDia.has(dia)) {
+        ci++;
+        continue;
+      }
+      let fimRun = ci;
+      while (fimRun + 1 < linha.length) {
+        const proximo = linha[fimRun + 1];
+        if (proximo === null || !eventosDoDia.has(proximo)) break;
+        fimRun++;
+      }
+      const xIni = x + ci * colunaW + margemH;
+      const xFim = x + (fimRun + 1) * colunaW - margemH;
+      desenharRetanguloArredondado(pagina, {
+        x: xIni,
+        yTopo: yLinha + linhaH - margemV,
+        largura: xFim - xIni,
+        altura: linhaH - 2 * margemV,
+        raio: raioDestaque,
+        color: YELLOW,
+      });
+      ci = fimRun + 1;
+    }
+  });
+
   const fonteDiaTam = 6 * e;
   linhas.forEach((linha, li) => {
     const yLinha = gradeTopo - cabecalhoSemanaH - (li + 1) * linhaH;
     linha.forEach((dia, ci) => {
       if (dia === null) return;
       const cx = x + ci * colunaW + colunaW / 2;
-      const destacado = eventosDoDia.has(dia);
-      if (destacado) {
-        const alturaPilula = Math.min(linhaH - 2 * e, colunaW - 4 * e);
-        desenharPilula(pagina, {
-          x: cx - alturaPilula / 2,
-          yTopo: yLinha + linhaH / 2 + alturaPilula / 2,
-          largura: alturaPilula,
-          altura: alturaPilula,
-          color: YELLOW,
-        });
-      }
       const texto = String(dia);
       const l = fonte.widthOfTextAtSize(texto, fonteDiaTam);
       pagina.drawText(texto, { x: cx - l / 2, y: yLinha + linhaH / 2 - fonteDiaTam * 0.35, size: fonteDiaTam, font: fonte, color: NAVY_TEXT });
@@ -337,6 +369,7 @@ function desenharPagina(
     fonte,
     fonteBold,
     logo,
+    fundoGradiente,
     decoracaoCanto,
     decoracaoRodape,
     tituloPagina,
@@ -348,6 +381,7 @@ function desenharPagina(
     fonte: PDFFont;
     fonteBold: PDFFont;
     logo: PDFImage | null;
+    fundoGradiente: PDFImage | null;
     decoracaoCanto: PDFImage | null;
     decoracaoRodape: PDFImage | null;
     tituloPagina: string;
@@ -355,7 +389,20 @@ function desenharPagina(
     totalPaginas: number;
   }
 ) {
-  pagina.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: NAVY });
+  // Fundo: a imagem real do gradiente (extraída do pôster original com
+  // pdfimages, igual às outras decorações) em vez de um azul sólido — bug
+  // real (set/2026): o navy chapado que a gente desenhava não é a cor nem o
+  // efeito do pôster de verdade, que tem um brilho radial sutil no canto
+  // superior esquerdo. Escala tipo "cover" (cobre a página inteira, corta o
+  // excesso) porque a proporção da imagem não bate exatamente com A4.
+  if (fundoGradiente) {
+    const escala = Math.max(PAGE_W / fundoGradiente.width, PAGE_H / fundoGradiente.height);
+    const w = fundoGradiente.width * escala;
+    const h = fundoGradiente.height * escala;
+    pagina.drawImage(fundoGradiente, { x: (PAGE_W - w) / 2, y: (PAGE_H - h) / 2, width: w, height: h });
+  } else {
+    pagina.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: NAVY });
+  }
 
   // Decoração do canto superior direito (arte real extraída do pôster do
   // Marketing) — sangrando pro canto, atrás do título.
@@ -428,6 +475,12 @@ function desenharPagina(
   }
 }
 
+// Selo "15 anos" só faz sentido no ano de aniversário — a referência de 2027
+// usa o logo liso ("logo-cda-sem-selo.png", extraído do próprio pôster
+// original) porque em 2027 a escola não completa mais 15 anos. Só 2026 leva
+// o selo; qualquer outro ano (passado ou futuro) usa o logo liso.
+const ANO_ANIVERSARIO_15 = 2026;
+
 export async function gerarCalendarioPdf({
   meses,
   eventosPorMes,
@@ -441,7 +494,9 @@ export async function gerarCalendarioPdf({
   pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const logo = await embarcarImagemPublica(pdf, "logo-cda.png");
+  const logoComSelo = await embarcarImagemPublica(pdf, "logo-cda.png");
+  const logoSemSelo = await embarcarImagemPublica(pdf, "logo-cda-sem-selo.png");
+  const fundoGradiente = await embarcarImagemPublica(pdf, "calendario-fundo-gradiente.png");
   const decoracaoCanto = await embarcarImagemPublica(pdf, "calendario-decoracao-canto.png");
   const decoracaoRodape = await embarcarImagemPublica(pdf, "calendario-decoracao-rodape.png");
 
@@ -464,12 +519,14 @@ export async function gerarCalendarioPdf({
 
   paginas.forEach((mesesDaPagina, indice) => {
     const pagina = pdf.addPage([PAGE_W, PAGE_H]);
+    const logo = mesesDaPagina[0].ano === ANO_ANIVERSARIO_15 ? logoComSelo : logoSemSelo;
     desenharPagina(pagina, {
       meses: mesesDaPagina,
       eventosPorMes: eventosPorMesDia,
       fonte,
       fonteBold,
       logo,
+      fundoGradiente,
       decoracaoCanto,
       decoracaoRodape,
       tituloPagina: construirSubtitulo(mesesDaPagina),
