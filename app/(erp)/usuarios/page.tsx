@@ -1,4 +1,4 @@
-import { Download, KeyRound } from "lucide-react";
+import { Download, KeyRound, Users, Crown, Wallet, UserCog, GraduationCap, type LucideIcon } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -6,11 +6,22 @@ import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { BarraFiltro } from "@/components/ui/BarraFiltro";
+import { MetricCard, type MetricTone } from "@/components/ui/MetricCard";
 import { NovoUsuarioModal } from "@/components/modules/usuarios/NovoUsuarioModal";
 import { UsuarioCard } from "@/components/modules/usuarios/UsuarioCard";
 import { podeEditarModulo } from "@/lib/permissoes";
-import { ROLES_ATIVAS, ROLE_LABEL } from "@/lib/permissoes";
+import { ROLES_ATIVAS, ROLE_LABEL, ROLE_BADGE_VARIANT } from "@/lib/permissoes";
 import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
+
+// Ícone + tom (mesma cor do badge/anel do cargo, ROLE_BADGE_VARIANT já é um
+// MetricTone válido) pra cada cargo que ganha card de resumo no topo — Admin
+// fica de fora (é só o dono, não agrega nada olhar "1" separado).
+const RESUMO_CARGO: { role: (typeof ROLES_ATIVAS)[number]; icon: LucideIcon }[] = [
+  { role: "DIRECAO", icon: Crown },
+  { role: "PEDAGOGICO", icon: GraduationCap },
+  { role: "FINANCEIRO", icon: Wallet },
+  { role: "ADMINISTRATIVO", icon: UserCog },
+];
 
 // Ordem de exibição por hierarquia de cargo, não alfabética por nome — antes
 // a listagem misturava Admin/Direção/Financeiro/Administrativo numa ordem que
@@ -69,6 +80,20 @@ export default async function UsuariosPage({
           </div>
         }
       />
+
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+        <MetricCard icon={Users} tone="neutral" value={todos.length} label="Total de usuários" href="/usuarios" />
+        {RESUMO_CARGO.filter((r) => contagemPorCargo.has(r.role)).map((r) => (
+          <MetricCard
+            key={r.role}
+            icon={r.icon}
+            tone={ROLE_BADGE_VARIANT[r.role] as MetricTone}
+            value={contagemPorCargo.get(r.role) ?? 0}
+            label={ROLE_LABEL[r.role]}
+            href={`/usuarios?cargo=${r.role}`}
+          />
+        ))}
+      </div>
 
       {pedidosPendentes > 0 && (
         <Alert

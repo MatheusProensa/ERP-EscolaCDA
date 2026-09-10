@@ -22,6 +22,18 @@ export const ROLE_BADGE_VARIANT: Record<string, "cat1" | "cat2" | "cat3" | "cat4
   ADMINISTRATIVO: "cat6",
 };
 
+/** Mesma cor de ROLE_BADGE_VARIANT, mas como var CSS crua — pro anel do avatar
+ * em UsuarioCard (mesma receita de "chip com anel" do MetricCard: borda +
+ * sombra suave via color-mix em cima dessa cor), não dá pra usar o Badge ali. */
+export const ROLE_COR_DOT: Record<string, string> = {
+  ADMIN: "var(--cat-3-dot)",
+  DIRECAO: "var(--cat-1-dot)",
+  SECRETARIA: "var(--cat-6-dot)",
+  FINANCEIRO: "var(--cat-2-dot)",
+  PEDAGOGICO: "var(--cat-5-dot)",
+  ADMINISTRATIVO: "var(--cat-6-dot)",
+};
+
 export const GESTAO: RoleAtiva[] = ["ADMIN", "DIRECAO"];
 // Log de Atividades expõe quem mudou o quê no sistema inteiro — só o Admin (Matheus) vê,
 // nem Direção, a pedido explícito dele. Não é um módulo com permissão por pessoa: é
