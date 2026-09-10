@@ -2,14 +2,20 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type PDFIm
 import { readFile } from "fs/promises";
 import path from "path";
 
-/** Embarca o logo real da escola (fundo branco atrás pra garantir contraste com o cabeçalho navy). */
-export async function embarcarLogo(pdf: PDFDocument): Promise<PDFImage | null> {
+/** Embarca um PNG de public/ — devolve null se o arquivo não existir, em vez
+ * de derrubar o PDF inteiro (nenhum elemento decorativo é obrigatório). */
+export async function embarcarImagemPublica(pdf: PDFDocument, arquivo: string): Promise<PDFImage | null> {
   try {
-    const bytes = await readFile(path.join(process.cwd(), "public", "logo-cda.png"));
+    const bytes = await readFile(path.join(process.cwd(), "public", arquivo));
     return await pdf.embedPng(bytes);
   } catch {
     return null;
   }
+}
+
+/** Embarca o logo real da escola (fundo branco atrás pra garantir contraste com o cabeçalho navy). */
+export async function embarcarLogo(pdf: PDFDocument): Promise<PDFImage | null> {
+  return embarcarImagemPublica(pdf, "logo-cda.png");
 }
 
 /** Desenha o logo no canto superior esquerdo do cabeçalho navy. O PNG já tem

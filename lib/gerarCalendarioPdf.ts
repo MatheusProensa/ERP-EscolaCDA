@@ -1,7 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, type PDFPage, type PDFFont, type PDFImage } from "pdf-lib";
-import { readFile } from "node:fs/promises";
-import path from "node:path";
-import { truncar } from "@/lib/gerarRelatorioPdf";
+import { truncar, embarcarImagemPublica } from "@/lib/gerarRelatorioPdf";
+import { desenharRetanguloArredondado, desenharPilula, retanguloTopoArredondadoPath } from "@/lib/pdfFormas";
 import { MESES } from "@/lib/calendario";
 
 /**
@@ -53,15 +52,6 @@ const ESCALA_MAXIMA = 2.4; // trava pra "1 mês" não virar um cartão gigante d
 
 export type EventoCalendarioPdf = { titulo: string; data: Date };
 
-async function embarcarImagemPublica(pdf: PDFDocument, arquivo: string): Promise<PDFImage | null> {
-  try {
-    const bytes = await readFile(path.join(process.cwd(), "public", arquivo));
-    return await pdf.embedPng(bytes);
-  } catch {
-    return null;
-  }
-}
-
 function diasDoMes(ano: number, mes: number): (number | null)[][] {
   const primeiroDiaSemana = new Date(Date.UTC(ano, mes - 1, 1)).getUTCDay(); // 0=Dom
   const totalDias = new Date(Date.UTC(ano, mes, 0)).getUTCDate();
@@ -109,38 +99,6 @@ function agruparEventosDoMes(eventos: { dia: number; titulo: string }[]): { rotu
     rotulo: g.inicio === g.fim ? String(g.inicio) : `${g.inicio}-${g.fim}`,
     titulo: g.titulo,
   }));
-}
-
-/** Caminho SVG (origem no canto superior-esquerdo, Y pra baixo — convenção
- * SVG, que é o que page.drawSvgPath espera) de um retângulo com os 4 cantos
- * arredondados. */
-function retanguloArredondadoPath(w: number, h: number, r: number): string {
-  const raio = Math.max(0, Math.min(r, w / 2, h / 2));
-  return `M ${raio},0 H ${w - raio} Q ${w},0 ${w},${raio} V ${h - raio} Q ${w},${h} ${w - raio},${h} H ${raio} Q 0,${h} 0,${h - raio} V ${raio} Q 0,0 ${raio},0 Z`;
-}
-
-/** Igual ao anterior, mas só os cantos de CIMA são arredondados (base reta)
- * — usado no cabeçalho azul do mini-mês, que fica colado na grade branca
- * embaixo dele. */
-function retanguloTopoArredondadoPath(w: number, h: number, r: number): string {
-  const raio = Math.max(0, Math.min(r, w / 2, h));
-  return `M 0,${raio} Q 0,0 ${raio},0 H ${w - raio} Q ${w},0 ${w},${raio} V ${h} H 0 V ${raio} Z`;
-}
-
-function desenharRetanguloArredondado(
-  pagina: PDFPage,
-  { x, yTopo, largura, altura, raio, color, opacity }: { x: number; yTopo: number; largura: number; altura: number; raio: number; color: ReturnType<typeof rgb>; opacity?: number }
-) {
-  pagina.drawSvgPath(retanguloArredondadoPath(largura, altura, raio), { x, y: yTopo, color, opacity });
-}
-
-/** Pílula (retângulo com os cantos totalmente arredondados) — usada nos
- * chips da legenda e no destaque de dia com evento, igual à referência. */
-function desenharPilula(
-  pagina: PDFPage,
-  { x, yTopo, largura, altura, color }: { x: number; yTopo: number; largura: number; altura: number; color: ReturnType<typeof rgb> }
-) {
-  desenharRetanguloArredondado(pagina, { x, yTopo, largura, altura, raio: altura / 2, color });
 }
 
 function desenharMiniMes(
