@@ -257,32 +257,32 @@ function adicionarLinkInterno(
   }
 }
 
-function desenharMiniMes(
+/** Só a grade do mini-mês (cartão + cabeçalho + dias + destaque por
+ * categoria) — sem a legenda de eventos embaixo, que cada modo de página usa
+ * de um jeito diferente (overview trunca em "+N eventos"; página de detalhe
+ * de 1 mês mostra tudo, em colunas — ver desenharLegendaCompleta). */
+function desenharGradeMes(
   pagina: PDFPage,
   {
     x,
     yTopo,
     largura,
     escala,
-    legendaHeadroom,
     mes,
     ano,
     fonte,
     fonteBold,
     corPorDia,
-    eventosDoMes,
   }: {
     x: number;
     yTopo: number;
     largura: number;
     escala: number;
-    legendaHeadroom: number;
     mes: number;
     ano: number;
     fonte: PDFFont;
     fonteBold: PDFFont;
     corPorDia: Map<number, string>;
-    eventosDoMes: { dia: number; titulo: string; categoria: string }[];
   }
 ) {
   const e = escala;
@@ -389,6 +389,45 @@ function desenharMiniMes(
       pagina.drawText(texto, { x: cx - l / 2, y: yLinha + linhaH / 2 - fonteDiaTam * 0.35, size: fonteDiaTam, font: fonte, color: corTexto });
     });
   });
+}
+
+/** Mini-mês completo (grade + legenda TRUNCADA) — usado só na visão geral
+ * (vários meses na mesma página): a legenda resume o resto em "+N eventos"
+ * quando o espaço do cartão acaba, porque cada cartão tem altura fixa e
+ * nenhum pode invadir o vizinho. A página de detalhe de 1 mês (que existe
+ * justamente pra mostrar tudo) usa desenharGradeMes + desenharLegendaCompleta
+ * direto, não esta função. */
+function desenharMiniMes(
+  pagina: PDFPage,
+  {
+    x,
+    yTopo,
+    largura,
+    escala,
+    legendaHeadroom,
+    mes,
+    ano,
+    fonte,
+    fonteBold,
+    corPorDia,
+    eventosDoMes,
+  }: {
+    x: number;
+    yTopo: number;
+    largura: number;
+    escala: number;
+    legendaHeadroom: number;
+    mes: number;
+    ano: number;
+    fonte: PDFFont;
+    fonteBold: PDFFont;
+    corPorDia: Map<number, string>;
+    eventosDoMes: { dia: number; titulo: string; categoria: string }[];
+  }
+) {
+  const e = escala;
+  const cardH = CARD_H * e;
+  desenharGradeMes(pagina, { x, yTopo, largura, escala, mes, ano, fonte, fonteBold, corPorDia });
 
   // Legenda — cada item com uma pílula colorida pela CATEGORIA do evento
   // (dia/intervalo) + o título em caixa alta, igual à referência (que quebra
@@ -462,6 +501,266 @@ function desenharMiniMes(
       color: rgb(0.75, 0.8, 0.92),
     });
   }
+}
+
+/** Legenda de eventos SEM corte — usada na página de detalhe de 1 mês
+ * (clicar num mês na visão geral abre essa página). Flui em colunas (tipo
+ * jornal) em vez de uma coluna só: com mês de conteúdo real cheio (achado
+ * revisando com dados reais: setembro/2026 tem 50 eventos agrupados), uma
+ * coluna só nunca ia caber por mais que a "arte" encolhesse — múltiplas
+ * colunas multiplicam a capacidade sem precisar de fonte minúscula. Escolhe
+ * o menor número de colunas (1 a 4) que cabe tudo sem cortar; se nem 4
+ * colunas bastar (caso extremo), ainda desenha tudo mesmo assim — essa
+ * página existe justamente pra nunca esconder evento nenhum em "+N eventos".
+ */
+function desenharLegendaCompleta(
+  pagina: PDFPage,
+  {
+    x,
+    yTopo,
+    largura,
+    altura,
+    fonte,
+    fonteBold,
+    eventosDoMes,
+  }: {
+    x: number;
+    yTopo: number;
+    largura: number;
+    altura: number;
+    fonte: PDFFont;
+    fonteBold: PDFFont;
+    eventosDoMes: { dia: number; titulo: string; categoria: string }[];
+  }
+) {
+  const grupos = agruparEventosDoMes(eventosDoMes);
+  if (grupos.length === 0) {
+    pagina.drawText("Nenhum evento cadastrado neste mês.", { x, y: yTopo - 12, size: 9, font: fonte, color: rgb(0.75, 0.8, 0.92) });
+    return;
+  }
+
+  const fonteTam = 7.5;
+  const alturaLinha = fonteTam + 3.5;
+  const chipAltura = 10.5;
+  const deslocamentoLinhaBase = -chipAltura + (chipAltura - fonteTam) / 2 + 1;
+  const gapItem = 4;
+  const gapColuna = 14;
+
+  const alturasParaLargura = (largColuna: number) =>
+    grupos.map((g) => {
+      const chipLargura = Math.max(16, fonteBold.widthOfTextAtSize(g.rotulo, fonteTam) + 7);
+      const linhasTitulo = quebrarEm2Linhas(fonteBold, g.titulo.toUpperCase(), fonteTam, largColuna - chipLargura - 7);
+      return Math.max(chipAltura, linhasTitulo.length * alturaLinha);
+    });
+
+  // Testa de 1 a 4 colunas, fica com a primeira que cabe tudo dentro de `altura`.
+  let colunas = 4;
+  for (let tentativa = 1; tentativa <= 4; tentativa++) {
+    const largColuna = (largura - (tentativa - 1) * gapColuna) / tentativa;
+    const alturas = alturasParaLargura(largColuna);
+    let col = 0;
+    let y = 0;
+    let coube = true;
+    for (const h of alturas) {
+      if (y + h > altura) {
+        col++;
+        y = 0;
+        if (col >= tentativa) {
+          coube = false;
+          break;
+        }
+      }
+      y += h + gapItem;
+    }
+    colunas = tentativa;
+    if (coube) break;
+  }
+
+  const largColuna = (largura - (colunas - 1) * gapColuna) / colunas;
+  const alturas = alturasParaLargura(largColuna);
+
+  let col = 0;
+  let y = yTopo;
+  grupos.forEach((g, i) => {
+    const h = alturas[i];
+    if (y - h < yTopo - altura && col < colunas - 1) {
+      col++;
+      y = yTopo;
+    }
+    const xCol = x + col * (largColuna + gapColuna);
+    const corCategoria = corCategoriaHex(g.categoria).dot;
+    const chipLargura = Math.max(16, fonteBold.widthOfTextAtSize(g.rotulo, fonteTam) + 7);
+    desenharPilula(pagina, { x: xCol, yTopo: y, largura: chipLargura, altura: chipAltura, color: hexParaRgb(corCategoria) });
+    const chipTextoLargura = fonteBold.widthOfTextAtSize(g.rotulo, fonteTam);
+    pagina.drawText(g.rotulo, {
+      x: xCol + (chipLargura - chipTextoLargura) / 2,
+      y: y + deslocamentoLinhaBase,
+      size: fonteTam,
+      font: fonteBold,
+      color: corTextoContraste(corCategoria),
+    });
+    const linhasTitulo = quebrarEm2Linhas(fonteBold, g.titulo.toUpperCase(), fonteTam, largColuna - chipLargura - 7);
+    linhasTitulo.forEach((linha, li) => {
+      pagina.drawText(linha, {
+        x: xCol + chipLargura + 7,
+        y: y + deslocamentoLinhaBase - li * alturaLinha,
+        size: fonteTam,
+        font: fonteBold,
+        color: WHITE,
+      });
+    });
+    y -= h + gapItem;
+  });
+}
+
+/**
+ * Página de detalhe de 1 mês — pra onde o clique num mini-mês da visão geral
+ * leva (ver adicionarLinkInterno em gerarCalendarioPdf). Cabeçalho e rodapé
+ * BEM mais enxutos que o pôster de visão geral, de propósito: pedido real do
+ * dono revisando com dados reais ("se tem vários eventos, diminui a arte") —
+ * meses cheios (30-50 eventos agrupados) precisam de todo o espaço vertical
+ * disponível pra legenda completa (desenharLegendaCompleta), que nunca corta
+ * nada em "+N eventos". Link "← Voltar" no topo pra voltar pra visão geral —
+ * sem ele, a página de detalhe seria um beco sem saída dentro do PDF.
+ */
+function desenharPaginaDetalheMes(
+  pdf: PDFDocument,
+  pagina: PDFPage,
+  {
+    ano,
+    mes,
+    eventosDoMes,
+    fonte,
+    fonteBold,
+    fonteTitulo,
+    logo,
+    fundoCompleto,
+    decoracaoRodape,
+    paginaVoltar,
+  }: {
+    ano: number;
+    mes: number;
+    eventosDoMes: { dia: number; titulo: string; categoria: string }[];
+    fonte: PDFFont;
+    fonteBold: PDFFont;
+    fonteTitulo: PDFFont;
+    logo: PDFImage | null;
+    fundoCompleto: PDFImage | null;
+    decoracaoRodape: PDFImage | null;
+    // null quando esta página não veio de um clique na visão geral (export
+    // direto de 1 mês só, pelo modal) — nesse caso não tem pra onde voltar,
+    // então o link "← Voltar" nem é desenhado.
+    paginaVoltar: PDFPage | null;
+  }
+) {
+  const SANGRIA = 1;
+  if (fundoCompleto) {
+    pagina.drawImage(fundoCompleto, { x: -SANGRIA, y: -SANGRIA, width: PAGE_W + SANGRIA * 2, height: PAGE_H + SANGRIA * 2 });
+  } else {
+    pagina.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: NAVY });
+  }
+
+  const MARGEM_LATERAL = 24;
+
+  // "← Voltar" — sem isso a página de detalhe é um beco sem saída no PDF.
+  // Só existe quando veio de um clique na visão geral (paginaVoltar != null).
+  if (paginaVoltar) {
+    // "<" em vez de "←": a fonte padrão (Helvetica/WinAnsi) não tem o glifo
+    // de seta unicode — bug real (set/2026), quebrava a geração do PDF com
+    // "WinAnsi cannot encode ←".
+    const voltarTexto = "< Voltar ao calendário";
+    const voltarTam = 10;
+    pagina.drawText(voltarTexto, { x: MARGEM_LATERAL, y: PAGE_H - 22, size: voltarTam, font: fonteBold, color: YELLOW });
+    const voltarLargura = fonteBold.widthOfTextAtSize(voltarTexto, voltarTam);
+    adicionarLinkInterno(
+      pdf,
+      pagina,
+      { x: MARGEM_LATERAL - 4, y: PAGE_H - 28, largura: voltarLargura + 8, altura: 18 },
+      paginaVoltar
+    );
+  }
+
+  // Cabeçalho compacto (bem menor que o da visão geral — a prioridade aqui é
+  // deixar espaço pra legenda completa, não a "arte" do pôster).
+  const titulo = "CALENDÁRIO";
+  const tituloTam = 20;
+  const tituloLargura = fonteTitulo.widthOfTextAtSize(titulo, tituloTam);
+  pagina.drawText(titulo, { x: (PAGE_W - tituloLargura) / 2, y: PAGE_H - 46, size: tituloTam, font: fonteTitulo, color: YELLOW });
+  const subtitulo = `${MESES[mes - 1]}/${ano}`;
+  const subtituloTam = 13;
+  const subtituloLargura = fonteTitulo.widthOfTextAtSize(subtitulo, subtituloTam);
+  pagina.drawText(subtitulo, { x: (PAGE_W - subtituloLargura) / 2, y: PAGE_H - 63, size: subtituloTam, font: fonteTitulo, color: WHITE });
+
+  // Legenda de categorias — mesma faixa da visão geral, só reposicionada.
+  const legendaCategoriasFonteTam = 6.5;
+  const legendaCategoriasDot = 5;
+  const itensLegendaCategorias = CATEGORIAS_EVENTO.map((cat) => ({
+    cat,
+    largura: legendaCategoriasDot + 4 + fonte.widthOfTextAtSize(cat, legendaCategoriasFonteTam),
+  }));
+  const espacoEntreItens = 12;
+  const larguraTotalLegenda =
+    itensLegendaCategorias.reduce((soma, it) => soma + it.largura, 0) + espacoEntreItens * (itensLegendaCategorias.length - 1);
+  let xLegendaCategorias = (PAGE_W - larguraTotalLegenda) / 2;
+  const yLegendaCategorias = PAGE_H - 80;
+  itensLegendaCategorias.forEach(({ cat, largura: larguraItem }) => {
+    const corDot = corCategoriaHex(cat).dot;
+    pagina.drawEllipse({
+      x: xLegendaCategorias + legendaCategoriasDot / 2,
+      y: yLegendaCategorias - legendaCategoriasFonteTam * 0.32,
+      xScale: legendaCategoriasDot / 2,
+      yScale: legendaCategoriasDot / 2,
+      color: hexParaRgb(corDot),
+    });
+    pagina.drawText(cat, {
+      x: xLegendaCategorias + legendaCategoriasDot + 4,
+      y: yLegendaCategorias - legendaCategoriasFonteTam * 0.72,
+      size: legendaCategoriasFonteTam,
+      font: fonte,
+      color: rgb(0.75, 0.8, 0.92),
+    });
+    xLegendaCategorias += larguraItem + espacoEntreItens;
+  });
+
+  // Grade do mês — tamanho moderado e fixo (não precisa mais ser gigante:
+  // a legenda completa embaixo é o conteúdo principal desta página agora).
+  const corPorDia = corPorDiaDoMes(eventosDoMes);
+  const escalaGrade = 1.35;
+  const cardW = CARD_W * escalaGrade;
+  const cardH = CARD_H * escalaGrade;
+  const gradeX = (PAGE_W - cardW) / 2;
+  const gradeTopo = PAGE_H - 98;
+  desenharGradeMes(pagina, { x: gradeX, yTopo: gradeTopo, largura: cardW, escala: escalaGrade, mes, ano, fonte, fonteBold, corPorDia });
+
+  // Rodapé BEM menor que o da visão geral (pedido do dono: "diminui a arte"
+  // quando tem muito evento) — sobra o máximo de espaço vertical possível
+  // pra legenda completa, que nunca pode cortar nada.
+  const RODAPE_H = 46;
+  if (decoracaoRodape) {
+    const larguraAlvo = 42;
+    const alturaAlvo = (decoracaoRodape.height / decoracaoRodape.width) * larguraAlvo;
+    pagina.drawImage(decoracaoRodape, { x: -6, y: -8, width: larguraAlvo, height: alturaAlvo });
+  }
+  if (logo) {
+    const larguraAlvo = 62;
+    const alturaAlvo = (logo.height / logo.width) * larguraAlvo;
+    pagina.drawImage(logo, { x: (PAGE_W - larguraAlvo) / 2, y: 10, width: larguraAlvo, height: alturaAlvo });
+  }
+
+  // Legenda completa — ocupa toda a largura útil da página (bem mais que a
+  // largura estreita do cartão do mês) e toda a altura que sobrar até o
+  // rodapé, em colunas. É o motivo desta página existir.
+  const legendaTopo = gradeTopo - cardH - 14;
+  const legendaBase = RODAPE_H + 8;
+  desenharLegendaCompleta(pagina, {
+    x: MARGEM_LATERAL,
+    yTopo: legendaTopo,
+    largura: PAGE_W - MARGEM_LATERAL * 2,
+    altura: legendaTopo - legendaBase,
+    fonte,
+    fonteBold,
+    eventosDoMes,
+  });
 }
 
 /** Layouts "bonitos" pra quantidades comuns de meses (1/3/6/12 são as opções
@@ -706,6 +1005,32 @@ export async function gerarCalendarioPdf({
     );
   }
 
+  // Export de 1 mês só (opção do modal) usa direto o mesmo layout compacto
+  // (sem "+N eventos", legenda completa em colunas) da página de detalhe que
+  // se abre ao clicar num mês na visão geral — mesma experiência pros dois
+  // casos, sem precisar passar pela visão geral primeiro. Sem link "← Voltar"
+  // aqui (não existe visão geral pra voltar, é um PDF de 1 página só).
+  if (meses.length === 1) {
+    const { ano, mes } = meses[0];
+    pdf.setTitle(`Calendário — ${MESES[mes - 1]} ${ano} — Escola CDA`);
+    const pagina = pdf.addPage([PAGE_W, PAGE_H]);
+    const logo = ano === ANO_ANIVERSARIO_15 ? logoComSelo : logoSemSelo;
+    desenharPaginaDetalheMes(pdf, pagina, {
+      ano,
+      mes,
+      eventosDoMes: eventosPorMesDia.get(`${ano}-${mes}`) ?? [],
+      fonte,
+      fonteBold,
+      fonteTitulo,
+      logo,
+      fundoCompleto,
+      decoracaoRodape,
+      paginaVoltar: null,
+    });
+    const bytesUmMes = await pdf.save();
+    return `data:application/pdf;base64,${Buffer.from(bytesUmMes).toString("base64")}`;
+  }
+
   // Pôster comporta até 12 mini-meses numa página só — período maior (ex.:
   // "2 anos") vira várias páginas do mesmo design, 12 meses por vez.
   const MESES_POR_PAGINA = 12;
@@ -756,24 +1081,28 @@ export async function gerarCalendarioPdf({
   // por mês distinto pedido, anexada no fim do documento.
   if (retangulosParaLink.length > 0) {
     const mesesUnicos = new Map<string, { ano: number; mes: number }>();
-    for (const r of retangulosParaLink) mesesUnicos.set(`${r.ano}-${r.mes}`, { ano: r.ano, mes: r.mes });
+    const overviewPorMes = new Map<string, PDFPage>(); // pra onde o "← Voltar" de cada mês deve apontar
+    for (const r of retangulosParaLink) {
+      mesesUnicos.set(`${r.ano}-${r.mes}`, { ano: r.ano, mes: r.mes });
+      overviewPorMes.set(`${r.ano}-${r.mes}`, r.paginaOverview);
+    }
 
     const paginaDetalhePorMes = new Map<string, PDFPage>();
     for (const { ano, mes } of mesesUnicos.values()) {
       const paginaDetalhe = pdf.addPage([PAGE_W, PAGE_H]);
       const logo = ano === ANO_ANIVERSARIO_15 ? logoComSelo : logoSemSelo;
-      desenharPagina(paginaDetalhe, {
-        meses: [{ ano, mes }],
-        eventosPorMes: eventosPorMesDia,
+      const paginaVoltar = overviewPorMes.get(`${ano}-${mes}`)!;
+      desenharPaginaDetalheMes(pdf, paginaDetalhe, {
+        ano,
+        mes,
+        eventosDoMes: eventosPorMesDia.get(`${ano}-${mes}`) ?? [],
         fonte,
         fonteBold,
         fonteTitulo,
         logo,
         fundoCompleto,
         decoracaoRodape,
-        tituloPagina: construirSubtitulo([{ ano, mes }]),
-        numeroPagina: 1,
-        totalPaginas: 1,
+        paginaVoltar,
       });
       paginaDetalhePorMes.set(`${ano}-${mes}`, paginaDetalhe);
     }
