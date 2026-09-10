@@ -425,8 +425,15 @@ function desenharPagina(
   // não só do visualizador). Fundir as duas imagens ANTES de embutir no PDF
   // evita o bug inteiro: só sobra UMA imagem opaca (sem canal alfa), desenhada
   // sem deslocamento nenhum de transparência em runtime.
+  // Bug real (set/2026, achado testando o PDF em alta resolução): a imagem
+  // desenhada exatamente do tamanho da página deixava uma emenda branca de
+  // ~1pt na borda direita (a página do PDF por baixo é branca; arredondamento
+  // na matriz de transformação da imagem não fechava 100% até a borda).
+  // Sangria de 1pt pra cada lado resolve — a imagem passa um pouco da borda
+  // da página (que corta o excesso), então nunca sobra branco visível.
+  const SANGRIA = 1;
   if (fundoCompleto) {
-    pagina.drawImage(fundoCompleto, { x: 0, y: 0, width: PAGE_W, height: PAGE_H });
+    pagina.drawImage(fundoCompleto, { x: -SANGRIA, y: -SANGRIA, width: PAGE_W + SANGRIA * 2, height: PAGE_H + SANGRIA * 2 });
   } else {
     pagina.drawRectangle({ x: 0, y: 0, width: PAGE_W, height: PAGE_H, color: NAVY });
   }
