@@ -14,24 +14,24 @@ datasource db {
 }
 
 model User {
-  id                 String         @id @default(cuid())
+  id                 String             @id @default(cuid())
   name               String
-  email              String         @unique
+  email              String             @unique
   password           String
-  role               Role           @default(SECRETARIA)
+  role               Role               @default(SECRETARIA)
   /// Foto de perfil (JPEG em base64, redimensionado no navegador antes do
   /// upload — ver components/ui/PhotoUpload.tsx). Vira o "image" padrão do
   /// NextAuth na sessão.
   foto               String?
-  tentativasFalhas   Int            @default(0)
+  tentativasFalhas   Int                @default(0)
   bloqueadoAte       DateTime?
   /// Marcado quando o usuário pede "esqueci minha senha" na tela de login —
   /// sem envio de e-mail (não tem provedor configurado), um ADMIN/DIREÇÃO vê
   /// o pedido na tela de Usuários e redefine manualmente (fluxo que já existia).
   pedidoResetSenhaEm DateTime?
-  createdAt          DateTime       @default(now())
-  mensagensEnviadas  Mensagem[]     @relation("MensagensEnviadas")
-  mensagensRecebidas Mensagem[]     @relation("MensagensRecebidas")
+  createdAt          DateTime           @default(now())
+  mensagensEnviadas  Mensagem[]         @relation("MensagensEnviadas")
+  mensagensRecebidas Mensagem[]         @relation("MensagensRecebidas")
   notificacoes       Notificacao[]
   avisosMural        MuralAviso[]
   leiturasAvisos     AvisoLeitura[]
@@ -109,11 +109,12 @@ enum Role {
 }
 
 model AnoLetivo {
-  id         String      @id @default(cuid())
-  ano        Int         @unique
-  ativo      Boolean     @default(false)
-  turmas     Turma[]
-  matriculas Matricula[]
+  id             String          @id @default(cuid())
+  ano            Int             @unique
+  ativo          Boolean         @default(false)
+  turmas         Turma[]
+  matriculas     Matricula[]
+  eventosFamilia EventoFamilia[]
 }
 
 model Turma {
@@ -226,25 +227,26 @@ model Aluno {
   nis             String?
 
   // Dados da Ficha de Matrícula (rotina/perfil da criança)
-  temIrmaos             Boolean?
-  idadesIrmaos          String?
-  usaBico               Boolean?
-  usaMamadeira          Boolean?
-  obsBicoMamadeira      String?
-  jaFrequentouEscola    Boolean?
-  duracaoEscolaAnterior String?
-  rotinaSonoAlimentacao String?
+  temIrmaos              Boolean?
+  idadesIrmaos           String?
+  usaBico                Boolean?
+  usaMamadeira           Boolean?
+  obsBicoMamadeira       String?
+  jaFrequentouEscola     Boolean?
+  duracaoEscolaAnterior  String?
+  rotinaSonoAlimentacao  String?
   brincadeirasPrediletas String?
-  reacoesContrariado    String?
+  reacoesContrariado     String?
 
-  matriculas             Matricula[]
-  responsaveis           Responsavel[]
-  pessoasAutorizadas     PessoaAutorizada[]
-  notasFiscais           NotaFiscal[]
-  boletos                Boleto[]
-  avaliacoesNutricionais AvaliacaoNutricional[]
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
+  matriculas               Matricula[]
+  responsaveis             Responsavel[]
+  pessoasAutorizadas       PessoaAutorizada[]
+  notasFiscais             NotaFiscal[]
+  boletos                  Boleto[]
+  avaliacoesNutricionais   AvaliacaoNutricional[]
+  confirmacoesFestaFamilia ConfirmacaoFestaFamilia[]
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
 
   @@index([nome])
 }
@@ -373,16 +375,16 @@ model Contrato {
   /// editar) — sem isso, assinar pelo link teria que re-derivar tudo do
   /// cadastro atual do aluno, que pode já ter mudado desde a geração e perderia
   /// coisas como dia/mês de vencimento (não existem em outro lugar do banco).
-  alunoNomeSnapshot         String?
-  alunoNascimentoSnapshot   DateTime?
-  responsavelNomeSnapshot   String?
-  responsavelCpfSnapshot    String?
-  turmaNomeSnapshot         String?
-  turnoLabelSnapshot        String?
-  anoLetivoSnapshot         Int?
-  valorMensalidadeSnapshot  Float?
-  dataMatriculaSnapshot     DateTime?
-  diaVencimentoSnapshot     String?
+  alunoNomeSnapshot           String?
+  alunoNascimentoSnapshot     DateTime?
+  responsavelNomeSnapshot     String?
+  responsavelCpfSnapshot      String?
+  turmaNomeSnapshot           String?
+  turnoLabelSnapshot          String?
+  anoLetivoSnapshot           Int?
+  valorMensalidadeSnapshot    Float?
+  dataMatriculaSnapshot       DateTime?
+  diaVencimentoSnapshot       String?
   mesInicioVencimentoSnapshot String?
 }
 
@@ -588,17 +590,17 @@ model Chave {
 }
 
 model EmprestimoChave {
-  id          String    @id @default(cuid())
-  chave       Chave     @relation(fields: [chaveId], references: [id])
-  chaveId     String
+  id                       String       @id @default(cuid())
+  chave                    Chave        @relation(fields: [chaveId], references: [id])
+  chaveId                  String
   /// Nome do responsável — sempre preenchido a partir do Funcionario selecionado
   /// (snapshot, igual a NotaFiscal/LogAtividade). Registros antigos (antes do
   /// autocomplete) podem não ter responsavelFuncionarioId — não foram migrados.
-  responsavel String
+  responsavel              String
   responsavelFuncionario   Funcionario? @relation(fields: [responsavelFuncionarioId], references: [id])
   responsavelFuncionarioId String?
-  retirada    DateTime  @default(now())
-  devolucao   DateTime?
+  retirada                 DateTime     @default(now())
+  devolucao                DateTime?
 }
 
 model MuralAviso {
@@ -649,22 +651,22 @@ model EventoCalendario {
 /// Canva pra cada ano. Cada linha aqui é um "bloco" (card) da tela, na ordem
 /// em que aparece.
 model EscalaEquipeBloco {
-  id                 String            @id @default(cuid())
+  id                 String          @id @default(cuid())
   ano                Int
   ordem              Int
   titulo             String
-  tipo               TipoEscalaBloco   @default(TURNO)
+  tipo               TipoEscalaBloco @default(TURNO)
   /// Só pra TURNO: horários citados no bloco, como referência visual (não
   /// necessariamente 1 pra 1 com cada entrada/saída — ver nota no seed).
-  horariosReferencia String[]          @default([])
+  horariosReferencia String[]        @default([])
   /// Só pra TURNO: [{ pessoa, nota }], nota é o que já vinha escrito no
   /// quadro (ex.: "início do turno", "vem do CTI").
   entradas           Json?
   saidas             Json?
   /// Só pra NOTA: texto livre (organização de turmas, avisos gerais).
   conteudoLivre      String?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 }
 
 enum TipoEscalaBloco {
@@ -680,4 +682,54 @@ model DocumentoInstitucional {
   validade   DateTime?
   observacao String?
   createdAt  DateTime  @default(now())
+}
+
+/// Evento de confirmação de presença por turma/aluno — nasceu da "Festa da
+/// Família" (planilha manual que a Duda, secretaria, mantinha atualizando à
+/// mão em várias versões: quem confirmou, quantos adultos/crianças, quem
+/// compareceu no dia). Genérico o bastante (nome + data livres) pra servir
+/// pra qualquer evento fora do calendário letivo que precise desse controle
+/// de RSVP por aluno, não só a Festa da Família.
+model EventoFamilia {
+  id           String                    @id @default(cuid())
+  nome         String
+  data         DateTime?
+  anoLetivo    AnoLetivo                 @relation(fields: [anoLetivoId], references: [id])
+  anoLetivoId  String
+  confirmacoes ConfirmacaoFestaFamilia[]
+  createdAt    DateTime                  @default(now())
+
+  @@index([anoLetivoId])
+}
+
+enum StatusFestaFamilia {
+  SEM_RESPOSTA
+  CONFIRMADO_AGENDA
+  CONFIRMADO_FORMS
+  NAO_DEU_RETORNO
+  NAO_IRAO
+  VAO_SE_MUDAR
+}
+
+/// Uma linha por (evento, aluno) — atualizada pela Duda conforme a família
+/// responde. `adultos`/`criancas` só fazem sentido depois de confirmado (a
+/// planilha de referência só tinha essa contagem na 2ª rodada, depois da
+/// confirmação); `compareceu` só no dia do evento em si (check-in).
+model ConfirmacaoFestaFamilia {
+  id         String             @id @default(cuid())
+  evento     EventoFamilia      @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+  eventoId   String
+  aluno      Aluno              @relation(fields: [alunoId], references: [id])
+  alunoId    String
+  status     StatusFestaFamilia @default(SEM_RESPOSTA)
+  adultos    Int?
+  criancas   Int?
+  horario    String?
+  compareceu Boolean?
+  observacao String?
+  updatedAt  DateTime           @updatedAt
+
+  @@unique([eventoId, alunoId])
+  @@index([eventoId])
+  @@index([alunoId])
 }

@@ -43,6 +43,20 @@ export const STATUS_INTERESSADO_BADGE: Record<string, { variant: BadgeVariant; l
   DESISTIU: { variant: "danger", label: "Desistiu" },
 };
 
+// Ordem pensada pro fluxo real de confirmação (Festa da Família): começa em
+// quem ainda não respondeu, passa pelos dois jeitos de confirmar (agenda
+// impressa vs. formulário online — mesmo peso, "success" pros dois, só o
+// rótulo muda pra secretaria saber por onde a família respondeu), termina
+// nos desfechos negativos/definitivos.
+export const STATUS_FESTA_FAMILIA_BADGE: Record<string, { variant: BadgeVariant; label: string }> = {
+  SEM_RESPOSTA: { variant: "neutral", label: "Sem resposta" },
+  NAO_DEU_RETORNO: { variant: "warning", label: "Não deu retorno" },
+  CONFIRMADO_AGENDA: { variant: "success", label: "Confirmado (agenda)" },
+  CONFIRMADO_FORMS: { variant: "success", label: "Confirmado (forms)" },
+  NAO_IRAO: { variant: "danger", label: "Não irão" },
+  VAO_SE_MUDAR: { variant: "cat6", label: "Vão se mudar" },
+};
+
 export function situacaoVisual<T extends { variant: BadgeVariant; label: string }>(
   dicionario: Record<string, T>,
   chave: string
