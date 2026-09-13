@@ -37,6 +37,8 @@ model User {
   leiturasAvisos     AvisoLeitura[]
   permissoes         PermissaoUsuario[]
   vinculosPedagogico VinculoPedagogico[]
+  temasPlanejamento  TemaPlanejamento[]
+  planejamentos      Planejamento[]
 }
 
 /// Permissão granular por pessoa/setor — sobrepõe o pacote padrão do Role
@@ -127,6 +129,7 @@ model Turma {
   matriculas         Matricula[]
   listaEspera        ListaEspera[]
   vinculosPedagogico VinculoPedagogico[]
+  planejamentos      Planejamento[]
   createdAt          DateTime            @default(now())
 
   @@unique([nome, anoLetivoId])
@@ -165,6 +168,58 @@ model VinculoPedagogico {
 enum PapelPedagogico {
   REGENTE
   ESPECIALISTA
+}
+
+/// Tema/projeto da semana, cadastrado pela coordenação com uma estrutura já
+/// pronta (achado confirmado, out/2026: "facilitar em um tema já pronto
+/// layout, aí elas só põe o dia e o que vai ter") — a professora não monta o
+/// planejamento do zero, só escolhe o tema e preenche dia a dia. Parecido
+/// com a pasta `_MODELOS` que a coordenadora já usa hoje no Drive.
+model TemaPlanejamento {
+  id            String         @id @default(cuid())
+  titulo        String
+  /// Roteiro/estrutura pronta do tema (o que cobrir, sugestões) — texto livre
+  /// por enquanto, pensado pra aparecer como guia ao lado do formulário.
+  estrutura     String?
+  criadoPor     User           @relation(fields: [criadoPorId], references: [id])
+  criadoPorId   String
+  createdAt     DateTime       @default(now())
+  planejamentos Planejamento[]
+}
+
+/// Planejamento semanal de uma turma — 1 por (turma, semana). Escrito pela
+/// professora regente (às vezes também especialista, a confirmar), a partir
+/// de um TemaPlanejamento opcional.
+model Planejamento {
+  id           String            @id @default(cuid())
+  turma        Turma             @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turmaId      String
+  tema         TemaPlanejamento? @relation(fields: [temaId], references: [id], onDelete: SetNull)
+  temaId       String?
+  /// Segunda-feira da semana que esse planejamento cobre (meia-noite UTC,
+  /// mesma convenção de EventoCalendario) — identidade junto com a turma.
+  semanaInicio DateTime
+  autor        User              @relation(fields: [autorId], references: [id])
+  autorId      String
+  dias         PlanejamentoDia[]
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+
+  @@unique([turmaId, semanaInicio])
+  @@index([turmaId])
+  @@index([temaId])
+}
+
+/// Um dia de conteúdo dentro do planejamento da semana — é o que a
+/// professora de fato preenche ("o que vai ter" naquele dia).
+model PlanejamentoDia {
+  id             String       @id @default(cuid())
+  planejamento   Planejamento @relation(fields: [planejamentoId], references: [id], onDelete: Cascade)
+  planejamentoId String
+  data           DateTime
+  conteudo       String
+
+  @@unique([planejamentoId, data])
 }
 
 enum Turno {
