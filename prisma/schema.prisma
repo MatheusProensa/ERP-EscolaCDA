@@ -36,6 +36,7 @@ model User {
   avisosMural        MuralAviso[]
   leiturasAvisos     AvisoLeitura[]
   permissoes         PermissaoUsuario[]
+  vinculosPedagogico VinculoPedagogico[]
 }
 
 /// Permissão granular por pessoa/setor — sobrepõe o pacote padrão do Role
@@ -117,17 +118,53 @@ model AnoLetivo {
 }
 
 model Turma {
-  id          String        @id @default(cuid())
-  nome        String
-  turno       Turno
-  capacidade  Int           @default(25)
-  anoLetivo   AnoLetivo     @relation(fields: [anoLetivoId], references: [id])
-  anoLetivoId String
-  matriculas  Matricula[]
-  listaEspera ListaEspera[]
-  createdAt   DateTime      @default(now())
+  id                 String              @id @default(cuid())
+  nome               String
+  turno              Turno
+  capacidade         Int                 @default(25)
+  anoLetivo          AnoLetivo           @relation(fields: [anoLetivoId], references: [id])
+  anoLetivoId        String
+  matriculas         Matricula[]
+  listaEspera        ListaEspera[]
+  vinculosPedagogico VinculoPedagogico[]
+  createdAt          DateTime            @default(now())
 
   @@unique([nome, anoLetivoId])
+}
+
+/// Vínculo de uma professora com uma turma na Área Pedagógica (parecer,
+/// planejamento, portfólio) — a permissão granular hoje (PermissaoUsuario) só
+/// enxerga módulo inteiro, sem noção de "só a minha turma"; esta tabela é a
+/// camada extra de escopo por turma, só pra esse módulo.
+/// REGENTE: 1 vínculo por turma, sem matéria — responsável pela turma inteira.
+/// ESPECIALISTA (Ed. Física, Musicalização, Inglês/Bilíngue etc.): vínculo por
+/// matéria, podendo cobrir várias turmas — achado real (out/2026) lendo
+/// pareceres reais da escola: a mesma especialista escreve a mesma seção em
+/// N turmas diferentes, nunca "dona" de 1 turma só como a regente.
+model VinculoPedagogico {
+  id        String          @id @default(cuid())
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  turma     Turma           @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turmaId   String
+  papel     PapelPedagogico
+  /// Só preenchido quando papel = ESPECIALISTA. Texto livre por enquanto (ex.:
+  /// "Educação Física", "Inglês") — vira lista fechada se a variação real
+  /// pedir isso mais pra frente.
+  materia   String?
+  createdAt DateTime        @default(now())
+
+  // Nota: com materia NULL (caso REGENTE), o Postgres trata cada NULL como
+  // distinto — essa constraint não barra duplicata de regente na prática,
+  // só documenta a intenção. A checagem de duplicidade real fica na API.
+  @@unique([userId, turmaId, materia])
+  @@index([turmaId])
+  @@index([userId])
+}
+
+enum PapelPedagogico {
+  REGENTE
+  ESPECIALISTA
 }
 
 enum Turno {
