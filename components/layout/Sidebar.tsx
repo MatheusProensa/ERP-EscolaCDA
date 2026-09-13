@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
   GraduationCap,
+  BookOpen,
   UserCog,
   Megaphone,
   Package,
@@ -42,6 +43,11 @@ type NavGroup = { label: string; items: NavItem[] };
 // escanear por posição do que por frequência de uso. "Dashboard" é a única
 // exceção, sempre primeiro no Principal (é a home, não faz sentido ordenar
 // ele no meio da lista).
+// "Pedagógico" voltou a existir (out/2026, task #18) — mas agora é diferente
+// do que foi dobrado antes: não duplica o Acadêmico, é a área pessoal da
+// professora (parecer/planejamento/portfólio, escopada pela turma/matéria
+// dela). Grupo de 1 item de novo, mas dessa vez de propósito — essa página
+// só cresce por dentro (novas seções internas), não vira mais itens de menu.
 // "Sistema" separado do Administrativo (set/2026, pedido do dono): Usuários
 // e Log de Atividades são administração do PRÓPRIO ERP (quem acessa o quê,
 // auditoria de mudanças), não tarefa do dia a dia da secretaria — misturado
@@ -72,6 +78,10 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Horários da Equipe", href: "/horarios-equipe", icon: CalendarClock },
       { label: "Interessados", href: "/interessados", icon: UserPlus },
     ],
+  },
+  {
+    label: "Pedagógico",
+    items: [{ label: "Minhas Turmas", href: "/pedagogico", icon: BookOpen }],
   },
   {
     label: "Nutrição",

@@ -55,6 +55,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   // Páginas
   { prefixo: "/alunos", roles: PEDAGOGICO },
   { prefixo: "/academico", roles: PEDAGOGICO },
+  { prefixo: "/pedagogico", roles: PEDAGOGICO },
   { prefixo: "/cardapio", roles: PEDAGOGICO },
   // Mesmo pacote do Cardápio: é a Nutricionista que usa (Role Administrativo
   // ou Pedagógico, dependendo de quem — a grade que decide de verdade).
