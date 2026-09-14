@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { hojeBrasilia } from "@/lib/utils";
+import { PlanejamentoTabs } from "@/components/modules/pedagogico/PlanejamentoTabs";
 import {
   segundaFeiraDe,
   diasDaSemana,
@@ -82,12 +83,14 @@ export default async function RoteiroTurmaPage({
     <div>
       <PageHeader
         title={`Roteiro — ${turma.nome}`}
+        subtitle="Resumo em bullets do que já foi preenchido no Planejamento — gerado sozinho, não precisa digitar de novo."
         breadcrumb={[
           { label: "Pedagógico", href: "/pedagogico" },
           { label: turma.nome, href: `/pedagogico/planejamento/${turma.id}` },
           { label: "Roteiro" },
         ]}
       />
+      <PlanejamentoTabs turmaId={turma.id} active="roteiro" />
 
       <div className="mb-2 flex items-center justify-between gap-3">
         <Link

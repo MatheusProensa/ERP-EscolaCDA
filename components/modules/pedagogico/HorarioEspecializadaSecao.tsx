@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CalendarClock } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
 import { showToast } from "@/components/ui/Toast";
 
 const LABEL_DIA = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"];
@@ -60,8 +61,16 @@ export function HorarioEspecializadaSecao({ turmaId, podeEditar }: { turmaId: st
   }
 
   if (carregando) return null;
-  // Sem nada preenchido e sem quem edite: não mostra a seção (evita card vazio pra quem não usa isso).
-  if (!podeEditar && dias.every((d) => !d.texto)) return null;
+  // Sem nada preenchido e sem quem edite: mostra um aviso simples em vez de
+  // sumir — agora é página própria (não mais 1 de várias seções empilhadas),
+  // sumir por completo deixaria a tela em branco sem explicação.
+  if (!podeEditar && dias.every((d) => !d.texto)) {
+    return (
+      <Card>
+        <EmptyState icon={CalendarClock} title="Ainda não tem horário fixo cadastrado" subtitle="Só a regente dessa turma preenche isso." />
+      </Card>
+    );
+  }
 
   return (
     <Card

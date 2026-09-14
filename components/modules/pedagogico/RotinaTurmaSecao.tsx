@@ -19,7 +19,9 @@ export function RotinaTurmaSecao({ turmaId, podeEditar }: { turmaId: string; pod
   const [momentos, setMomentos] = useState<Momento[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
-  const [aberto, setAberto] = useState(false);
+  // Aberta por padrão — agora é página própria (não mais 1 seção escondida
+  // entre outras), não faz sentido nascer fechada.
+  const [aberto, setAberto] = useState(true);
   const [erro, setErro] = useState("");
 
   useEffect(() => {

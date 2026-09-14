@@ -2,11 +2,10 @@ import { notFound } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
-import { hojeBrasilia } from "@/lib/utils";
 import { PlanejamentoTabs } from "@/components/modules/pedagogico/PlanejamentoTabs";
-import { PlanejamentoMensalClient } from "@/components/modules/pedagogico/PlanejamentoMensalClient";
+import { ProjetoPedagogicoSecao } from "@/components/modules/pedagogico/ProjetoPedagogicoSecao";
 
-export default async function PlanejamentoTurmaPage({ params }: { params: Promise<{ turmaId: string }> }) {
+export default async function ProjetoTurmaPage({ params }: { params: Promise<{ turmaId: string }> }) {
   const { turmaId } = await params;
   const session = await auth();
 
@@ -20,23 +19,17 @@ export default async function PlanejamentoTurmaPage({ params }: { params: Promis
   if (!turma) notFound();
 
   const podeEditar = session?.user.role === "ADMIN" || !!vinculo;
-  const hoje = hojeBrasilia();
-  const anoMesInicial = `${hoje.getUTCFullYear()}-${String(hoje.getUTCMonth() + 1).padStart(2, "0")}`;
+  const projetosDTO = projetos.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() }));
 
   return (
     <div>
       <PageHeader
-        title={`Planejamento — ${turma.nome}`}
-        subtitle="O que a turma vai viver cada dia — preencha a semana, clique em Finalizar pra enviar."
+        title={`Projeto pedagógico — ${turma.nome}`}
+        subtitle="O fio condutor do que a turma está explorando agora — o Planejamento semanal se guia por ele."
         breadcrumb={[{ label: "Pedagógico", href: "/pedagogico" }, { label: turma.nome }]}
       />
-      <PlanejamentoTabs turmaId={turma.id} active="planejamento" />
-      <PlanejamentoMensalClient
-        turmaId={turma.id}
-        projetos={projetos.map((p) => ({ id: p.id, nome: p.nome, ativo: p.ativo }))}
-        anoMesInicial={anoMesInicial}
-        podeEditar={podeEditar}
-      />
+      <PlanejamentoTabs turmaId={turma.id} active="projeto" />
+      <ProjetoPedagogicoSecao turmaId={turma.id} projetos={projetosDTO} podeEditar={podeEditar} />
     </div>
   );
 }
