@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { PedagogicoTutorial } from "@/components/modules/pedagogico/PedagogicoTutorial";
 import { PrazoPedagogicoForm } from "@/components/modules/pedagogico/PrazoPedagogicoForm";
+import { BarraFiltro } from "@/components/ui/BarraFiltro";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { hojeBrasilia, ordenarTurmas } from "@/lib/utils";
 import { semanasDoMes } from "@/lib/planejamento";
@@ -18,7 +19,12 @@ const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã", TARDE: "Tarde" };
 /** Hub da professora dentro da Área Pedagógica — mostra o vínculo dela
  * (turma como regente, matéria×turmas como especialista) e leva pras 3
  * entregas (planejamento, parecer, portfólio), todas já reais (task #18). */
-export default async function PedagogicoPage() {
+export default async function PedagogicoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ busca?: string; atrasados?: string }>;
+}) {
+  const { busca, atrasados } = await searchParams;
   const session = await auth();
   const souCoordenadora = session?.user.role === "ADMIN" || !!session?.user.coordenaAreaPedagogica;
 
@@ -113,6 +119,22 @@ export default async function PedagogicoPage() {
       )
     : [];
 
+  // Busca por turma/professora + filtro "só atrasados" (pedido do dono:
+  // "filtro só atrasados com 1 clique" + "busca rápida por nome de
+  // professora ou turma") — só filtra a LISTA, os cards de resumo acima
+  // continuam mostrando o total real do ano letivo, filtro nenhum.
+  const buscaNormalizada = (busca ?? "").trim().toLowerCase();
+  const soAtrasados = atrasados === "1";
+  const turmasFiltradas = todasTurmas.filter((t) => {
+    if (soAtrasados && statusExibicao(t.id) !== "ATRASADO") return false;
+    if (buscaNormalizada) {
+      const regenteNome = t.vinculosPedagogico[0]?.user.name ?? "";
+      const alvo = `${t.nome} ${regenteNome}`.toLowerCase();
+      if (!alvo.includes(buscaNormalizada)) return false;
+    }
+    return true;
+  });
+
   // Ordem pensada pra achar rápido o que se usa todo dia primeiro (pedido
   // explícito do dono: página bem organizada pra fácil utilização) —
   // coordenadora vê o painel de acompanhamento logo de cara (é o motivo
@@ -154,6 +176,13 @@ export default async function PedagogicoPage() {
               subtext={prazoVencido ? "Passou do prazo do mês" : "Planejamento desse mês"}
             />
           </div>
+          <BarraFiltro
+            buscaParam="busca"
+            buscaPlaceholder="Buscar turma ou professora..."
+            checkboxes={[{ paramName: "atrasados", value: "1", label: "Só atrasadas" }]}
+            total={turmasFiltradas.length}
+            totalGeral={todasTurmas.length}
+          />
           <Card
             title={
               <div className="flex items-center gap-2">
@@ -162,8 +191,11 @@ export default async function PedagogicoPage() {
               </div>
             }
           >
+            {turmasFiltradas.length === 0 && (
+              <p className="px-5 py-6 text-center text-sm text-cda-text3">Nenhuma turma encontrada com esse filtro.</p>
+            )}
             {(["TARDE", "MANHA"] as const).map((turno) => {
-              const turmasDoTurno = todasTurmas.filter((t) => t.turno === turno);
+              const turmasDoTurno = turmasFiltradas.filter((t) => t.turno === turno);
               if (turmasDoTurno.length === 0) return null;
               return (
                 <div key={turno}>
