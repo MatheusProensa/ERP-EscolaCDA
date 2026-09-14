@@ -1,13 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { diasDaSemana, isoData, tipoPadraoDoDia, blocosDoDia, semanasDoMes, type ConteudoDiaPlanejamento } from "@/lib/planejamento";
-import { gerarPlanejamentoMesPdf, type DiaPlanejamentoPdf, type SemanaPlanejamentoPdf, type MomentoRotinaPdf } from "@/lib/gerarPlanejamentoPdf";
+import {
+  diasDaSemana,
+  isoData,
+  tipoPadraoDoDia,
+  tituloDoDia,
+  bulletsDoDia,
+  semanasDoMes,
+  type ConteudoDiaPlanejamento,
+} from "@/lib/planejamento";
+import { gerarRoteiroMesPdf, type RoteiroDiaPdf, type RoteiroSemanaPdf } from "@/lib/gerarRoteiroPdf";
 import { respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import type { TipoDiaPlanejamento } from "@prisma/client";
 
-const LABEL_DIA = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"];
-const LABEL_TIPO: Record<string, string> = { TEMATICA: "Temática do dia", CONTEXTO: "Contexto organizado" };
+const LABEL_DIA = ["SEGUNDA-FEIRA", "TERÇA-FEIRA", "QUARTA-FEIRA", "QUINTA-FEIRA", "SEXTA-FEIRA"];
 const MESES_LABEL = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
@@ -17,11 +24,10 @@ function formatarDiaMes(data: Date): string {
   return data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
 }
 
-/** Exporta o planejamento do MÊS INTEIRO em PDF (achado real, set/2026: o
- * documento real da escola é organizado por mês, com as semanas dentro —
- * correção do dono depois de ver o PDF sair só por semana: "é o mês
- * inteiro, é o projeto do mês inteiro"). A professora preenche semana a
- * semana na tela; aqui é onde tudo isso vira 1 PDF só. Qualquer um do
+/** Exporta o Roteiro de Vivências Pedagógicas do MÊS INTEIRO em PDF — tabela
+ * horizontal com os 5 dias em colunas (achado real, set/2026, documento
+ * MODELO_ROTEIRO_CDA). É o resumo do Planejamento (mesmos dados, gerado
+ * automaticamente, sem a professora digitar de novo). Qualquer um do
  * Pedagógico baixa, não só quem edita. */
 export async function GET(req: NextRequest) {
   const session = await auth();
@@ -39,50 +45,51 @@ export async function GET(req: NextRequest) {
   if (!turma) return NextResponse.json({ error: "Turma não encontrada" }, { status: 404 });
 
   const semanasIniciais = semanasDoMes(referencia);
-  const [planejamentos, momentosRotina, regente] = await Promise.all([
+  const [planejamentos, regente, projetoAtivo] = await Promise.all([
     prisma.planejamento.findMany({
       where: { turmaId, semanaInicio: { in: semanasIniciais } },
       include: { dias: true, projeto: { select: { nome: true, justificativa: true } } },
     }),
-    prisma.momentoRotina.findMany({ where: { turmaId }, orderBy: { ordem: "asc" } }),
     prisma.vinculoPedagogico.findFirst({ where: { turmaId, papel: "REGENTE" }, select: { user: { select: { name: true } } } }),
+    prisma.projetoPedagogico.findFirst({ where: { turmaId, ativo: true }, select: { nome: true, justificativa: true } }),
   ]);
   const planejamentoPorSemana = new Map(planejamentos.map((p) => [isoData(p.semanaInicio), p]));
-  const rotina: MomentoRotinaPdf[] = momentosRotina.map((m) => ({ nome: m.nome, descricao: m.descricao }));
 
-  const semanas: SemanaPlanejamentoPdf[] = semanasIniciais.map((semanaInicio) => {
+  // Tema do Projeto + Justificativa aparecem 1 vez no topo do documento real
+  // (não por semana) — usa o projeto da 1ª semana que tiver um escolhido, ou
+  // o ativo da turma quando nenhuma semana ainda escolheu.
+  const projetoDoMes = planejamentos.find((p) => p.projeto)?.projeto ?? projetoAtivo;
+
+  const semanas: RoteiroSemanaPdf[] = semanasIniciais.map((semanaInicio) => {
     const planejamento = planejamentoPorSemana.get(isoData(semanaInicio));
     const diasPorData = new Map((planejamento?.dias ?? []).map((d) => [isoData(d.data), d]));
-    const dias: DiaPlanejamentoPdf[] = diasDaSemana(semanaInicio).map((data, indice) => {
+    const dias: RoteiroDiaPdf[] = diasDaSemana(semanaInicio).map((data, indice) => {
       const salvo = diasPorData.get(isoData(data));
       const tipo = (salvo?.tipo ?? tipoPadraoDoDia(indice)) as TipoDiaPlanejamento;
       const conteudo = (salvo?.conteudo ?? {}) as ConteudoDiaPlanejamento;
       return {
-        label: `${LABEL_DIA[indice]} — ${formatarDiaMes(data)}`,
-        tipoLabel: LABEL_TIPO[tipo],
-        blocos: blocosDoDia(tipo, conteudo),
+        diaLabel: `${LABEL_DIA[indice]} — ${formatarDiaMes(data)}`,
+        tematica: tituloDoDia(tipo, conteudo),
+        vivencias: bulletsDoDia(tipo, conteudo),
         especializadas: salvo?.especializadas ?? "",
       };
     });
     return {
       semanaLabel: `Semana de ${formatarDiaMes(semanaInicio)} a ${formatarDiaMes(diasDaSemana(semanaInicio)[4])}`,
-      projetoNome: planejamento?.projeto?.nome ?? null,
-      projetoJustificativa: planejamento?.projeto?.justificativa ?? null,
       materiais: planejamento?.materiais ?? null,
-      tardeCulturalApresentacao: planejamento?.tardeCulturalApresentacao ?? null,
-      tardeCulturalMateriais: planejamento?.tardeCulturalMateriais ?? null,
       dias,
     };
   });
 
   const mesLabel = `${MESES_LABEL[mes - 1]} de ${ano}`;
-  const dataUri = await gerarPlanejamentoMesPdf({
+  const dataUri = await gerarRoteiroMesPdf({
     turmaNome: turma.nome,
     professoraNome: regente?.user.name ?? "",
     mesLabel,
-    rotina,
+    projetoNome: projetoDoMes?.nome ?? null,
+    projetoJustificativa: projetoDoMes?.justificativa ?? null,
     semanas,
   });
 
-  return respostaPDF(dataUri, nomeArquivoPdf("Planejamento", turma.nome, mesLabel));
+  return respostaPDF(dataUri, nomeArquivoPdf("Roteiro de Vivencias", turma.nome, mesLabel));
 }

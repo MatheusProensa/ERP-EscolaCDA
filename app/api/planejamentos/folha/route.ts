@@ -33,14 +33,27 @@ export async function GET(req: NextRequest) {
   if (!turma) return NextResponse.json({ error: "Turma não encontrada" }, { status: 404 });
 
   const semanaInicio = segundaFeiraDe(data);
-  const planejamento = await prisma.planejamento.findUnique({
-    where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
-    include: { dias: { where: { data } } },
-  });
+  const [planejamento, matriculas] = await Promise.all([
+    prisma.planejamento.findUnique({
+      where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
+      include: { dias: { where: { data } } },
+    }),
+    prisma.matricula.findMany({
+      where: { turmaId, situacao: "ATIVA" },
+      orderBy: { aluno: { nome: "asc" } },
+      select: { aluno: { select: { nome: true } } },
+    }),
+  ]);
   const conteudo = (planejamento?.dias[0]?.conteudo ?? {}) as ConteudoDiaPlanejamento;
   const texto = conteudo[CHAVE_POR_TIPO[tipo]];
   if (!texto) return NextResponse.json({ error: "Esse dia ainda não tem texto preenchido pra essa folha" }, { status: 404 });
 
-  const dataUri = await gerarFolhaImprimivelPdf({ tipo, turmaNome: turma.nome, texto });
-  return respostaPDF(dataUri, nomeArquivoPdf(tipo === "TEMA_LITERARIO" ? "Tema Literario" : "Atividade Grafica", turma.nome));
+  // Puxa a lista de alunos ativos da turma — 1 página por aluno, com o nome
+  // já preenchido (pedido do dono, set/2026: "sistema puxa a lista de alunos
+  // da turma e gera PDF com uma folha por aluno automaticamente").
+  const alunos = matriculas.map((m) => m.aluno.nome);
+  const dataLabel = data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" });
+
+  const dataUri = await gerarFolhaImprimivelPdf({ tipo, turmaNome: turma.nome, texto, dataLabel, alunos });
+  return respostaPDF(dataUri, nomeArquivoPdf(tipo === "TEMA_LITERARIO" ? "Tema Literario" : "Atividade Grafica", turma.nome, dataLabel));
 }

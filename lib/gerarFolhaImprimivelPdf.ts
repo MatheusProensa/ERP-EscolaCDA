@@ -1,10 +1,10 @@
-import { PDFDocument, StandardFonts } from "pdf-lib";
-import { embarcarLogo, desenharLogo, desenharSlogan, NAVY, YELLOW, TEXT2, BLACK, WHITE } from "./gerarRelatorioPdf";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 
 const LARGURA = 595;
 const ALTURA = 842; // A4 retrato — folha pra imprimir e preencher à mão, não tabela
 const MARGEM = 48;
-const HEADER_H = 70;
+const PRETO = rgb(0, 0, 0);
+const CINZA = rgb(0.35, 0.35, 0.35);
 
 export type TipoFolhaImprimivel = "TEMA_LITERARIO" | "ATIVIDADE_GRAFICA";
 
@@ -13,50 +13,39 @@ const TITULO: Record<TipoFolhaImprimivel, string> = {
   ATIVIDADE_GRAFICA: "Atividade Gráfica",
 };
 
-/** Folha imprimível pontual (achado real, set/2026: documentos
- * MODELO_TEMA_LITERÁRIO/ATIVIDADE_GRÁFICA_CDA) — cabeçalho NOME/DATA em
- * branco pra criança preencher, o texto da instrução (escrito pela
- * professora naquele dia específico do planejamento) e um espaço grande em
- * branco pro desenho. Uma folha por vez (não é lista de alunos — é o mesmo
- * impresso repetido N vezes na hora de tirar cópia). */
+/** Folha imprimível (achado real, set/2026: documentos
+ * MODELO_TEMA_LITERÁRIO/ATIVIDADE_GRÁFICA_CDA) — cabeçalho "NOME: ___ DATA:
+ * ___", título, o texto da instrução (escrito pela professora naquele dia
+ * específico do planejamento) e um espaço grande em branco pro desenho. Sem
+ * logo, sem cor — folha simples preto e branco pra imprimir em quantidade
+ * (pedido do dono, set/2026: "na área pedagógica quero fielmente aos
+ * arquivos que te mandei", os 4 docs reais da escola são todos assim).
+ *
+ * `alunos` é a lista de nomes da turma — gera 1 página por aluno, com o
+ * nome já preenchido na linha (puxado da matrícula, acaba com a professora
+ * escrevendo 20x o mesmo cabeçalho à mão). Lista vazia gera 1 página em
+ * branco (cópia mestra, pra imprimir manualmente quando não há turma
+ * associada). A data vem de fora, é a mesma pra turma inteira nesse dia. */
 export async function gerarFolhaImprimivelPdf({
   tipo,
   turmaNome,
   texto,
+  dataLabel,
+  alunos,
 }: {
   tipo: TipoFolhaImprimivel;
   turmaNome: string;
   texto: string;
+  dataLabel: string;
+  alunos: string[];
 }): Promise<string> {
   const pdf = await PDFDocument.create();
   pdf.setTitle(`${TITULO[tipo]} — ${turmaNome} — Escola CDA`);
   pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const logo = await embarcarLogo(pdf);
 
-  const pagina = pdf.addPage([LARGURA, ALTURA]);
-
-  pagina.drawRectangle({ x: 0, y: ALTURA - HEADER_H, width: LARGURA, height: HEADER_H, color: NAVY });
-  pagina.drawRectangle({ x: 0, y: ALTURA - HEADER_H - 3, width: LARGURA, height: 3, color: YELLOW });
-  desenharLogo(pagina, logo, ALTURA);
-  desenharSlogan(pagina, fonte, ALTURA);
-  const turmaLargura = fonteBold.widthOfTextAtSize(turmaNome, 12);
-  pagina.drawText(turmaNome, { x: LARGURA - MARGEM - turmaLargura, y: ALTURA - 32, size: 12, font: fonteBold, color: WHITE });
-
-  let y = ALTURA - HEADER_H - 40;
-
-  // Linha NOME/DATA pra criança preencher à mão
-  pagina.drawText("NOME:", { x: MARGEM, y, size: 10, font: fonteBold, color: BLACK });
-  pagina.drawLine({ start: { x: MARGEM + 42, y: y - 2 }, end: { x: LARGURA - MARGEM - 110, y: y - 2 }, thickness: 0.8, color: TEXT2 });
-  pagina.drawText("DATA:", { x: LARGURA - MARGEM - 95, y, size: 10, font: fonteBold, color: BLACK });
-  pagina.drawLine({ start: { x: LARGURA - MARGEM - 55, y: y - 2 }, end: { x: LARGURA - MARGEM, y: y - 2 }, thickness: 0.8, color: TEXT2 });
-  y -= 40;
-
-  const tituloTexto = TITULO[tipo].toUpperCase();
-  const tituloLargura = fonteBold.widthOfTextAtSize(tituloTexto, 18);
-  pagina.drawText(tituloTexto, { x: (LARGURA - tituloLargura) / 2, y, size: 18, font: fonteBold, color: NAVY });
-  y -= 34;
+  const larguraUtil = LARGURA - MARGEM * 2;
 
   function quebrarLinhas(txt: string, tamanho: number, larguraMax: number): string[] {
     const palavras = txt.replace(/[\r\n]+/g, " ").split(" ");
@@ -75,24 +64,45 @@ export async function gerarFolhaImprimivelPdf({
     return linhas;
   }
 
-  const larguraUtil = LARGURA - MARGEM * 2;
-  for (const linha of quebrarLinhas(texto, 11, larguraUtil)) {
-    pagina.drawText(linha, { x: MARGEM, y, size: 11, font: fonte, color: BLACK });
-    y -= 16;
-  }
-  y -= 20;
+  const listaAlunos = alunos.length > 0 ? alunos : [""];
 
-  // Espaço em branco pro desenho — ocupa o resto da página, com borda leve
-  // só pra delimitar a área (achado real: a criança desenha livre ali dentro).
-  const rodape = 40;
-  pagina.drawRectangle({
-    x: MARGEM,
-    y: rodape,
-    width: larguraUtil,
-    height: y - rodape,
-    borderColor: TEXT2,
-    borderWidth: 0.8,
-  });
+  for (const nomeAluno of listaAlunos) {
+    const pagina = pdf.addPage([LARGURA, ALTURA]);
+    let y = ALTURA - MARGEM;
+
+    // Cabeçalho igual ao modelo: "NOME: ___ DATA: xx/xx/xxxx"
+    pagina.drawText("NOME:", { x: MARGEM, y, size: 10, font: fonteBold, color: PRETO });
+    if (nomeAluno) {
+      pagina.drawText(nomeAluno, { x: MARGEM + 42, y, size: 10, font: fonte, color: PRETO });
+    }
+    pagina.drawLine({ start: { x: MARGEM + 42, y: y - 2 }, end: { x: LARGURA - MARGEM - 110, y: y - 2 }, thickness: 0.8, color: PRETO });
+    pagina.drawText("DATA:", { x: LARGURA - MARGEM - 95, y, size: 10, font: fonteBold, color: PRETO });
+    pagina.drawText(dataLabel, { x: LARGURA - MARGEM - 55, y, size: 10, font: fonte, color: PRETO });
+    y -= 40;
+
+    const tituloTexto = TITULO[tipo].toUpperCase();
+    const tituloLargura = fonteBold.widthOfTextAtSize(tituloTexto, 16);
+    pagina.drawText(tituloTexto, { x: (LARGURA - tituloLargura) / 2, y, size: 16, font: fonteBold, color: PRETO });
+    y -= 30;
+
+    for (const linha of quebrarLinhas(texto, 11, larguraUtil)) {
+      pagina.drawText(linha, { x: MARGEM, y, size: 11, font: fonte, color: PRETO });
+      y -= 16;
+    }
+    y -= 20;
+
+    // Espaço em branco pro desenho — ocupa o resto da página, com borda leve
+    // só pra delimitar a área (achado real: a criança desenha livre ali dentro).
+    const rodape = 40;
+    pagina.drawRectangle({
+      x: MARGEM,
+      y: rodape,
+      width: larguraUtil,
+      height: y - rodape,
+      borderColor: CINZA,
+      borderWidth: 0.8,
+    });
+  }
 
   const bytes = await pdf.save();
   const base64 = Buffer.from(bytes).toString("base64");

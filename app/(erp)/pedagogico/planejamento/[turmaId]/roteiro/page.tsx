@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, ChevronRight, Sparkles, CalendarClock, ScrollText } from "lucide-react";
+import { ChevronLeft, ChevronRight, Sparkles, CalendarClock, ScrollText, Printer } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
@@ -51,6 +51,7 @@ export default async function RoteiroTurmaPage({
   const semanaBase = semanaParam ? new Date(`${semanaParam}T00:00:00.000Z`) : hojeBrasilia();
   const semanaInicio = segundaFeiraDe(Number.isNaN(semanaBase.getTime()) ? hojeBrasilia() : semanaBase);
   const semanaIso = isoData(semanaInicio);
+  const anoMes = `${semanaInicio.getUTCFullYear()}-${String(semanaInicio.getUTCMonth() + 1).padStart(2, "0")}`;
 
   const [planejamento, horarios] = await Promise.all([
     prisma.planejamento.findUnique({
@@ -88,7 +89,7 @@ export default async function RoteiroTurmaPage({
         ]}
       />
 
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div className="mb-2 flex items-center justify-between gap-3">
         <Link
           href={`/pedagogico/planejamento/${turma.id}/roteiro?semana=${somarDias(semanaIso, -7)}`}
           className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg"
@@ -107,6 +108,16 @@ export default async function RoteiroTurmaPage({
           <ChevronRight className="h-4 w-4" />
         </Link>
       </div>
+
+      <a
+        href={`/api/planejamentos/roteiro-pdf?turmaId=${turma.id}&mes=${anoMes}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mb-5 inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
+      >
+        <Printer className="h-3.5 w-3.5" />
+        Baixar PDF do Roteiro (mês inteiro)
+      </a>
 
       {planejamento?.projeto && (
         <Card
