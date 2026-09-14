@@ -45,15 +45,14 @@ export default async function PedagogicoPage() {
     especialistaPorMateria.set(chave, [...(especialistaPorMateria.get(chave) ?? []), v]);
   }
 
-  // "Entregue" = tem TODAS as semanas do mês atual com pelo menos 1 dia
-  // preenchido — a cobrança da coordenadora é mensal (correção do dono,
-  // set/2026: "planejamento é por mês", repetida depois de ver o card
-  // "Entregaram essa semana" no ar). A professora continua preenchendo
-  // semana a semana (é como o documento real é organizado), só o status
-  // de acompanhamento olha o mês inteiro, não a semana isolada.
+  // "Entregue" = tem TODAS as semanas do mês atual com status ENVIADO — a
+  // cobrança da coordenadora é mensal (correção do dono, set/2026:
+  // "planejamento é por mês") e a entrega em si é um clique explícito no
+  // botão "Finalizar" de cada semana (pedido do dono, set/2026: botão de
+  // verdade em vez do status ser só heurística de "tem algo preenchido").
   const semanasMes = semanasDoMes(hojeBrasilia());
   const planejamentosMes = await prisma.planejamento.findMany({
-    where: { semanaInicio: { in: semanasMes }, dias: { some: {} } },
+    where: { semanaInicio: { in: semanasMes }, status: "ENVIADO" },
     select: { turmaId: true },
   });
   const contagemPorTurma = new Map<string, number>();

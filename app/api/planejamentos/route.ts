@@ -90,6 +90,7 @@ export async function GET(req: NextRequest) {
     semanaInicio: isoData(semanaInicio),
     projetoId: planejamento?.projetoId ?? projetoAtivo?.id ?? null,
     materiais: planejamento?.materiais ?? "",
+    status: planejamento?.status ?? "RASCUNHO",
     dias,
     podeEditar: await podeEscrever(session.user.id, session.user.role, turmaId),
   });
@@ -108,6 +109,10 @@ export async function POST(req: NextRequest) {
   const projetoId = body?.projetoId ? String(body.projetoId) : null;
   const materiais = body?.materiais ? String(body.materiais).trim() : null;
   const dias = Array.isArray(body?.dias) ? body.dias : [];
+  // undefined = não mexe no status atual (salvar comum); só muda quando o
+  // front manda explícito (botão "Finalizar" manda ENVIADO) — mesmo padrão
+  // já usado em /api/pareceres/[id]/alunos/[alunoId].
+  const status = body?.status === "ENVIADO" ? "ENVIADO" : body?.status === "RASCUNHO" ? "RASCUNHO" : undefined;
 
   if (!turmaId || !semanaParam) return NextResponse.json({ error: "Informe turmaId e semana" }, { status: 400 });
   const semana = new Date(`${semanaParam}T00:00:00.000Z`);
@@ -143,8 +148,8 @@ export async function POST(req: NextRequest) {
     const planejamento = await prisma.$transaction(async (tx) => {
       const registro = await tx.planejamento.upsert({
         where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
-        create: { turmaId, semanaInicio, projetoId, materiais, autorId: session.user.id },
-        update: { projetoId, materiais, autorId: session.user.id },
+        create: { turmaId, semanaInicio, projetoId, materiais, autorId: session.user.id, ...(status ? { status } : {}) },
+        update: { projetoId, materiais, autorId: session.user.id, ...(status ? { status } : {}) },
       });
       await tx.planejamentoDia.deleteMany({ where: { planejamentoId: registro.id } });
       await tx.planejamentoDia.createMany({
@@ -161,7 +166,7 @@ export async function POST(req: NextRequest) {
 
     await prisma.logAtividade.create({
       data: {
-        acao: `Planejamento da semana de ${isoData(semanaInicio)} salvo (${turma.nome})`,
+        acao: `Planejamento da semana de ${isoData(semanaInicio)} ${status === "ENVIADO" ? "finalizado" : "salvo"} (${turma.nome})`,
         entidade: "Planejamento",
         entidadeId: planejamento.id,
         usuario: session.user.name ?? "Usuário",

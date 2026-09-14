@@ -234,6 +234,11 @@ model Planejamento {
   /// Lista de materiais da semana (achado real: 1 bloco "MATERIAIS" por
   /// semana no documento real, não por dia).
   materiais    String?
+  /// Rascunho até a regente clicar em "Finalizar" — pedido do dono, set/2026:
+  /// um botão explícito de entrega, em vez do status "Entregue" ser só um
+  /// heurístico de "tem algo preenchido" (mesmo padrão já usado no Parecer,
+  /// ver StatusParecer). O painel da coordenadora passa a contar ENVIADO.
+  status       StatusPlanejamento @default(RASCUNHO)
   autor        User               @relation(fields: [autorId], references: [id])
   autorId      String
   dias         PlanejamentoDia[]
@@ -243,6 +248,11 @@ model Planejamento {
   @@unique([turmaId, semanaInicio])
   @@index([turmaId])
   @@index([projetoId])
+}
+
+enum StatusPlanejamento {
+  RASCUNHO
+  ENVIADO
 }
 
 enum TipoDiaPlanejamento {

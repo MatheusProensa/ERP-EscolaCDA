@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, NotebookPen, ScrollText, Printer } from "lucide-react";
+import { ChevronDown, NotebookPen, ScrollText, Printer, CheckCircle2, RotateCcw } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -250,6 +250,7 @@ export function SemanaPlanejamento({
   const [projetoId, setProjetoId] = useState<string>("");
   const [materiais, setMateriais] = useState("");
   const [dias, setDias] = useState<DiaForm[]>([]);
+  const [status, setStatus] = useState<"RASCUNHO" | "ENVIADO">("RASCUNHO");
   const [podeEditar, setPodeEditar] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
@@ -272,6 +273,7 @@ export function SemanaPlanejamento({
       setProjetoId(data.projetoId ?? "");
       setMateriais(data.materiais ?? "");
       setDias(data.dias);
+      setStatus(data.status ?? "RASCUNHO");
       setPodeEditar(data.podeEditar);
       setCarregando(false);
       setCarregado(true);
@@ -286,13 +288,13 @@ export function SemanaPlanejamento({
     setDias((atual) => atual.map((d, i) => (i === index ? { ...d, ...patch } : d)));
   }
 
-  async function salvar() {
+  async function salvar(novoStatus?: "ENVIADO" | "RASCUNHO") {
     setSalvando(true);
     setErro("");
     const res = await fetch("/api/planejamentos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ turmaId, semana: semanaIso, projetoId: projetoId || null, materiais, dias }),
+      body: JSON.stringify({ turmaId, semana: semanaIso, projetoId: projetoId || null, materiais, dias, status: novoStatus }),
     });
     setSalvando(false);
     if (!res.ok) {
@@ -300,7 +302,8 @@ export function SemanaPlanejamento({
       setErro(data.error ?? "Não foi possível salvar o planejamento.");
       return;
     }
-    showToast("Planejamento da semana salvo.");
+    if (novoStatus) setStatus(novoStatus);
+    showToast(novoStatus === "ENVIADO" ? "Planejamento da semana finalizado." : novoStatus === "RASCUNHO" ? "Planejamento reaberto." : "Planejamento da semana salvo.");
   }
 
   const preenchida = carregado && dias.some((d) => Object.keys(d.conteudo).length > 0);
@@ -316,7 +319,11 @@ export function SemanaPlanejamento({
           Semana de {formatarDiaMes(semanaIso)} a {formatarDiaMes(somarDias(semanaIso, 4))}
         </span>
         <div className="flex items-center gap-2">
-          {carregado && <Badge variant={preenchida ? "success" : "neutral"}>{preenchida ? "Preenchida" : "Vazia"}</Badge>}
+          {carregado && (
+            <Badge variant={status === "ENVIADO" ? "success" : preenchida ? "warning" : "neutral"}>
+              {status === "ENVIADO" ? "Enviado" : preenchida ? "Rascunho" : "Vazia"}
+            </Badge>
+          )}
           <ChevronDown className={`h-4 w-4 shrink-0 text-cda-text3 transition-transform ${aberta ? "rotate-180" : ""}`} />
         </div>
       </button>
@@ -362,11 +369,22 @@ export function SemanaPlanejamento({
           {erro && <p className="mt-3 text-sm text-cda-red">{erro}</p>}
 
           {podeEditar && (
-            <div className="mt-4 flex justify-end">
-              <Button onClick={salvar} loading={salvando} disabled={carregando}>
+            <div className="mt-4 flex flex-wrap justify-end gap-2">
+              <Button variant="outline" onClick={() => salvar()} loading={salvando} disabled={carregando}>
                 <NotebookPen className="h-3.5 w-3.5" />
                 Salvar planejamento
               </Button>
+              {status === "ENVIADO" ? (
+                <Button variant="outline" onClick={() => salvar("RASCUNHO")} loading={salvando} disabled={carregando}>
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Reabrir
+                </Button>
+              ) : (
+                <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Finalizar
+                </Button>
+              )}
             </div>
           )}
           {!carregando && !podeEditar && (
