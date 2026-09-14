@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { segundaFeiraDe, diasDaSemana, isoData, tituloDoDia, bulletsDoDia } from "./planejamento";
+import { segundaFeiraDe, diasDaSemana, isoData, tituloDoDia, bulletsDoDia, semanasDoMes } from "./planejamento";
 
 function utc(ano: number, mes: number, dia: number): Date {
   return new Date(Date.UTC(ano, mes - 1, dia));
@@ -42,6 +42,17 @@ describe("tituloDoDia", () => {
 
   it("devolve string vazia quando não tem nada preenchido", () => {
     expect(tituloDoDia("TEMATICA", {})).toBe("");
+  });
+});
+
+describe("semanasDoMes", () => {
+  it("setembro/2026: inclui a semana que começa no fim de agosto (1º é terça)", () => {
+    const semanas = semanasDoMes(utc(2026, 9, 14)).map(isoData);
+    expect(semanas).toEqual(["2026-08-31", "2026-09-07", "2026-09-14", "2026-09-21", "2026-09-28"]);
+  });
+
+  it("qualquer dia do mês devolve o mesmo conjunto de semanas", () => {
+    expect(semanasDoMes(utc(2026, 9, 1)).map(isoData)).toEqual(semanasDoMes(utc(2026, 9, 30)).map(isoData));
   });
 });
 

@@ -29,6 +29,8 @@ const CHAVES_CONTEUDO: (keyof ConteudoDiaPlanejamento)[] = [
   "questionamentosContexto",
   "momentoFinal",
   "questionamentosFinal",
+  "folhaTemaLiterario",
+  "folhaAtividadeGrafica",
 ];
 
 /** Limpa o JSON de conteúdo de um dia — só aceita as chaves conhecidas, tudo

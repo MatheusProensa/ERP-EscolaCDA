@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ChevronDown, NotebookPen, ScrollText } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronDown, NotebookPen, ScrollText, Printer } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -55,6 +55,45 @@ function Campo({
   );
 }
 
+/** Campo de texto de uma folha imprimível pontual (Tema Literário/Atividade
+ * Gráfica) + link pra baixar o PDF (aparece só quando já tem texto salvo —
+ * o PDF é gerado a partir do que está no banco, então baixa a versão salva
+ * mais recente, não o rascunho ainda não salvo na tela). */
+function FolhaImprimivel({
+  turmaId,
+  data,
+  tipo,
+  label,
+  value,
+  onChange,
+  podeEditar,
+}: {
+  turmaId: string;
+  data: string;
+  tipo: "TEMA_LITERARIO" | "ATIVIDADE_GRAFICA";
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  podeEditar: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-1">
+      <Campo label={label} value={value} onChange={onChange} disabled={!podeEditar} rows={2} />
+      {value && (
+        <a
+          href={`/api/planejamentos/folha?turmaId=${turmaId}&data=${data}&tipo=${tipo}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 self-start text-xs font-medium text-cda-blue hover:underline"
+        >
+          <Printer className="h-3.5 w-3.5" />
+          Baixar folha em PDF (versão já salva)
+        </a>
+      )}
+    </div>
+  );
+}
+
 /** Um dia do planejamento — estrutura real do documento MODELO_PLANEJAMENTO
  * (achado real, set/2026): alterna entre "Temática do dia" (temática +
  * momento inicial/fundamental) e "Contexto organizado" (contexto + roda de
@@ -62,11 +101,13 @@ function Campo({
  * Recolhido por padrão pra não virar uma tela gigante com os 5 dias abertos
  * ao mesmo tempo — abre um resumo do que já tem preenchido. */
 function DiaPlanejamento({
+  turmaId,
   indice,
   dia,
   atualizar,
   podeEditar,
 }: {
+  turmaId: string;
   indice: number;
   dia: DiaForm;
   atualizar: (patch: Partial<DiaForm>) => void;
@@ -160,6 +201,28 @@ function DiaPlanejamento({
             disabled={!podeEditar}
           />
           <Campo label="Aulas especializadas nesse dia" value={dia.especializadas} onChange={(v) => atualizar({ especializadas: v })} disabled={!podeEditar} rows={1} />
+
+          <div className="flex flex-col gap-3 border-t border-cda-border pt-3">
+            <p className="text-xs font-medium text-cda-text2">Folhas imprimíveis (opcional, só se esse dia tiver uma)</p>
+            <FolhaImprimivel
+              turmaId={turmaId}
+              data={dia.data}
+              tipo="TEMA_LITERARIO"
+              label="Tema Literário — texto da folha"
+              value={c.folhaTemaLiterario ?? ""}
+              onChange={(v) => atualizarConteudo({ folhaTemaLiterario: v })}
+              podeEditar={podeEditar}
+            />
+            <FolhaImprimivel
+              turmaId={turmaId}
+              data={dia.data}
+              tipo="ATIVIDADE_GRAFICA"
+              label="Atividade Gráfica — texto da folha"
+              value={c.folhaAtividadeGrafica ?? ""}
+              onChange={(v) => atualizarConteudo({ folhaAtividadeGrafica: v })}
+              podeEditar={podeEditar}
+            />
+          </div>
         </div>
       )}
     </div>
@@ -286,7 +349,7 @@ export function PlanejamentoSemanalClient({
           </div>
           <div className="flex flex-col gap-3">
             {dias.map((dia, i) => (
-              <DiaPlanejamento key={dia.data} indice={i} dia={dia} atualizar={(patch) => atualizarDia(i, patch)} podeEditar={podeEditar} />
+              <DiaPlanejamento key={dia.data} turmaId={turmaId} indice={i} dia={dia} atualizar={(patch) => atualizarDia(i, patch)} podeEditar={podeEditar} />
             ))}
           </div>
         </>

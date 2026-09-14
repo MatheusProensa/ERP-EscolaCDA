@@ -9,8 +9,8 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { PedagogicoTutorial } from "@/components/modules/pedagogico/PedagogicoTutorial";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
-import { hojeBrasilia } from "@/lib/utils";
-import { segundaFeiraDe } from "@/lib/planejamento";
+import { hojeBrasilia, ordenarTurmas } from "@/lib/utils";
+import { semanasDoMes } from "@/lib/planejamento";
 
 const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã", TARDE: "Tarde" };
 
@@ -20,21 +20,22 @@ const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã", TARDE: "Tarde" };
 export default async function PedagogicoPage() {
   const session = await auth();
   const souCoordenadora = session?.user.role === "ADMIN" || !!session?.user.coordenaAreaPedagogica;
-  const semanaAtual = segundaFeiraDe(hojeBrasilia());
 
   const [vinculos, anoLetivo] = await Promise.all([
     session?.user.id
       ? prisma.vinculoPedagogico.findMany({
           where: { userId: session.user.id },
           include: { turma: { select: { id: true, nome: true, turno: true } } },
-          orderBy: { turma: { nome: "asc" } },
         })
       : Promise.resolve([]),
     getAnoLetivoAtivo(),
   ]);
 
-  const comoRegente = vinculos.filter((v) => v.papel === "REGENTE");
-  const comoEspecialista = vinculos.filter((v) => v.papel === "ESPECIALISTA");
+  // Ordem pedagógica de verdade (Berçário → Maternal → Pré → Anos), não
+  // alfabética — "1º Ano" vindo alfabeticamente antes de "Berçário" saía
+  // errado (achado real, dono, set/2026). Mesmo helper usado em Acadêmico.
+  const comoRegente = ordenarTurmas(vinculos.filter((v) => v.papel === "REGENTE").map((v) => ({ ...v, nome: v.turma.nome })));
+  const comoEspecialista = ordenarTurmas(vinculos.filter((v) => v.papel === "ESPECIALISTA").map((v) => ({ ...v, nome: v.turma.nome })));
 
   // Agrupa especialista por matéria — a mesma pessoa dá a mesma matéria em
   // várias turmas (achado real, out/2026: Ed. Física, Musicalização, Inglês).
@@ -44,28 +45,33 @@ export default async function PedagogicoPage() {
     especialistaPorMateria.set(chave, [...(especialistaPorMateria.get(chave) ?? []), v]);
   }
 
-  // "Entregue" = já tem pelo menos 1 dia preenchido no planejamento dessa
-  // semana — é o pedido original da coordenadora (saber quem entregou e quem
-  // não). Sem prazo configurável ainda (a semana em si já é o ciclo), só o
-  // status calculado a partir do que já existe.
-  const entreguesSemanaAtual = new Set(
-    (
-      await prisma.planejamento.findMany({
-        where: { semanaInicio: semanaAtual, dias: { some: {} } },
-        select: { turmaId: true },
-      })
-    ).map((p) => p.turmaId)
-  );
+  // "Entregue" = tem TODAS as semanas do mês atual com pelo menos 1 dia
+  // preenchido — a cobrança da coordenadora é mensal (correção do dono,
+  // set/2026: "planejamento é por mês", repetida depois de ver o card
+  // "Entregaram essa semana" no ar). A professora continua preenchendo
+  // semana a semana (é como o documento real é organizado), só o status
+  // de acompanhamento olha o mês inteiro, não a semana isolada.
+  const semanasMes = semanasDoMes(hojeBrasilia());
+  const planejamentosMes = await prisma.planejamento.findMany({
+    where: { semanaInicio: { in: semanasMes }, dias: { some: {} } },
+    select: { turmaId: true },
+  });
+  const contagemPorTurma = new Map<string, number>();
+  for (const p of planejamentosMes) {
+    contagemPorTurma.set(p.turmaId, (contagemPorTurma.get(p.turmaId) ?? 0) + 1);
+  }
+  const entreguesMesAtual = new Set([...contagemPorTurma.entries()].filter(([, n]) => n >= semanasMes.length).map(([turmaId]) => turmaId));
 
   // Coordenadora vê TODAS as turmas do ano letivo ativo, com a regente e o
-  // status da semana — é o "dashboard bem bom pra acompanhar as professoras"
+  // status do mês — é o "dashboard bem bom pra acompanhar as professoras"
   // pedido desde o início.
   const todasTurmas = souCoordenadora && anoLetivo
-    ? await prisma.turma.findMany({
-        where: { anoLetivoId: anoLetivo.id },
-        orderBy: { nome: "asc" },
-        include: { vinculosPedagogico: { where: { papel: "REGENTE" }, include: { user: { select: { name: true } } } } },
-      })
+    ? ordenarTurmas(
+        await prisma.turma.findMany({
+          where: { anoLetivoId: anoLetivo.id },
+          include: { vinculosPedagogico: { where: { papel: "REGENTE" }, include: { user: { select: { name: true } } } } },
+        })
+      )
     : [];
 
   // Ordem pensada pra achar rápido o que se usa todo dia primeiro (pedido
@@ -87,23 +93,23 @@ export default async function PedagogicoPage() {
             <MetricCard
               icon={CheckCircle2}
               tone="success"
-              value={entreguesSemanaAtual.size}
-              label="Entregaram essa semana"
+              value={entreguesMesAtual.size}
+              label="Entregaram esse mês"
               subtext="Planejamento em dia"
             />
             <MetricCard
               icon={Clock}
               tone="warning"
-              value={Math.max(0, todasTurmas.length - entreguesSemanaAtual.size)}
+              value={Math.max(0, todasTurmas.length - entreguesMesAtual.size)}
               label="Ainda pendentes"
-              subtext="Planejamento dessa semana"
+              subtext="Planejamento desse mês"
             />
           </div>
           <Card
             title={
               <div className="flex items-center gap-2">
                 <ClipboardCheck className="h-4 w-4 text-cda-blue" />
-                Planejamento da semana — todas as turmas
+                Planejamento do mês — todas as turmas
               </div>
             }
           >
@@ -118,7 +124,7 @@ export default async function PedagogicoPage() {
                   <div className="flex flex-col divide-y divide-cda-border">
                     {turmasDoTurno.map((turma) => {
                       const regente = turma.vinculosPedagogico[0]?.user.name;
-                      const entregue = entreguesSemanaAtual.has(turma.id);
+                      const entregue = entreguesMesAtual.has(turma.id);
                       return (
                         <div key={turma.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
                           <div>
@@ -160,7 +166,7 @@ export default async function PedagogicoPage() {
               <h3 className="mb-2 text-sm font-semibold text-cda-text2">Como regente</h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {comoRegente.map((v) => {
-                  const entregue = entreguesSemanaAtual.has(v.turma.id);
+                  const entregue = entreguesMesAtual.has(v.turma.id);
                   return (
                     <Card key={v.id} className="p-4">
                       <div className="mb-3 flex items-center gap-2">
@@ -177,7 +183,7 @@ export default async function PedagogicoPage() {
                           Planejamento
                         </Link>
                         <Badge variant={entregue ? "success" : "warning"}>
-                          {entregue ? "Entregue essa semana" : "Pendente essa semana"}
+                          {entregue ? "Entregue esse mês" : "Pendente esse mês"}
                         </Badge>
                         <Link
                           href={`/pedagogico/parecer/${v.turma.id}`}

@@ -14,7 +14,12 @@ export const OFFSETS_DIA_UTIL = [0, 1, 2, 3, 4] as const;
  *   perguntas de cada).
  * - momentoFinal/questionamentosFinal são comuns aos 2 tipos (registro do
  *   dia — no documento real só se aplica a partir de certa idade, a
- *   professora deixa em branco quando não se aplica à turma dela). */
+ *   professora deixa em branco quando não se aplica à turma dela).
+ * - folhaTemaLiterario/folhaAtividadeGrafica: texto das folhas imprimíveis
+ *   pontuais (achado real: docs MODELO_TEMA_LITERÁRIO/ATIVIDADE_GRÁFICA —
+ *   uma folha "NOME/DATA" + instrução + espaço em branco pro desenho, pra
+ *   mandar pra casa ou preencher na sala num dia específico). Opcional, só
+ *   preenche quando aquele dia realmente tem uma dessas folhas. */
 export type ConteudoDiaPlanejamento = {
   tematicaDia?: string;
   momentoInicial?: string;
@@ -28,6 +33,8 @@ export type ConteudoDiaPlanejamento = {
   questionamentosContexto?: string;
   momentoFinal?: string;
   questionamentosFinal?: string;
+  folhaTemaLiterario?: string;
+  folhaAtividadeGrafica?: string;
 };
 
 /** Tipo padrão de cada dia útil da semana, pelo índice (0=segunda...4=sexta)
@@ -63,6 +70,27 @@ export function diasDaSemana(segunda: Date): Date[] {
  * comparar datas sem depender de fuso horário do navegador. */
 export function isoData(data: Date): string {
   return data.toISOString().slice(0, 10);
+}
+
+/** Todas as segundas-feiras cujas semanas tocam o mês de `data` — é o que
+ * define "entregue esse mês": a professora entrega semana a semana (achado
+ * real: o documento é organizado por semana dentro do mês/projeto), mas a
+ * COBRANÇA da coordenadora é mensal (correção do dono, set/2026: "planejamento
+ * é por mês", repetida depois de ver o card "Entregaram essa semana" no ar —
+ * a semana é só a unidade de preenchimento, não a unidade de cobrança).
+ * Inclui a semana que já começa no mês anterior quando a 1ª segunda do mês
+ * cai depois do dia 1 (a semana inteira "pertence" ao mês que ela cobre). */
+export function semanasDoMes(data: Date): Date[] {
+  const primeiroDia = new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), 1));
+  const ultimoDia = new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth() + 1, 0));
+  const semanas: Date[] = [];
+  let segunda = segundaFeiraDe(primeiroDia);
+  while (segunda <= ultimoDia) {
+    semanas.push(new Date(segunda));
+    segunda = new Date(segunda);
+    segunda.setUTCDate(segunda.getUTCDate() + 7);
+  }
+  return semanas;
 }
 
 /** Título do dia (o que aparece em destaque no Roteiro) — tematicaDia pro
