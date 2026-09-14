@@ -11,6 +11,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatarDataHora } from "@/lib/utils";
 import { ConfirmarLeituraButton } from "@/components/modules/dashboard/ConfirmarLeituraButton";
 import { EditarAvisoModal } from "./EditarAvisoModal";
+import { LeiturasAvisoModal } from "./LeiturasAvisoModal";
 
 export function AvisoCard({
   aviso,
@@ -27,6 +28,7 @@ export function AvisoCard({
   const [loading, setLoading] = useState(false);
   const [editando, setEditando] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  const [vendoLeituras, setVendoLeituras] = useState(false);
   const [erro, setErro] = useState("");
 
   async function alternarFixado() {
@@ -91,12 +93,25 @@ export function AvisoCard({
 
       {aviso.fixado && (
         <div className="mt-3 flex items-center justify-between gap-3 border-t border-cda-border pt-3">
-          <span className="text-xs text-cda-text3">{totalLeituras} confirmaram a leitura</span>
+          {podeGerenciar ? (
+            <button
+              type="button"
+              onClick={() => setVendoLeituras(true)}
+              className="text-xs text-cda-text3 underline decoration-dotted hover:text-cda-blue"
+            >
+              {totalLeituras} confirmaram a leitura
+            </button>
+          ) : (
+            <span className="text-xs text-cda-text3">{totalLeituras} confirmaram a leitura</span>
+          )}
           <ConfirmarLeituraButton avisoId={aviso.id} confirmadoInicial={confirmadoInicial} />
         </div>
       )}
 
       <EditarAvisoModal aviso={editando ? aviso : null} onClose={() => setEditando(false)} />
+      {podeGerenciar && (
+        <LeiturasAvisoModal avisoId={aviso.id} open={vendoLeituras} onClose={() => setVendoLeituras(false)} />
+      )}
 
       <ConfirmDialog
         open={confirmandoExclusao}
