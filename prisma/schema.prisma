@@ -358,13 +358,18 @@ model MomentoRotina {
 /// pra TODAS as turmas — ainda não existe noção de prazo por turma/módulo,
 /// só Planejamento por enquanto (Parecer/Portfólio ficam de fora dessa v1).
 model PrazoPedagogico {
-  id            String   @id @default(cuid())
+  id                 String   @id @default(cuid())
   /// "YYYY-MM"
-  mes           String   @unique
-  dataLimite    DateTime
-  definidoPor   User     @relation(fields: [definidoPorId], references: [id])
-  definidoPorId String
-  updatedAt     DateTime @updatedAt
+  mes                String   @unique
+  dataLimite         DateTime
+  definidoPor        User     @relation(fields: [definidoPorId], references: [id])
+  definidoPorId      String
+  updatedAt          DateTime @updatedAt
+  /// Evento correspondente no Calendário geral da escola (pedido do dono,
+  /// set/2026: "prazo de entrega vira automaticamente um evento no
+  /// calendário") — guarda o id pra ATUALIZAR o mesmo evento quando a
+  /// coordenadora muda a data, em vez de criar um novo toda vez.
+  eventoCalendarioId String?  @unique
 }
 
 /// Modelo de parecer — a lista de parágrafos que a professora vai preencher

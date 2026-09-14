@@ -4,6 +4,11 @@ import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { avisarMudanca } from "@/lib/liveUpdate";
 
+const MESES_LABEL = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
 /** Prazo mensal do Planejamento (pedido do dono, set/2026: "coordenadora
  * define o prazo do mês"). GET é livre pra qualquer um do Pedagógico (só
  * consulta); POST só quem coordena a Área Pedagógica (ou ADMIN). */
@@ -33,12 +38,39 @@ export async function POST(req: NextRequest) {
   if (Number.isNaN(dataLimite.getTime())) return NextResponse.json({ error: "dataLimite inválida" }, { status: 400 });
 
   try {
+    // Integração com o Calendário geral da escola (pedido do dono, set/2026:
+    // "prazo de entrega vira automaticamente um evento no calendário") —
+    // atualiza o MESMO evento em vez de duplicar quando a data muda.
+    const [anoNum, mesNum] = mes.split("-").map(Number);
+    const dataEvento = new Date(`${dataLimiteParam}T00:00:00.000Z`);
+    const titulo = `Prazo do Planejamento — ${MESES_LABEL[mesNum - 1]}/${anoNum}`;
+
+    const existente = await prisma.prazoPedagogico.findUnique({ where: { mes } });
+    let eventoCalendarioId = existente?.eventoCalendarioId ?? null;
+    const eventoAtual = eventoCalendarioId ? await prisma.eventoCalendario.findUnique({ where: { id: eventoCalendarioId } }) : null;
+    if (eventoAtual) {
+      await prisma.eventoCalendario.update({ where: { id: eventoAtual.id }, data: { data: dataEvento, titulo } });
+    } else {
+      const novoEvento = await prisma.eventoCalendario.create({
+        data: {
+          titulo,
+          data: dataEvento,
+          categoria: "Organização Interna",
+          descricao: "Prazo de entrega do Planejamento Pedagógico, definido pela coordenação.",
+        },
+      });
+      eventoCalendarioId = novoEvento.id;
+    }
+
     await prisma.prazoPedagogico.upsert({
       where: { mes },
-      create: { mes, dataLimite, definidoPorId: session.user.id },
-      update: { dataLimite, definidoPorId: session.user.id },
+      create: { mes, dataLimite, definidoPorId: session.user.id, eventoCalendarioId },
+      update: { dataLimite, definidoPorId: session.user.id, eventoCalendarioId },
     });
-    after(() => avisarMudanca("pedagogico"));
+    after(() => {
+      avisarMudanca("pedagogico");
+      avisarMudanca("calendario");
+    });
     return NextResponse.json({ ok: true });
   } catch (err) {
     return erroApi(err);
