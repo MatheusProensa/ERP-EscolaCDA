@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, NotebookPen, ScrollText, Printer, CheckCircle2, RotateCcw, ThumbsUp, Undo2, MessageSquareWarning } from "lucide-react";
+import { ChevronDown, NotebookPen, ScrollText, Printer, CheckCircle2, RotateCcw, ThumbsUp, Undo2, MessageSquareWarning, History } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { showToast } from "@/components/ui/Toast";
-import type { ConteudoDiaPlanejamento } from "@/lib/planejamento";
+import { tituloDoDia, bulletsDoDia, type ConteudoDiaPlanejamento } from "@/lib/planejamento";
 
 type TipoDia = "TEMATICA" | "CONTEXTO";
 export type Projeto = { id: string; nome: string; ativo: boolean };
@@ -25,6 +25,94 @@ function somarDias(iso: string, dias: number): string {
 function formatarDiaMes(iso: string): string {
   const data = new Date(`${iso}T00:00:00.000Z`);
   return data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+}
+
+function formatarDataHora(iso: string): string {
+  return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+type VersaoApi = {
+  numero: number;
+  conteudo: {
+    projetoNome: string | null;
+    dias: { data: string; tipo: TipoDia; conteudo: ConteudoDiaPlanejamento }[];
+  };
+  enviadoPorNome: string;
+  enviadoEm: string;
+  veredito: "APROVADO" | "DEVOLVIDO" | null;
+  comentario: string | null;
+  decididoPorNome: string | null;
+  decididoEm: string | null;
+};
+
+/** Histórico de versões — pedido do dono, set/2026: "o sistema guarda v1 e
+ * v2, nunca substitui sem rastro... importante pra auditoria ou
+ * questionamento futuro". Carrega só quando abre (não pesa a tela toda vez
+ * que a semana carrega, é consulta rara). */
+function HistoricoVersoes({ planejamentoId }: { planejamentoId: string }) {
+  const [aberto, setAberto] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const [versoes, setVersoes] = useState<VersaoApi[] | null>(null);
+
+  async function alternar() {
+    const proximo = !aberto;
+    setAberto(proximo);
+    if (proximo && versoes === null) {
+      setCarregando(true);
+      const res = await fetch(`/api/planejamentos/${planejamentoId}/versoes`);
+      if (res.ok) setVersoes(await res.json());
+      setCarregando(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 border-t border-cda-border pt-3">
+      <button type="button" onClick={alternar} className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-text3 hover:text-cda-blue">
+        <History className="h-3.5 w-3.5" />
+        {aberto ? "Ocultar histórico de versões" : "Ver histórico de versões"}
+      </button>
+      {aberto && (
+        <div className="mt-2 flex flex-col gap-2">
+          {carregando && <p className="text-xs text-cda-text3">Carregando...</p>}
+          {versoes?.length === 0 && <p className="text-xs text-cda-text3">Nenhum envio registrado ainda.</p>}
+          {versoes?.map((v) => (
+            <div key={v.numero} className="rounded-lg border border-cda-border bg-cda-bg p-3">
+              <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-cda-text">
+                  Versão {v.numero} — enviada {formatarDataHora(v.enviadoEm)} por {v.enviadoPorNome}
+                </span>
+                {v.veredito && (
+                  <Badge variant={v.veredito === "APROVADO" ? "success" : "danger"}>
+                    {v.veredito === "APROVADO" ? "Aprovado" : "Devolvido"}
+                  </Badge>
+                )}
+              </div>
+              {v.decididoPorNome && v.decididoEm && (
+                <p className="mb-2 text-xs text-cda-text3">
+                  por {v.decididoPorNome} em {formatarDataHora(v.decididoEm)}
+                  {v.comentario && <>: “{v.comentario}”</>}
+                </p>
+              )}
+              <div className="flex flex-col gap-0.5">
+                {v.conteudo.projetoNome && <p className="text-xs text-cda-text2">Projeto: {v.conteudo.projetoNome}</p>}
+                {v.conteudo.dias.map((d) => {
+                  const titulo = tituloDoDia(d.tipo, d.conteudo);
+                  const bullets = bulletsDoDia(d.tipo, d.conteudo);
+                  const resumo = titulo || bullets[0] || null;
+                  if (!resumo) return null;
+                  return (
+                    <p key={d.data} className="text-xs text-cda-text3">
+                      <span className="font-medium">{formatarDiaMes(d.data)}:</span> {resumo}
+                    </p>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /** Um campo de texto com rótulo, no mesmo padrão visual usado em toda a
@@ -556,6 +644,8 @@ export function SemanaPlanejamento({
               </div>
             </div>
           )}
+
+          {id && status !== "RASCUNHO" && <HistoricoVersoes planejamentoId={id} />}
         </div>
       )}
     </Card>

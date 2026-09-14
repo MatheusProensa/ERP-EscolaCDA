@@ -3,7 +3,14 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { avisarMudanca } from "@/lib/liveUpdate";
-import { segundaFeiraDe, diasDaSemana, isoData, tipoPadraoDoDia, type ConteudoDiaPlanejamento } from "@/lib/planejamento";
+import {
+  segundaFeiraDe,
+  diasDaSemana,
+  isoData,
+  tipoPadraoDoDia,
+  type ConteudoDiaPlanejamento,
+  type SnapshotPlanejamento,
+} from "@/lib/planejamento";
 import { criarNotificacao } from "@/lib/notificacoes";
 import type { TipoDiaPlanejamento } from "@prisma/client";
 
@@ -157,9 +164,13 @@ export async function POST(req: NextRequest) {
   // coordena.
   const reenvioAposDevolucao = existente?.status === "DEVOLVIDO" && status === "ENVIADO";
 
+  let projeto: { nome: string; justificativa: string | null } | null = null;
   if (projetoId) {
-    const projeto = await prisma.projetoPedagogico.findUnique({ where: { id: projetoId } });
-    if (!projeto || projeto.turmaId !== turmaId) return NextResponse.json({ error: "Projeto não encontrado" }, { status: 400 });
+    const projetoEncontrado = await prisma.projetoPedagogico.findUnique({ where: { id: projetoId } });
+    if (!projetoEncontrado || projetoEncontrado.turmaId !== turmaId) {
+      return NextResponse.json({ error: "Projeto não encontrado" }, { status: 400 });
+    }
+    projeto = { nome: projetoEncontrado.nome, justificativa: projetoEncontrado.justificativa };
   }
 
   const diasValidos: { data: Date; tipo: TipoDiaPlanejamento; conteudo: ConteudoDiaPlanejamento; especializadas: string | null }[] = [];
@@ -211,6 +222,39 @@ export async function POST(req: NextRequest) {
           especializadas: d.especializadas,
         })),
       });
+
+      // Versionamento (pedido do dono, set/2026: "nunca substitui sem
+      // rastro") — 1 snapshot por ENVIO (1ª vez ou reenvio depois de
+      // devolvido), nunca em salvamento comum de rascunho.
+      if (status === "ENVIADO") {
+        const ultimaVersao = await tx.planejamentoVersao.findFirst({
+          where: { planejamentoId: registro.id },
+          orderBy: { numero: "desc" },
+          select: { numero: true },
+        });
+        const snapshot: SnapshotPlanejamento = {
+          projetoNome: projeto?.nome ?? null,
+          projetoJustificativa: projeto?.justificativa ?? null,
+          materiais,
+          tardeCulturalApresentacao,
+          tardeCulturalMateriais,
+          dias: diasComConteudo.map((d) => ({
+            data: isoData(d.data),
+            tipo: d.tipo,
+            conteudo: d.conteudo,
+            especializadas: d.especializadas,
+          })),
+        };
+        await tx.planejamentoVersao.create({
+          data: {
+            planejamentoId: registro.id,
+            numero: (ultimaVersao?.numero ?? 0) + 1,
+            conteudo: snapshot,
+            enviadoPorId: session.user.id,
+          },
+        });
+      }
+
       return registro;
     });
 

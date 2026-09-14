@@ -44,6 +44,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       },
     });
 
+    // O veredito entra NA VERSÃO que foi enviada (é o resultado daquele
+    // envio específico, não um envio novo) — pedido do dono: "nunca
+    // substitui sem rastro". Se por algum motivo não achar versão (dado
+    // antigo, de antes do versionamento existir), segue sem quebrar.
+    const ultimaVersao = await prisma.planejamentoVersao.findFirst({
+      where: { planejamentoId: id },
+      orderBy: { numero: "desc" },
+    });
+    if (ultimaVersao) {
+      await prisma.planejamentoVersao.update({
+        where: { id: ultimaVersao.id },
+        data: { veredito: status, comentario, decididoPorId: session.user.id, decididoEm: new Date() },
+      });
+    }
+
     await prisma.logAtividade.create({
       data: {
         acao: `Planejamento da semana de ${isoData(planejamento.semanaInicio)} ${status === "APROVADO" ? "aprovado" : "devolvido"} (${planejamento.turma.nome})`,

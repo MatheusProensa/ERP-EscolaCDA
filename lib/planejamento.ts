@@ -37,6 +37,26 @@ export type ConteudoDiaPlanejamento = {
   folhaAtividadeGrafica?: string;
 };
 
+/** Snapshot completo de 1 envio do Planejamento (achado real, set/2026,
+ * pedido do dono: "o sistema guarda v1 e v2, nunca substitui sem rastro") —
+ * congela nome/justificativa do projeto (não só o id, que pode mudar ou ser
+ * excluído depois) e os 5 dias inteiros, exatamente como estavam quando a
+ * regente clicou "Finalizar"/"Reenviar". Guardado em
+ * PlanejamentoVersao.conteudo. */
+export type SnapshotPlanejamento = {
+  projetoNome: string | null;
+  projetoJustificativa: string | null;
+  materiais: string | null;
+  tardeCulturalApresentacao: string | null;
+  tardeCulturalMateriais: string | null;
+  dias: {
+    data: string; // ISO
+    tipo: TipoDiaPlanejamento;
+    conteudo: ConteudoDiaPlanejamento;
+    especializadas: string | null;
+  }[];
+};
+
 /** Tipo padrão de cada dia útil da semana, pelo índice (0=segunda...4=sexta)
  * — alternado TEMATICA/CONTEXTO igual o padrão real observado no documento
  * (segunda/quarta/sexta = temática, terça/quinta = contexto). É só o valor

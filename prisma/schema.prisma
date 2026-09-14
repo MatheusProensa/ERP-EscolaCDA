@@ -14,44 +14,46 @@ datasource db {
 }
 
 model User {
-  id                     String              @id @default(cuid())
-  name                   String
-  email                  String              @unique
-  password               String
-  role                   Role                @default(SECRETARIA)
+  id                           String               @id @default(cuid())
+  name                         String
+  email                        String               @unique
+  password                     String
+  role                         Role                 @default(SECRETARIA)
   /// Foto de perfil (JPEG em base64, redimensionado no navegador antes do
   /// upload — ver components/ui/PhotoUpload.tsx). Vira o "image" padrão do
   /// NextAuth na sessão.
-  foto                   String?
-  tentativasFalhas       Int                 @default(0)
-  bloqueadoAte           DateTime?
+  foto                         String?
+  tentativasFalhas             Int                  @default(0)
+  bloqueadoAte                 DateTime?
   /// Marcado quando o usuário pede "esqueci minha senha" na tela de login —
   /// sem envio de e-mail (não tem provedor configurado), um ADMIN/DIREÇÃO vê
   /// o pedido na tela de Usuários e redefine manualmente (fluxo que já existia).
-  pedidoResetSenhaEm     DateTime?
+  pedidoResetSenhaEm           DateTime?
   /// Marca a coordenadora pedagógica — enxerga TODAS as turmas na Área
   /// Pedagógica (não só as que ela tem VinculoPedagogico) e acompanha/
   /// comenta as entregas de cada uma. Separado do Role porque "Pedagógico"
   /// já é usado por mais gente (professoras regentes/especialistas) que não
   /// tem essa visão ampla — é uma marcação extra dentro do Role, não um Role
   /// à parte.
-  coordenaAreaPedagogica Boolean             @default(false)
-  createdAt              DateTime            @default(now())
-  mensagensEnviadas      Mensagem[]          @relation("MensagensEnviadas")
-  mensagensRecebidas     Mensagem[]          @relation("MensagensRecebidas")
-  notificacoes           Notificacao[]
-  avisosMural            MuralAviso[]
-  leiturasAvisos         AvisoLeitura[]
-  permissoes             PermissaoUsuario[]
-  vinculosPedagogico     VinculoPedagogico[]
-  projetosPedagogicos    ProjetoPedagogico[]
-  planejamentos          Planejamento[]
-  planejamentosRevisados Planejamento[]      @relation("ComentariosPlanejamento")
-  prazosDefinidos        PrazoPedagogico[]
-  modelosParecer         ModeloParecer[]
-  pareceres              Parecer[]
-  portfolioItens         PortfolioItem[]
-  tutoriaisVistos        TutorialVisto[]
+  coordenaAreaPedagogica       Boolean              @default(false)
+  createdAt                    DateTime             @default(now())
+  mensagensEnviadas            Mensagem[]           @relation("MensagensEnviadas")
+  mensagensRecebidas           Mensagem[]           @relation("MensagensRecebidas")
+  notificacoes                 Notificacao[]
+  avisosMural                  MuralAviso[]
+  leiturasAvisos               AvisoLeitura[]
+  permissoes                   PermissaoUsuario[]
+  vinculosPedagogico           VinculoPedagogico[]
+  projetosPedagogicos          ProjetoPedagogico[]
+  planejamentos                Planejamento[]
+  planejamentosRevisados       Planejamento[]       @relation("ComentariosPlanejamento")
+  prazosDefinidos              PrazoPedagogico[]
+  versoesPlanejamentoEnviadas  PlanejamentoVersao[] @relation("VersoesEnviadas")
+  versoesPlanejamentoDecididas PlanejamentoVersao[] @relation("VersoesDecididas")
+  modelosParecer               ModeloParecer[]
+  pareceres                    Parecer[]
+  portfolioItens               PortfolioItem[]
+  tutoriaisVistos              TutorialVisto[]
 }
 
 /// Permissão granular por pessoa/setor — sobrepõe o pacote padrão do Role
@@ -232,10 +234,10 @@ model ProjetoPedagogico {
 /// são organizados em semanas dentro de um projeto/mês). Escrito pela
 /// professora regente.
 model Planejamento {
-  id                        String             @id @default(cuid())
-  turma                     Turma              @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  id                        String               @id @default(cuid())
+  turma                     Turma                @relation(fields: [turmaId], references: [id], onDelete: Cascade)
   turmaId                   String
-  projeto                   ProjetoPedagogico? @relation(fields: [projetoId], references: [id], onDelete: SetNull)
+  projeto                   ProjetoPedagogico?   @relation(fields: [projetoId], references: [id], onDelete: SetNull)
   projetoId                 String?
   /// Segunda-feira da semana que esse planejamento cobre (meia-noite UTC,
   /// mesma convenção de EventoCalendario) — identidade junto com a turma.
@@ -257,25 +259,59 @@ model Planejamento {
   /// Fluxo de aprovação (pedido do dono, set/2026): ENVIADO vira APROVADO ou
   /// DEVOLVIDO quando a coordenadora revisa; DEVOLVIDO some assim que a
   /// regente reenvia (volta pra ENVIADO).
-  status                    StatusPlanejamento @default(RASCUNHO)
+  status                    StatusPlanejamento   @default(RASCUNHO)
   /// Comentário da coordenadora ao aprovar/devolver — null quando ainda não
   /// foi revisado, ou quando aprovado sem nada a dizer (curtida simples).
   comentarioCoordenadora    String?
-  comentarioAutor           User?              @relation("ComentariosPlanejamento", fields: [comentarioAutorId], references: [id])
+  comentarioAutor           User?                @relation("ComentariosPlanejamento", fields: [comentarioAutorId], references: [id])
   comentarioAutorId         String?
   comentarioEm              DateTime?
   /// Confirmação de leitura da regente ("li e entendi") — fecha o loop sem
   /// depender de WhatsApp. Zera de novo a cada novo comentário/devolução.
   liComentarioEm            DateTime?
-  autor                     User               @relation(fields: [autorId], references: [id])
+  autor                     User                 @relation(fields: [autorId], references: [id])
   autorId                   String
   dias                      PlanejamentoDia[]
-  createdAt                 DateTime           @default(now())
-  updatedAt                 DateTime           @updatedAt
+  versoes                   PlanejamentoVersao[]
+  createdAt                 DateTime             @default(now())
+  updatedAt                 DateTime             @updatedAt
 
   @@unique([turmaId, semanaInicio])
   @@index([turmaId])
   @@index([projetoId])
+}
+
+/// Snapshot de cada ENVIO do Planejamento — pedido do dono, set/2026: "o
+/// sistema guarda v1 e v2, nunca substitui sem rastro... importante pra
+/// auditoria ou questionamento futuro". 1 versão nasce toda vez que a
+/// regente clica "Finalizar" (1ª vez) ou "Reenviar" (depois de devolvido) —
+/// captura o conteúdo INTEIRO daquele momento (não só um diff). Quando a
+/// coordenadora revisa, o veredito entra NA MESMA versão (é o resultado
+/// daquele envio específico, não um envio novo).
+model PlanejamentoVersao {
+  id             String       @id @default(cuid())
+  planejamento   Planejamento @relation(fields: [planejamentoId], references: [id], onDelete: Cascade)
+  planejamentoId String
+  /// 1, 2, 3... por planejamento — v1 é o 1º envio, v2 o reenvio depois de
+  /// devolvido, etc.
+  numero         Int
+  /// Conteúdo completo no momento do envio (materiais, tarde cultural,
+  /// projeto nome/justificativa já copiados — não só o id, pra sobreviver
+  /// mesmo se o projeto mudar/for excluído depois —, e os 5 dias completos).
+  /// Formato: ver SnapshotPlanejamento em lib/planejamento.ts.
+  conteudo       Json
+  enviadoPor     User         @relation("VersoesEnviadas", fields: [enviadoPorId], references: [id])
+  enviadoPorId   String
+  enviadoEm      DateTime     @default(now())
+  /// null enquanto a coordenadora ainda não revisou essa versão.
+  veredito       String?
+  comentario     String?
+  decididoPor    User?        @relation("VersoesDecididas", fields: [decididoPorId], references: [id])
+  decididoPorId  String?
+  decididoEm     DateTime?
+
+  @@unique([planejamentoId, numero])
+  @@index([planejamentoId])
 }
 
 enum StatusPlanejamento {
