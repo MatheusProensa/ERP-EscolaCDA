@@ -11,8 +11,6 @@ import {
   Clock,
   ScrollText,
   BookOpen,
-  Printer,
-  ArrowUpRight,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -23,6 +21,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { PedagogicoTutorial } from "@/components/modules/pedagogico/PedagogicoTutorial";
 import { PrazoPedagogicoForm } from "@/components/modules/pedagogico/PrazoPedagogicoForm";
+import { DocumentoPedagogicoCard } from "@/components/modules/pedagogico/DocumentoPedagogicoCard";
 import { BarraFiltro } from "@/components/ui/BarraFiltro";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { hojeBrasilia, ordenarTurmas } from "@/lib/utils";
@@ -120,12 +119,12 @@ export default async function PedagogicoPage({
     ATRASADO: "critical",
     PENDENTE: "warning",
   };
-  const EMPHASIS_STATUS: Record<string, "brand" | "warning" | "danger" | undefined> = {
-    APROVADO: undefined,
-    ENVIADO: undefined,
-    DEVOLVIDO: "danger",
-    ATRASADO: "danger",
-    PENDENTE: "warning",
+  const STATUS_COR: Record<string, string> = {
+    APROVADO: "var(--status-success)",
+    DEVOLVIDO: "var(--status-danger)",
+    ENVIADO: "var(--status-info)",
+    ATRASADO: "var(--status-critical)",
+    PENDENTE: "var(--status-warning)",
   };
 
   // Quantas folhas de Atividade Gráfica / Tema Literário já foram preenchidas
@@ -329,51 +328,40 @@ export default async function PedagogicoPage({
                       </p>
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        <Card emphasis={EMPHASIS_STATUS[statusTurma]} className="flex flex-col gap-2 p-3">
-                          <div className="flex items-center gap-1.5">
-                            <NotebookPen className="h-3.5 w-3.5 text-cda-blue" />
-                            <span className="text-xs font-semibold text-cda-text">Planejamento</span>
-                          </div>
-                          <Badge variant={STATUS_BADGE[statusTurma]} className="self-start">
-                            {STATUS_LABEL[statusTurma]}
-                          </Badge>
-                          <Link href={`/pedagogico/planejamento/${v.turma.id}`} className="mt-auto inline-flex items-center gap-1 text-xs font-medium text-cda-blue hover:underline">
-                            Abrir <ArrowUpRight className="h-3 w-3" />
-                          </Link>
-                        </Card>
-
-                        <Card className="flex flex-col gap-2 p-3">
-                          <div className="flex items-center gap-1.5">
-                            <ScrollText className="h-3.5 w-3.5 text-cda-text3" />
-                            <span className="text-xs font-semibold text-cda-text">Roteiro</span>
-                          </div>
-                          <span className="text-xs text-cda-text3">Gerado automaticamente do Planejamento</span>
-                          <a href={roteiroHref} target="_blank" rel="noopener noreferrer" className="mt-auto inline-flex items-center gap-1 text-xs font-medium text-cda-blue hover:underline">
-                            <Printer className="h-3 w-3" /> Baixar PDF do mês
-                          </a>
-                        </Card>
-
-                        <Card className="flex flex-col gap-2 p-3">
-                          <div className="flex items-center gap-1.5">
-                            <ImageIcon className="h-3.5 w-3.5 text-cda-text3" />
-                            <span className="text-xs font-semibold text-cda-text">Atividade Gráfica</span>
-                          </div>
-                          <span className="text-xs text-cda-text3">{folhas.grafica} preenchida{folhas.grafica === 1 ? "" : "s"} esse mês</span>
-                          <Link href={`/pedagogico/planejamento/${v.turma.id}`} className="mt-auto inline-flex items-center gap-1 text-xs font-medium text-cda-blue hover:underline">
-                            Preencher no dia <ArrowUpRight className="h-3 w-3" />
-                          </Link>
-                        </Card>
-
-                        <Card className="flex flex-col gap-2 p-3">
-                          <div className="flex items-center gap-1.5">
-                            <BookOpen className="h-3.5 w-3.5 text-cda-text3" />
-                            <span className="text-xs font-semibold text-cda-text">Tema Literário</span>
-                          </div>
-                          <span className="text-xs text-cda-text3">{folhas.literario} preenchido{folhas.literario === 1 ? "" : "s"} esse mês</span>
-                          <Link href={`/pedagogico/planejamento/${v.turma.id}`} className="mt-auto inline-flex items-center gap-1 text-xs font-medium text-cda-blue hover:underline">
-                            Preencher no dia <ArrowUpRight className="h-3 w-3" />
-                          </Link>
-                        </Card>
+                        <DocumentoPedagogicoCard
+                          icon={NotebookPen}
+                          cor={STATUS_COR[statusTurma]}
+                          titulo="Planejamento"
+                          statusLabel={STATUS_LABEL[statusTurma]}
+                          subtitulo={`${semanasInfo?.total ?? 0} de ${semanasMes.length} semana${semanasMes.length === 1 ? "" : "s"} enviadas`}
+                          href={`/pedagogico/planejamento/${v.turma.id}`}
+                          acaoLabel="Abrir"
+                        />
+                        <DocumentoPedagogicoCard
+                          icon={ScrollText}
+                          cor="var(--cat-2-dot)"
+                          titulo="Roteiro"
+                          subtitulo="Gerado automaticamente do Planejamento"
+                          href={roteiroHref}
+                          external
+                          acaoLabel="Baixar PDF"
+                        />
+                        <DocumentoPedagogicoCard
+                          icon={ImageIcon}
+                          cor="var(--cat-4-dot)"
+                          titulo="Atividade Gráfica"
+                          subtitulo={`${folhas.grafica} preenchida${folhas.grafica === 1 ? "" : "s"} esse mês`}
+                          href={`/pedagogico/planejamento/${v.turma.id}`}
+                          acaoLabel="Preencher"
+                        />
+                        <DocumentoPedagogicoCard
+                          icon={BookOpen}
+                          cor="var(--cat-3-dot)"
+                          titulo="Tema Literário"
+                          subtitulo={`${folhas.literario} preenchido${folhas.literario === 1 ? "" : "s"} esse mês`}
+                          href={`/pedagogico/planejamento/${v.turma.id}`}
+                          acaoLabel="Preencher"
+                        />
                       </div>
 
                       <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-cda-border pt-3">
