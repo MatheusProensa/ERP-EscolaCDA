@@ -230,32 +230,34 @@ model ProjetoPedagogico {
 /// são organizados em semanas dentro de um projeto/mês). Escrito pela
 /// professora regente.
 model Planejamento {
-  id                      String             @id @default(cuid())
-  turma                   Turma              @relation(fields: [turmaId], references: [id], onDelete: Cascade)
-  turmaId                 String
-  projeto                 ProjetoPedagogico? @relation(fields: [projetoId], references: [id], onDelete: SetNull)
-  projetoId               String?
+  id                        String             @id @default(cuid())
+  turma                     Turma              @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turmaId                   String
+  projeto                   ProjetoPedagogico? @relation(fields: [projetoId], references: [id], onDelete: SetNull)
+  projetoId                 String?
   /// Segunda-feira da semana que esse planejamento cobre (meia-noite UTC,
   /// mesma convenção de EventoCalendario) — identidade junto com a turma.
-  semanaInicio            DateTime
+  semanaInicio              DateTime
   /// Lista de materiais da semana (achado real: 1 bloco "MATERIAIS" por
   /// semana no documento real, não por dia).
-  materiais               String?
-  /// Nota condicional de Tarde Cultural (achado real, set/2026, documento
-  /// MODELO_PLANEJAMENTO_CDA: "OBS: Em caso de Tarde Cultural — o que será
-  /// feito, quais processos necessários" só quando é o dia da turma
-  /// apresentar). Opcional, só preenche quando se aplica naquela semana.
-  observacaoTardeCultural String?
+  materiais                 String?
+  /// Tarde Cultural (achado real, set/2026, documento MODELO_PLANEJAMENTO_CDA:
+  /// bloco "OBS: Em caso de Tarde Cultural" com 2 partes — o que a turma vai
+  /// apresentar (só quando é o dia dela) e a lista de materiais necessários,
+  /// que "será entregue para a prof que separa o material após a impressão".
+  /// Os 2 opcionais, só preenche quando tem Tarde Cultural naquela semana.
+  tardeCulturalApresentacao String?
+  tardeCulturalMateriais    String?
   /// Rascunho até a regente clicar em "Finalizar" — pedido do dono, set/2026:
   /// um botão explícito de entrega, em vez do status "Entregue" ser só um
   /// heurístico de "tem algo preenchido" (mesmo padrão já usado no Parecer,
   /// ver StatusParecer). O painel da coordenadora passa a contar ENVIADO.
-  status                  StatusPlanejamento @default(RASCUNHO)
-  autor                   User               @relation(fields: [autorId], references: [id])
-  autorId                 String
-  dias                    PlanejamentoDia[]
-  createdAt               DateTime           @default(now())
-  updatedAt               DateTime           @updatedAt
+  status                    StatusPlanejamento @default(RASCUNHO)
+  autor                     User               @relation(fields: [autorId], references: [id])
+  autorId                   String
+  dias                      PlanejamentoDia[]
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
 
   @@unique([turmaId, semanaInicio])
   @@index([turmaId])

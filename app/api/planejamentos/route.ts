@@ -96,7 +96,8 @@ export async function GET(req: NextRequest) {
     projetoId: planejamento?.projetoId ?? projetoAtivo?.id ?? null,
     projetoJustificativa: projetoDaSemana?.justificativa ?? "",
     materiais: planejamento?.materiais ?? "",
-    observacaoTardeCultural: planejamento?.observacaoTardeCultural ?? "",
+    tardeCulturalApresentacao: planejamento?.tardeCulturalApresentacao ?? "",
+    tardeCulturalMateriais: planejamento?.tardeCulturalMateriais ?? "",
     status: planejamento?.status ?? "RASCUNHO",
     dias,
     podeEditar: await podeEscrever(session.user.id, session.user.role, turmaId),
@@ -115,7 +116,8 @@ export async function POST(req: NextRequest) {
   const semanaParam = String(body?.semana ?? "");
   const projetoId = body?.projetoId ? String(body.projetoId) : null;
   const materiais = body?.materiais ? String(body.materiais).trim() : null;
-  const observacaoTardeCultural = body?.observacaoTardeCultural ? String(body.observacaoTardeCultural).trim() : null;
+  const tardeCulturalApresentacao = body?.tardeCulturalApresentacao ? String(body.tardeCulturalApresentacao).trim() : null;
+  const tardeCulturalMateriais = body?.tardeCulturalMateriais ? String(body.tardeCulturalMateriais).trim() : null;
   const dias = Array.isArray(body?.dias) ? body.dias : [];
   // undefined = não mexe no status atual (salvar comum); só muda quando o
   // front manda explícito (botão "Finalizar" manda ENVIADO) — mesmo padrão
@@ -156,8 +158,24 @@ export async function POST(req: NextRequest) {
     const planejamento = await prisma.$transaction(async (tx) => {
       const registro = await tx.planejamento.upsert({
         where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
-        create: { turmaId, semanaInicio, projetoId, materiais, observacaoTardeCultural, autorId: session.user.id, ...(status ? { status } : {}) },
-        update: { projetoId, materiais, observacaoTardeCultural, autorId: session.user.id, ...(status ? { status } : {}) },
+        create: {
+          turmaId,
+          semanaInicio,
+          projetoId,
+          materiais,
+          tardeCulturalApresentacao,
+          tardeCulturalMateriais,
+          autorId: session.user.id,
+          ...(status ? { status } : {}),
+        },
+        update: {
+          projetoId,
+          materiais,
+          tardeCulturalApresentacao,
+          tardeCulturalMateriais,
+          autorId: session.user.id,
+          ...(status ? { status } : {}),
+        },
       });
       await tx.planejamentoDia.deleteMany({ where: { planejamentoId: registro.id } });
       await tx.planejamentoDia.createMany({

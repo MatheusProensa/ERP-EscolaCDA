@@ -68,7 +68,8 @@ export async function GET(req: NextRequest) {
       projetoNome: planejamento?.projeto?.nome ?? null,
       projetoJustificativa: planejamento?.projeto?.justificativa ?? null,
       materiais: planejamento?.materiais ?? null,
-      observacaoTardeCultural: planejamento?.observacaoTardeCultural ?? null,
+      tardeCulturalApresentacao: planejamento?.tardeCulturalApresentacao ?? null,
+      tardeCulturalMateriais: planejamento?.tardeCulturalMateriais ?? null,
       dias,
     };
   });

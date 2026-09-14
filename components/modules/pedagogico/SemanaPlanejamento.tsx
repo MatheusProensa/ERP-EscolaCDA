@@ -250,7 +250,8 @@ export function SemanaPlanejamento({
   const [projetoId, setProjetoId] = useState<string>("");
   const [projetoJustificativa, setProjetoJustificativa] = useState("");
   const [materiais, setMateriais] = useState("");
-  const [observacaoTardeCultural, setObservacaoTardeCultural] = useState("");
+  const [tardeCulturalApresentacao, setTardeCulturalApresentacao] = useState("");
+  const [tardeCulturalMateriais, setTardeCulturalMateriais] = useState("");
   const [dias, setDias] = useState<DiaForm[]>([]);
   const [status, setStatus] = useState<"RASCUNHO" | "ENVIADO">("RASCUNHO");
   const [podeEditar, setPodeEditar] = useState(false);
@@ -275,7 +276,8 @@ export function SemanaPlanejamento({
       setProjetoId(data.projetoId ?? "");
       setProjetoJustificativa(data.projetoJustificativa ?? "");
       setMateriais(data.materiais ?? "");
-      setObservacaoTardeCultural(data.observacaoTardeCultural ?? "");
+      setTardeCulturalApresentacao(data.tardeCulturalApresentacao ?? "");
+      setTardeCulturalMateriais(data.tardeCulturalMateriais ?? "");
       setDias(data.dias);
       setStatus(data.status ?? "RASCUNHO");
       setPodeEditar(data.podeEditar);
@@ -303,7 +305,8 @@ export function SemanaPlanejamento({
         semana: semanaIso,
         projetoId: projetoId || null,
         materiais,
-        observacaoTardeCultural,
+        tardeCulturalApresentacao,
+        tardeCulturalMateriais,
         dias,
         status: novoStatus,
       }),
@@ -375,13 +378,23 @@ export function SemanaPlanejamento({
             <>
               <div className="mb-4 flex flex-col gap-4">
                 <Campo label="Materiais da semana" value={materiais} onChange={setMateriais} disabled={!podeEditar} rows={2} />
-                <Campo
-                  label="OBS: em caso de Tarde Cultural (opcional, só se essa semana tiver)"
-                  value={observacaoTardeCultural}
-                  onChange={setObservacaoTardeCultural}
-                  disabled={!podeEditar}
-                  rows={2}
-                />
+                <div className="flex flex-col gap-3 rounded-lg border border-cda-border p-3">
+                  <p className="text-xs font-medium text-cda-text2">OBS: Em caso de Tarde Cultural (opcional, só se essa semana tiver)</p>
+                  <Campo
+                    label="Apresentação da turma — o que será feito, se for o dia da turma apresentar"
+                    value={tardeCulturalApresentacao}
+                    onChange={setTardeCulturalApresentacao}
+                    disabled={!podeEditar}
+                    rows={2}
+                  />
+                  <Campo
+                    label="Lista de materiais necessários (quantidade, item, tamanho, cor, detalhes)"
+                    value={tardeCulturalMateriais}
+                    onChange={setTardeCulturalMateriais}
+                    disabled={!podeEditar}
+                    rows={2}
+                  />
+                </div>
               </div>
               <div className="flex flex-col gap-3">
                 {dias.map((dia, i) => (

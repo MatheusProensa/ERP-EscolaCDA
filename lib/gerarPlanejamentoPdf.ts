@@ -20,7 +20,8 @@ export type SemanaPlanejamentoPdf = {
   projetoNome: string | null;
   projetoJustificativa: string | null;
   materiais: string | null;
-  observacaoTardeCultural: string | null;
+  tardeCulturalApresentacao: string | null;
+  tardeCulturalMateriais: string | null;
   dias: DiaPlanejamentoPdf[];
 };
 
@@ -157,13 +158,6 @@ export async function gerarPlanejamentoMesPdf({
       escreverParagrafo(semana.materiais, 9, fonte, TEXT2);
       y -= 8;
     }
-    if (semana.observacaoTardeCultural) {
-      garantirEspaco(13);
-      pagina.drawText("OBS: Em caso de Tarde Cultural:", { x: MARGEM, y, size: 9, font: fonteBold, color: TEXT2 });
-      y -= 12;
-      escreverParagrafo(semana.observacaoTardeCultural, 9, fonte, TEXT2);
-      y -= 8;
-    }
 
     for (const dia of semana.dias) {
       garantirEspaco(28);
@@ -192,6 +186,29 @@ export async function gerarPlanejamentoMesPdf({
         escreverParagrafo(dia.especializadas, 9, fonte, TEXT2);
       }
       y -= 10;
+    }
+
+    // Tarde Cultural (achado real, set/2026: bloco separado com quebra de
+    // página própria, "porém no mesmo arquivo" — a lista de materiais é
+    // entregue pra prof que separa o material depois de imprimir, então
+    // ajuda ficar destacada assim). Só entra quando a semana tem algo.
+    if (semana.tardeCulturalApresentacao || semana.tardeCulturalMateriais) {
+      novaPagina();
+      pagina.drawText("OBS: EM CASO DE TARDE CULTURAL", { x: MARGEM, y, size: 13, font: fonteBold, color: NAVY });
+      y -= 20;
+      if (semana.tardeCulturalApresentacao) {
+        garantirEspaco(13);
+        pagina.drawText("Apresentação da turma:", { x: MARGEM, y, size: 9.5, font: fonteBold, color: BLACK });
+        y -= 13;
+        escreverParagrafo(semana.tardeCulturalApresentacao, 9.5, fonte);
+        y -= 8;
+      }
+      if (semana.tardeCulturalMateriais) {
+        garantirEspaco(13);
+        pagina.drawText("Lista de materiais necessários:", { x: MARGEM, y, size: 9.5, font: fonteBold, color: BLACK });
+        y -= 13;
+        escreverParagrafo(semana.tardeCulturalMateriais, 9.5, fonte);
+      }
     }
   });
 
