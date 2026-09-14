@@ -24,6 +24,7 @@ type Usuario = {
   foto?: string | null;
   createdAt: string | Date;
   pedidoResetSenhaEm?: string | Date | null;
+  coordenaAreaPedagogica?: boolean;
 };
 
 export function PerfilUsuarioClient({
@@ -44,6 +45,7 @@ export function PerfilUsuarioClient({
   const [email, setEmail] = useState(usuario.email);
   const [role, setRole] = useState(usuario.role);
   const [foto, setFoto] = useState<string | null>(usuario.foto ?? null);
+  const [coordena, setCoordena] = useState(usuario.coordenaAreaPedagogica ?? false);
   const [salvando, setSalvando] = useState(false);
   const [erroSalvar, setErroSalvar] = useState("");
 
@@ -57,7 +59,11 @@ export function PerfilUsuarioClient({
   const [excluindo, setExcluindo] = useState(false);
 
   const sujo =
-    name.trim() !== usuario.name || email.trim() !== usuario.email || role !== usuario.role || foto !== (usuario.foto ?? null);
+    name.trim() !== usuario.name ||
+    email.trim() !== usuario.email ||
+    role !== usuario.role ||
+    foto !== (usuario.foto ?? null) ||
+    coordena !== (usuario.coordenaAreaPedagogica ?? false);
 
   const perfilInvalido = useMemo(
     () => !ROLES_ATIVAS.includes(usuario.role as (typeof ROLES_ATIVAS)[number]),
@@ -100,7 +106,7 @@ export function PerfilUsuarioClient({
     const res = await fetch(`/api/usuarios/${usuario.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: name.trim(), email: email.trim(), role, foto }),
+      body: JSON.stringify({ name: name.trim(), email: email.trim(), role, foto, coordenaAreaPedagogica: coordena }),
     });
     setSalvando(false);
     if (!res.ok) {
@@ -184,6 +190,18 @@ export function PerfilUsuarioClient({
             </Select>
             {souEu && (
               <p className="self-end text-xs text-cda-text3">Você não pode trocar seu próprio perfil.</p>
+            )}
+
+            {role === "PEDAGOGICO" && (
+              <label className="flex items-center gap-2 self-end text-sm text-cda-text2 sm:col-span-2">
+                <input
+                  type="checkbox"
+                  checked={coordena}
+                  onChange={(e) => setCoordena(e.target.checked)}
+                  className="h-4 w-4 rounded border-cda-border"
+                />
+                Coordena a Área Pedagógica (vê todas as turmas, cadastra temas, comenta e aprova entregas)
+              </label>
             )}
 
             {erroSalvar && <p className="sm:col-span-2 text-sm text-cda-red">{erroSalvar}</p>}

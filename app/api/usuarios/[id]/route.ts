@@ -21,12 +21,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
-  const { role, name, email, foto } = body;
+  const { role, name, email, foto, coordenaAreaPedagogica } = body;
 
   const atual = await prisma.user.findUnique({ where: { id } });
   if (!atual) return NextResponse.json({ error: "Usuário não encontrado" }, { status: 404 });
 
-  const data: { role?: Role; name?: string; email?: string; foto?: string | null } = {};
+  const data: { role?: Role; name?: string; email?: string; foto?: string | null; coordenaAreaPedagogica?: boolean } = {};
 
   if (role !== undefined) {
     if (!ROLES_ATIVAS.includes(role)) return NextResponse.json({ error: "Perfil inválido" }, { status: 400 });
@@ -64,10 +64,14 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     }
   }
 
+  if (coordenaAreaPedagogica !== undefined) {
+    data.coordenaAreaPedagogica = !!coordenaAreaPedagogica;
+  }
+
   const usuario = await prisma.user.update({
     where: { id },
     data,
-    select: { id: true, name: true, email: true, role: true, foto: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, foto: true, createdAt: true, coordenaAreaPedagogica: true },
   });
 
   const mudancas: string[] = [];
@@ -75,6 +79,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (data.email && data.email !== atual.email) mudancas.push(`email de "${atual.email}" para "${data.email}"`);
   if (data.role && data.role !== atual.role) mudancas.push(`perfil de ${atual.role} para ${data.role}`);
   if (foto !== undefined && foto !== atual.foto) mudancas.push(foto ? "foto atualizada" : "foto removida");
+  if (data.coordenaAreaPedagogica !== undefined && data.coordenaAreaPedagogica !== atual.coordenaAreaPedagogica) {
+    mudancas.push(data.coordenaAreaPedagogica ? "marcado como coordenadora da Área Pedagógica" : "desmarcado como coordenadora da Área Pedagógica");
+  }
   if (mudancas.length > 0) {
     await prisma.logAtividade.create({
       data: {

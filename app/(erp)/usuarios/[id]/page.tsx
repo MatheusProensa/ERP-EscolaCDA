@@ -17,7 +17,16 @@ export default async function PerfilUsuarioPage({ params }: { params: Promise<{ 
 
   const usuario = await prisma.user.findUnique({
     where: { id },
-    select: { id: true, name: true, email: true, role: true, foto: true, createdAt: true, pedidoResetSenhaEm: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      foto: true,
+      createdAt: true,
+      pedidoResetSenhaEm: true,
+      coordenaAreaPedagogica: true,
+    },
   });
   if (!usuario) notFound();
 

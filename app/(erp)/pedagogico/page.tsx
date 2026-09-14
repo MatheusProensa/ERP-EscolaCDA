@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { TemasPlanejamentoSecao } from "@/components/modules/pedagogico/TemasPlanejamentoSecao";
 
 const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã", TARDE: "Tarde" };
 
@@ -23,13 +24,16 @@ const ENTREGAS_FUTURAS = [
  * onde planejamento/parecer/portfólio vão aparecer por turma. */
 export default async function PedagogicoPage() {
   const session = await auth();
-  const vinculos = session?.user.id
-    ? await prisma.vinculoPedagogico.findMany({
-        where: { userId: session.user.id },
-        include: { turma: { select: { id: true, nome: true, turno: true } } },
-        orderBy: { turma: { nome: "asc" } },
-      })
-    : [];
+  const [vinculos, temas] = await Promise.all([
+    session?.user.id
+      ? prisma.vinculoPedagogico.findMany({
+          where: { userId: session.user.id },
+          include: { turma: { select: { id: true, nome: true, turno: true } } },
+          orderBy: { turma: { nome: "asc" } },
+        })
+      : Promise.resolve([]),
+    prisma.temaPlanejamento.findMany({ orderBy: { titulo: "asc" } }),
+  ]);
 
   const comoRegente = vinculos.filter((v) => v.papel === "REGENTE");
   const comoEspecialista = vinculos.filter((v) => v.papel === "ESPECIALISTA");
@@ -45,6 +49,10 @@ export default async function PedagogicoPage() {
   return (
     <div>
       <PageHeader title="Área Pedagógica" subtitle="Suas turmas — parecer, planejamento e portfólio chegam aqui em breve" />
+
+      <div className="mb-5">
+        <TemasPlanejamentoSecao temas={temas} souCoordenadora={session?.user.role === "ADMIN" || !!session?.user.coordenaAreaPedagogica} />
+      </div>
 
       {vinculos.length === 0 ? (
         <Card>

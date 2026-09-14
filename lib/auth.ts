@@ -50,7 +50,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Não devolve a foto aqui (image: user.foto) — ela é base64 e ia parar no
         // cookie de sessão (ver lib/auth.config.ts pro motivo completo). Foto de
         // cada um é buscada fresca do banco onde precisa aparecer.
-        return { id: user.id, name: user.name, email: user.email, role: user.role, permissoes };
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          permissoes,
+          coordenaAreaPedagogica: user.coordenaAreaPedagogica,
+        };
       },
     }),
   ],

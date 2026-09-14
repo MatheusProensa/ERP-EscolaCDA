@@ -14,31 +14,38 @@ datasource db {
 }
 
 model User {
-  id                 String         @id @default(cuid())
-  name               String
-  email              String         @unique
-  password           String
-  role               Role           @default(SECRETARIA)
+  id                     String              @id @default(cuid())
+  name                   String
+  email                  String              @unique
+  password               String
+  role                   Role                @default(SECRETARIA)
   /// Foto de perfil (JPEG em base64, redimensionado no navegador antes do
   /// upload — ver components/ui/PhotoUpload.tsx). Vira o "image" padrão do
   /// NextAuth na sessão.
-  foto               String?
-  tentativasFalhas   Int            @default(0)
-  bloqueadoAte       DateTime?
+  foto                   String?
+  tentativasFalhas       Int                 @default(0)
+  bloqueadoAte           DateTime?
   /// Marcado quando o usuário pede "esqueci minha senha" na tela de login —
   /// sem envio de e-mail (não tem provedor configurado), um ADMIN/DIREÇÃO vê
   /// o pedido na tela de Usuários e redefine manualmente (fluxo que já existia).
-  pedidoResetSenhaEm DateTime?
-  createdAt          DateTime       @default(now())
-  mensagensEnviadas  Mensagem[]     @relation("MensagensEnviadas")
-  mensagensRecebidas Mensagem[]     @relation("MensagensRecebidas")
-  notificacoes       Notificacao[]
-  avisosMural        MuralAviso[]
-  leiturasAvisos     AvisoLeitura[]
-  permissoes         PermissaoUsuario[]
-  vinculosPedagogico VinculoPedagogico[]
-  temasPlanejamento  TemaPlanejamento[]
-  planejamentos      Planejamento[]
+  pedidoResetSenhaEm     DateTime?
+  /// Marca a coordenadora pedagógica — enxerga TODAS as turmas na Área
+  /// Pedagógica (não só as que ela tem VinculoPedagogico), cadastra temas de
+  /// planejamento e comenta/aprova entregas. Separado do Role porque
+  /// "Pedagógico" já é usado por mais gente (professoras regentes/
+  /// especialistas) que não tem essa visão ampla — é uma marcação extra
+  /// dentro do Role, não um Role à parte.
+  coordenaAreaPedagogica Boolean             @default(false)
+  createdAt              DateTime            @default(now())
+  mensagensEnviadas      Mensagem[]          @relation("MensagensEnviadas")
+  mensagensRecebidas     Mensagem[]          @relation("MensagensRecebidas")
+  notificacoes           Notificacao[]
+  avisosMural            MuralAviso[]
+  leiturasAvisos         AvisoLeitura[]
+  permissoes             PermissaoUsuario[]
+  vinculosPedagogico     VinculoPedagogico[]
+  temasPlanejamento      TemaPlanejamento[]
+  planejamentos          Planejamento[]
 }
 
 /// Permissão granular por pessoa/setor — sobrepõe o pacote padrão do Role
@@ -318,16 +325,16 @@ model Aluno {
   nis             String?
 
   // Dados da Ficha de Matrícula (rotina/perfil da criança)
-  temIrmaos             Boolean?
-  idadesIrmaos          String?
-  usaBico               Boolean?
-  usaMamadeira          Boolean?
-  obsBicoMamadeira      String?
-  jaFrequentouEscola    Boolean?
-  duracaoEscolaAnterior String?
-  rotinaSonoAlimentacao String?
+  temIrmaos              Boolean?
+  idadesIrmaos           String?
+  usaBico                Boolean?
+  usaMamadeira           Boolean?
+  obsBicoMamadeira       String?
+  jaFrequentouEscola     Boolean?
+  duracaoEscolaAnterior  String?
+  rotinaSonoAlimentacao  String?
   brincadeirasPrediletas String?
-  reacoesContrariado    String?
+  reacoesContrariado     String?
 
   matriculas             Matricula[]
   responsaveis           Responsavel[]
@@ -335,8 +342,8 @@ model Aluno {
   notasFiscais           NotaFiscal[]
   boletos                Boleto[]
   avaliacoesNutricionais AvaliacaoNutricional[]
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
 
   @@index([nome])
 }
@@ -465,16 +472,16 @@ model Contrato {
   /// editar) — sem isso, assinar pelo link teria que re-derivar tudo do
   /// cadastro atual do aluno, que pode já ter mudado desde a geração e perderia
   /// coisas como dia/mês de vencimento (não existem em outro lugar do banco).
-  alunoNomeSnapshot         String?
-  alunoNascimentoSnapshot   DateTime?
-  responsavelNomeSnapshot   String?
-  responsavelCpfSnapshot    String?
-  turmaNomeSnapshot         String?
-  turnoLabelSnapshot        String?
-  anoLetivoSnapshot         Int?
-  valorMensalidadeSnapshot  Float?
-  dataMatriculaSnapshot     DateTime?
-  diaVencimentoSnapshot     String?
+  alunoNomeSnapshot           String?
+  alunoNascimentoSnapshot     DateTime?
+  responsavelNomeSnapshot     String?
+  responsavelCpfSnapshot      String?
+  turmaNomeSnapshot           String?
+  turnoLabelSnapshot          String?
+  anoLetivoSnapshot           Int?
+  valorMensalidadeSnapshot    Float?
+  dataMatriculaSnapshot       DateTime?
+  diaVencimentoSnapshot       String?
   mesInicioVencimentoSnapshot String?
 }
 
@@ -680,17 +687,17 @@ model Chave {
 }
 
 model EmprestimoChave {
-  id          String    @id @default(cuid())
-  chave       Chave     @relation(fields: [chaveId], references: [id])
-  chaveId     String
+  id                       String       @id @default(cuid())
+  chave                    Chave        @relation(fields: [chaveId], references: [id])
+  chaveId                  String
   /// Nome do responsável — sempre preenchido a partir do Funcionario selecionado
   /// (snapshot, igual a NotaFiscal/LogAtividade). Registros antigos (antes do
   /// autocomplete) podem não ter responsavelFuncionarioId — não foram migrados.
-  responsavel String
+  responsavel              String
   responsavelFuncionario   Funcionario? @relation(fields: [responsavelFuncionarioId], references: [id])
   responsavelFuncionarioId String?
-  retirada    DateTime  @default(now())
-  devolucao   DateTime?
+  retirada                 DateTime     @default(now())
+  devolucao                DateTime?
 }
 
 model MuralAviso {
@@ -741,22 +748,22 @@ model EventoCalendario {
 /// Canva pra cada ano. Cada linha aqui é um "bloco" (card) da tela, na ordem
 /// em que aparece.
 model EscalaEquipeBloco {
-  id                 String            @id @default(cuid())
+  id                 String          @id @default(cuid())
   ano                Int
   ordem              Int
   titulo             String
-  tipo               TipoEscalaBloco   @default(TURNO)
+  tipo               TipoEscalaBloco @default(TURNO)
   /// Só pra TURNO: horários citados no bloco, como referência visual (não
   /// necessariamente 1 pra 1 com cada entrada/saída — ver nota no seed).
-  horariosReferencia String[]          @default([])
+  horariosReferencia String[]        @default([])
   /// Só pra TURNO: [{ pessoa, nota }], nota é o que já vinha escrito no
   /// quadro (ex.: "início do turno", "vem do CTI").
   entradas           Json?
   saidas             Json?
   /// Só pra NOTA: texto livre (organização de turmas, avisos gerais).
   conteudoLivre      String?
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
 }
 
 enum TipoEscalaBloco {

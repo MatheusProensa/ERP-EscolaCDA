@@ -21,6 +21,7 @@ export const authConfig = {
       if (user) {
         token.role = user.role;
         token.permissoes = user.permissoes;
+        token.coordenaAreaPedagogica = user.coordenaAreaPedagogica;
       }
       // O NextAuth guarda "picture" no token SOZINHO, antes mesmo desse callback
       // rodar (pega direto do que authorize() devolveu) — não bastava só não
@@ -36,6 +37,7 @@ export const authConfig = {
       session.user.id = token.sub!;
       session.user.role = token.role as string;
       session.user.permissoes = token.permissoes as PermissoesPorModulo | undefined;
+      session.user.coordenaAreaPedagogica = token.coordenaAreaPedagogica as boolean | undefined;
       return session;
     },
   },
