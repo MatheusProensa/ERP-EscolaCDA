@@ -2,13 +2,13 @@ import { Download, KeyRound, Users, Crown, Wallet, UserCog, GraduationCap, type 
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Alert } from "@/components/ui/Alert";
-import { EmptyState } from "@/components/ui/EmptyState";
 import { BarraFiltro } from "@/components/ui/BarraFiltro";
 import { MetricCard, type MetricTone } from "@/components/ui/MetricCard";
 import { NovoUsuarioModal } from "@/components/modules/usuarios/NovoUsuarioModal";
-import { UsuarioCard } from "@/components/modules/usuarios/UsuarioCard";
+import { UsuarioTable } from "@/components/modules/usuarios/UsuarioTable";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { ROLES_ATIVAS, ROLE_LABEL, ROLE_BADGE_VARIANT } from "@/lib/permissoes";
 import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
@@ -46,7 +46,16 @@ export default async function UsuariosPage({
 
   const todos = await prisma.user.findMany({
     orderBy: { name: "asc" },
-    select: { id: true, name: true, email: true, role: true, foto: true, createdAt: true, pedidoResetSenhaEm: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      foto: true,
+      createdAt: true,
+      pedidoResetSenhaEm: true,
+      vinculosPedagogico: { select: { papel: true, materia: true, turma: { select: { nome: true } } } },
+    },
   });
 
   const contagemPorCargo = new Map<string, number>();
@@ -129,15 +138,9 @@ export default async function UsuariosPage({
         totalGeral={todos.length}
       />
 
-      {filtrados.length === 0 ? (
-        <EmptyState title="Nenhum usuário encontrado." />
-      ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {filtrados.map((usuario) => (
-            <UsuarioCard key={usuario.id} usuario={usuario} souEu={usuario.id === session?.user.id} />
-          ))}
-        </div>
-      )}
+      <Card>
+        <UsuarioTable usuarios={filtrados} meuId={session?.user.id} />
+      </Card>
     </div>
   );
 }
