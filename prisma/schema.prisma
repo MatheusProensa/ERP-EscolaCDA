@@ -49,6 +49,7 @@ model User {
   modelosParecer         ModeloParecer[]
   pareceres              Parecer[]
   portfolioItens         PortfolioItem[]
+  tutoriaisVistos        TutorialVisto[]
 }
 
 /// Permissão granular por pessoa/setor — sobrepõe o pacote padrão do Role
@@ -846,6 +847,22 @@ model AvisoLeitura {
   createdAt DateTime   @default(now())
 
   @@unique([avisoId, userId])
+}
+
+/// Marca que uma pessoa já viu o tutorial guiado de um módulo (ex.:
+/// "pedagogico") — ideia confirmada pelo dono, out/2026: tour tipo app/jogo,
+/// contextual por tela, disparado só na primeira vez, sempre re-disparável
+/// por um botão de ajuda. `modulo` é texto livre (não FK), mesmo espírito de
+/// PermissaoUsuario.modulo — cada tela nova só precisa de uma chave nova, sem
+/// migração.
+model TutorialVisto {
+  id      String   @id @default(cuid())
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  String
+  modulo  String
+  vistoEm DateTime @default(now())
+
+  @@unique([userId, modulo])
 }
 
 model LogAtividade {

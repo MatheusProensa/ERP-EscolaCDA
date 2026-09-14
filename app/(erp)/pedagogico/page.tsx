@@ -8,11 +8,35 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TemasPlanejamentoSecao } from "@/components/modules/pedagogico/TemasPlanejamentoSecao";
 import { ModelosParecerSecao } from "@/components/modules/pedagogico/ModelosParecerSecao";
+import { TutorialGuiado } from "@/components/ui/TutorialGuiado";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { hojeBrasilia } from "@/lib/utils";
 import { segundaFeiraDe } from "@/lib/planejamento";
 
 const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã", TARDE: "Tarde" };
+
+const TUTORIAL_PASSOS = [
+  {
+    titulo: "Bem-vinda à Área Pedagógica!",
+    texto: "Aqui você acompanha suas turmas e entrega planejamento, parecer e portfólio — tudo num lugar só, sem precisar de PDF ou pasta separada.",
+    icon: GraduationCap,
+  },
+  {
+    titulo: "Planejamento semanal",
+    texto: 'No card da sua turma, toque em "Planejamento" pra escolher o tema da semana (se a coordenação já preparou um) e preencher o que vai ter em cada dia.',
+    icon: NotebookPen,
+  },
+  {
+    titulo: "Parecer guiado por parágrafo",
+    texto: 'Em "Parecer", cada parágrafo já vem com uma pergunta pra te ajudar a escrever — não precisa abrir nenhum PDF de orientação do lado.',
+    icon: FileText,
+  },
+  {
+    titulo: "Portfólio com fotos",
+    texto: 'Em "Portfólio", é só arrastar a foto pra tela (ou tocar pra abrir a câmera/galeria do tablet) e escrever uma legenda curta.',
+    icon: ImageIcon,
+  },
+];
 
 /** Hub da professora dentro da Área Pedagógica — mostra o vínculo dela
  * (turma como regente, matéria×turmas como especialista) e leva pras 3
@@ -72,6 +96,7 @@ export default async function PedagogicoPage() {
 
   return (
     <div>
+      <TutorialGuiado modulo="pedagogico" titulo="Como usar a Área Pedagógica" passos={TUTORIAL_PASSOS} />
       <PageHeader title="Área Pedagógica" subtitle="Suas turmas — planejamento, parecer e portfólio" />
 
       <div className="mb-5 flex flex-col gap-5 lg:flex-row lg:items-start">
