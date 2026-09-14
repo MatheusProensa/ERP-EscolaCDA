@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Trash2, Image as ImageIcon } from "lucide-react";
+import { Trash2, Image as ImageIcon, Printer } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -89,7 +89,22 @@ export function PortfolioAlunoClient({ turmaId, alunoId, podeEditar }: { turmaId
         </Card>
       )}
 
-      <Card title={`Linha do tempo (${itens.length})`}>
+      <Card
+        title={`Linha do tempo (${itens.length})`}
+        action={
+          itens.length > 0 && (
+            <a
+              href={`/api/portfolio/${alunoId}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Baixar PDF do portfólio
+            </a>
+          )
+        }
+      >
         {carregando ? (
           <p className="px-5 py-4 text-sm text-cda-text3">Carregando...</p>
         ) : itens.length === 0 ? (
