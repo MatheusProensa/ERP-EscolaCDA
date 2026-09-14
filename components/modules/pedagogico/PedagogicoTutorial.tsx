@@ -16,12 +16,12 @@ const PASSOS = [
   },
   {
     titulo: "Planejamento semanal",
-    texto: 'No card da sua turma, toque em "Planejamento" pra escolher o tema da semana (se a coordenação já preparou um) e preencher o que vai ter em cada dia.',
+    texto: 'No card da sua turma, toque em "Planejamento" pra abrir o projeto pedagógico da turma e preencher a semana, dia a dia, do jeito que você já monta hoje.',
     icon: NotebookPen,
   },
   {
     titulo: "Parecer guiado por parágrafo",
-    texto: 'Em "Parecer", cada parágrafo já vem com uma pergunta pra te ajudar a escrever — não precisa abrir nenhum PDF de orientação do lado.',
+    texto: 'Em "Parecer", você monta o modelo de parágrafos da sua turma uma vez — cada um já vem com uma pergunta pra te ajudar a escrever — e depois é só entrar em cada aluno.',
     icon: FileText,
   },
   {

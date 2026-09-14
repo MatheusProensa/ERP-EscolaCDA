@@ -96,7 +96,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/api/relatorios/interessados", roles: ANIVERSARIANTES },
   { prefixo: "/api/responsaveis", roles: PEDAGOGICO },
   { prefixo: "/api/turmas", roles: PEDAGOGICO },
-  { prefixo: "/api/temas-planejamento", roles: PEDAGOGICO },
+  { prefixo: "/api/projetos-pedagogicos", roles: PEDAGOGICO },
   { prefixo: "/api/planejamentos", roles: PEDAGOGICO },
   { prefixo: "/api/modelos-parecer", roles: PEDAGOGICO },
   { prefixo: "/api/pareceres", roles: PEDAGOGICO },

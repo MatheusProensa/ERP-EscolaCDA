@@ -3,7 +3,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { avisarMudanca } from "@/lib/liveUpdate";
-import { segundaFeiraDe, diasDaSemana, isoData } from "@/lib/planejamento";
+import { segundaFeiraDe, diasDaSemana, isoData, tipoPadraoDoDia, type ConteudoDiaPlanejamento } from "@/lib/planejamento";
+import type { TipoDiaPlanejamento } from "@prisma/client";
 
 /** Confere se quem tá logado pode ESCREVER o planejamento dessa turma — hoje
  * só a REGENTE dela (ou ADMIN). Especialista escrever planejamento da
@@ -15,10 +16,38 @@ async function podeEscrever(userId: string, role: string, turmaId: string): Prom
   return !!vinculo;
 }
 
+const CHAVES_CONTEUDO: (keyof ConteudoDiaPlanejamento)[] = [
+  "tematicaDia",
+  "momentoInicial",
+  "questionamentosInicial",
+  "momentoFundamental",
+  "questionamentosFundamental",
+  "contextoOrganizado",
+  "rodaDeConversa",
+  "questionamentosRoda",
+  "organizacaoContexto",
+  "questionamentosContexto",
+  "momentoFinal",
+  "questionamentosFinal",
+];
+
+/** Limpa o JSON de conteúdo de um dia — só aceita as chaves conhecidas, tudo
+ * texto, trim, e descarta o que vier vazio (evita acumular lixo no JSON ao
+ * longo de várias edições). */
+function sanearConteudo(valor: unknown): ConteudoDiaPlanejamento {
+  const obj = (valor && typeof valor === "object" ? valor : {}) as Record<string, unknown>;
+  const limpo: ConteudoDiaPlanejamento = {};
+  for (const chave of CHAVES_CONTEUDO) {
+    const texto = obj[chave] ? String(obj[chave]).trim() : "";
+    if (texto) limpo[chave] = texto;
+  }
+  return limpo;
+}
+
 /** Busca o planejamento de uma turma numa semana específica (normalizada pra
- * segunda-feira) — devolve os 5 dias sempre, com conteúdo vazio pros que
- * ainda não foram preenchidos, pra o formulário não precisar tratar "não
- * existe ainda" como caso especial. */
+ * segunda-feira) — devolve os 5 dias sempre, com valor padrão pros que ainda
+ * não foram preenchidos, pra o formulário não precisar tratar "não existe
+ * ainda" como caso especial. */
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -32,18 +61,29 @@ export async function GET(req: NextRequest) {
   if (Number.isNaN(semana.getTime())) return NextResponse.json({ error: "Semana inválida" }, { status: 400 });
   const semanaInicio = segundaFeiraDe(semana);
 
-  const planejamento = await prisma.planejamento.findUnique({
-    where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
-    include: { dias: true, tema: { select: { id: true, titulo: true, estrutura: true } } },
-  });
+  const [planejamento, projetoAtivo] = await Promise.all([
+    prisma.planejamento.findUnique({
+      where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
+      include: { dias: true },
+    }),
+    prisma.projetoPedagogico.findFirst({ where: { turmaId, ativo: true } }),
+  ]);
 
-  const diasPorData = new Map((planejamento?.dias ?? []).map((d) => [isoData(d.data), d.conteudo]));
-  const dias = diasDaSemana(semanaInicio).map((data) => ({ data: isoData(data), conteudo: diasPorData.get(isoData(data)) ?? "" }));
+  const diasPorData = new Map((planejamento?.dias ?? []).map((d) => [isoData(d.data), d]));
+  const dias = diasDaSemana(semanaInicio).map((data, indice) => {
+    const salvo = diasPorData.get(isoData(data));
+    return {
+      data: isoData(data),
+      tipo: (salvo?.tipo ?? tipoPadraoDoDia(indice)) as TipoDiaPlanejamento,
+      conteudo: (salvo?.conteudo ?? {}) as ConteudoDiaPlanejamento,
+      especializadas: salvo?.especializadas ?? "",
+    };
+  });
 
   return NextResponse.json({
     semanaInicio: isoData(semanaInicio),
-    temaId: planejamento?.temaId ?? null,
-    tema: planejamento?.tema ?? null,
+    projetoId: planejamento?.projetoId ?? projetoAtivo?.id ?? null,
+    materiais: planejamento?.materiais ?? "",
     dias,
     podeEditar: await podeEscrever(session.user.id, session.user.role, turmaId),
   });
@@ -59,7 +99,8 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const turmaId = String(body?.turmaId ?? "");
   const semanaParam = String(body?.semana ?? "");
-  const temaId = body?.temaId ? String(body.temaId) : null;
+  const projetoId = body?.projetoId ? String(body.projetoId) : null;
+  const materiais = body?.materiais ? String(body.materiais).trim() : null;
   const dias = Array.isArray(body?.dias) ? body.dias : [];
 
   if (!turmaId || !semanaParam) return NextResponse.json({ error: "Informe turmaId e semana" }, { status: 400 });
@@ -74,30 +115,40 @@ export async function POST(req: NextRequest) {
   const turma = await prisma.turma.findUnique({ where: { id: turmaId } });
   if (!turma) return NextResponse.json({ error: "Turma não encontrada" }, { status: 404 });
 
-  if (temaId) {
-    const tema = await prisma.temaPlanejamento.findUnique({ where: { id: temaId } });
-    if (!tema) return NextResponse.json({ error: "Tema não encontrado" }, { status: 400 });
+  if (projetoId) {
+    const projeto = await prisma.projetoPedagogico.findUnique({ where: { id: projetoId } });
+    if (!projeto || projeto.turmaId !== turmaId) return NextResponse.json({ error: "Projeto não encontrado" }, { status: 400 });
   }
 
-  const diasValidos: { data: Date; conteudo: string }[] = [];
+  const diasValidos: { data: Date; tipo: TipoDiaPlanejamento; conteudo: ConteudoDiaPlanejamento; especializadas: string | null }[] = [];
   for (const d of dias) {
     const data = new Date(`${d?.data}T00:00:00.000Z`);
     if (Number.isNaN(data.getTime())) continue;
-    diasValidos.push({ data, conteudo: String(d?.conteudo ?? "").trim() });
+    const tipo: TipoDiaPlanejamento = d?.tipo === "CONTEXTO" ? "CONTEXTO" : "TEMATICA";
+    const conteudo = sanearConteudo(d?.conteudo);
+    const especializadas = d?.especializadas ? String(d.especializadas).trim() : null;
+    diasValidos.push({ data, tipo, conteudo, especializadas });
   }
+  // Só grava dia que tem pelo menos algo preenchido (conteúdo ou especializadas)
+  // — dia em branco não vira registro, mesma lógica de antes.
+  const diasComConteudo = diasValidos.filter((d) => Object.keys(d.conteudo).length > 0 || d.especializadas);
 
   try {
     const planejamento = await prisma.$transaction(async (tx) => {
       const registro = await tx.planejamento.upsert({
         where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
-        create: { turmaId, semanaInicio, temaId, autorId: session.user.id },
-        update: { temaId, autorId: session.user.id },
+        create: { turmaId, semanaInicio, projetoId, materiais, autorId: session.user.id },
+        update: { projetoId, materiais, autorId: session.user.id },
       });
       await tx.planejamentoDia.deleteMany({ where: { planejamentoId: registro.id } });
       await tx.planejamentoDia.createMany({
-        data: diasValidos
-          .filter((d) => d.conteudo)
-          .map((d) => ({ planejamentoId: registro.id, data: d.data, conteudo: d.conteudo })),
+        data: diasComConteudo.map((d) => ({
+          planejamentoId: registro.id,
+          data: d.data,
+          tipo: d.tipo,
+          conteudo: d.conteudo,
+          especializadas: d.especializadas,
+        })),
       });
       return registro;
     });

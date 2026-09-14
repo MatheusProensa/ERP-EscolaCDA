@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { GraduationCap, Sparkles, NotebookPen, FileText, Image as ImageIcon, ClipboardCheck, Users, CheckCircle2, Clock, Settings2 } from "lucide-react";
+import { GraduationCap, Sparkles, NotebookPen, FileText, Image as ImageIcon, ClipboardCheck, Users, CheckCircle2, Clock } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -7,7 +7,6 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { MetricCard } from "@/components/ui/MetricCard";
-import { TemasPlanejamentoSecao } from "@/components/modules/pedagogico/TemasPlanejamentoSecao";
 import { PedagogicoTutorial } from "@/components/modules/pedagogico/PedagogicoTutorial";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { hojeBrasilia } from "@/lib/utils";
@@ -23,7 +22,7 @@ export default async function PedagogicoPage() {
   const souCoordenadora = session?.user.role === "ADMIN" || !!session?.user.coordenaAreaPedagogica;
   const semanaAtual = segundaFeiraDe(hojeBrasilia());
 
-  const [vinculos, temas, anoLetivo] = await Promise.all([
+  const [vinculos, anoLetivo] = await Promise.all([
     session?.user.id
       ? prisma.vinculoPedagogico.findMany({
           where: { userId: session.user.id },
@@ -31,7 +30,6 @@ export default async function PedagogicoPage() {
           orderBy: { turma: { nome: "asc" } },
         })
       : Promise.resolve([]),
-    prisma.temaPlanejamento.findMany({ orderBy: { titulo: "asc" } }),
     getAnoLetivoAtivo(),
   ]);
 
@@ -73,12 +71,10 @@ export default async function PedagogicoPage() {
   // Ordem pensada pra achar rápido o que se usa todo dia primeiro (pedido
   // explícito do dono: página bem organizada pra fácil utilização) —
   // coordenadora vê o painel de acompanhamento logo de cara (é o motivo
-  // principal dela entrar aqui), depois vem "Suas turmas" (a parte de
-  // trabalho de qualquer um, incluindo a coordenadora quando ela também dá
-  // aula), e só no fim o cadastro de referência (Temas), que se consulta bem
-  // menos vezes do que se usa o dia a dia. Modelo de parecer NÃO mora mais
-  // aqui — virou por turma (correção do dono, set/2026), vive dentro de
-  // /pedagogico/parecer/[turmaId].
+  // principal dela entrar aqui), depois vem "Suas turmas". Nem Projeto
+  // pedagógico nem Modelo de parecer moram mais aqui — os dois viraram por
+  // turma (correção do dono, set/2026), vivem dentro de
+  // /pedagogico/planejamento/[turmaId] e /pedagogico/parecer/[turmaId].
   return (
     <div>
       <PedagogicoTutorial />
@@ -229,14 +225,6 @@ export default async function PedagogicoPage() {
           )}
         </div>
       )}
-
-      <div className="mt-8">
-        <h2 className="mb-3 flex items-center gap-2 text-base font-semibold text-cda-text">
-          <Settings2 className="h-4 w-4 text-cda-text3" />
-          Configurações
-        </h2>
-        <TemasPlanejamentoSecao temas={temas} souCoordenadora={souCoordenadora} />
-      </div>
     </div>
   );
 }

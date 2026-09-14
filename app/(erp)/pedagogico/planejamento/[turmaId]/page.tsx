@@ -1,20 +1,28 @@
 import { notFound } from "next/navigation";
+import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { hojeBrasilia } from "@/lib/utils";
 import { segundaFeiraDe, isoData } from "@/lib/planejamento";
+import { ProjetoPedagogicoSecao } from "@/components/modules/pedagogico/ProjetoPedagogicoSecao";
 import { PlanejamentoSemanalClient } from "@/components/modules/pedagogico/PlanejamentoSemanalClient";
 
 export default async function PlanejamentoTurmaPage({ params }: { params: Promise<{ turmaId: string }> }) {
   const { turmaId } = await params;
+  const session = await auth();
 
-  const [turma, temas] = await Promise.all([
+  const [turma, projetos, vinculo] = await Promise.all([
     prisma.turma.findUnique({ where: { id: turmaId }, select: { id: true, nome: true } }),
-    prisma.temaPlanejamento.findMany({ orderBy: { titulo: "asc" } }),
+    prisma.projetoPedagogico.findMany({ where: { turmaId }, orderBy: { createdAt: "desc" } }),
+    session?.user.id
+      ? prisma.vinculoPedagogico.findFirst({ where: { userId: session.user.id, turmaId, papel: "REGENTE" } })
+      : null,
   ]);
   if (!turma) notFound();
 
+  const podeEditar = session?.user.role === "ADMIN" || !!vinculo;
   const semanaInicialIso = isoData(segundaFeiraDe(hojeBrasilia()));
+  const projetosDTO = projetos.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() }));
 
   return (
     <div>
@@ -22,7 +30,14 @@ export default async function PlanejamentoTurmaPage({ params }: { params: Promis
         title={`Planejamento — ${turma.nome}`}
         breadcrumb={[{ label: "Pedagógico", href: "/pedagogico" }, { label: turma.nome }]}
       />
-      <PlanejamentoSemanalClient turmaId={turma.id} temas={temas} semanaInicialIso={semanaInicialIso} />
+      <div className="flex flex-col gap-5">
+        <ProjetoPedagogicoSecao turmaId={turma.id} projetos={projetosDTO} podeEditar={podeEditar} />
+        <PlanejamentoSemanalClient
+          turmaId={turma.id}
+          projetos={projetos.map((p) => ({ id: p.id, nome: p.nome, ativo: p.ativo }))}
+          semanaInicialIso={semanaInicialIso}
+        />
+      </div>
     </div>
   );
 }

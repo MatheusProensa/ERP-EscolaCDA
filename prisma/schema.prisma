@@ -30,11 +30,11 @@ model User {
   /// o pedido na tela de Usuários e redefine manualmente (fluxo que já existia).
   pedidoResetSenhaEm     DateTime?
   /// Marca a coordenadora pedagógica — enxerga TODAS as turmas na Área
-  /// Pedagógica (não só as que ela tem VinculoPedagogico), cadastra temas de
-  /// planejamento e comenta/aprova entregas. Separado do Role porque
-  /// "Pedagógico" já é usado por mais gente (professoras regentes/
-  /// especialistas) que não tem essa visão ampla — é uma marcação extra
-  /// dentro do Role, não um Role à parte.
+  /// Pedagógica (não só as que ela tem VinculoPedagogico) e acompanha/
+  /// comenta as entregas de cada uma. Separado do Role porque "Pedagógico"
+  /// já é usado por mais gente (professoras regentes/especialistas) que não
+  /// tem essa visão ampla — é uma marcação extra dentro do Role, não um Role
+  /// à parte.
   coordenaAreaPedagogica Boolean             @default(false)
   createdAt              DateTime            @default(now())
   mensagensEnviadas      Mensagem[]          @relation("MensagensEnviadas")
@@ -44,7 +44,7 @@ model User {
   leiturasAvisos         AvisoLeitura[]
   permissoes             PermissaoUsuario[]
   vinculosPedagogico     VinculoPedagogico[]
-  temasPlanejamento      TemaPlanejamento[]
+  projetosPedagogicos    ProjetoPedagogico[]
   planejamentos          Planejamento[]
   modelosParecer         ModeloParecer[]
   pareceres              Parecer[]
@@ -131,20 +131,21 @@ model AnoLetivo {
 }
 
 model Turma {
-  id                 String              @id @default(cuid())
-  nome               String
-  turno              Turno
-  capacidade         Int                 @default(25)
-  anoLetivo          AnoLetivo           @relation(fields: [anoLetivoId], references: [id])
-  anoLetivoId        String
-  matriculas         Matricula[]
-  listaEspera        ListaEspera[]
-  vinculosPedagogico VinculoPedagogico[]
-  planejamentos      Planejamento[]
-  modelosParecer     ModeloParecer[]
-  pareceres          Parecer[]
-  portfolioItens     PortfolioItem[]
-  createdAt          DateTime            @default(now())
+  id                  String              @id @default(cuid())
+  nome                String
+  turno               Turno
+  capacidade          Int                 @default(25)
+  anoLetivo           AnoLetivo           @relation(fields: [anoLetivoId], references: [id])
+  anoLetivoId         String
+  matriculas          Matricula[]
+  listaEspera         ListaEspera[]
+  vinculosPedagogico  VinculoPedagogico[]
+  projetosPedagogicos ProjetoPedagogico[]
+  planejamentos       Planejamento[]
+  modelosParecer      ModeloParecer[]
+  pareceres           Parecer[]
+  portfolioItens      PortfolioItem[]
+  createdAt           DateTime            @default(now())
 
   @@unique([nome, anoLetivoId])
 }
@@ -184,54 +185,91 @@ enum PapelPedagogico {
   ESPECIALISTA
 }
 
-/// Tema/projeto da semana, cadastrado pela coordenação com uma estrutura já
-/// pronta (achado confirmado, out/2026: "facilitar em um tema já pronto
-/// layout, aí elas só põe o dia e o que vai ter") — a professora não monta o
-/// planejamento do zero, só escolhe o tema e preenche dia a dia. Parecido
-/// com a pasta `_MODELOS` que a coordenadora já usa hoje no Drive.
-model TemaPlanejamento {
-  id            String         @id @default(cuid())
-  titulo        String
-  /// Roteiro/estrutura pronta do tema (o que cobrir, sugestões) — texto livre
-  /// por enquanto, pensado pra aparecer como guia ao lado do formulário.
-  estrutura     String?
-  criadoPor     User           @relation(fields: [criadoPorId], references: [id])
-  criadoPorId   String
-  createdAt     DateTime       @default(now())
-  planejamentos Planejamento[]
+/// Projeto pedagógico de uma turma — a unidade real de planejamento da
+/// Educação Infantil (achado real, set/2026: pasta de planejamento real da
+/// escola, modelo "PROJETO PEDAGÓGICO" usado hoje no Word). Nasce dos
+/// interesses/necessidades observados nas crianças e dura o tempo que o
+/// projeto precisar (não é fixo por semana/mês) — quando um projeto se
+/// encerra, a regente cria o próximo. Por turma desde o início (substitui o
+/// antigo TemaPlanejamento, que era um catálogo global da coordenação —
+/// correção do dono, set/2026: "os temas são definidos por cada prof").
+model ProjetoPedagogico {
+  id                       String         @id @default(cuid())
+  turma                    Turma          @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turmaId                  String
+  nome                     String
+  interessesObservados     String?
+  necessidadesObservadas   String?
+  acoesNarrativasPerguntas String?
+  intencionalidades        String?
+  justificativa            String?
+  /// Só 1 projeto ativo por turma por vez (regra aplicada na API, não no
+  /// banco) — os demais viram histórico, continuam ligados aos planejamentos
+  /// antigos que os referenciaram.
+  ativo                    Boolean        @default(true)
+  autor                    User           @relation(fields: [autorId], references: [id])
+  autorId                  String
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  planejamentos            Planejamento[]
+
+  @@index([turmaId])
+  @@index([turmaId, ativo])
 }
 
-/// Planejamento semanal de uma turma — 1 por (turma, semana). Escrito pela
-/// professora regente (às vezes também especialista, a confirmar), a partir
-/// de um TemaPlanejamento opcional.
+/// Planejamento semanal de uma turma — 1 por (turma, semana), dentro do
+/// projeto pedagógico ativo (achado real: os planejamentos reais da escola
+/// são organizados em semanas dentro de um projeto/mês). Escrito pela
+/// professora regente.
 model Planejamento {
-  id           String            @id @default(cuid())
-  turma        Turma             @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  id           String             @id @default(cuid())
+  turma        Turma              @relation(fields: [turmaId], references: [id], onDelete: Cascade)
   turmaId      String
-  tema         TemaPlanejamento? @relation(fields: [temaId], references: [id], onDelete: SetNull)
-  temaId       String?
+  projeto      ProjetoPedagogico? @relation(fields: [projetoId], references: [id], onDelete: SetNull)
+  projetoId    String?
   /// Segunda-feira da semana que esse planejamento cobre (meia-noite UTC,
   /// mesma convenção de EventoCalendario) — identidade junto com a turma.
   semanaInicio DateTime
-  autor        User              @relation(fields: [autorId], references: [id])
+  /// Lista de materiais da semana (achado real: 1 bloco "MATERIAIS" por
+  /// semana no documento real, não por dia).
+  materiais    String?
+  autor        User               @relation(fields: [autorId], references: [id])
   autorId      String
   dias         PlanejamentoDia[]
-  createdAt    DateTime          @default(now())
-  updatedAt    DateTime          @updatedAt
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   @@unique([turmaId, semanaInicio])
   @@index([turmaId])
-  @@index([temaId])
+  @@index([projetoId])
 }
 
-/// Um dia de conteúdo dentro do planejamento da semana — é o que a
-/// professora de fato preenche ("o que vai ter" naquele dia).
+enum TipoDiaPlanejamento {
+  /// Temática do dia + Momento inicial/fundamental/final (achado real: dias
+  /// ímpares da semana no documento real, ex.: segunda/quarta/sexta).
+  TEMATICA
+  /// Contexto organizado + Roda de conversa + Organização do contexto
+  /// (achado real: dias pares, ex.: terça/quinta).
+  CONTEXTO
+}
+
+/// Um dia dentro do planejamento da semana — estrutura real copiada do
+/// documento MODELO_PLANEJAMENTO_CDA (achado real, set/2026), com 2 formatos
+/// de dia (`tipo`) que a professora alterna ao longo da semana. `conteudo`
+/// guarda os campos de texto de cada bloco (temática, momentos, perguntas
+/// norteadoras) em JSON — ver ConteudoDiaPlanejamento em lib/planejamento.ts
+/// pras chaves esperadas por tipo — em vez de uma coluna por campo, porque a
+/// estrutura ainda pode mudar com o uso real (v1 dessa reformulação).
 model PlanejamentoDia {
-  id             String       @id @default(cuid())
-  planejamento   Planejamento @relation(fields: [planejamentoId], references: [id], onDelete: Cascade)
+  id             String              @id @default(cuid())
+  planejamento   Planejamento        @relation(fields: [planejamentoId], references: [id], onDelete: Cascade)
   planejamentoId String
   data           DateTime
-  conteudo       String
+  tipo           TipoDiaPlanejamento @default(TEMATICA)
+  conteudo       Json
+  /// Horário das aulas especializadas nesse dia (Bilíngue, Ed. Física,
+  /// Capoeira, Musicalização) — texto livre por enquanto.
+  especializadas String?
 
   @@unique([planejamentoId, data])
 }
