@@ -14,15 +14,9 @@ import { segundaFeiraDe } from "@/lib/planejamento";
 
 const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã", TARDE: "Tarde" };
 
-// Portfólio ainda não existe — mostrado como badge "em breve" pra já dar
-// contexto do que essa tela vai virar (task #18). Planejamento e Parecer já
-// são reais, viraram link de verdade em vez de badge inerte.
-const ENTREGAS_EM_BREVE = [{ label: "Portfólio", icon: ImageIcon }];
-
-/** Hub da professora dentro da Área Pedagógica — por enquanto só mostra o
- * vínculo dela (turma como regente, matéria×turmas como especialista), sem
- * nenhuma entrega ainda (isso vem nos próximos passos da task #18). É a base
- * onde planejamento/parecer/portfólio vão aparecer por turma. */
+/** Hub da professora dentro da Área Pedagógica — mostra o vínculo dela
+ * (turma como regente, matéria×turmas como especialista) e leva pras 3
+ * entregas (planejamento, parecer, portfólio), todas já reais (task #18). */
 export default async function PedagogicoPage() {
   const session = await auth();
   const souCoordenadora = session?.user.role === "ADMIN" || !!session?.user.coordenaAreaPedagogica;
@@ -78,7 +72,7 @@ export default async function PedagogicoPage() {
 
   return (
     <div>
-      <PageHeader title="Área Pedagógica" subtitle="Suas turmas — parecer, planejamento e portfólio chegam aqui em breve" />
+      <PageHeader title="Área Pedagógica" subtitle="Suas turmas — planejamento, parecer e portfólio" />
 
       <div className="mb-5 flex flex-col gap-5 lg:flex-row lg:items-start">
         <div className="flex-1">
@@ -161,12 +155,13 @@ export default async function PedagogicoPage() {
                           <FileText className="h-3 w-3" />
                           Parecer
                         </Link>
-                        {ENTREGAS_EM_BREVE.map(({ label, icon: Icon }) => (
-                          <Badge key={label} variant="neutral">
-                            <Icon className="h-3 w-3" />
-                            {label}
-                          </Badge>
-                        ))}
+                        <Link
+                          href={`/pedagogico/portfolio/${v.turma.id}`}
+                          className="inline-flex items-center gap-1 rounded-full bg-cda-blue/10 px-2.5 py-0.5 text-xs font-medium text-cda-blue hover:bg-cda-blue/20"
+                        >
+                          <ImageIcon className="h-3 w-3" />
+                          Portfólio
+                        </Link>
                       </div>
                     </Card>
                   );

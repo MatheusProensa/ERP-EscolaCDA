@@ -48,6 +48,7 @@ model User {
   planejamentos          Planejamento[]
   modelosParecer         ModeloParecer[]
   pareceres              Parecer[]
+  portfolioItens         PortfolioItem[]
 }
 
 /// Permissão granular por pessoa/setor — sobrepõe o pacote padrão do Role
@@ -140,6 +141,7 @@ model Turma {
   vinculosPedagogico VinculoPedagogico[]
   planejamentos      Planejamento[]
   pareceres          Parecer[]
+  portfolioItens     PortfolioItem[]
   createdAt          DateTime            @default(now())
 
   @@unique([nome, anoLetivoId])
@@ -325,6 +327,31 @@ model ParecerAlunoParagrafo {
   @@unique([parecerAlunoId, paragrafoId])
 }
 
+/// Um item do portfólio de um aluno — foto + legenda curta, datado, formando
+/// uma linha do tempo (não é um documento com "período" como o Parecer;
+/// portfólio é acúmulo contínuo ao longo do ano, então não tem essa noção de
+/// ciclo). turmaId fica gravado no momento do upload (não vem só via Aluno)
+/// pra escopar por vínculo da regente sem precisar seguir Aluno→Matrícula
+/// toda vez, e pra manter o item ligado à turma de quando foi tirado mesmo
+/// que o aluno mude de turma no ano seguinte.
+model PortfolioItem {
+  id        String   @id @default(cuid())
+  aluno     Aluno    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  alunoId   String
+  turma     Turma    @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turmaId   String
+  /// JPEG em base64 (mesmo padrão de foto de perfil, ver PhotoUpload) — lado
+  /// máximo bem maior (1600px) porque aqui é pra ver grande, não avatar.
+  foto      String
+  legenda   String?
+  autor     User     @relation(fields: [autorId], references: [id])
+  autorId   String
+  createdAt DateTime @default(now())
+
+  @@index([alunoId, createdAt])
+  @@index([turmaId])
+}
+
 enum Turno {
   MANHA
   TARDE
@@ -439,6 +466,7 @@ model Aluno {
   boletos                Boleto[]
   avaliacoesNutricionais AvaliacaoNutricional[]
   pareceres              ParecerAluno[]
+  portfolioItens         PortfolioItem[]
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
 
