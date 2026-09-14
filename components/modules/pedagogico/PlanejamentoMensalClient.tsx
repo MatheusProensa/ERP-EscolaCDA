@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer } from "lucide-react";
 import { semanasDoMes, isoData, segundaFeiraDe } from "@/lib/planejamento";
 import { hojeBrasilia } from "@/lib/utils";
 import { SemanaPlanejamento, type Projeto } from "./SemanaPlanejamento";
@@ -65,6 +65,16 @@ export function PlanejamentoMensalClient({
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
+
+      <a
+        href={`/api/planejamentos/pdf?turmaId=${turmaId}&mes=${anoMes}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center gap-1.5 self-end text-xs font-medium text-cda-blue hover:underline"
+      >
+        <Printer className="h-3.5 w-3.5" />
+        Baixar PDF do mês inteiro
+      </a>
 
       <div className="flex flex-col gap-3">
         {semanas.map((semanaIso) => (

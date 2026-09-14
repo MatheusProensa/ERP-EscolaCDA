@@ -15,26 +15,38 @@ export type DiaPlanejamentoPdf = {
   especializadas: string;
 };
 
-/** PDF do planejamento semanal — mesma estrutura do documento real
- * MODELO_PLANEJAMENTO_CDA (achado real, set/2026), com o cabeçalho de marca
- * já usado no resto do sistema. Multi-página (quebra sozinho quando o
- * conteúdo de um dia não cabe), diferente da folha imprimível (1 página fixa)
- * porque aqui o texto é de altura bem variável — pode ter 1 linha ou 15. */
-export async function gerarPlanejamentoPdf({
-  turmaNome,
-  semanaLabel,
-  projetoNome,
-  materiais,
-  dias,
-}: {
-  turmaNome: string;
+export type SemanaPlanejamentoPdf = {
   semanaLabel: string;
   projetoNome: string | null;
+  projetoJustificativa: string | null;
   materiais: string | null;
+  observacaoTardeCultural: string | null;
   dias: DiaPlanejamentoPdf[];
+};
+
+export type MomentoRotinaPdf = { nome: string; descricao: string };
+
+/** PDF do planejamento do MÊS INTEIRO — mesma estrutura do documento real
+ * MODELO_PLANEJAMENTO_CDA (achado real, set/2026: o documento é organizado
+ * por mês, com as semanas dentro — correção do dono, set/2026: "o
+ * planejamento é do mês inteiro... tem que ser baixado o PDF do mês
+ * inteiro"). A professora continua preenchendo semana a semana na tela; o
+ * PDF é que junta tudo. Cada semana começa em página nova (fica claro onde
+ * uma termina e a outra começa ao imprimir); dentro de cada semana, quebra
+ * de página automática — texto de altura bem variável por dia. */
+export async function gerarPlanejamentoMesPdf({
+  turmaNome,
+  mesLabel,
+  rotina,
+  semanas,
+}: {
+  turmaNome: string;
+  mesLabel: string;
+  rotina?: MomentoRotinaPdf[];
+  semanas: SemanaPlanejamentoPdf[];
 }): Promise<string> {
   const pdf = await PDFDocument.create();
-  pdf.setTitle(`Planejamento — ${turmaNome} — ${semanaLabel} — Escola CDA`);
+  pdf.setTitle(`Planejamento — ${turmaNome} — ${mesLabel} — Escola CDA`);
   pdf.setAuthor("Escola CDA");
   const fonte = await pdf.embedFont(StandardFonts.Helvetica);
   const fonteBold = await pdf.embedFont(StandardFonts.HelveticaBold);
@@ -48,9 +60,9 @@ export async function gerarPlanejamentoPdf({
 
     const turmaLargura = fonteBold.widthOfTextAtSize(turmaNome, 12);
     pagina.drawText(turmaNome, { x: LARGURA - MARGEM - turmaLargura, y: ALTURA - 28, size: 12, font: fonteBold, color: WHITE });
-    const semanaLargura = fonte.widthOfTextAtSize(semanaLabel, 9);
-    pagina.drawText(semanaLabel, {
-      x: LARGURA - MARGEM - semanaLargura,
+    const mesLargura = fonte.widthOfTextAtSize(mesLabel, 9);
+    pagina.drawText(mesLabel, {
+      x: LARGURA - MARGEM - mesLargura,
       y: ALTURA - 44,
       size: 9,
       font: fonte,
@@ -97,47 +109,91 @@ export async function gerarPlanejamentoPdf({
     }
   }
 
-  if (projetoNome) {
-    garantirEspaco(16);
-    pagina.drawText(`Projeto: ${projetoNome}`, { x: MARGEM, y, size: 10, font: fonteBold, color: NAVY });
-    y -= 18;
-  }
-  if (materiais) {
-    garantirEspaco(13);
-    pagina.drawText("Materiais da semana:", { x: MARGEM, y, size: 9, font: fonteBold, color: TEXT2 });
-    y -= 12;
-    escreverParagrafo(materiais, 9, fonte, TEXT2);
-    y -= 8;
-  }
-
-  for (const dia of dias) {
-    garantirEspaco(28);
-    pagina.drawLine({ start: { x: MARGEM, y: y + 8 }, end: { x: MARGEM + LARGURA_UTIL, y: y + 8 }, thickness: 0.8, color: NAVY });
-    pagina.drawText(dia.label, { x: MARGEM, y, size: 12, font: fonteBold, color: NAVY });
-    const tipoLargura = fonte.widthOfTextAtSize(dia.tipoLabel, 8.5);
-    pagina.drawText(dia.tipoLabel, { x: LARGURA - MARGEM - tipoLargura, y: y + 1.5, size: 8.5, font: fonte, color: TEXT3 });
-    y -= 18;
-
-    if (dia.blocos.length === 0) {
+  // Planejamento do Cotidiano (rotina fixa da turma) — achado real, set/2026:
+  // aparece 1 vez no documento, não repete por semana (é a rotina, não muda
+  // toda semana). Entra antes da primeira semana, só quando a turma tem
+  // rotina cadastrada.
+  if (rotina && rotina.length > 0) {
+    pagina.drawText("PLANEJAMENTO DO COTIDIANO", { x: MARGEM, y, size: 13, font: fonteBold, color: NAVY });
+    y -= 20;
+    for (const momento of rotina) {
       garantirEspaco(13);
-      pagina.drawText("— Sem conteúdo preenchido —", { x: MARGEM, y, size: 9, font: fonte, color: TEXT3 });
-      y -= 16;
-    }
-    for (const bloco of dia.blocos) {
-      garantirEspaco(13);
-      pagina.drawText(`${bloco.label}:`, { x: MARGEM, y, size: 9.5, font: fonteBold, color: BLACK });
+      pagina.drawText(momento.nome, { x: MARGEM, y, size: 9.5, font: fonteBold, color: BLACK });
       y -= 13;
-      escreverParagrafo(bloco.texto, 9.5, fonte);
-      y -= 4;
+      if (momento.descricao) {
+        escreverParagrafo(momento.descricao, 9.5, fonte);
+      }
+      y -= 6;
     }
-    if (dia.especializadas) {
-      garantirEspaco(12);
-      pagina.drawText("Especializadas:", { x: MARGEM, y, size: 9, font: fonteBold, color: TEXT2 });
-      y -= 12;
-      escreverParagrafo(dia.especializadas, 9, fonte, TEXT2);
-    }
-    y -= 10;
+    y -= 6;
   }
+
+  semanas.forEach((semana, indiceSemana) => {
+    // Cada semana começa em página nova (menos a primeira, que já abre a
+    // página inicial do documento, ou a página da rotina quando tem) — fica
+    // claro no impresso onde uma semana termina e a próxima começa dentro do
+    // mês.
+    if (indiceSemana > 0) novaPagina();
+
+    pagina.drawText(semana.semanaLabel.toUpperCase(), { x: MARGEM, y, size: 13, font: fonteBold, color: NAVY });
+    y -= 20;
+
+    if (semana.projetoNome) {
+      garantirEspaco(16);
+      pagina.drawText(`Projeto: ${semana.projetoNome}`, { x: MARGEM, y, size: 10, font: fonteBold, color: NAVY });
+      y -= 18;
+    }
+    if (semana.projetoJustificativa) {
+      garantirEspaco(13);
+      pagina.drawText("Justificativa:", { x: MARGEM, y, size: 9, font: fonteBold, color: TEXT2 });
+      y -= 12;
+      escreverParagrafo(semana.projetoJustificativa, 9, fonte, TEXT2);
+      y -= 8;
+    }
+    if (semana.materiais) {
+      garantirEspaco(13);
+      pagina.drawText("Materiais da semana:", { x: MARGEM, y, size: 9, font: fonteBold, color: TEXT2 });
+      y -= 12;
+      escreverParagrafo(semana.materiais, 9, fonte, TEXT2);
+      y -= 8;
+    }
+    if (semana.observacaoTardeCultural) {
+      garantirEspaco(13);
+      pagina.drawText("OBS: Em caso de Tarde Cultural:", { x: MARGEM, y, size: 9, font: fonteBold, color: TEXT2 });
+      y -= 12;
+      escreverParagrafo(semana.observacaoTardeCultural, 9, fonte, TEXT2);
+      y -= 8;
+    }
+
+    for (const dia of semana.dias) {
+      garantirEspaco(28);
+      pagina.drawLine({ start: { x: MARGEM, y: y + 8 }, end: { x: MARGEM + LARGURA_UTIL, y: y + 8 }, thickness: 0.8, color: NAVY });
+      pagina.drawText(dia.label, { x: MARGEM, y, size: 12, font: fonteBold, color: NAVY });
+      const tipoLargura = fonte.widthOfTextAtSize(dia.tipoLabel, 8.5);
+      pagina.drawText(dia.tipoLabel, { x: LARGURA - MARGEM - tipoLargura, y: y + 1.5, size: 8.5, font: fonte, color: TEXT3 });
+      y -= 18;
+
+      if (dia.blocos.length === 0) {
+        garantirEspaco(13);
+        pagina.drawText("— Sem conteúdo preenchido —", { x: MARGEM, y, size: 9, font: fonte, color: TEXT3 });
+        y -= 16;
+      }
+      for (const bloco of dia.blocos) {
+        garantirEspaco(13);
+        pagina.drawText(`${bloco.label}:`, { x: MARGEM, y, size: 9.5, font: fonteBold, color: BLACK });
+        y -= 13;
+        escreverParagrafo(bloco.texto, 9.5, fonte);
+        y -= 4;
+      }
+      if (dia.especializadas) {
+        garantirEspaco(12);
+        pagina.drawText("Especializadas:", { x: MARGEM, y, size: 9, font: fonteBold, color: TEXT2 });
+        y -= 12;
+        escreverParagrafo(dia.especializadas, 9, fonte, TEXT2);
+      }
+      y -= 10;
+    }
+  });
 
   const bytes = await pdf.save();
   const base64 = Buffer.from(bytes).toString("base64");

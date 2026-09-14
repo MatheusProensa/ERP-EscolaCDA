@@ -66,11 +66,16 @@ export async function GET(req: NextRequest) {
   const [planejamento, projetoAtivo, horarios] = await Promise.all([
     prisma.planejamento.findUnique({
       where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
-      include: { dias: true },
+      include: { dias: true, projeto: { select: { id: true, nome: true, justificativa: true } } },
     }),
-    prisma.projetoPedagogico.findFirst({ where: { turmaId, ativo: true } }),
+    prisma.projetoPedagogico.findFirst({ where: { turmaId, ativo: true }, select: { id: true, nome: true, justificativa: true } }),
     prisma.horarioEspecializada.findMany({ where: { turmaId } }),
   ]);
+  // Justificativa do projeto escolhido nessa semana (o real, salvo, ou o
+  // ativo quando a semana ainda não tem um escolhido) — achado real, set/2026:
+  // o documento copia nome + justificativa do projeto em cada semana, não só
+  // o nome.
+  const projetoDaSemana = planejamento?.projeto ?? projetoAtivo;
 
   const diasPorData = new Map((planejamento?.dias ?? []).map((d) => [isoData(d.data), d]));
   const horarioPorDiaSemana = new Map(horarios.map((h) => [h.diaSemana, h.texto]));
@@ -89,7 +94,9 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     semanaInicio: isoData(semanaInicio),
     projetoId: planejamento?.projetoId ?? projetoAtivo?.id ?? null,
+    projetoJustificativa: projetoDaSemana?.justificativa ?? "",
     materiais: planejamento?.materiais ?? "",
+    observacaoTardeCultural: planejamento?.observacaoTardeCultural ?? "",
     status: planejamento?.status ?? "RASCUNHO",
     dias,
     podeEditar: await podeEscrever(session.user.id, session.user.role, turmaId),
@@ -108,6 +115,7 @@ export async function POST(req: NextRequest) {
   const semanaParam = String(body?.semana ?? "");
   const projetoId = body?.projetoId ? String(body.projetoId) : null;
   const materiais = body?.materiais ? String(body.materiais).trim() : null;
+  const observacaoTardeCultural = body?.observacaoTardeCultural ? String(body.observacaoTardeCultural).trim() : null;
   const dias = Array.isArray(body?.dias) ? body.dias : [];
   // undefined = não mexe no status atual (salvar comum); só muda quando o
   // front manda explícito (botão "Finalizar" manda ENVIADO) — mesmo padrão
@@ -148,8 +156,8 @@ export async function POST(req: NextRequest) {
     const planejamento = await prisma.$transaction(async (tx) => {
       const registro = await tx.planejamento.upsert({
         where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
-        create: { turmaId, semanaInicio, projetoId, materiais, autorId: session.user.id, ...(status ? { status } : {}) },
-        update: { projetoId, materiais, autorId: session.user.id, ...(status ? { status } : {}) },
+        create: { turmaId, semanaInicio, projetoId, materiais, observacaoTardeCultural, autorId: session.user.id, ...(status ? { status } : {}) },
+        update: { projetoId, materiais, observacaoTardeCultural, autorId: session.user.id, ...(status ? { status } : {}) },
       });
       await tx.planejamentoDia.deleteMany({ where: { planejamentoId: registro.id } });
       await tx.planejamentoDia.createMany({

@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { hojeBrasilia } from "@/lib/utils";
 import { ProjetoPedagogicoSecao } from "@/components/modules/pedagogico/ProjetoPedagogicoSecao";
 import { HorarioEspecializadaSecao } from "@/components/modules/pedagogico/HorarioEspecializadaSecao";
+import { RotinaTurmaSecao } from "@/components/modules/pedagogico/RotinaTurmaSecao";
 import { PlanejamentoMensalClient } from "@/components/modules/pedagogico/PlanejamentoMensalClient";
 
 export default async function PlanejamentoTurmaPage({ params }: { params: Promise<{ turmaId: string }> }) {
@@ -33,6 +34,7 @@ export default async function PlanejamentoTurmaPage({ params }: { params: Promis
       />
       <div className="flex flex-col gap-5">
         <ProjetoPedagogicoSecao turmaId={turma.id} projetos={projetosDTO} podeEditar={podeEditar} />
+        <RotinaTurmaSecao turmaId={turma.id} podeEditar={podeEditar} />
         <HorarioEspecializadaSecao turmaId={turma.id} podeEditar={podeEditar} />
         <PlanejamentoMensalClient
           turmaId={turma.id}

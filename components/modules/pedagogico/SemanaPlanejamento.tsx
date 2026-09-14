@@ -248,7 +248,9 @@ export function SemanaPlanejamento({
   const [aberta, setAberta] = useState(abertaPorPadrao);
   const [carregado, setCarregado] = useState(false);
   const [projetoId, setProjetoId] = useState<string>("");
+  const [projetoJustificativa, setProjetoJustificativa] = useState("");
   const [materiais, setMateriais] = useState("");
+  const [observacaoTardeCultural, setObservacaoTardeCultural] = useState("");
   const [dias, setDias] = useState<DiaForm[]>([]);
   const [status, setStatus] = useState<"RASCUNHO" | "ENVIADO">("RASCUNHO");
   const [podeEditar, setPodeEditar] = useState(false);
@@ -271,7 +273,9 @@ export function SemanaPlanejamento({
       const data = await res.json();
       if (cancelado) return;
       setProjetoId(data.projetoId ?? "");
+      setProjetoJustificativa(data.projetoJustificativa ?? "");
       setMateriais(data.materiais ?? "");
+      setObservacaoTardeCultural(data.observacaoTardeCultural ?? "");
       setDias(data.dias);
       setStatus(data.status ?? "RASCUNHO");
       setPodeEditar(data.podeEditar);
@@ -294,7 +298,15 @@ export function SemanaPlanejamento({
     const res = await fetch("/api/planejamentos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ turmaId, semana: semanaIso, projetoId: projetoId || null, materiais, dias, status: novoStatus }),
+      body: JSON.stringify({
+        turmaId,
+        semana: semanaIso,
+        projetoId: projetoId || null,
+        materiais,
+        observacaoTardeCultural,
+        dias,
+        status: novoStatus,
+      }),
     });
     setSalvando(false);
     if (!res.ok) {
@@ -331,15 +343,6 @@ export function SemanaPlanejamento({
       {aberta && (
         <div className="border-t border-cda-border p-5">
           <div className="mb-4 flex flex-wrap justify-end gap-x-4 gap-y-1.5">
-            <a
-              href={`/api/planejamentos/pdf?turmaId=${turmaId}&semana=${semanaIso}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
-            >
-              <Printer className="h-3.5 w-3.5" />
-              Baixar PDF dessa semana
-            </a>
             <Link
               href={`/pedagogico/planejamento/${turmaId}/roteiro?semana=${semanaIso}`}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
@@ -359,13 +362,26 @@ export function SemanaPlanejamento({
               ))}
             </Select>
           </div>
+          {projetoJustificativa && (
+            <p className="-mt-2 mb-4 rounded-lg border border-cda-border bg-cda-bg px-3 py-2 text-xs text-cda-text3">
+              <span className="font-medium text-cda-text2">Justificativa do projeto: </span>
+              {projetoJustificativa}
+            </p>
+          )}
 
           {carregando ? (
             <p className="text-sm text-cda-text3">Carregando...</p>
           ) : (
             <>
-              <div className="mb-4">
+              <div className="mb-4 flex flex-col gap-4">
                 <Campo label="Materiais da semana" value={materiais} onChange={setMateriais} disabled={!podeEditar} rows={2} />
+                <Campo
+                  label="OBS: em caso de Tarde Cultural (opcional, só se essa semana tiver)"
+                  value={observacaoTardeCultural}
+                  onChange={setObservacaoTardeCultural}
+                  disabled={!podeEditar}
+                  rows={2}
+                />
               </div>
               <div className="flex flex-col gap-3">
                 {dias.map((dia, i) => (
