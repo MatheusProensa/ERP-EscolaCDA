@@ -112,3 +112,34 @@ export function bulletsDoDia(tipo: TipoDiaPlanejamento, conteudo: ConteudoDiaPla
       : [conteudo.rodaDeConversa, conteudo.organizacaoContexto];
   return [...bullets, conteudo.momentoFinal].filter((texto): texto is string => !!texto);
 }
+
+/** Versão completa (rótulo + parágrafo inteiro, não em bullet) de cada bloco
+ * preenchido do dia, na mesma ordem do formulário — usada pra exportar o
+ * planejamento em PDF (achado real, set/2026: mesma estrutura do documento
+ * MODELO_PLANEJAMENTO_CDA, um bloco "PERGUNTA:" logo abaixo de cada
+ * momento/contexto). Só entra bloco que tem algo escrito. */
+export function blocosDoDia(tipo: TipoDiaPlanejamento, conteudo: ConteudoDiaPlanejamento): { label: string; texto: string }[] {
+  const blocos: { label: string; chave: keyof ConteudoDiaPlanejamento }[] =
+    tipo === "TEMATICA"
+      ? [
+          { label: "Temática do dia", chave: "tematicaDia" },
+          { label: "Momento inicial", chave: "momentoInicial" },
+          { label: "Questionamentos e diálogos possíveis", chave: "questionamentosInicial" },
+          { label: "Momento fundamental", chave: "momentoFundamental" },
+          { label: "Questionamentos e diálogos possíveis", chave: "questionamentosFundamental" },
+        ]
+      : [
+          { label: "Contexto organizado", chave: "contextoOrganizado" },
+          { label: "Roda de conversa", chave: "rodaDeConversa" },
+          { label: "Questionamentos e diálogos possíveis", chave: "questionamentosRoda" },
+          { label: "Organização do contexto", chave: "organizacaoContexto" },
+          { label: "Questionamentos e diálogos possíveis", chave: "questionamentosContexto" },
+        ];
+  blocos.push(
+    { label: "Momento final — registro do dia", chave: "momentoFinal" },
+    { label: "Questionamentos e diálogos possíveis", chave: "questionamentosFinal" }
+  );
+  return blocos
+    .map((b) => ({ label: b.label, texto: conteudo[b.chave] ?? "" }))
+    .filter((b) => b.texto);
+}

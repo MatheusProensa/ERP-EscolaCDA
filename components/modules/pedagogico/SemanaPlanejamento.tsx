@@ -330,7 +330,16 @@ export function SemanaPlanejamento({
 
       {aberta && (
         <div className="border-t border-cda-border p-5">
-          <div className="mb-4 flex justify-end">
+          <div className="mb-4 flex flex-wrap justify-end gap-x-4 gap-y-1.5">
+            <a
+              href={`/api/planejamentos/pdf?turmaId=${turmaId}&semana=${semanaIso}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Baixar PDF dessa semana
+            </a>
             <Link
               href={`/pedagogico/planejamento/${turmaId}/roteiro?semana=${semanaIso}`}
               className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
