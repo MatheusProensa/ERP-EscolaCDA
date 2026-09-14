@@ -120,6 +120,12 @@ enum Role {
   FINANCEIRO
   PEDAGOGICO
   ADMINISTRATIVO
+  /// Nutricionista — separado de ADMINISTRATIVO (pedido do dono, set/2026,
+  /// depois de ver a nutricionista contada junto com a secretaria/portaria no
+  /// resumo de Usuários). Acesso real a Cardápio/Avaliação Nutricional
+  /// continua sendo só pela grade de permissões por pessoa (esses 2 módulos
+  /// já não olham pro Role — ver acessoPermitido em lib/permissoes.ts).
+  NUTRICAO
 }
 
 model AnoLetivo {

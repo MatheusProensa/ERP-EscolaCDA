@@ -1,4 +1,4 @@
-import { Download, KeyRound, Users, Crown, Wallet, UserCog, GraduationCap, type LucideIcon } from "lucide-react";
+import { Download, KeyRound, Users, Crown, Wallet, UserCog, GraduationCap, Apple, type LucideIcon } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -21,6 +21,7 @@ const RESUMO_CARGO: { role: (typeof ROLES_ATIVAS)[number]; icon: LucideIcon }[] 
   { role: "PEDAGOGICO", icon: GraduationCap },
   { role: "FINANCEIRO", icon: Wallet },
   { role: "ADMINISTRATIVO", icon: UserCog },
+  { role: "NUTRICAO", icon: Apple },
 ];
 
 // Ordem de exibição por hierarquia de cargo, não alfabética por nome — antes

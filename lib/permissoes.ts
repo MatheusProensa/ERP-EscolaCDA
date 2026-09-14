@@ -1,4 +1,4 @@
-export const ROLES_ATIVAS = ["ADMIN", "DIRECAO", "FINANCEIRO", "PEDAGOGICO", "ADMINISTRATIVO"] as const;
+export const ROLES_ATIVAS = ["ADMIN", "DIRECAO", "FINANCEIRO", "PEDAGOGICO", "ADMINISTRATIVO", "NUTRICAO"] as const;
 export type RoleAtiva = (typeof ROLES_ATIVAS)[number];
 
 export const ROLE_LABEL: Record<string, string> = {
@@ -8,6 +8,7 @@ export const ROLE_LABEL: Record<string, string> = {
   FINANCEIRO: "Financeiro",
   PEDAGOGICO: "Pedagógico",
   ADMINISTRATIVO: "Administrativo",
+  NUTRICAO: "Nutrição",
 };
 
 /** Cor do badge de perfil na tela de Usuários — dá pra reconhecer o setor de
@@ -20,6 +21,7 @@ export const ROLE_BADGE_VARIANT: Record<string, "cat1" | "cat2" | "cat3" | "cat4
   FINANCEIRO: "cat2",
   PEDAGOGICO: "cat5",
   ADMINISTRATIVO: "cat6",
+  NUTRICAO: "cat4",
 };
 
 export const GESTAO: RoleAtiva[] = ["ADMIN", "DIRECAO"];
@@ -45,8 +47,10 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/academico", roles: PEDAGOGICO },
   { prefixo: "/pedagogico", roles: PEDAGOGICO },
   { prefixo: "/cardapio", roles: PEDAGOGICO },
-  // Mesmo pacote do Cardápio: é a Nutricionista que usa (Role Administrativo
-  // ou Pedagógico, dependendo de quem — a grade que decide de verdade).
+  // Cardápio e Avaliação Nutricional estão na grade (MODULOS) — pra quem não
+  // é ADMIN, o Role aqui embaixo nem entra em jogo, só a marcação por pessoa
+  // em "Permissões por setor" decide (ver acessoPermitido). O pacote PEDAGOGICO
+  // aqui é só o fallback documentado, na prática irrelevante pra esses 2.
   { prefixo: "/avaliacao-nutricional", roles: PEDAGOGICO },
   { prefixo: "/aniversariantes", roles: ANIVERSARIANTES },
   { prefixo: "/interessados", roles: ANIVERSARIANTES },
