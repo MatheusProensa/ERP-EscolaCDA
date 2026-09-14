@@ -131,21 +131,22 @@ model AnoLetivo {
 }
 
 model Turma {
-  id                  String              @id @default(cuid())
-  nome                String
-  turno               Turno
-  capacidade          Int                 @default(25)
-  anoLetivo           AnoLetivo           @relation(fields: [anoLetivoId], references: [id])
-  anoLetivoId         String
-  matriculas          Matricula[]
-  listaEspera         ListaEspera[]
-  vinculosPedagogico  VinculoPedagogico[]
-  projetosPedagogicos ProjetoPedagogico[]
-  planejamentos       Planejamento[]
-  modelosParecer      ModeloParecer[]
-  pareceres           Parecer[]
-  portfolioItens      PortfolioItem[]
-  createdAt           DateTime            @default(now())
+  id                    String                 @id @default(cuid())
+  nome                  String
+  turno                 Turno
+  capacidade            Int                    @default(25)
+  anoLetivo             AnoLetivo              @relation(fields: [anoLetivoId], references: [id])
+  anoLetivoId           String
+  matriculas            Matricula[]
+  listaEspera           ListaEspera[]
+  vinculosPedagogico    VinculoPedagogico[]
+  projetosPedagogicos   ProjetoPedagogico[]
+  planejamentos         Planejamento[]
+  horariosEspecializada HorarioEspecializada[]
+  modelosParecer        ModeloParecer[]
+  pareceres             Parecer[]
+  portfolioItens        PortfolioItem[]
+  createdAt             DateTime               @default(now())
 
   @@unique([nome, anoLetivoId])
 }
@@ -268,10 +269,27 @@ model PlanejamentoDia {
   tipo           TipoDiaPlanejamento @default(TEMATICA)
   conteudo       Json
   /// Horário das aulas especializadas nesse dia (Bilíngue, Ed. Física,
-  /// Capoeira, Musicalização) — texto livre por enquanto.
+  /// Capoeira, Musicalização). Pré-preenchido a partir de
+  /// HorarioEspecializada (o horário fixo da turma) e editável aqui só pra
+  /// exceção pontual daquela semana (sub, feriado, mudança de horário).
   especializadas String?
 
   @@unique([planejamentoId, data])
+}
+
+/// Horário fixo das aulas especializadas de uma turma, por dia da semana —
+/// achado real (set/2026): o horário se repete igual toda semana no
+/// documento real, então preencher 1 vez aqui evita digitar de novo em cada
+/// planejamento semanal (mesmo raciocínio do tipoPadraoDoDia). diaSemana usa
+/// o mesmo índice de OFFSETS_DIA_UTIL (0=segunda ... 4=sexta).
+model HorarioEspecializada {
+  id        String @id @default(cuid())
+  turma     Turma  @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turmaId   String
+  diaSemana Int
+  texto     String
+
+  @@unique([turmaId, diaSemana])
 }
 
 /// Modelo de parecer — a lista de parágrafos que a professora vai preencher

@@ -61,22 +61,26 @@ export async function GET(req: NextRequest) {
   if (Number.isNaN(semana.getTime())) return NextResponse.json({ error: "Semana inválida" }, { status: 400 });
   const semanaInicio = segundaFeiraDe(semana);
 
-  const [planejamento, projetoAtivo] = await Promise.all([
+  const [planejamento, projetoAtivo, horarios] = await Promise.all([
     prisma.planejamento.findUnique({
       where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
       include: { dias: true },
     }),
     prisma.projetoPedagogico.findFirst({ where: { turmaId, ativo: true } }),
+    prisma.horarioEspecializada.findMany({ where: { turmaId } }),
   ]);
 
   const diasPorData = new Map((planejamento?.dias ?? []).map((d) => [isoData(d.data), d]));
+  const horarioPorDiaSemana = new Map(horarios.map((h) => [h.diaSemana, h.texto]));
   const dias = diasDaSemana(semanaInicio).map((data, indice) => {
     const salvo = diasPorData.get(isoData(data));
     return {
       data: isoData(data),
       tipo: (salvo?.tipo ?? tipoPadraoDoDia(indice)) as TipoDiaPlanejamento,
       conteudo: (salvo?.conteudo ?? {}) as ConteudoDiaPlanejamento,
-      especializadas: salvo?.especializadas ?? "",
+      // Pré-preenche com o horário fixo da turma (HorarioEspecializada)
+      // quando o dia ainda não foi salvo — mesmo raciocínio do tipoPadraoDoDia.
+      especializadas: salvo?.especializadas ?? horarioPorDiaSemana.get(indice) ?? "",
     };
   });
 
