@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { GraduationCap, Sparkles, NotebookPen, FileText, Image as ImageIcon } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -9,11 +10,10 @@ import { TemasPlanejamentoSecao } from "@/components/modules/pedagogico/TemasPla
 
 const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã", TARDE: "Tarde" };
 
-// As 3 entregas da Área Pedagógica ainda não existem — mostradas aqui como
-// prévia do que vem a seguir, pra já dar contexto do que essa tela vai virar
-// (task #18: parecer, planejamento e portfólio, cada um com prazo e status).
-const ENTREGAS_FUTURAS = [
-  { label: "Planejamento", icon: NotebookPen },
+// Parecer e Portfólio ainda não existem — mostrados como badge "em breve"
+// pra já dar contexto do que essa tela vai virar (task #18). Planejamento já
+// é real, virou link de verdade em vez de badge inerte.
+const ENTREGAS_EM_BREVE = [
   { label: "Parecer", icon: FileText },
   { label: "Portfólio", icon: ImageIcon },
 ];
@@ -76,7 +76,14 @@ export default async function PedagogicoPage() {
                       <span className="text-xs text-cda-text3">({TURNO_LABEL[v.turma.turno] ?? v.turma.turno})</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {ENTREGAS_FUTURAS.map(({ label, icon: Icon }) => (
+                      <Link
+                        href={`/pedagogico/planejamento/${v.turma.id}`}
+                        className="inline-flex items-center gap-1 rounded-full bg-cda-blue/10 px-2.5 py-0.5 text-xs font-medium text-cda-blue hover:bg-cda-blue/20"
+                      >
+                        <NotebookPen className="h-3 w-3" />
+                        Planejamento
+                      </Link>
+                      {ENTREGAS_EM_BREVE.map(({ label, icon: Icon }) => (
                         <Badge key={label} variant="neutral">
                           <Icon className="h-3 w-3" />
                           {label}
