@@ -90,7 +90,9 @@ export function ParecerAlunoClient({ parecerId, alunoId, turmaId }: { parecerId:
         <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
           <div>
             <h2 className="text-base font-semibold text-cda-text">{alunoNome}</h2>
-            <p className="text-xs text-cda-text3">{periodo}</p>
+            <p className="text-xs text-cda-text3">
+              {periodo} · {paragrafos.filter((p) => p.conteudo.trim()).length} de {paragrafos.length} parágrafos preenchidos
+            </p>
           </div>
           <Badge variant={status === "ENVIADO" ? "success" : "warning"}>{status === "ENVIADO" ? "Enviado" : "Rascunho"}</Badge>
         </div>

@@ -365,6 +365,7 @@ export default async function PedagogicoPage({
                       </div>
 
                       <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-cda-border pt-3">
+                        <span className="text-xs text-cda-text3">Outras entregas:</span>
                         <Link
                           href={`/pedagogico/parecer/${v.turma.id}`}
                           className="inline-flex items-center gap-1 rounded-full bg-cda-blue/10 px-2.5 py-0.5 text-xs font-medium text-cda-blue hover:bg-cda-blue/20"
