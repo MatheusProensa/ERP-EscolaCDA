@@ -2,15 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ChevronDown, NotebookPen, ScrollText, Printer } from "lucide-react";
+import { ChevronDown, NotebookPen, ScrollText, Printer } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
+import { Badge } from "@/components/ui/Badge";
 import { showToast } from "@/components/ui/Toast";
 import type { ConteudoDiaPlanejamento } from "@/lib/planejamento";
 
 type TipoDia = "TEMATICA" | "CONTEXTO";
-type Projeto = { id: string; nome: string; ativo: boolean };
+export type Projeto = { id: string; nome: string; ativo: boolean };
 type DiaForm = { data: string; tipo: TipoDia; conteudo: ConteudoDiaPlanejamento; especializadas: string };
 
 const LABEL_DIA = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"];
@@ -113,7 +114,7 @@ function DiaPlanejamento({
   atualizar: (patch: Partial<DiaForm>) => void;
   podeEditar: boolean;
 }) {
-  const [aberto, setAberto] = useState(indice === 0);
+  const [aberto, setAberto] = useState(false);
   const c = dia.conteudo;
 
   function atualizarConteudo(patch: Partial<ConteudoDiaPlanejamento>) {
@@ -229,20 +230,23 @@ function DiaPlanejamento({
   );
 }
 
-/** Formulário semanal do planejamento — a professora regente preenche cada
- * dia dentro do projeto pedagógico ativo da turma. Navega semana a semana
- * com os botões, sem precisar de calendário. Estrutura de cada dia copiada
- * do documento real da escola (ver DiaPlanejamento acima). */
-export function PlanejamentoSemanalClient({
+/** Uma semana dentro do mês — carrega e salva sozinha (achado real, set/2026:
+ * o documento é organizado em semanas dentro do mês/projeto). Recolhida por
+ * padrão (abre só a semana atual, quando o mês em tela é o mês corrente),
+ * mostra um resumo de "preenchida/vazia" no cabeçalho mesmo fechada. */
+export function SemanaPlanejamento({
   turmaId,
   projetos,
-  semanaInicialIso,
+  semanaIso,
+  abertaPorPadrao,
 }: {
   turmaId: string;
   projetos: Projeto[];
-  semanaInicialIso: string;
+  semanaIso: string;
+  abertaPorPadrao: boolean;
 }) {
-  const [semana, setSemana] = useState(semanaInicialIso);
+  const [aberta, setAberta] = useState(abertaPorPadrao);
+  const [carregado, setCarregado] = useState(false);
   const [projetoId, setProjetoId] = useState<string>("");
   const [materiais, setMateriais] = useState("");
   const [dias, setDias] = useState<DiaForm[]>([]);
@@ -256,7 +260,7 @@ export function PlanejamentoSemanalClient({
     async function carregar() {
       setCarregando(true);
       setErro("");
-      const res = await fetch(`/api/planejamentos?turmaId=${turmaId}&semana=${semana}`);
+      const res = await fetch(`/api/planejamentos?turmaId=${turmaId}&semana=${semanaIso}`);
       if (cancelado) return;
       if (!res.ok) {
         setCarregando(false);
@@ -270,12 +274,13 @@ export function PlanejamentoSemanalClient({
       setDias(data.dias);
       setPodeEditar(data.podeEditar);
       setCarregando(false);
+      setCarregado(true);
     }
     carregar();
     return () => {
       cancelado = true;
     };
-  }, [turmaId, semana]);
+  }, [turmaId, semanaIso]);
 
   function atualizarDia(index: number, patch: Partial<DiaForm>) {
     setDias((atual) => atual.map((d, i) => (i === index ? { ...d, ...patch } : d)));
@@ -287,7 +292,7 @@ export function PlanejamentoSemanalClient({
     const res = await fetch("/api/planejamentos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ turmaId, semana, projetoId: projetoId || null, materiais, dias }),
+      body: JSON.stringify({ turmaId, semana: semanaIso, projetoId: projetoId || null, materiais, dias }),
     });
     setSalvando(false);
     if (!res.ok) {
@@ -298,75 +303,76 @@ export function PlanejamentoSemanalClient({
     showToast("Planejamento da semana salvo.");
   }
 
+  const preenchida = carregado && dias.some((d) => Object.keys(d.conteudo).length > 0);
+
   return (
-    <Card className="p-5">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => setSemana((s) => somarDias(s, -7))}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg"
-          aria-label="Semana anterior"
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </button>
+    <Card className="p-0">
+      <button
+        type="button"
+        onClick={() => setAberta((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
+      >
         <span className="text-sm font-semibold text-cda-text">
-          Semana de {formatarDiaMes(semana)} a {formatarDiaMes(somarDias(semana, 4))}
+          Semana de {formatarDiaMes(semanaIso)} a {formatarDiaMes(somarDias(semanaIso, 4))}
         </span>
-        <button
-          type="button"
-          onClick={() => setSemana((s) => somarDias(s, 7))}
-          className="flex h-9 w-9 items-center justify-center rounded-lg border border-cda-border text-cda-text2 hover:bg-cda-bg"
-          aria-label="Próxima semana"
-        >
-          <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-
-      <div className="mb-4 flex justify-end">
-        <Link href={`/pedagogico/planejamento/${turmaId}/roteiro?semana=${semana}`} className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline">
-          <ScrollText className="h-3.5 w-3.5" />
-          Ver roteiro dessa semana
-        </Link>
-      </div>
-
-      <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Select label="Projeto pedagógico" value={projetoId} onChange={(e) => setProjetoId(e.target.value)} disabled={!podeEditar}>
-          <option value="">Sem projeto vinculado</option>
-          {projetos.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nome} {p.ativo ? "(ativo)" : ""}
-            </option>
-          ))}
-        </Select>
-      </div>
-
-      {carregando ? (
-        <p className="text-sm text-cda-text3">Carregando...</p>
-      ) : (
-        <>
-          <div className="mb-4">
-            <Campo label="Materiais da semana" value={materiais} onChange={setMateriais} disabled={!podeEditar} rows={2} />
-          </div>
-          <div className="flex flex-col gap-3">
-            {dias.map((dia, i) => (
-              <DiaPlanejamento key={dia.data} turmaId={turmaId} indice={i} dia={dia} atualizar={(patch) => atualizarDia(i, patch)} podeEditar={podeEditar} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {erro && <p className="mt-3 text-sm text-cda-red">{erro}</p>}
-
-      {podeEditar && (
-        <div className="mt-4 flex justify-end">
-          <Button onClick={salvar} loading={salvando} disabled={carregando}>
-            <NotebookPen className="h-3.5 w-3.5" />
-            Salvar planejamento
-          </Button>
+        <div className="flex items-center gap-2">
+          {carregado && <Badge variant={preenchida ? "success" : "neutral"}>{preenchida ? "Preenchida" : "Vazia"}</Badge>}
+          <ChevronDown className={`h-4 w-4 shrink-0 text-cda-text3 transition-transform ${aberta ? "rotate-180" : ""}`} />
         </div>
-      )}
-      {!carregando && !podeEditar && (
-        <p className="mt-3 text-xs text-cda-text3">Só a professora regente dessa turma edita o planejamento.</p>
+      </button>
+
+      {aberta && (
+        <div className="border-t border-cda-border p-5">
+          <div className="mb-4 flex justify-end">
+            <Link
+              href={`/pedagogico/planejamento/${turmaId}/roteiro?semana=${semanaIso}`}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
+            >
+              <ScrollText className="h-3.5 w-3.5" />
+              Ver roteiro dessa semana
+            </Link>
+          </div>
+
+          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Select label="Projeto pedagógico" value={projetoId} onChange={(e) => setProjetoId(e.target.value)} disabled={!podeEditar}>
+              <option value="">Sem projeto vinculado</option>
+              {projetos.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nome} {p.ativo ? "(ativo)" : ""}
+                </option>
+              ))}
+            </Select>
+          </div>
+
+          {carregando ? (
+            <p className="text-sm text-cda-text3">Carregando...</p>
+          ) : (
+            <>
+              <div className="mb-4">
+                <Campo label="Materiais da semana" value={materiais} onChange={setMateriais} disabled={!podeEditar} rows={2} />
+              </div>
+              <div className="flex flex-col gap-3">
+                {dias.map((dia, i) => (
+                  <DiaPlanejamento key={dia.data} turmaId={turmaId} indice={i} dia={dia} atualizar={(patch) => atualizarDia(i, patch)} podeEditar={podeEditar} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {erro && <p className="mt-3 text-sm text-cda-red">{erro}</p>}
+
+          {podeEditar && (
+            <div className="mt-4 flex justify-end">
+              <Button onClick={salvar} loading={salvando} disabled={carregando}>
+                <NotebookPen className="h-3.5 w-3.5" />
+                Salvar planejamento
+              </Button>
+            </div>
+          )}
+          {!carregando && !podeEditar && (
+            <p className="mt-3 text-xs text-cda-text3">Só a professora regente dessa turma edita o planejamento.</p>
+          )}
+        </div>
       )}
     </Card>
   );

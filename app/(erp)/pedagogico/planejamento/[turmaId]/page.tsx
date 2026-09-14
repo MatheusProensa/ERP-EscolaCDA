@@ -3,10 +3,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { hojeBrasilia } from "@/lib/utils";
-import { segundaFeiraDe, isoData } from "@/lib/planejamento";
 import { ProjetoPedagogicoSecao } from "@/components/modules/pedagogico/ProjetoPedagogicoSecao";
 import { HorarioEspecializadaSecao } from "@/components/modules/pedagogico/HorarioEspecializadaSecao";
-import { PlanejamentoSemanalClient } from "@/components/modules/pedagogico/PlanejamentoSemanalClient";
+import { PlanejamentoMensalClient } from "@/components/modules/pedagogico/PlanejamentoMensalClient";
 
 export default async function PlanejamentoTurmaPage({ params }: { params: Promise<{ turmaId: string }> }) {
   const { turmaId } = await params;
@@ -22,7 +21,8 @@ export default async function PlanejamentoTurmaPage({ params }: { params: Promis
   if (!turma) notFound();
 
   const podeEditar = session?.user.role === "ADMIN" || !!vinculo;
-  const semanaInicialIso = isoData(segundaFeiraDe(hojeBrasilia()));
+  const hoje = hojeBrasilia();
+  const anoMesInicial = `${hoje.getUTCFullYear()}-${String(hoje.getUTCMonth() + 1).padStart(2, "0")}`;
   const projetosDTO = projetos.map((p) => ({ ...p, createdAt: p.createdAt.toISOString() }));
 
   return (
@@ -34,10 +34,10 @@ export default async function PlanejamentoTurmaPage({ params }: { params: Promis
       <div className="flex flex-col gap-5">
         <ProjetoPedagogicoSecao turmaId={turma.id} projetos={projetosDTO} podeEditar={podeEditar} />
         <HorarioEspecializadaSecao turmaId={turma.id} podeEditar={podeEditar} />
-        <PlanejamentoSemanalClient
+        <PlanejamentoMensalClient
           turmaId={turma.id}
           projetos={projetos.map((p) => ({ id: p.id, nome: p.nome, ativo: p.ativo }))}
-          semanaInicialIso={semanaInicialIso}
+          anoMesInicial={anoMesInicial}
         />
       </div>
     </div>
