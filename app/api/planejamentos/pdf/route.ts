@@ -7,7 +7,6 @@ import { respostaPDF, nomeArquivoPdf } from "@/lib/gerarRelatorioPdf";
 import type { TipoDiaPlanejamento } from "@prisma/client";
 
 const LABEL_DIA = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"];
-const LABEL_TIPO: Record<string, string> = { TEMATICA: "Temática do dia", CONTEXTO: "Contexto organizado" };
 const MESES_LABEL = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
   "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
@@ -50,22 +49,25 @@ export async function GET(req: NextRequest) {
   const planejamentoPorSemana = new Map(planejamentos.map((p) => [isoData(p.semanaInicio), p]));
   const rotina: MomentoRotinaPdf[] = momentosRotina.map((m) => ({ nome: m.nome, descricao: m.descricao }));
 
-  const semanas: SemanaPlanejamentoPdf[] = semanasIniciais.map((semanaInicio) => {
+  const semanas: SemanaPlanejamentoPdf[] = semanasIniciais.map((semanaInicio, indiceSemana) => {
     const planejamento = planejamentoPorSemana.get(isoData(semanaInicio));
     const diasPorData = new Map((planejamento?.dias ?? []).map((d) => [isoData(d.data), d]));
     const dias: DiaPlanejamentoPdf[] = diasDaSemana(semanaInicio).map((data, indice) => {
       const salvo = diasPorData.get(isoData(data));
       const tipo = (salvo?.tipo ?? tipoPadraoDoDia(indice)) as TipoDiaPlanejamento;
       const conteudo = (salvo?.conteudo ?? {}) as ConteudoDiaPlanejamento;
+      // Formato igual ao documento real (achado real, set/2026: "Segunda-feira
+      // – xx/xx:", com travessão curto e dois-pontos no final).
       return {
-        label: `${LABEL_DIA[indice]} — ${formatarDiaMes(data)}`,
-        tipoLabel: LABEL_TIPO[tipo],
+        label: `${LABEL_DIA[indice]} – ${formatarDiaMes(data)}:`,
         blocos: blocosDoDia(tipo, conteudo),
         especializadas: salvo?.especializadas ?? "",
       };
     });
     return {
-      semanaLabel: `Semana de ${formatarDiaMes(semanaInicio)} a ${formatarDiaMes(diasDaSemana(semanaInicio)[4])}`,
+      // "1ª SEMANA (dd/mm a dd/mm)" — formato exato do documento real, não
+      // "Semana de... a..." (achado real, comparação lado a lado com o Word).
+      semanaLabel: `${indiceSemana + 1}ª semana (${formatarDiaMes(semanaInicio)} a ${formatarDiaMes(diasDaSemana(semanaInicio)[4])})`,
       projetoNome: planejamento?.projeto?.nome ?? null,
       projetoJustificativa: planejamento?.projeto?.justificativa ?? null,
       materiais: planejamento?.materiais ?? null,

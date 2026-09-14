@@ -12,7 +12,6 @@ const LINHA = rgb(0, 0, 0);
 
 export type DiaPlanejamentoPdf = {
   label: string;
-  tipoLabel: string;
   blocos: { label: string; texto: string }[];
   especializadas: string;
 };
@@ -149,32 +148,36 @@ export async function gerarPlanejamentoMesPdf({
     }
 
     for (const dia of semana.dias) {
-      garantirEspaco(26);
-      pagina.drawLine({ start: { x: MARGEM, y: y + 8 }, end: { x: MARGEM + LARGURA_UTIL, y: y + 8 }, thickness: 0.6, color: LINHA });
+      garantirEspaco(24);
+      pagina.drawLine({ start: { x: MARGEM, y: y + 10 }, end: { x: MARGEM + LARGURA_UTIL, y: y + 10 }, thickness: 0.6, color: LINHA });
       pagina.drawText(dia.label, { x: MARGEM, y, size: 11, font: fonteBold, color: PRETO });
-      const tipoLargura = fonte.widthOfTextAtSize(dia.tipoLabel, 8.5);
-      pagina.drawText(dia.tipoLabel, { x: LARGURA - MARGEM - tipoLargura, y: y + 1.5, size: 8.5, font: fonte, color: CINZA });
-      y -= 17;
+      y -= 20;
 
       if (dia.blocos.length === 0) {
         garantirEspaco(13);
         pagina.drawText("— Sem conteúdo preenchido —", { x: MARGEM, y, size: 9, font: fonte, color: CINZA });
-        y -= 16;
+        y -= 18;
       }
       for (const bloco of dia.blocos) {
         garantirEspaco(13);
-        pagina.drawText(`${bloco.label.toUpperCase()}:`, { x: MARGEM, y, size: 9, font: fonteBold, color: PRETO });
-        y -= 12;
+        // Documento real (MODELO_PLANEJAMENTO_CDA): rótulos principais em
+        // CAIXA ALTA (TEMÁTICA DO DIA, MOMENTO INICIAL...), mas
+        // "Questionamentos e diálogos possíveis" fica em caixa normal — não
+        // é tudo maiúsculo igual (achado real, correção depois de comparar
+        // com o PDF gerado lado a lado com o Word).
+        const rotulo = bloco.label.startsWith("Questionamentos") ? bloco.label : bloco.label.toUpperCase();
+        pagina.drawText(`${rotulo}:`, { x: MARGEM, y, size: 9, font: fonteBold, color: PRETO });
+        y -= 13;
         escreverParagrafo(bloco.texto, 9.5, fonte);
-        y -= 4;
+        y -= 8;
       }
       if (dia.especializadas) {
         garantirEspaco(12);
         pagina.drawText("Especializadas:", { x: MARGEM, y, size: 9, font: fonteBold, color: PRETO });
-        y -= 12;
+        y -= 13;
         escreverParagrafo(dia.especializadas, 9, fonte, CINZA);
       }
-      y -= 10;
+      y -= 14;
     }
 
     if (semana.materiais) {

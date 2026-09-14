@@ -136,7 +136,7 @@ export function blocosDoDia(tipo: TipoDiaPlanejamento, conteudo: ConteudoDiaPlan
           { label: "Questionamentos e diálogos possíveis", chave: "questionamentosContexto" },
         ];
   blocos.push(
-    { label: "Momento final — registro do dia", chave: "momentoFinal" },
+    { label: "Momento final", chave: "momentoFinal" },
     { label: "Questionamentos e diálogos possíveis", chave: "questionamentosFinal" }
   );
   return blocos
