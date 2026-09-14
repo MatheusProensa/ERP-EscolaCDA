@@ -40,6 +40,7 @@ export default async function PlanejamentoTurmaPage({ params }: { params: Promis
           turmaId={turma.id}
           projetos={projetos.map((p) => ({ id: p.id, nome: p.nome, ativo: p.ativo }))}
           anoMesInicial={anoMesInicial}
+          podeEditar={podeEditar}
         />
       </div>
     </div>
