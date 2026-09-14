@@ -64,3 +64,23 @@ export function diasDaSemana(segunda: Date): Date[] {
 export function isoData(data: Date): string {
   return data.toISOString().slice(0, 10);
 }
+
+/** Título do dia (o que aparece em destaque no Roteiro) — tematicaDia pro
+ * tipo TEMATICA, contextoOrganizado pro tipo CONTEXTO. */
+export function tituloDoDia(tipo: TipoDiaPlanejamento, conteudo: ConteudoDiaPlanejamento): string {
+  return (tipo === "TEMATICA" ? conteudo.tematicaDia : conteudo.contextoOrganizado) ?? "";
+}
+
+/** Roteiro é a versão resumida do planejamento (achado real, set/2026:
+ * documento MODELO_ROTEIRO_CDA — mesma semana, só que em bullets curtos em
+ * vez dos parágrafos completos) — GERADO a partir do planejamento em vez de
+ * digitado de novo (senão a professora escreveria a mesma coisa 2x). Cada
+ * bloco de texto já preenchido vira 1 bullet, na ordem em que aparecem no
+ * formulário; o momento final (registro) entra por último, comum aos 2 tipos. */
+export function bulletsDoDia(tipo: TipoDiaPlanejamento, conteudo: ConteudoDiaPlanejamento): string[] {
+  const bullets =
+    tipo === "TEMATICA"
+      ? [conteudo.momentoInicial, conteudo.momentoFundamental]
+      : [conteudo.rodaDeConversa, conteudo.organizacaoContexto];
+  return [...bullets, conteudo.momentoFinal].filter((texto): texto is string => !!texto);
+}

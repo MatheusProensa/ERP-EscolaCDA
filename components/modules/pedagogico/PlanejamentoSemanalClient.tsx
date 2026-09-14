@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, ChevronDown, NotebookPen } from "lucide-react";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, ChevronDown, NotebookPen, ScrollText } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -256,6 +257,13 @@ export function PlanejamentoSemanalClient({
         >
           <ChevronRight className="h-4 w-4" />
         </button>
+      </div>
+
+      <div className="mb-4 flex justify-end">
+        <Link href={`/pedagogico/planejamento/${turmaId}/roteiro?semana=${semana}`} className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline">
+          <ScrollText className="h-3.5 w-3.5" />
+          Ver roteiro dessa semana
+        </Link>
       </div>
 
       <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
