@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { erroApi } from "@/lib/apiError";
 import { avisarMudanca } from "@/lib/liveUpdate";
 import { segundaFeiraDe, diasDaSemana, isoData, tipoPadraoDoDia, type ConteudoDiaPlanejamento } from "@/lib/planejamento";
+import { criarNotificacao } from "@/lib/notificacoes";
 import type { TipoDiaPlanejamento } from "@prisma/client";
 
 /** Confere se quem tá logado pode ESCREVER o planejamento dessa turma — hoje
@@ -66,7 +67,11 @@ export async function GET(req: NextRequest) {
   const [planejamento, projetoAtivo, horarios] = await Promise.all([
     prisma.planejamento.findUnique({
       where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
-      include: { dias: true, projeto: { select: { id: true, nome: true, justificativa: true } } },
+      include: {
+        dias: true,
+        projeto: { select: { id: true, nome: true, justificativa: true } },
+        comentarioAutor: { select: { name: true } },
+      },
     }),
     prisma.projetoPedagogico.findFirst({ where: { turmaId, ativo: true }, select: { id: true, nome: true, justificativa: true } }),
     prisma.horarioEspecializada.findMany({ where: { turmaId } }),
@@ -92,6 +97,7 @@ export async function GET(req: NextRequest) {
   });
 
   return NextResponse.json({
+    id: planejamento?.id ?? null,
     semanaInicio: isoData(semanaInicio),
     projetoId: planejamento?.projetoId ?? projetoAtivo?.id ?? null,
     projetoJustificativa: projetoDaSemana?.justificativa ?? "",
@@ -99,8 +105,13 @@ export async function GET(req: NextRequest) {
     tardeCulturalApresentacao: planejamento?.tardeCulturalApresentacao ?? "",
     tardeCulturalMateriais: planejamento?.tardeCulturalMateriais ?? "",
     status: planejamento?.status ?? "RASCUNHO",
+    comentarioCoordenadora: planejamento?.comentarioCoordenadora ?? "",
+    comentarioAutorNome: planejamento?.comentarioAutor?.name ?? "",
+    comentarioEm: planejamento?.comentarioEm?.toISOString() ?? null,
+    liComentarioEm: planejamento?.liComentarioEm?.toISOString() ?? null,
     dias,
     podeEditar: await podeEscrever(session.user.id, session.user.role, turmaId),
+    souCoordenadora: session.user.role === "ADMIN" || !!session.user.coordenaAreaPedagogica,
   });
 }
 
@@ -135,6 +146,16 @@ export async function POST(req: NextRequest) {
 
   const turma = await prisma.turma.findUnique({ where: { id: turmaId } });
   if (!turma) return NextResponse.json({ error: "Turma não encontrada" }, { status: 404 });
+
+  const existente = await prisma.planejamento.findUnique({
+    where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
+    select: { status: true },
+  });
+  // Reenvio depois de devolvido (pedido do dono, set/2026: "aviso automático
+  // quando professora reenvia após devolução") — limpa o comentário antigo
+  // (senão fica pendurado na tela como se ainda fosse o atual) e avisa quem
+  // coordena.
+  const reenvioAposDevolucao = existente?.status === "DEVOLVIDO" && status === "ENVIADO";
 
   if (projetoId) {
     const projeto = await prisma.projetoPedagogico.findUnique({ where: { id: projetoId } });
@@ -175,6 +196,9 @@ export async function POST(req: NextRequest) {
           tardeCulturalMateriais,
           autorId: session.user.id,
           ...(status ? { status } : {}),
+          ...(reenvioAposDevolucao
+            ? { comentarioCoordenadora: null, comentarioAutorId: null, comentarioEm: null, liComentarioEm: null }
+            : {}),
         },
       });
       await tx.planejamentoDia.deleteMany({ where: { planejamentoId: registro.id } });
@@ -198,6 +222,21 @@ export async function POST(req: NextRequest) {
         usuario: session.user.name ?? "Usuário",
       },
     });
+
+    if (reenvioAposDevolucao) {
+      const coordenadoras = await prisma.user.findMany({ where: { coordenaAreaPedagogica: true }, select: { id: true } });
+      await Promise.all(
+        coordenadoras.map((c) =>
+          criarNotificacao({
+            usuarioId: c.id,
+            tipo: "PLANEJAMENTO_REENVIADO",
+            titulo: `${turma.nome} reenviou o planejamento`,
+            corpo: `Semana de ${isoData(semanaInicio)}, depois de devolvido pra revisão.`,
+            link: `/pedagogico/planejamento/${turmaId}`,
+          })
+        )
+      );
+    }
 
     after(() => avisarMudanca("pedagogico"));
     return NextResponse.json({ ok: true });

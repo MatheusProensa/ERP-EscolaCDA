@@ -46,6 +46,7 @@ model User {
   vinculosPedagogico     VinculoPedagogico[]
   projetosPedagogicos    ProjetoPedagogico[]
   planejamentos          Planejamento[]
+  planejamentosRevisados Planejamento[]      @relation("ComentariosPlanejamento")
   modelosParecer         ModeloParecer[]
   pareceres              Parecer[]
   portfolioItens         PortfolioItem[]
@@ -252,7 +253,19 @@ model Planejamento {
   /// um botão explícito de entrega, em vez do status "Entregue" ser só um
   /// heurístico de "tem algo preenchido" (mesmo padrão já usado no Parecer,
   /// ver StatusParecer). O painel da coordenadora passa a contar ENVIADO.
+  /// Fluxo de aprovação (pedido do dono, set/2026): ENVIADO vira APROVADO ou
+  /// DEVOLVIDO quando a coordenadora revisa; DEVOLVIDO some assim que a
+  /// regente reenvia (volta pra ENVIADO).
   status                    StatusPlanejamento @default(RASCUNHO)
+  /// Comentário da coordenadora ao aprovar/devolver — null quando ainda não
+  /// foi revisado, ou quando aprovado sem nada a dizer (curtida simples).
+  comentarioCoordenadora    String?
+  comentarioAutor           User?              @relation("ComentariosPlanejamento", fields: [comentarioAutorId], references: [id])
+  comentarioAutorId         String?
+  comentarioEm              DateTime?
+  /// Confirmação de leitura da regente ("li e entendi") — fecha o loop sem
+  /// depender de WhatsApp. Zera de novo a cada novo comentário/devolução.
+  liComentarioEm            DateTime?
   autor                     User               @relation(fields: [autorId], references: [id])
   autorId                   String
   dias                      PlanejamentoDia[]
@@ -267,6 +280,10 @@ model Planejamento {
 enum StatusPlanejamento {
   RASCUNHO
   ENVIADO
+  /// Coordenadora revisou e aprovou (👍, com ou sem comentário).
+  APROVADO
+  /// Coordenadora pediu revisão — comentarioCoordenadora explica o quê.
+  DEVOLVIDO
 }
 
 enum TipoDiaPlanejamento {

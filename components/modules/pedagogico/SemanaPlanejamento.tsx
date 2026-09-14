@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, NotebookPen, ScrollText, Printer, CheckCircle2, RotateCcw } from "lucide-react";
+import { ChevronDown, NotebookPen, ScrollText, Printer, CheckCircle2, RotateCcw, ThumbsUp, Undo2, MessageSquareWarning } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
@@ -247,17 +247,25 @@ export function SemanaPlanejamento({
 }) {
   const [aberta, setAberta] = useState(abertaPorPadrao);
   const [carregado, setCarregado] = useState(false);
+  const [id, setId] = useState<string | null>(null);
   const [projetoId, setProjetoId] = useState<string>("");
   const [projetoJustificativa, setProjetoJustificativa] = useState("");
   const [materiais, setMateriais] = useState("");
   const [tardeCulturalApresentacao, setTardeCulturalApresentacao] = useState("");
   const [tardeCulturalMateriais, setTardeCulturalMateriais] = useState("");
   const [dias, setDias] = useState<DiaForm[]>([]);
-  const [status, setStatus] = useState<"RASCUNHO" | "ENVIADO">("RASCUNHO");
+  const [status, setStatus] = useState<"RASCUNHO" | "ENVIADO" | "APROVADO" | "DEVOLVIDO">("RASCUNHO");
+  const [comentarioCoordenadora, setComentarioCoordenadora] = useState("");
+  const [comentarioAutorNome, setComentarioAutorNome] = useState("");
+  const [liComentarioEm, setLiComentarioEm] = useState<string | null>(null);
+  const [souCoordenadora, setSouCoordenadora] = useState(false);
   const [podeEditar, setPodeEditar] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState("");
+  const [comentarioForm, setComentarioForm] = useState("");
+  const [revisando, setRevisando] = useState(false);
+  const [mostrarDevolver, setMostrarDevolver] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -273,6 +281,7 @@ export function SemanaPlanejamento({
       }
       const data = await res.json();
       if (cancelado) return;
+      setId(data.id ?? null);
       setProjetoId(data.projetoId ?? "");
       setProjetoJustificativa(data.projetoJustificativa ?? "");
       setMateriais(data.materiais ?? "");
@@ -280,6 +289,10 @@ export function SemanaPlanejamento({
       setTardeCulturalMateriais(data.tardeCulturalMateriais ?? "");
       setDias(data.dias);
       setStatus(data.status ?? "RASCUNHO");
+      setComentarioCoordenadora(data.comentarioCoordenadora ?? "");
+      setComentarioAutorNome(data.comentarioAutorNome ?? "");
+      setLiComentarioEm(data.liComentarioEm ?? null);
+      setSouCoordenadora(!!data.souCoordenadora);
       setPodeEditar(data.podeEditar);
       setCarregando(false);
       setCarregado(true);
@@ -318,7 +331,43 @@ export function SemanaPlanejamento({
       return;
     }
     if (novoStatus) setStatus(novoStatus);
+    if (novoStatus === "ENVIADO") {
+      setComentarioCoordenadora("");
+      setLiComentarioEm(null);
+    }
     showToast(novoStatus === "ENVIADO" ? "Planejamento da semana finalizado." : novoStatus === "RASCUNHO" ? "Planejamento reaberto." : "Planejamento da semana salvo.");
+  }
+
+  async function revisar(novoStatus: "APROVADO" | "DEVOLVIDO") {
+    if (!id) return;
+    setRevisando(true);
+    setErro("");
+    const res = await fetch(`/api/planejamentos/${id}/revisar`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: novoStatus, comentario: comentarioForm.trim() || undefined }),
+    });
+    setRevisando(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setErro(data.error ?? "Não foi possível revisar essa entrega.");
+      return;
+    }
+    setStatus(novoStatus);
+    setComentarioCoordenadora(comentarioForm.trim());
+    setLiComentarioEm(null);
+    setComentarioForm("");
+    setMostrarDevolver(false);
+    showToast(novoStatus === "APROVADO" ? "Planejamento aprovado." : "Planejamento devolvido pra revisão.");
+  }
+
+  async function confirmarLeitura() {
+    if (!id) return;
+    const res = await fetch(`/api/planejamentos/${id}/li-entendi`, { method: "PATCH" });
+    if (res.ok) {
+      setLiComentarioEm(new Date().toISOString());
+      showToast("Confirmado — a coordenadora vê que você leu.");
+    }
   }
 
   const preenchida = carregado && dias.some((d) => Object.keys(d.conteudo).length > 0);
@@ -335,8 +384,12 @@ export function SemanaPlanejamento({
         </span>
         <div className="flex items-center gap-2">
           {carregado && (
-            <Badge variant={status === "ENVIADO" ? "success" : preenchida ? "warning" : "neutral"}>
-              {status === "ENVIADO" ? "Enviado" : preenchida ? "Rascunho" : "Vazia"}
+            <Badge
+              variant={
+                status === "APROVADO" ? "success" : status === "DEVOLVIDO" ? "danger" : status === "ENVIADO" ? "info" : preenchida ? "warning" : "neutral"
+              }
+            >
+              {status === "APROVADO" ? "Aprovado" : status === "DEVOLVIDO" ? "Devolvido" : status === "ENVIADO" ? "Enviado" : preenchida ? "Rascunho" : "Vazia"}
             </Badge>
           )}
           <ChevronDown className={`h-4 w-4 shrink-0 text-cda-text3 transition-transform ${aberta ? "rotate-180" : ""}`} />
@@ -354,6 +407,27 @@ export function SemanaPlanejamento({
               Ver roteiro dessa semana
             </Link>
           </div>
+
+          {comentarioCoordenadora && (
+            <div className={`mb-4 rounded-lg border p-3 ${status === "DEVOLVIDO" ? "border-cda-red/30 bg-cda-red/5" : "border-cda-border bg-cda-bg"}`}>
+              <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-cda-text">
+                <MessageSquareWarning className="h-3.5 w-3.5" />
+                Comentário {comentarioAutorNome ? `de ${comentarioAutorNome}` : "da coordenadora"}
+              </div>
+              <p className="whitespace-pre-line text-sm text-cda-text2">{comentarioCoordenadora}</p>
+              {status === "DEVOLVIDO" && podeEditar && (
+                <div className="mt-2">
+                  {liComentarioEm ? (
+                    <span className="text-xs text-cda-text3">Você já confirmou que leu.</span>
+                  ) : (
+                    <Button variant="outline" size="sm" onClick={confirmarLeitura}>
+                      Li e entendi
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
             <Select label="Projeto pedagógico" value={projetoId} onChange={(e) => setProjetoId(e.target.value)} disabled={!podeEditar}>
@@ -412,21 +486,75 @@ export function SemanaPlanejamento({
                 <NotebookPen className="h-3.5 w-3.5" />
                 Salvar planejamento
               </Button>
-              {status === "ENVIADO" ? (
+              {status !== "RASCUNHO" && (
                 <Button variant="outline" onClick={() => salvar("RASCUNHO")} loading={salvando} disabled={carregando}>
                   <RotateCcw className="h-3.5 w-3.5" />
                   Reabrir
                 </Button>
-              ) : (
+              )}
+              {status === "RASCUNHO" && (
                 <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
                   <CheckCircle2 className="h-3.5 w-3.5" />
                   Finalizar
                 </Button>
               )}
+              {status === "DEVOLVIDO" && (
+                <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Reenviar
+                </Button>
+              )}
             </div>
           )}
-          {!carregando && !podeEditar && (
+          {!carregando && !podeEditar && !souCoordenadora && (
             <p className="mt-3 text-xs text-cda-text3">Só a professora regente dessa turma edita o planejamento.</p>
+          )}
+
+          {souCoordenadora && status !== "RASCUNHO" && (
+            <div className="mt-4 border-t border-cda-border pt-4">
+              <p className="mb-2 text-xs font-semibold text-cda-text2">Revisão da coordenadora</p>
+              {mostrarDevolver && (
+                <textarea
+                  value={comentarioForm}
+                  onChange={(e) => setComentarioForm(e.target.value)}
+                  placeholder="O que precisa corrigir?"
+                  rows={3}
+                  className="mb-2 w-full rounded-lg border border-cda-border bg-white px-3 py-2 text-sm text-cda-text outline-none transition-colors focus:border-cda-blue"
+                />
+              )}
+              <div className="flex flex-wrap justify-end gap-2">
+                {mostrarDevolver ? (
+                  <>
+                    <Button variant="outline" size="sm" onClick={() => setMostrarDevolver(false)} disabled={revisando}>
+                      Cancelar
+                    </Button>
+                    <Button size="sm" onClick={() => revisar("DEVOLVIDO")} loading={revisando} disabled={!comentarioForm.trim()}>
+                      <Undo2 className="h-3.5 w-3.5" />
+                      Devolver
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setComentarioForm("");
+                        setMostrarDevolver(true);
+                      }}
+                      disabled={revisando}
+                    >
+                      <Undo2 className="h-3.5 w-3.5" />
+                      Devolver com comentário
+                    </Button>
+                    <Button size="sm" onClick={() => revisar("APROVADO")} loading={revisando}>
+                      <ThumbsUp className="h-3.5 w-3.5" />
+                      Aprovar
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
           )}
         </div>
       )}

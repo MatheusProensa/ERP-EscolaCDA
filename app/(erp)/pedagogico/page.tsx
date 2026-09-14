@@ -45,21 +45,45 @@ export default async function PedagogicoPage() {
     especialistaPorMateria.set(chave, [...(especialistaPorMateria.get(chave) ?? []), v]);
   }
 
-  // "Entregue" = tem TODAS as semanas do mês atual com status ENVIADO — a
+  // "Entregue" = já foi enviado (ENVIADO/APROVADO/DEVOLVIDO — as 3 são "a
+  // regente já fez a parte dela") em TODAS as semanas do mês atual. A
   // cobrança da coordenadora é mensal (correção do dono, set/2026:
   // "planejamento é por mês") e a entrega em si é um clique explícito no
   // botão "Finalizar" de cada semana (pedido do dono, set/2026: botão de
   // verdade em vez do status ser só heurística de "tem algo preenchido").
   const semanasMes = semanasDoMes(hojeBrasilia());
   const planejamentosMes = await prisma.planejamento.findMany({
-    where: { semanaInicio: { in: semanasMes }, status: "ENVIADO" },
-    select: { turmaId: true },
+    where: { semanaInicio: { in: semanasMes }, status: { in: ["ENVIADO", "APROVADO", "DEVOLVIDO"] } },
+    select: { turmaId: true, status: true },
   });
-  const contagemPorTurma = new Map<string, number>();
+  const statusPorTurma = new Map<string, { total: number; aprovadas: number; devolvidas: number }>();
   for (const p of planejamentosMes) {
-    contagemPorTurma.set(p.turmaId, (contagemPorTurma.get(p.turmaId) ?? 0) + 1);
+    const atual = statusPorTurma.get(p.turmaId) ?? { total: 0, aprovadas: 0, devolvidas: 0 };
+    atual.total += 1;
+    if (p.status === "APROVADO") atual.aprovadas += 1;
+    if (p.status === "DEVOLVIDO") atual.devolvidas += 1;
+    statusPorTurma.set(p.turmaId, atual);
   }
-  const entreguesMesAtual = new Set([...contagemPorTurma.entries()].filter(([, n]) => n >= semanasMes.length).map(([turmaId]) => turmaId));
+  const entreguesMesAtual = new Set(
+    [...statusPorTurma.entries()].filter(([, s]) => s.total >= semanasMes.length).map(([turmaId]) => turmaId)
+  );
+  // Status pra exibir por turma — devolvido pesa mais (precisa de ação da
+  // regente), depois aprovado (só quando TODAS as semanas foram aprovadas),
+  // depois "aguardando revisão" (enviou mas a coordenadora ainda não olhou).
+  function statusExibicao(turmaId: string): "APROVADO" | "DEVOLVIDO" | "ENVIADO" | "PENDENTE" {
+    const s = statusPorTurma.get(turmaId);
+    if (!s || s.total < semanasMes.length) return "PENDENTE";
+    if (s.devolvidas > 0) return "DEVOLVIDO";
+    if (s.aprovadas >= semanasMes.length) return "APROVADO";
+    return "ENVIADO";
+  }
+  const STATUS_LABEL: Record<string, string> = { APROVADO: "Aprovado", DEVOLVIDO: "Devolvido", ENVIADO: "Aguardando revisão", PENDENTE: "Pendente" };
+  const STATUS_BADGE: Record<string, "success" | "danger" | "info" | "warning"> = {
+    APROVADO: "success",
+    DEVOLVIDO: "danger",
+    ENVIADO: "info",
+    PENDENTE: "warning",
+  };
 
   // Coordenadora vê TODAS as turmas do ano letivo ativo, com a regente e o
   // status do mês — é o "dashboard bem bom pra acompanhar as professoras"
@@ -87,7 +111,7 @@ export default async function PedagogicoPage() {
 
       {souCoordenadora && todasTurmas.length > 0 && (
         <div className="mb-6">
-          <div className="mb-3 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="mb-3 grid grid-cols-1 gap-4 sm:grid-cols-4">
             <MetricCard icon={Users} tone="cat1" value={todasTurmas.length} label="Turmas" subtext="Ano letivo atual" />
             <MetricCard
               icon={CheckCircle2}
@@ -95,6 +119,13 @@ export default async function PedagogicoPage() {
               value={entreguesMesAtual.size}
               label="Entregaram esse mês"
               subtext="Planejamento em dia"
+            />
+            <MetricCard
+              icon={ClipboardCheck}
+              tone="cat5"
+              value={todasTurmas.filter((t) => statusExibicao(t.id) === "ENVIADO").length}
+              label="Aguardando revisão"
+              subtext="Enviado, ainda não revisado"
             />
             <MetricCard
               icon={Clock}
@@ -123,7 +154,7 @@ export default async function PedagogicoPage() {
                   <div className="flex flex-col divide-y divide-cda-border">
                     {turmasDoTurno.map((turma) => {
                       const regente = turma.vinculosPedagogico[0]?.user.name;
-                      const entregue = entreguesMesAtual.has(turma.id);
+                      const statusTurma = statusExibicao(turma.id);
                       return (
                         <div key={turma.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
                           <div>
@@ -132,7 +163,7 @@ export default async function PedagogicoPage() {
                             </Link>
                             <span className="ml-2 text-xs text-cda-text3">{regente ? `Regente: ${regente}` : "Sem regente vinculada"}</span>
                           </div>
-                          <Badge variant={entregue ? "success" : "warning"}>{entregue ? "Entregue" : "Pendente"}</Badge>
+                          <Badge variant={STATUS_BADGE[statusTurma]}>{STATUS_LABEL[statusTurma]}</Badge>
                         </div>
                       );
                     })}
@@ -165,7 +196,7 @@ export default async function PedagogicoPage() {
               <h3 className="mb-2 text-sm font-semibold text-cda-text2">Como regente</h3>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {comoRegente.map((v) => {
-                  const entregue = entreguesMesAtual.has(v.turma.id);
+                  const statusTurma = statusExibicao(v.turma.id);
                   return (
                     <Card key={v.id} className="p-4">
                       <div className="mb-3 flex items-center gap-2">
@@ -181,9 +212,7 @@ export default async function PedagogicoPage() {
                           <NotebookPen className="h-3 w-3" />
                           Planejamento
                         </Link>
-                        <Badge variant={entregue ? "success" : "warning"}>
-                          {entregue ? "Entregue esse mês" : "Pendente esse mês"}
-                        </Badge>
+                        <Badge variant={STATUS_BADGE[statusTurma]}>{STATUS_LABEL[statusTurma]}</Badge>
                         <Link
                           href={`/pedagogico/parecer/${v.turma.id}`}
                           className="inline-flex items-center gap-1 rounded-full bg-cda-blue/10 px-2.5 py-0.5 text-xs font-medium text-cda-blue hover:bg-cda-blue/20"
