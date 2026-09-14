@@ -47,6 +47,7 @@ model User {
   projetosPedagogicos    ProjetoPedagogico[]
   planejamentos          Planejamento[]
   planejamentosRevisados Planejamento[]      @relation("ComentariosPlanejamento")
+  prazosDefinidos        PrazoPedagogico[]
   modelosParecer         ModeloParecer[]
   pareceres              Parecer[]
   portfolioItens         PortfolioItem[]
@@ -350,6 +351,20 @@ model MomentoRotina {
   descricao String
 
   @@index([turmaId, ordem])
+}
+
+/// Prazo mensal do Planejamento, definido pela coordenadora (pedido do dono,
+/// set/2026: "coordenadora define o prazo do mês"). 1 prazo por mês, vale
+/// pra TODAS as turmas — ainda não existe noção de prazo por turma/módulo,
+/// só Planejamento por enquanto (Parecer/Portfólio ficam de fora dessa v1).
+model PrazoPedagogico {
+  id            String   @id @default(cuid())
+  /// "YYYY-MM"
+  mes           String   @unique
+  dataLimite    DateTime
+  definidoPor   User     @relation(fields: [definidoPorId], references: [id])
+  definidoPorId String
+  updatedAt     DateTime @updatedAt
 }
 
 /// Modelo de parecer — a lista de parágrafos que a professora vai preencher

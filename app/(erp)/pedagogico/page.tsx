@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { PedagogicoTutorial } from "@/components/modules/pedagogico/PedagogicoTutorial";
+import { PrazoPedagogicoForm } from "@/components/modules/pedagogico/PrazoPedagogicoForm";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { hojeBrasilia, ordenarTurmas } from "@/lib/utils";
 import { semanasDoMes } from "@/lib/planejamento";
@@ -21,7 +22,10 @@ export default async function PedagogicoPage() {
   const session = await auth();
   const souCoordenadora = session?.user.role === "ADMIN" || !!session?.user.coordenaAreaPedagogica;
 
-  const [vinculos, anoLetivo] = await Promise.all([
+  const hoje = hojeBrasilia();
+  const anoMesAtual = `${hoje.getUTCFullYear()}-${String(hoje.getUTCMonth() + 1).padStart(2, "0")}`;
+
+  const [vinculos, anoLetivo, prazo] = await Promise.all([
     session?.user.id
       ? prisma.vinculoPedagogico.findMany({
           where: { userId: session.user.id },
@@ -29,7 +33,10 @@ export default async function PedagogicoPage() {
         })
       : Promise.resolve([]),
     getAnoLetivoAtivo(),
+    prisma.prazoPedagogico.findUnique({ where: { mes: anoMesAtual } }),
   ]);
+  const dataLimite = prazo?.dataLimite ?? null;
+  const prazoVencido = !!dataLimite && hoje > dataLimite;
 
   // Ordem pedagógica de verdade (Berçário → Maternal → Pré → Anos), não
   // alfabética — "1º Ano" vindo alfabeticamente antes de "Berçário" saía
@@ -51,7 +58,7 @@ export default async function PedagogicoPage() {
   // "planejamento é por mês") e a entrega em si é um clique explícito no
   // botão "Finalizar" de cada semana (pedido do dono, set/2026: botão de
   // verdade em vez do status ser só heurística de "tem algo preenchido").
-  const semanasMes = semanasDoMes(hojeBrasilia());
+  const semanasMes = semanasDoMes(hoje);
   const planejamentosMes = await prisma.planejamento.findMany({
     where: { semanaInicio: { in: semanasMes }, status: { in: ["ENVIADO", "APROVADO", "DEVOLVIDO"] } },
     select: { turmaId: true, status: true },
@@ -70,18 +77,27 @@ export default async function PedagogicoPage() {
   // Status pra exibir por turma — devolvido pesa mais (precisa de ação da
   // regente), depois aprovado (só quando TODAS as semanas foram aprovadas),
   // depois "aguardando revisão" (enviou mas a coordenadora ainda não olhou).
-  function statusExibicao(turmaId: string): "APROVADO" | "DEVOLVIDO" | "ENVIADO" | "PENDENTE" {
+  // Pendente vira Atrasado quando já passou do prazo do mês (pedido do dono,
+  // set/2026: "coordenadora define o prazo do mês").
+  function statusExibicao(turmaId: string): "APROVADO" | "DEVOLVIDO" | "ENVIADO" | "ATRASADO" | "PENDENTE" {
     const s = statusPorTurma.get(turmaId);
-    if (!s || s.total < semanasMes.length) return "PENDENTE";
+    if (!s || s.total < semanasMes.length) return prazoVencido ? "ATRASADO" : "PENDENTE";
     if (s.devolvidas > 0) return "DEVOLVIDO";
     if (s.aprovadas >= semanasMes.length) return "APROVADO";
     return "ENVIADO";
   }
-  const STATUS_LABEL: Record<string, string> = { APROVADO: "Aprovado", DEVOLVIDO: "Devolvido", ENVIADO: "Aguardando revisão", PENDENTE: "Pendente" };
-  const STATUS_BADGE: Record<string, "success" | "danger" | "info" | "warning"> = {
+  const STATUS_LABEL: Record<string, string> = {
+    APROVADO: "Aprovado",
+    DEVOLVIDO: "Devolvido",
+    ENVIADO: "Aguardando revisão",
+    ATRASADO: "Atrasado",
+    PENDENTE: "Pendente",
+  };
+  const STATUS_BADGE: Record<string, "success" | "danger" | "info" | "warning" | "critical"> = {
     APROVADO: "success",
     DEVOLVIDO: "danger",
     ENVIADO: "info",
+    ATRASADO: "critical",
     PENDENTE: "warning",
   };
 
@@ -111,6 +127,9 @@ export default async function PedagogicoPage() {
 
       {souCoordenadora && todasTurmas.length > 0 && (
         <div className="mb-6">
+          <div className="mb-3">
+            <PrazoPedagogicoForm anoMes={anoMesAtual} dataLimiteInicial={dataLimite ? dataLimite.toISOString().slice(0, 10) : null} />
+          </div>
           <div className="mb-3 grid grid-cols-1 gap-4 sm:grid-cols-4">
             <MetricCard icon={Users} tone="cat1" value={todasTurmas.length} label="Turmas" subtext="Ano letivo atual" />
             <MetricCard
@@ -129,10 +148,10 @@ export default async function PedagogicoPage() {
             />
             <MetricCard
               icon={Clock}
-              tone="warning"
+              tone={prazoVencido ? "critical" : "warning"}
               value={Math.max(0, todasTurmas.length - entreguesMesAtual.size)}
-              label="Ainda pendentes"
-              subtext="Planejamento desse mês"
+              label={prazoVencido ? "Atrasadas" : "Ainda pendentes"}
+              subtext={prazoVencido ? "Passou do prazo do mês" : "Planejamento desse mês"}
             />
           </div>
           <Card
@@ -190,7 +209,15 @@ export default async function PedagogicoPage() {
         )
       ) : (
         <div className="flex flex-col gap-5">
-          <h2 className="text-base font-semibold text-cda-text">Suas turmas</h2>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-base font-semibold text-cda-text">Suas turmas</h2>
+            {!souCoordenadora && dataLimite && (
+              <span className={`text-xs font-medium ${prazoVencido ? "text-cda-red" : "text-cda-text3"}`}>
+                Prazo do planejamento esse mês: {dataLimite.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" })}
+                {prazoVencido && " — vencido"}
+              </span>
+            )}
+          </div>
           {comoRegente.length > 0 && (
             <div>
               <h3 className="mb-2 text-sm font-semibold text-cda-text2">Como regente</h3>
