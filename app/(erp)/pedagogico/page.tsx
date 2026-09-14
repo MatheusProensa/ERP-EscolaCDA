@@ -7,19 +7,17 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TemasPlanejamentoSecao } from "@/components/modules/pedagogico/TemasPlanejamentoSecao";
+import { ModelosParecerSecao } from "@/components/modules/pedagogico/ModelosParecerSecao";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { hojeBrasilia } from "@/lib/utils";
 import { segundaFeiraDe } from "@/lib/planejamento";
 
 const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã", TARDE: "Tarde" };
 
-// Parecer e Portfólio ainda não existem — mostrados como badge "em breve"
-// pra já dar contexto do que essa tela vai virar (task #18). Planejamento já
-// é real, virou link de verdade em vez de badge inerte.
-const ENTREGAS_EM_BREVE = [
-  { label: "Parecer", icon: FileText },
-  { label: "Portfólio", icon: ImageIcon },
-];
+// Portfólio ainda não existe — mostrado como badge "em breve" pra já dar
+// contexto do que essa tela vai virar (task #18). Planejamento e Parecer já
+// são reais, viraram link de verdade em vez de badge inerte.
+const ENTREGAS_EM_BREVE = [{ label: "Portfólio", icon: ImageIcon }];
 
 /** Hub da professora dentro da Área Pedagógica — por enquanto só mostra o
  * vínculo dela (turma como regente, matéria×turmas como especialista), sem
@@ -30,7 +28,7 @@ export default async function PedagogicoPage() {
   const souCoordenadora = session?.user.role === "ADMIN" || !!session?.user.coordenaAreaPedagogica;
   const semanaAtual = segundaFeiraDe(hojeBrasilia());
 
-  const [vinculos, temas, anoLetivo] = await Promise.all([
+  const [vinculos, temas, modelosParecer, anoLetivo] = await Promise.all([
     session?.user.id
       ? prisma.vinculoPedagogico.findMany({
           where: { userId: session.user.id },
@@ -39,6 +37,7 @@ export default async function PedagogicoPage() {
         })
       : Promise.resolve([]),
     prisma.temaPlanejamento.findMany({ orderBy: { titulo: "asc" } }),
+    prisma.modeloParecer.findMany({ orderBy: { titulo: "asc" }, include: { paragrafos: { orderBy: { ordem: "asc" } } } }),
     getAnoLetivoAtivo(),
   ]);
 
@@ -81,8 +80,13 @@ export default async function PedagogicoPage() {
     <div>
       <PageHeader title="Área Pedagógica" subtitle="Suas turmas — parecer, planejamento e portfólio chegam aqui em breve" />
 
-      <div className="mb-5">
-        <TemasPlanejamentoSecao temas={temas} souCoordenadora={souCoordenadora} />
+      <div className="mb-5 flex flex-col gap-5 lg:flex-row lg:items-start">
+        <div className="flex-1">
+          <TemasPlanejamentoSecao temas={temas} souCoordenadora={souCoordenadora} />
+        </div>
+        <div className="flex-1">
+          <ModelosParecerSecao modelos={modelosParecer} souCoordenadora={souCoordenadora} />
+        </div>
       </div>
 
       {souCoordenadora && todasTurmas.length > 0 && (
@@ -150,6 +154,13 @@ export default async function PedagogicoPage() {
                         <Badge variant={entregue ? "success" : "warning"}>
                           {entregue ? "Entregue essa semana" : "Pendente essa semana"}
                         </Badge>
+                        <Link
+                          href={`/pedagogico/parecer/${v.turma.id}`}
+                          className="inline-flex items-center gap-1 rounded-full bg-cda-blue/10 px-2.5 py-0.5 text-xs font-medium text-cda-blue hover:bg-cda-blue/20"
+                        >
+                          <FileText className="h-3 w-3" />
+                          Parecer
+                        </Link>
                         {ENTREGAS_EM_BREVE.map(({ label, icon: Icon }) => (
                           <Badge key={label} variant="neutral">
                             <Icon className="h-3 w-3" />

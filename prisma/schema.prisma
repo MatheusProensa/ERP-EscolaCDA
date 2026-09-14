@@ -46,6 +46,8 @@ model User {
   vinculosPedagogico     VinculoPedagogico[]
   temasPlanejamento      TemaPlanejamento[]
   planejamentos          Planejamento[]
+  modelosParecer         ModeloParecer[]
+  pareceres              Parecer[]
 }
 
 /// Permissão granular por pessoa/setor — sobrepõe o pacote padrão do Role
@@ -137,6 +139,7 @@ model Turma {
   listaEspera        ListaEspera[]
   vinculosPedagogico VinculoPedagogico[]
   planejamentos      Planejamento[]
+  pareceres          Parecer[]
   createdAt          DateTime            @default(now())
 
   @@unique([nome, anoLetivoId])
@@ -227,6 +230,99 @@ model PlanejamentoDia {
   conteudo       String
 
   @@unique([planejamentoId, data])
+}
+
+/// Modelo de parecer — a coordenação monta a lista de parágrafos que a
+/// professora vai preencher (achado real, out/2026: os PDFs de orientação da
+/// escola já têm exatamente esse formato — Conteúdo + Pergunta Norteadora por
+/// parágrafo). Um modelo por público/etapa (ex.: "Berçário I — 1º Semestre",
+/// "Fundamental — Trimestral"), reaproveitando o mesmo padrão de "roteiro
+/// pronto" do TemaPlanejamento. A checklist A/EP/NA exclusiva do Fundamental
+/// (achado real: não existe no Infantil) fica de fora por enquanto — parecer
+/// aqui é só narrativa guiada por parágrafo, checklist é próxima etapa.
+model ModeloParecer {
+  id          String                   @id @default(cuid())
+  titulo      String
+  criadoPor   User                     @relation(fields: [criadoPorId], references: [id])
+  criadoPorId String
+  createdAt   DateTime                 @default(now())
+  paragrafos  ParagrafoModeloParecer[]
+  pareceres   Parecer[]
+}
+
+/// Um parágrafo dentro do modelo — título do tema + a pergunta norteadora que
+/// aparece como guia ao lado do campo de texto (mesmo texto que already
+/// existe nos PDFs de orientação reais da escola).
+model ParagrafoModeloParecer {
+  id                     String                  @id @default(cuid())
+  modelo                 ModeloParecer           @relation(fields: [modeloId], references: [id], onDelete: Cascade)
+  modeloId               String
+  ordem                  Int
+  titulo                 String
+  perguntaNorteadora     String?
+  parecerAlunoParagrafos ParecerAlunoParagrafo[]
+
+  @@unique([modeloId, ordem])
+}
+
+/// Um ciclo de parecer de uma turma (ex.: "1º Trimestre 2026" pro
+/// Fundamental, "1º Semestre 2026" pro Infantil — achado real: a cadência
+/// muda por público, por isso "periodo" é texto livre, não um enum fixo).
+/// Guarda o texto compartilhado da turma; o texto individual de cada aluno
+/// fica em ParecerAluno.
+model Parecer {
+  id         String         @id @default(cuid())
+  turma      Turma          @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turmaId    String
+  modelo     ModeloParecer  @relation(fields: [modeloId], references: [id])
+  modeloId   String
+  periodo    String
+  /// Texto sobre a turma inteira — igual pra todos os alunos desse ciclo
+  /// (achado real nos .docx entregues: 1 bloco "AVALIAÇÃO DESCRITIVA DA
+  /// TURMA" compartilhado, repetido só por engano em alguns arquivos reais).
+  textoTurma String?
+  autor      User           @relation(fields: [autorId], references: [id])
+  autorId    String
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  alunos     ParecerAluno[]
+
+  @@unique([turmaId, periodo])
+  @@index([modeloId])
+}
+
+enum StatusParecer {
+  RASCUNHO
+  ENVIADO
+}
+
+/// O parecer individual de 1 aluno dentro de um ciclo — puxa nome/turma do
+/// cadastro (achado real: professoras digitavam isso à mão em cada arquivo,
+/// com rótulo inconsistente e às vezes errado). Os parágrafos ficam em
+/// ParecerAlunoParagrafo, um por ParagrafoModeloParecer do modelo escolhido.
+model ParecerAluno {
+  id         String                  @id @default(cuid())
+  parecer    Parecer                 @relation(fields: [parecerId], references: [id], onDelete: Cascade)
+  parecerId  String
+  aluno      Aluno                   @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  alunoId    String
+  status     StatusParecer           @default(RASCUNHO)
+  paragrafos ParecerAlunoParagrafo[]
+  updatedAt  DateTime                @updatedAt
+
+  @@unique([parecerId, alunoId])
+  @@index([alunoId])
+}
+
+model ParecerAlunoParagrafo {
+  id             String                 @id @default(cuid())
+  parecerAluno   ParecerAluno           @relation(fields: [parecerAlunoId], references: [id], onDelete: Cascade)
+  parecerAlunoId String
+  paragrafo      ParagrafoModeloParecer @relation(fields: [paragrafoId], references: [id])
+  paragrafoId    String
+  conteudo       String
+
+  @@unique([parecerAlunoId, paragrafoId])
 }
 
 enum Turno {
@@ -342,6 +438,7 @@ model Aluno {
   notasFiscais           NotaFiscal[]
   boletos                Boleto[]
   avaliacoesNutricionais AvaliacaoNutricional[]
+  pareceres              ParecerAluno[]
   createdAt              DateTime               @default(now())
   updatedAt              DateTime               @updatedAt
 

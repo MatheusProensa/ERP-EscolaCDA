@@ -98,6 +98,8 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/api/turmas", roles: PEDAGOGICO },
   { prefixo: "/api/temas-planejamento", roles: PEDAGOGICO },
   { prefixo: "/api/planejamentos", roles: PEDAGOGICO },
+  { prefixo: "/api/modelos-parecer", roles: PEDAGOGICO },
+  { prefixo: "/api/pareceres", roles: PEDAGOGICO },
   { prefixo: "/api/cardapio", roles: PEDAGOGICO },
   { prefixo: "/api/avaliacao-nutricional", roles: PEDAGOGICO },
   { prefixo: "/api/contratos", roles: PEDAGOGICO },
