@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { showToast } from "@/components/ui/Toast";
+import { PlanejamentoStepper } from "@/components/modules/pedagogico/PlanejamentoStepper";
 import { tituloDoDia, bulletsDoDia, type ConteudoDiaPlanejamento } from "@/lib/planejamento";
 
 type TipoDia = "TEMATICA" | "CONTEXTO";
@@ -210,6 +211,7 @@ function DiaPlanejamento({
   }
 
   const resumo = dia.tipo === "TEMATICA" ? c.tematicaDia : c.contextoOrganizado;
+  const temConteudo = Object.keys(c).length > 0;
 
   return (
     <div className="rounded-lg border border-cda-border">
@@ -219,10 +221,15 @@ function DiaPlanejamento({
         className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
       >
         <div>
-          <p className="text-sm font-semibold text-cda-text">
+          <p className="flex items-center gap-2 text-sm font-semibold text-cda-text">
+            <span
+              className="h-1.5 w-1.5 shrink-0 rounded-full"
+              style={{ backgroundColor: temConteudo ? "var(--status-info)" : "var(--cda-border)" }}
+              aria-hidden
+            />
             {LABEL_DIA[indice]} <span className="font-normal text-cda-text3">({formatarDiaMes(dia.data)})</span>
           </p>
-          {resumo && <p className="mt-0.5 text-xs text-cda-text3">{resumo}</p>}
+          {resumo && <p className="mt-0.5 pl-3.5 text-xs text-cda-text3">{resumo}</p>}
         </div>
         <ChevronDown className={`h-4 w-4 shrink-0 text-cda-text3 transition-transform ${aberto ? "rotate-180" : ""}`} />
       </button>
@@ -238,6 +245,11 @@ function DiaPlanejamento({
             <option value="TEMATICA">Temática do dia</option>
             <option value="CONTEXTO">Contexto organizado</option>
           </Select>
+          <p className="-mt-2 text-xs text-cda-text3">
+            <span className="font-medium text-cda-text2">Temática do dia:</span> assunto novo, com momento inicial e
+            fundamental. <span className="font-medium text-cda-text2">Contexto organizado:</span> ambiente livre, com roda
+            de conversa.
+          </p>
 
           {dia.tipo === "TEMATICA" ? (
             <>
@@ -277,12 +289,15 @@ function DiaPlanejamento({
             </>
           )}
 
-          <Campo
-            label="Momento final — registro do dia (opcional, se não se aplicar deixe em branco)"
-            value={c.momentoFinal ?? ""}
-            onChange={(v) => atualizarConteudo({ momentoFinal: v })}
-            disabled={!podeEditar}
-          />
+          <div className="flex flex-col gap-1">
+            <Campo
+              label="Momento final (opcional)"
+              value={c.momentoFinal ?? ""}
+              onChange={(v) => atualizarConteudo({ momentoFinal: v })}
+              disabled={!podeEditar}
+            />
+            <p className="text-xs text-cda-text3">Registro de fechamento do dia — deixe em branco se não se aplicar.</p>
+          </div>
           <Campo
             label="Questionamentos e diálogos possíveis"
             value={c.questionamentosFinal ?? ""}
@@ -459,6 +474,7 @@ export function SemanaPlanejamento({
   }
 
   const preenchida = carregado && dias.some((d) => Object.keys(d.conteudo).length > 0);
+  const diasPreenchidos = dias.filter((d) => Object.keys(d.conteudo).length > 0).length;
 
   return (
     <Card className="p-0">
@@ -467,9 +483,12 @@ export function SemanaPlanejamento({
         onClick={() => setAberta((v) => !v)}
         className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
       >
-        <span className="text-sm font-semibold text-cda-text">
-          Semana de {formatarDiaMes(semanaIso)} a {formatarDiaMes(somarDias(semanaIso, 4))}
-        </span>
+        <div>
+          <span className="text-sm font-semibold text-cda-text">
+            Semana de {formatarDiaMes(semanaIso)} a {formatarDiaMes(somarDias(semanaIso, 4))}
+          </span>
+          {carregado && <p className="mt-0.5 text-xs text-cda-text3">{diasPreenchidos} de 5 dias preenchidos</p>}
+        </div>
         <div className="flex items-center gap-2">
           {carregado && (
             <Badge
@@ -486,10 +505,14 @@ export function SemanaPlanejamento({
 
       {aberta && (
         <div className="border-t border-cda-border p-5">
-          <div className="mb-4 flex flex-wrap justify-end gap-x-4 gap-y-1.5">
+          {/* Trilho de etapas em destaque no topo — pedido do dono, set/2026:
+              ver de cara onde a semana está entre "preenchendo" e "aprovado",
+              sem ter que decifrar um badge de texto. */}
+          <div className="mb-4 flex flex-col gap-3 rounded-lg border border-cda-border bg-cda-bg px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <PlanejamentoStepper status={status} />
             <Link
               href={`/pedagogico/planejamento/${turmaId}/roteiro?semana=${semanaIso}`}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
+              className="inline-flex shrink-0 items-center gap-1.5 self-start text-xs font-medium text-cda-blue hover:underline sm:self-auto"
             >
               <ScrollText className="h-3.5 w-3.5" />
               Ver roteiro dessa semana
@@ -569,29 +592,37 @@ export function SemanaPlanejamento({
           {erro && <p className="mt-3 text-sm text-cda-red">{erro}</p>}
 
           {podeEditar && (
-            <div className="mt-4 flex flex-wrap justify-end gap-2">
-              <Button variant="outline" onClick={() => salvar()} loading={salvando} disabled={carregando}>
-                <NotebookPen className="h-3.5 w-3.5" />
-                Salvar planejamento
-              </Button>
-              {status !== "RASCUNHO" && (
-                <Button variant="outline" onClick={() => salvar("RASCUNHO")} loading={salvando} disabled={carregando}>
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  Reabrir
-                </Button>
+            <div className="mt-4">
+              {(status === "RASCUNHO" || status === "DEVOLVIDO") && (
+                <p className="mb-2 text-right text-xs text-cda-text3">
+                  “Salvar” guarda o rascunho sem enviar. “{status === "DEVOLVIDO" ? "Reenviar" : "Finalizar"}” manda pra
+                  revisão da coordenadora.
+                </p>
               )}
-              {status === "RASCUNHO" && (
-                <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Finalizar
+              <div className="flex flex-wrap justify-end gap-2">
+                <Button variant="outline" onClick={() => salvar()} loading={salvando} disabled={carregando}>
+                  <NotebookPen className="h-3.5 w-3.5" />
+                  Salvar planejamento
                 </Button>
-              )}
-              {status === "DEVOLVIDO" && (
-                <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
-                  <CheckCircle2 className="h-3.5 w-3.5" />
-                  Reenviar
-                </Button>
-              )}
+                {status !== "RASCUNHO" && (
+                  <Button variant="outline" onClick={() => salvar("RASCUNHO")} loading={salvando} disabled={carregando}>
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Reabrir
+                  </Button>
+                )}
+                {status === "RASCUNHO" && (
+                  <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Finalizar
+                  </Button>
+                )}
+                {status === "DEVOLVIDO" && (
+                  <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Reenviar
+                  </Button>
+                )}
+              </div>
             </div>
           )}
           {!carregando && !podeEditar && !souCoordenadora && (
@@ -599,8 +630,9 @@ export function SemanaPlanejamento({
           )}
 
           {souCoordenadora && status !== "RASCUNHO" && (
-            <div className="mt-4 border-t border-cda-border pt-4">
-              <p className="mb-2 text-xs font-semibold text-cda-text2">Revisão da coordenadora</p>
+            <div className="mt-4 rounded-lg border border-cda-blue/20 bg-cda-blue/5 p-4">
+              <p className="mb-1 text-xs font-semibold text-cda-text2">Revisão da coordenadora</p>
+              <p className="mb-3 text-xs text-cda-text3">Aprove se está tudo certo, ou devolva explicando o que precisa ajustar.</p>
               {mostrarDevolver && (
                 <textarea
                   value={comentarioForm}
