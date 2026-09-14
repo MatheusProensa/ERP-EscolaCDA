@@ -12,10 +12,19 @@ import { NovoModeloParecerForm } from "./NovoModeloParecerForm";
 type Paragrafo = { id: string; titulo: string; perguntaNorteadora: string | null };
 type Modelo = { id: string; titulo: string; paragrafos: Paragrafo[] };
 
-/** Lista de modelos de parecer (lista de parágrafos guiados) — qualquer um
- * do Pedagógico vê, só a coordenadora cadastra novo. Cada modelo pode ser
- * expandido pra ver os parágrafos que ele cobre. */
-export function ModelosParecerSecao({ modelos, souCoordenadora }: { modelos: Modelo[]; souCoordenadora: boolean }) {
+/** Lista de modelos de parecer (lista de parágrafos guiados) DESSA turma —
+ * escopado por turma desde a correção do dono (set/2026: "do parecer tbm,
+ * deveria ser em cada turma"), só a regente dela (ou ADMIN) cadastra novo.
+ * Cada modelo pode ser expandido pra ver os parágrafos que ele cobre. */
+export function ModelosParecerSecao({
+  turmaId,
+  modelos,
+  podeEditar,
+}: {
+  turmaId: string;
+  modelos: Modelo[];
+  podeEditar: boolean;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [expandido, setExpandido] = useState<string | null>(null);
@@ -25,11 +34,11 @@ export function ModelosParecerSecao({ modelos, souCoordenadora }: { modelos: Mod
       title={
         <div className="flex items-center gap-2">
           <FileText className="h-4 w-4 text-cda-blue" />
-          Modelos de parecer
+          Modelo de parecer dessa turma
         </div>
       }
       action={
-        souCoordenadora && (
+        podeEditar && (
           <Button size="sm" onClick={() => setOpen(true)}>
             <Plus className="h-3.5 w-3.5" />
             Novo modelo
@@ -42,9 +51,9 @@ export function ModelosParecerSecao({ modelos, souCoordenadora }: { modelos: Mod
           icon={FileText}
           title="Nenhum modelo cadastrado ainda"
           subtitle={
-            souCoordenadora
-              ? 'Clique em "Novo modelo" pra montar os parágrafos guiados do parecer.'
-              : "A coordenação ainda não cadastrou nenhum modelo."
+            podeEditar
+              ? 'Clique em "Novo modelo" pra montar os parágrafos guiados do parecer dessa turma.'
+              : "Ainda não tem modelo de parecer cadastrado pra essa turma."
           }
         />
       ) : (
@@ -84,6 +93,7 @@ export function ModelosParecerSecao({ modelos, souCoordenadora }: { modelos: Mod
 
       <Modal open={open} onClose={() => setOpen(false)} title="Novo modelo de parecer">
         <NovoModeloParecerForm
+          turmaId={turmaId}
           onCancel={() => setOpen(false)}
           onSuccess={() => {
             setOpen(false);

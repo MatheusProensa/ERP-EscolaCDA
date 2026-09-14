@@ -75,7 +75,7 @@ export function CiclosParecerClient({ turmaId, modelos, ciclosIniciais }: { turm
           title="Nenhum ciclo de parecer aberto ainda"
           subtitle={
             modelos.length === 0
-              ? "A coordenação ainda não cadastrou nenhum modelo de parecer — sem modelo não dá pra abrir um ciclo."
+              ? "Essa turma ainda não tem modelo de parecer cadastrado — crie um acima antes de abrir um ciclo."
               : 'Clique em "Abrir novo ciclo" pra começar (ex.: "1º Trimestre 2026").'
           }
         />

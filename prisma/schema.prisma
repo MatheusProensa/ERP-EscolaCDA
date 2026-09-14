@@ -141,6 +141,7 @@ model Turma {
   listaEspera        ListaEspera[]
   vinculosPedagogico VinculoPedagogico[]
   planejamentos      Planejamento[]
+  modelosParecer     ModeloParecer[]
   pareceres          Parecer[]
   portfolioItens     PortfolioItem[]
   createdAt          DateTime            @default(now())
@@ -235,22 +236,26 @@ model PlanejamentoDia {
   @@unique([planejamentoId, data])
 }
 
-/// Modelo de parecer — a coordenação monta a lista de parágrafos que a
-/// professora vai preencher (achado real, out/2026: os PDFs de orientação da
-/// escola já têm exatamente esse formato — Conteúdo + Pergunta Norteadora por
-/// parágrafo). Um modelo por público/etapa (ex.: "Berçário I — 1º Semestre",
-/// "Fundamental — Trimestral"), reaproveitando o mesmo padrão de "roteiro
-/// pronto" do TemaPlanejamento. A checklist A/EP/NA exclusiva do Fundamental
-/// (achado real: não existe no Infantil) fica de fora por enquanto — parecer
-/// aqui é só narrativa guiada por parágrafo, checklist é próxima etapa.
+/// Modelo de parecer — a lista de parágrafos que a professora vai preencher
+/// (achado real, out/2026: os PDFs de orientação da escola já têm exatamente
+/// esse formato — Conteúdo + Pergunta Norteadora por parágrafo). Escopado por
+/// TURMA (correção do dono, set/2026: "do parecer tbm, deveria ser em cada
+/// turma" — cada turma monta/ajusta o próprio modelo, não é mais um catálogo
+/// global editado só pela coordenação). A checklist A/EP/NA exclusiva do
+/// Fundamental (achado real: não existe no Infantil) fica de fora por
+/// enquanto — parecer aqui é só narrativa guiada por parágrafo.
 model ModeloParecer {
   id          String                   @id @default(cuid())
   titulo      String
+  turma       Turma                    @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turmaId     String
   criadoPor   User                     @relation(fields: [criadoPorId], references: [id])
   criadoPorId String
   createdAt   DateTime                 @default(now())
   paragrafos  ParagrafoModeloParecer[]
   pareceres   Parecer[]
+
+  @@index([turmaId])
 }
 
 /// Um parágrafo dentro do modelo — título do tema + a pergunta norteadora que

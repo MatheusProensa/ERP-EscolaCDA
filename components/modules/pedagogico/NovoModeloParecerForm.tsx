@@ -10,11 +10,19 @@ type ParagrafoForm = { titulo: string; perguntaNorteadora: string };
 
 const PARAGRAFO_VAZIO: ParagrafoForm = { titulo: "", perguntaNorteadora: "" };
 
-/** Cadastro do modelo de parecer — a coordenação monta a lista de parágrafos
- * (título + pergunta norteadora) que vai guiar a professora na hora de
- * escrever, um por um, igual o PDF de orientação real que a escola já usa
- * hoje (Conteúdo + Perguntas Norteadoras por parágrafo). */
-export function NovoModeloParecerForm({ onSuccess, onCancel }: { onSuccess: () => void; onCancel: () => void }) {
+/** Cadastro do modelo de parecer de uma turma — a regente monta a lista de
+ * parágrafos (título + pergunta norteadora) que vai guiar a escrita, um por
+ * um, igual o PDF de orientação real que a escola já usa hoje (Conteúdo +
+ * Perguntas Norteadoras por parágrafo). Por turma desde set/2026. */
+export function NovoModeloParecerForm({
+  turmaId,
+  onSuccess,
+  onCancel,
+}: {
+  turmaId: string;
+  onSuccess: () => void;
+  onCancel: () => void;
+}) {
   const [titulo, setTitulo] = useState("");
   const [paragrafos, setParagrafos] = useState<ParagrafoForm[]>([{ ...PARAGRAFO_VAZIO }]);
   const [loading, setLoading] = useState(false);
@@ -44,7 +52,7 @@ export function NovoModeloParecerForm({ onSuccess, onCancel }: { onSuccess: () =
     const res = await fetch("/api/modelos-parecer", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ titulo, paragrafos: validos }),
+      body: JSON.stringify({ turmaId, titulo, paragrafos: validos }),
     });
     setLoading(false);
     if (!res.ok) {
