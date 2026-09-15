@@ -534,25 +534,27 @@ export default async function PedagogicoPage() {
                   return (
                     <div key={v.id} className="rounded-[10px] border border-cda-border bg-cda-surface p-4">
                       {/* Cabeçalho — turma + regente à esquerda, resumo "X de 6
-                          entregas" + anel de progresso à direita (redesign,
-                          pedido do dono, mockup de referência). */}
+                          entregas" + anel de progresso à direita — ajuste
+                          visual pedido do dono, seguindo a referência à
+                          risca (ícone em círculo cinza, nome maior, anel
+                          mais grosso e com o % dentro). */}
                       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                         <div className="flex items-center gap-3">
-                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cda-blue/10">
-                            <GraduationCap className="h-5 w-5 text-cda-blue" />
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-cda-bg">
+                            <Users className="h-5 w-5 text-cda-text3" />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-cda-text">
+                            <p className="text-base font-bold text-cda-text">
                               {v.turma.nome} <span className="font-normal text-cda-text3">({TURNO_LABEL[v.turma.turno] ?? v.turma.turno})</span>
                             </p>
                             {session?.user.name && <p className="text-xs text-cda-text3">{session.user.name}</p>}
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
-                          <span className="text-right text-xs font-medium text-cda-text2">
+                          <span className="text-right text-xs font-medium text-cda-text3">
                             {entregas.feitas} de {entregas.total} entregas
                             <br />
-                            <span className="text-cda-text3">{entregasPct}%</span>
+                            {entregasPct}%
                           </span>
                           <ProgressoCircular pct={entregasPct} />
                         </div>
