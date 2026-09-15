@@ -117,15 +117,28 @@ export default async function PedagogicoPage() {
   const semanasMes = semanasDoMes(hoje);
   const planejamentosMes = await prisma.planejamento.findMany({
     where: { semanaInicio: { in: semanasMes }, status: { in: ["ENVIADO", "APROVADO", "DEVOLVIDO"] } },
-    select: { id: true, turmaId: true, status: true, semanaInicio: true },
+    select: { id: true, turmaId: true, status: true, semanaInicio: true, impresso: true, roteiroImpresso: true },
   });
   const statusPorTurma = new Map<string, { total: number; aprovadas: number; devolvidas: number }>();
+  // Impressão (Fila de Impressão, out/2026) — quantas das semanas APROVADAS
+  // do mês já foram marcadas como impressas pela secretaria; só conta
+  // "impresso" pro card da professora quando TODAS já foram (mesmo critério
+  // de "aprovado" já usado pro resto da tela — ver impressoPlanejamento/
+  // impressoRoteiro abaixo).
+  const impressoPlanejamentoPorTurma = new Map<string, { totalAprovadas: number; impressas: number; roteiroImpressas: number }>();
   for (const p of planejamentosMes) {
     const atual = statusPorTurma.get(p.turmaId) ?? { total: 0, aprovadas: 0, devolvidas: 0 };
     atual.total += 1;
     if (p.status === "APROVADO") atual.aprovadas += 1;
     if (p.status === "DEVOLVIDO") atual.devolvidas += 1;
     statusPorTurma.set(p.turmaId, atual);
+    if (p.status === "APROVADO") {
+      const impressao = impressoPlanejamentoPorTurma.get(p.turmaId) ?? { totalAprovadas: 0, impressas: 0, roteiroImpressas: 0 };
+      impressao.totalAprovadas += 1;
+      if (p.impresso) impressao.impressas += 1;
+      if (p.roteiroImpresso) impressao.roteiroImpressas += 1;
+      impressoPlanejamentoPorTurma.set(p.turmaId, impressao);
+    }
   }
   const entreguesMesAtual = new Set(
     [...statusPorTurma.entries()].filter(([, s]) => s.total >= semanasMes.length).map(([turmaId]) => turmaId)
@@ -147,6 +160,16 @@ export default async function PedagogicoPage() {
   }
   const STATUS_LABEL = STATUS_TURMA_MES_LABEL;
   const STATUS_COR = STATUS_TURMA_MES_COR;
+  function impressoPlanejamento(turmaId: string): boolean {
+    if (statusExibicao(turmaId) !== "APROVADO") return false;
+    const i = impressoPlanejamentoPorTurma.get(turmaId);
+    return !!i && i.totalAprovadas > 0 && i.impressas === i.totalAprovadas;
+  }
+  function impressoRoteiro(turmaId: string): boolean {
+    if (statusExibicao(turmaId) !== "APROVADO") return false;
+    const i = impressoPlanejamentoPorTurma.get(turmaId);
+    return !!i && i.totalAprovadas > 0 && i.roteiroImpressas === i.totalAprovadas;
+  }
 
   // Quantas folhas de Atividade Gráfica / Tema Literário já foram preenchidas
   // esse mês, por turma — os 2 não são documentos mensais (são pontuais, por
@@ -200,10 +223,13 @@ export default async function PedagogicoPage() {
   const folhaMensalMes = idsRegente.length
     ? await prisma.folhaMensal.findMany({
         where: { turmaId: { in: idsRegente }, semanaInicio: { in: semanasMes }, status: { in: ["ENVIADO", "APROVADO", "DEVOLVIDO"] } },
-        select: { turmaId: true, tipo: true, status: true },
+        select: { turmaId: true, tipo: true, status: true, impresso: true },
       })
     : [];
   const folhaContagemPorChave = new Map<string, { total: number; aprovadas: number; devolvidas: number }>();
+  // Impressão (Fila de Impressão, out/2026) — mesmo raciocínio de
+  // impressoPlanejamentoPorTurma acima, só que por (turma, tipo).
+  const folhaImpressoPorChave = new Map<string, { totalAprovadas: number; impressas: number }>();
   for (const f of folhaMensalMes) {
     const chave = `${f.turmaId}|${f.tipo}`;
     const atual = folhaContagemPorChave.get(chave) ?? { total: 0, aprovadas: 0, devolvidas: 0 };
@@ -211,6 +237,12 @@ export default async function PedagogicoPage() {
     if (f.status === "APROVADO") atual.aprovadas += 1;
     if (f.status === "DEVOLVIDO") atual.devolvidas += 1;
     folhaContagemPorChave.set(chave, atual);
+    if (f.status === "APROVADO") {
+      const impressao = folhaImpressoPorChave.get(chave) ?? { totalAprovadas: 0, impressas: 0 };
+      impressao.totalAprovadas += 1;
+      if (f.impresso) impressao.impressas += 1;
+      folhaImpressoPorChave.set(chave, impressao);
+    }
   }
   function statusFolha(turmaId: string, tipo: "ATIVIDADE_GRAFICA" | "TEMA_LITERARIO"): StatusTurmaMes {
     return statusTurmaMesDeContagem(folhaContagemPorChave.get(`${turmaId}|${tipo}`), semanasMes.length, prazoVencido);
@@ -218,6 +250,11 @@ export default async function PedagogicoPage() {
   function folhaEntregueMes(turmaId: string, tipo: "ATIVIDADE_GRAFICA" | "TEMA_LITERARIO"): boolean {
     const c = folhaContagemPorChave.get(`${turmaId}|${tipo}`);
     return !!c && c.total >= semanasMes.length;
+  }
+  function impressoFolha(turmaId: string, tipo: "ATIVIDADE_GRAFICA" | "TEMA_LITERARIO"): boolean {
+    if (statusFolha(turmaId, tipo) !== "APROVADO") return false;
+    const i = folhaImpressoPorChave.get(`${turmaId}|${tipo}`);
+    return !!i && i.totalAprovadas > 0 && i.impressas === i.totalAprovadas;
   }
 
   // 3) Parecer/Portfólio não têm prazo nem status próprio no schema — sem
@@ -566,6 +603,7 @@ export default async function PedagogicoPage() {
                           linhas={linhasPlanejamento}
                           progresso={{ atual: semanasInfo?.total ?? 0, total: semanasMes.length }}
                           prazo={prazoPlanejamentoInfo()}
+                          impresso={impressoPlanejamento(turmaId)}
                           href={`/pedagogico/planejamento/${turmaId}`}
                           acaoLabel="Abrir"
                         />
@@ -579,6 +617,7 @@ export default async function PedagogicoPage() {
                             semanasRoteiro > 0 ? `${semanasRoteiro} de ${semanasMes.length} semanas` : "Preencha o Planejamento primeiro",
                           ]}
                           progresso={semanasRoteiro > 0 ? { atual: semanasRoteiro, total: semanasMes.length } : undefined}
+                          impresso={impressoRoteiro(turmaId)}
                           href={roteiroHref}
                           external
                           acaoLabel="Baixar PDF"
@@ -593,6 +632,7 @@ export default async function PedagogicoPage() {
                             "Gera folha por aluno",
                             `${semanasGrafica} de ${semanasMes.length} semana${semanasMes.length === 1 ? "" : "s"} com folha`,
                           ]}
+                          impresso={impressoFolha(turmaId, "ATIVIDADE_GRAFICA")}
                           href={`/pedagogico/planejamento/${turmaId}/atividade-grafica`}
                           acaoLabel="Preencher"
                         />
@@ -606,6 +646,7 @@ export default async function PedagogicoPage() {
                             "Gera folha por aluno",
                             `${semanasLiterario} de ${semanasMes.length} semana${semanasMes.length === 1 ? "" : "s"} com folha`,
                           ]}
+                          impresso={impressoFolha(turmaId, "TEMA_LITERARIO")}
                           href={`/pedagogico/planejamento/${turmaId}/tema-literario`}
                           acaoLabel="Preencher"
                         />

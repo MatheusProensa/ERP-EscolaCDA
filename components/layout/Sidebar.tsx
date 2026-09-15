@@ -24,6 +24,7 @@ import {
   Barcode,
   History,
   Ruler,
+  Printer,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -74,6 +75,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Chaves", href: "/chaves", icon: KeyRound },
       { label: "Documentos", href: "/documentos", icon: FileText },
       { label: "Estoque", href: "/estoque", icon: Package },
+      { label: "Fila de Impressão", href: "/impressao", icon: Printer },
       { label: "Funcionários", href: "/funcionarios", icon: UserCog },
       { label: "Horários da Equipe", href: "/horarios-equipe", icon: CalendarClock },
       { label: "Interessados", href: "/interessados", icon: UserPlus },

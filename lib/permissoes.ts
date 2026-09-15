@@ -62,6 +62,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/notas-fiscais", roles: FINANCEIRO },
   { prefixo: "/boletos", roles: FINANCEIRO },
   { prefixo: "/documentos", roles: GESTAO },
+  { prefixo: "/impressao", roles: ADMINISTRATIVO },
   { prefixo: "/usuarios", roles: GESTAO },
   { prefixo: "/log-atividades", roles: SOMENTE_ADMIN },
   { prefixo: "/api/relatorios/log-atividades", roles: SOMENTE_ADMIN },
@@ -82,6 +83,7 @@ const REGRAS_ACESSO: { prefixo: string; roles: RoleAtiva[] }[] = [
   { prefixo: "/api/relatorios/notas-fiscais", roles: FINANCEIRO },
   { prefixo: "/api/relatorios/boletos", roles: FINANCEIRO },
   { prefixo: "/api/documentos", roles: GESTAO },
+  { prefixo: "/api/impressao", roles: ADMINISTRATIVO },
   { prefixo: "/api/alunos", roles: PEDAGOGICO },
   { prefixo: "/api/matriculas", roles: PEDAGOGICO },
   { prefixo: "/api/interessados", roles: ANIVERSARIANTES },
@@ -150,6 +152,7 @@ export const MODULOS: { chave: string; label: string; prefixos: string[] }[] = [
   { chave: "notas-fiscais", label: "Notas Fiscais", prefixos: ["/notas-fiscais", "/api/notas-fiscais", "/api/relatorios/notas-fiscais"] },
   { chave: "boletos", label: "Boletos", prefixos: ["/boletos", "/api/boletos", "/api/relatorios/boletos"] },
   { chave: "documentos", label: "Documentos", prefixos: ["/documentos", "/api/documentos"] },
+  { chave: "impressao", label: "Fila de Impressão", prefixos: ["/impressao", "/api/impressao"] },
   { chave: "usuarios", label: "Usuários", prefixos: ["/usuarios", "/api/usuarios", "/api/backup"] },
 ];
 

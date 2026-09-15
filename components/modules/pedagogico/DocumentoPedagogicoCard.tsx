@@ -18,6 +18,7 @@ export function DocumentoPedagogicoCard({
   linhas,
   progresso,
   prazo,
+  impresso,
   href,
   external,
   acaoLabel,
@@ -40,6 +41,12 @@ export function DocumentoPedagogicoCard({
    * coordenadora); pedido do dono, o redesign v2 tinha perdido essa
    * informação. */
   prazo?: { texto: string; cor: string };
+  /** true = a secretaria já marcou esse documento como impresso na Fila de
+   * Impressão — mostra um badge "Impresso" abaixo do status (pedido do
+   * dono, Fila de Impressão, out/2026: "a professora vê o status impresso
+   * no card dela"). Omitido (undefined) = documento que a Fila de
+   * Impressão não rastreia (não tem caso hoje, os 4 documentos têm). */
+  impresso?: boolean;
   href: string;
   /** true = PDF/link externo (abre em nova aba); false = navegação interna. */
   external?: boolean;
@@ -61,6 +68,12 @@ export function DocumentoPedagogicoCard({
           {statusLabel}
         </span>
       </div>
+
+      {impresso && (
+        <span className="mb-2 inline-flex w-fit items-center gap-1 rounded-full bg-cda-green/10 px-2 py-0.5 text-[11px] font-semibold text-cda-green">
+          🖨️ Impresso
+        </span>
+      )}
 
       <div className="flex flex-1 flex-col gap-0.5">
         {linhas.map((linha, i) => (

@@ -160,6 +160,7 @@ model Turma {
   pareceres             Parecer[]
   portfolioItens        PortfolioItem[]
   folhasMensais         FolhaMensal[]
+  observacoesImpressao  ObservacaoImpressao[]
   createdAt             DateTime               @default(now())
 
   @@unique([nome, anoLetivoId])
@@ -278,6 +279,23 @@ model Planejamento {
   versoes                   PlanejamentoVersao[]
   createdAt                 DateTime             @default(now())
   updatedAt                 DateTime             @updatedAt
+  /// Impressão do Planejamento em si — pedido do dono, Fila de Impressão
+  /// (out/2026): depois que a coordenadora aprova, a secretaria (Duda)
+  /// imprime e marca aqui. impressoPor guarda o NOME de quem marcou (não um
+  /// relation pra User) — mesmo padrão já usado pra "autor" de log/comentário
+  /// quando só interessa o texto exibido, sem precisar navegar de volta pro
+  /// usuário.
+  impresso                  Boolean              @default(false)
+  impressoEm                DateTime?
+  impressoPor               String?
+  /// Impressão do Roteiro — campos SEPARADOS dos de cima porque, mesmo sendo
+  /// gerados a partir do mesmo Planejamento da semana, são 2 documentos
+  /// físicos impressos e marcados de forma independente na Fila de Impressão
+  /// (o Roteiro não tem registro próprio no banco, é PDF gerado on-the-fly —
+  /// ver /api/planejamentos/roteiro-pdf).
+  roteiroImpresso           Boolean              @default(false)
+  roteiroImpressoEm         DateTime?
+  roteiroImpressoPor        String?
 
   @@unique([turmaId, semanaInicio])
   @@index([turmaId])
@@ -402,9 +420,31 @@ model FolhaMensal {
   autorId                String
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
+  /// Impressão — mesmo padrão de Planejamento.impresso, Fila de Impressão
+  /// (out/2026). Serve pros 2 tipos (`tipo` já distingue Gráfica/Literário).
+  impresso               Boolean            @default(false)
+  impressoEm             DateTime?
+  impressoPor            String?
 
   @@unique([turmaId, tipo, semanaInicio])
   @@index([turmaId])
+}
+
+/// Observação livre da secretaria por turma+mês, na Fila de Impressão
+/// (out/2026) — pedido do dono, painel lateral do mockup: "campo de
+/// observação pra impressão". 1 nota por (turma, mês), sobrescrita a cada
+/// salvamento (não é histórico/comentário, é bloco de notas mesmo — ex.:
+/// "imprimir 2 vias", "aguardando encadernação").
+model ObservacaoImpressao {
+  id        String   @id @default(cuid())
+  turma     Turma    @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turmaId   String
+  /// "YYYY-MM"
+  anoMes    String
+  texto     String
+  updatedAt DateTime @updatedAt
+
+  @@unique([turmaId, anoMes])
 }
 
 /// Planejamento do Cotidiano — descrição da rotina diária da turma (achado
