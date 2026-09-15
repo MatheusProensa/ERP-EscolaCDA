@@ -1,4 +1,4 @@
-import { UserPlus } from "lucide-react";
+import { UserPlus, FileSpreadsheet } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -51,10 +51,16 @@ export default async function FuncionariosPage({
             <ExportButtons href="/api/relatorios/funcionarios" label="Lista completa" params={{ setor }} />
             <ExportButtons href="/api/relatorios/funcionarios-contatos" label="Contatos" />
             {podeEditar && (
-              <Button href="/funcionarios/novo">
-                <UserPlus className="h-4 w-4" />
-                Novo funcionário
-              </Button>
+              <>
+                <Button href="/funcionarios/importar" variant="outline">
+                  <FileSpreadsheet className="h-4 w-4" />
+                  Importar
+                </Button>
+                <Button href="/funcionarios/novo">
+                  <UserPlus className="h-4 w-4" />
+                  Novo funcionário
+                </Button>
+              </>
             )}
           </div>
         }
