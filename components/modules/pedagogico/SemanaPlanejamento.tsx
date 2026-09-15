@@ -17,24 +17,21 @@ type DiaForm = { data: string; tipo: TipoDia; conteudo: ConteudoDiaPlanejamento;
 
 const LABEL_DIA = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"];
 
-/** Pontinho de estado do dia — pedido do dono, mockup do Gemini (verde
- * cheio/meio/vazio por dia). "Parcial" vira um anel colorido em vez de meia
- * lua (mais simples de garantir legível em qualquer tamanho). */
+/** Pontinho de estado do dia — pedido do dono, ajuste fino, set/2026: os 3
+ * estados precisam ser diferenciáveis de relance (o desenho anterior, com
+ * anel fino pra parcial/vazio, ficava "tudo cinza" a essa distância).
+ * Completo/parcial agora são PREENCHIDOS (verde/âmbar); só vazio fica oco.
+ * Tamanho "sm" = 12px (linha da semana, pedido explícito); "xs" = 8px
+ * (dentro do cabeçalho de cada dia, mais compacto). */
 function PontoEstadoDia({ estado, size = "sm" }: { estado: EstadoDia; size?: "sm" | "xs" }) {
-  const dimensao = size === "xs" ? "h-1.5 w-1.5" : "h-2 w-2";
+  const dimensao = size === "xs" ? "h-2 w-2" : "h-3 w-3";
   if (estado === "completo") {
-    return <span className={`${dimensao} shrink-0 rounded-full`} style={{ backgroundColor: "var(--status-success)" }} aria-hidden />;
+    return <span className={`${dimensao} shrink-0 rounded-full`} style={{ backgroundColor: "var(--cda-green)" }} aria-hidden />;
   }
   if (estado === "parcial") {
-    return (
-      <span
-        className={`${dimensao} shrink-0 rounded-full border-2 bg-white`}
-        style={{ borderColor: "var(--status-warning)" }}
-        aria-hidden
-      />
-    );
+    return <span className={`${dimensao} shrink-0 rounded-full`} style={{ backgroundColor: "var(--cda-amber)" }} aria-hidden />;
   }
-  return <span className={`${dimensao} shrink-0 rounded-full border-2 bg-white`} style={{ borderColor: "var(--cda-border)" }} aria-hidden />;
+  return <span className={`${dimensao} shrink-0 rounded-full border`} style={{ borderColor: "var(--cda-border)", backgroundColor: "var(--cda-border)" }} aria-hidden />;
 }
 
 function somarDias(iso: string, dias: number): string {
@@ -209,7 +206,9 @@ function FolhaImprimivel({
  * momento inicial/fundamental) e "Contexto organizado" (contexto + roda de
  * conversa + organização), com o "Momento final" (registro) comum aos 2.
  * Recolhido por padrão pra não virar uma tela gigante com os 5 dias abertos
- * ao mesmo tempo — abre um resumo do que já tem preenchido. */
+ * ao mesmo tempo — abre um resumo do que já tem preenchido. Segunda-feira
+ * (índice 0) abre sozinha quando a semana expande — pedido do dono: a
+ * professora não precisa clicar 2x pra começar a preencher. */
 function DiaPlanejamento({
   turmaId,
   indice,
@@ -223,7 +222,7 @@ function DiaPlanejamento({
   atualizar: (patch: Partial<DiaForm>) => void;
   podeEditar: boolean;
 }) {
-  const [aberto, setAberto] = useState(false);
+  const [aberto, setAberto] = useState(indice === 0);
   const c = dia.conteudo;
 
   function atualizarConteudo(patch: Partial<ConteudoDiaPlanejamento>) {
@@ -554,7 +553,7 @@ export function SemanaPlanejamento({
               {/* 5 pontinhos, Segunda a Sexta — pedido do dono, mockup do
                   Gemini: dá pra ver de cara quais dias ainda faltam sem abrir
                   a semana. */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 {dias.map((dia) => (
                   <PontoEstadoDia key={dia.data} estado={estadoDoDia(dia.tipo, dia.conteudo)} />
                 ))}
@@ -577,16 +576,22 @@ export function SemanaPlanejamento({
         </div>
       </button>
 
+      {/* Trilho de etapas — pedido do dono: representa o status da semana
+          INTEIRA, não de um campo específico, então fica sempre visível
+          (fechada ou aberta), logo abaixo do título/pontinhos e acima do
+          conteúdo. Antes vivia dentro do bloco que só aparece expandido. */}
+      {carregado && (
+        <div className="border-t border-cda-border px-5 py-3">
+          <PlanejamentoStepper status={status} />
+        </div>
+      )}
+
       {aberta && (
         <div className="border-t border-cda-border p-5">
-          {/* Trilho de etapas em destaque no topo — pedido do dono, set/2026:
-              ver de cara onde a semana está entre "preenchendo" e "aprovado",
-              sem ter que decifrar um badge de texto. */}
-          <div className="mb-4 flex flex-col gap-3 rounded-lg border border-cda-border bg-cda-bg px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <PlanejamentoStepper status={status} />
+          <div className="mb-4 flex justify-end">
             <Link
               href={`/pedagogico/planejamento/${turmaId}/roteiro?semana=${semanaIso}`}
-              className="inline-flex shrink-0 items-center gap-1.5 self-start text-xs font-medium text-cda-blue hover:underline sm:self-auto"
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
             >
               <ScrollText className="h-3.5 w-3.5" />
               Ver roteiro dessa semana
