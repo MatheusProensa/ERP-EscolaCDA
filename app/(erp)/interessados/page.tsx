@@ -1,8 +1,9 @@
-import { UserPlus, PhoneCall, CalendarCheck, GraduationCap } from "lucide-react";
+import { UserPlus, PhoneCall, CalendarCheck, GraduationCap, FileSpreadsheet } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { PageHeader } from "@/components/layout/PageHeader";
+import { Button } from "@/components/ui/Button";
 import { MetricCard } from "@/components/ui/MetricCard";
 import { InteressadosTable } from "@/components/modules/interessados/InteressadosTable";
 import { NovoInteressadoModal } from "@/components/modules/interessados/NovoInteressadoModal";
@@ -44,6 +45,12 @@ export default async function InteressadosPage() {
         action={
           <>
             {itens.length > 0 && <InteressadosExportButton />}
+            {podeEditar && (
+              <Button href="/interessados/importar" variant="outline">
+                <FileSpreadsheet className="h-4 w-4" />
+                Importar
+              </Button>
+            )}
             {podeEditar && <NovoInteressadoModal turmas={turmas} />}
           </>
         }
