@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Users, Download, ExternalLink, Check, CheckCircle2, Clock3, Printer, Search } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Segmented } from "@/components/ui/Segmented";
-import { MetricCard } from "@/components/ui/MetricCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Button } from "@/components/ui/Button";
 
@@ -128,7 +127,7 @@ export function FilaImpressaoClient({
   }
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5 rounded-lg bg-[#f8fafc] p-4 sm:p-5">
       <div className="flex flex-wrap items-center gap-2">
         <Segmented
           value={filtro}
@@ -204,7 +203,7 @@ export function FilaImpressaoClient({
 
                   <div className="flex flex-col gap-1.5">
                     {totalAprovados === 0 ? (
-                      <p className="px-3 py-1.5 text-xs text-cda-text3">Aguardando aprovação da coordenadora</p>
+                      <p className="px-3 py-1.5 text-xs text-cda-text3">Aguardando coordenadora</p>
                     ) : (
                     turma.itens.map((item) => {
                       const chave = `${turma.id}|${item.tipo}`;
@@ -213,7 +212,7 @@ export function FilaImpressaoClient({
                         return (
                           <div key={item.tipo} className="flex items-center gap-3 rounded-lg bg-cda-bg px-3 py-2 text-cda-text3">
                             <span className="h-4 w-4 shrink-0 rounded border border-cda-border" />
-                            <span className="flex-1 text-xs">{item.label} · Aguardando aprovação</span>
+                            <span className="flex-1 text-xs">{item.label} · Aguardando coordenadora</span>
                             <span className="text-[11px]">— indisponível —</span>
                           </div>
                         );
@@ -267,8 +266,8 @@ export function FilaImpressaoClient({
 
         <div className="lg:sticky lg:top-4 lg:self-start">
           {!selecionada ? (
-            <Card className="flex flex-col items-center gap-1.5 px-4 py-6 text-center">
-              <Users className="h-4 w-4 text-cda-text3" />
+            <Card className="flex h-20 flex-col items-center justify-center gap-1 text-center">
+              <Users className="h-3.5 w-3.5 text-cda-text3" />
               <p className="text-xs text-cda-text3">Clique numa turma para ver os detalhes</p>
             </Card>
           ) : (
@@ -330,10 +329,29 @@ export function FilaImpressaoClient({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <MetricCard icon={CheckCircle2} tone="success" value={`${turmasCompletas} de ${totalTurmas}`} label="Turmas completas" />
-        <MetricCard icon={Printer} tone="cat1" value={`${documentosImpressos} de ${documentosAprovados}`} label="Documentos impressos" />
-        <MetricCard icon={Clock3} tone={aguardandoAprovacao > 0 ? "warning" : "neutral"} value={aguardandoAprovacao} label="Aguardando aprovação" subtext="documentos" />
+      {/* Resumo do rodapé — pedido do dono: mais compacto, "rodapé de resumo",
+          não cards principais (por isso não usa MetricCard, que é grande de
+          propósito nas telas que o usam pra métrica em destaque). */}
+      <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 rounded-lg border border-cda-border bg-white px-4 py-2.5">
+        <span className="inline-flex items-center gap-1.5 text-xs text-cda-text2">
+          <CheckCircle2 className="h-3.5 w-3.5 text-cda-green" />
+          <strong className="font-semibold text-cda-text">
+            {turmasCompletas} de {totalTurmas}
+          </strong>
+          turmas completas
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-xs text-cda-text2">
+          <Printer className="h-3.5 w-3.5 text-cda-blue" />
+          <strong className="font-semibold text-cda-text">
+            {documentosImpressos} de {documentosAprovados}
+          </strong>
+          documentos impressos
+        </span>
+        <span className="inline-flex items-center gap-1.5 text-xs text-cda-text2">
+          <Clock3 className={`h-3.5 w-3.5 ${aguardandoAprovacao > 0 ? "text-cda-amber" : "text-cda-text3"}`} />
+          <strong className="font-semibold text-cda-text">{aguardandoAprovacao}</strong>
+          aguardando coordenadora
+        </span>
       </div>
     </div>
   );
