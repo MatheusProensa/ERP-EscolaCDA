@@ -513,7 +513,7 @@ export default async function PedagogicoPage() {
             )}
           </div>
           {comoRegente.length > 0 && (
-            <div>
+            <div className="border-t border-cda-border pt-4">
               <h3 className="mb-2 text-sm font-semibold text-cda-text2">Como regente</h3>
               <div className="flex flex-col gap-4">
                 {comoRegente.map((v) => {
@@ -524,6 +524,8 @@ export default async function PedagogicoPage() {
                   const semanasRoteiro = semanasComRoteiroPorTurma.get(turmaId) ?? 0;
                   const graficaStatus = statusFolha(turmaId, "ATIVIDADE_GRAFICA");
                   const literarioStatus = statusFolha(turmaId, "TEMA_LITERARIO");
+                  const semanasGrafica = folhaContagemPorChave.get(`${turmaId}|ATIVIDADE_GRAFICA`)?.total ?? 0;
+                  const semanasLiterario = folhaContagemPorChave.get(`${turmaId}|TEMA_LITERARIO`)?.total ?? 0;
                   const roteiroHref = `/api/planejamentos/roteiro-pdf?turmaId=${turmaId}&mes=${anoMesAtual}`;
                   const entregas = entregasDaTurma(turmaId);
                   const entregasPct = Math.round((entregas.feitas / entregas.total) * 100);
@@ -589,7 +591,11 @@ export default async function PedagogicoPage() {
                           cor={STATUS_COR[graficaStatus]}
                           titulo="Atividade Gráfica"
                           statusLabel={STATUS_LABEL[graficaStatus]}
-                          linhas={[`${folhas.grafica} preenchida${folhas.grafica === 1 ? "" : "s"} esse mês`, "Gera folha por aluno"]}
+                          linhas={[
+                            `${folhas.grafica} preenchida${folhas.grafica === 1 ? "" : "s"} esse mês`,
+                            "Gera folha por aluno",
+                            `${semanasGrafica} de ${semanasMes.length} semana${semanasMes.length === 1 ? "" : "s"} com folha`,
+                          ]}
                           href={`/pedagogico/planejamento/${turmaId}/atividade-grafica`}
                           acaoLabel="Preencher"
                         />
@@ -598,7 +604,11 @@ export default async function PedagogicoPage() {
                           cor={STATUS_COR[literarioStatus]}
                           titulo="Tema Literário"
                           statusLabel={STATUS_LABEL[literarioStatus]}
-                          linhas={[`${folhas.literario} preenchido${folhas.literario === 1 ? "" : "s"} esse mês`, "Gera folha por aluno"]}
+                          linhas={[
+                            `${folhas.literario} preenchido${folhas.literario === 1 ? "" : "s"} esse mês`,
+                            "Gera folha por aluno",
+                            `${semanasLiterario} de ${semanasMes.length} semana${semanasMes.length === 1 ? "" : "s"} com folha`,
+                          ]}
                           href={`/pedagogico/planejamento/${turmaId}/tema-literario`}
                           acaoLabel="Preencher"
                         />

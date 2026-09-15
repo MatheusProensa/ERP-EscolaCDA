@@ -48,7 +48,7 @@ export function DocumentoPedagogicoCard({
   const pct = progresso && progresso.total > 0 ? Math.round((progresso.atual / progresso.total) * 100) : 0;
 
   const conteudo = (
-    <div className="flex h-full flex-col rounded-[10px] border border-cda-border bg-white p-4" style={{ borderTopWidth: 4, borderTopColor: cor }}>
+    <div className="flex h-full flex-col rounded-[10px] border border-cda-border bg-white p-4" style={{ borderTopWidth: 6, borderTopColor: cor }}>
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-1.5">
           <Icon className="h-4 w-4 shrink-0" style={{ color: cor }} />
