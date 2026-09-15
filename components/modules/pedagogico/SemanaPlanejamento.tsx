@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { NotebookPen, ScrollText, Printer, CheckCircle2, RotateCcw, ThumbsUp, Undo2, MessageSquareWarning, History, CalendarClock } from "lucide-react";
+import { NotebookPen, ScrollText, Printer, CheckCircle2, RotateCcw, ThumbsUp, Undo2, MessageSquareWarning, History, CalendarClock, Clock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
@@ -28,12 +28,12 @@ const LABEL_DIA_CURTO = ["Seg", "Ter", "Qua", "Qui", "Sex"];
 export function PontoEstadoDia({ estado, size = "sm" }: { estado: EstadoDia; size?: "sm" | "xs" }) {
   const dimensao = size === "xs" ? "h-2 w-2" : "h-3 w-3";
   if (estado === "completo") {
-    return <span className={`${dimensao} shrink-0 rounded-full`} style={{ backgroundColor: "var(--cda-green)" }} aria-hidden />;
+    return <span className={`${dimensao} shrink-0 rounded-full`} style={{ backgroundColor: "#16a34a" }} aria-hidden />;
   }
   if (estado === "parcial") {
-    return <span className={`${dimensao} shrink-0 rounded-full`} style={{ backgroundColor: "var(--cda-amber)" }} aria-hidden />;
+    return <span className={`${dimensao} shrink-0 rounded-full`} style={{ backgroundColor: "#d97706" }} aria-hidden />;
   }
-  return <span className={`${dimensao} shrink-0 rounded-full border`} style={{ borderColor: "var(--cda-border)", backgroundColor: "var(--cda-border)" }} aria-hidden />;
+  return <span className={`${dimensao} shrink-0 rounded-full border`} style={{ borderColor: "#e2e8f0", backgroundColor: "#e2e8f0" }} aria-hidden />;
 }
 
 function somarDias(iso: string, dias: number): string {
@@ -177,13 +177,15 @@ function Campo({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium text-cda-text2">{label}</label>
+      <label className="text-xs font-medium" style={{ color: "#475569" }}>
+        {label}
+      </label>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         rows={rows}
-        className="w-full rounded-lg border border-cda-border bg-white px-3 py-2 text-sm text-cda-text outline-none transition-colors focus:border-cda-blue disabled:bg-cda-bg disabled:text-cda-text3"
+        className="w-full rounded-lg border-[1.5px] border-[#cbd5e1] bg-[#f8fafc] px-3 py-2 text-sm text-cda-text outline-none transition-colors placeholder:text-[#94a3b8] focus:border-[#2563eb] focus:bg-white focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)] disabled:bg-cda-bg disabled:text-cda-text3"
       />
     </div>
   );
@@ -275,10 +277,10 @@ function DiaConteudo({
 
       {dia.tipo === "TEMATICA" ? (
         <>
-          <SecaoCampo titulo="Temática do dia" cor="var(--cda-blue)">
+          <SecaoCampo titulo="Temática do dia" cor="var(--cda-blue)" fundo="#eff6ff">
             <Campo label="Temática do dia" value={c.tematicaDia ?? ""} onChange={(v) => atualizarConteudo({ tematicaDia: v })} disabled={!podeEditar} rows={1} />
           </SecaoCampo>
-          <SecaoCampo titulo="Momento inicial" cor="var(--cda-teal)">
+          <SecaoCampo titulo="Momento inicial" cor="var(--cda-teal)" fundo="#f0fdfa">
             <Campo label="Momento inicial" value={c.momentoInicial ?? ""} onChange={(v) => atualizarConteudo({ momentoInicial: v })} disabled={!podeEditar} />
             <Disclosure label="Questionamentos possíveis">
               <Campo
@@ -289,7 +291,7 @@ function DiaConteudo({
               />
             </Disclosure>
           </SecaoCampo>
-          <SecaoCampo titulo="Momento fundamental" cor="var(--cda-indigo)" destaque>
+          <SecaoCampo titulo="Momento fundamental" cor="var(--cda-indigo)" fundo="#eef2ff" destaque>
             <Campo label="Momento fundamental" value={c.momentoFundamental ?? ""} onChange={(v) => atualizarConteudo({ momentoFundamental: v })} disabled={!podeEditar} />
             <Disclosure label="Questionamentos possíveis">
               <Campo
@@ -303,10 +305,10 @@ function DiaConteudo({
         </>
       ) : (
         <>
-          <SecaoCampo titulo="Contexto organizado" cor="var(--cda-blue)">
+          <SecaoCampo titulo="Contexto organizado" cor="var(--cda-blue)" fundo="#eff6ff">
             <Campo label="Contexto organizado" value={c.contextoOrganizado ?? ""} onChange={(v) => atualizarConteudo({ contextoOrganizado: v })} disabled={!podeEditar} rows={1} />
           </SecaoCampo>
-          <SecaoCampo titulo="Roda de conversa" cor="var(--cda-teal)">
+          <SecaoCampo titulo="Roda de conversa" cor="var(--cda-teal)" fundo="#f0fdfa">
             <Campo label="Roda de conversa" value={c.rodaDeConversa ?? ""} onChange={(v) => atualizarConteudo({ rodaDeConversa: v })} disabled={!podeEditar} />
             <Disclosure label="Questionamentos possíveis">
               <Campo
@@ -317,7 +319,7 @@ function DiaConteudo({
               />
             </Disclosure>
           </SecaoCampo>
-          <SecaoCampo titulo="Organização do contexto" cor="var(--cda-indigo)" destaque>
+          <SecaoCampo titulo="Organização do contexto" cor="var(--cda-indigo)" fundo="#eef2ff" destaque>
             <Campo label="Organização do contexto" value={c.organizacaoContexto ?? ""} onChange={(v) => atualizarConteudo({ organizacaoContexto: v })} disabled={!podeEditar} />
             <Disclosure label="Questionamentos possíveis">
               <Campo
@@ -331,7 +333,7 @@ function DiaConteudo({
         </>
       )}
 
-      <SecaoCampo titulo="Momento final" cor="var(--cda-purple)" opcional>
+      <SecaoCampo titulo="Momento final" cor="var(--cda-purple)" fundo="#faf5ff" opcional>
         <Campo label="Momento final (opcional)" value={c.momentoFinal ?? ""} onChange={(v) => atualizarConteudo({ momentoFinal: v })} disabled={!podeEditar} />
         <p className="text-xs text-cda-text3">Registro de fechamento do dia — deixe em branco se não se aplicar.</p>
         <Disclosure label="Questionamentos possíveis">
@@ -344,7 +346,7 @@ function DiaConteudo({
         </Disclosure>
       </SecaoCampo>
 
-      <SecaoCampo titulo="Folhas imprimíveis" cor="var(--cda-text3)" opcional>
+      <SecaoCampo titulo="Folhas imprimíveis" cor="var(--cda-text3)" fundo="#f8fafc" opcional>
         <p className="-mt-1 text-xs text-cda-text3">Só se esse dia tiver uma folha pra imprimir.</p>
         <FolhaImprimivel
           turmaId={turmaId}
@@ -698,9 +700,12 @@ export function SemanaPlanejamento({
               key={dia.data}
               type="button"
               onClick={() => setDiaAtivo(i)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
-                ativo ? "border-cda-blue bg-cda-blue/5 text-cda-blue" : "border-cda-border bg-white text-cda-text2 hover:bg-cda-bg"
+              className={`flex shrink-0 items-center gap-1.5 rounded-t-lg border border-b-2 px-3 py-2 text-xs transition-colors ${
+                ativo
+                  ? "border-transparent border-b-[#2563eb] font-semibold"
+                  : "border-cda-border bg-white font-medium text-cda-text2 hover:bg-cda-bg"
               }`}
+              style={ativo ? { backgroundColor: "#eff6ff", color: "#2563eb" } : undefined}
             >
               <PontoEstadoDia estado={estadoDoDia(dia.tipo, dia.conteudo)} size="xs" />
               {LABEL_DIA_CURTO[i]} {formatarDiaMes(dia.data).slice(0, 2)}
@@ -717,7 +722,10 @@ export function SemanaPlanejamento({
 
       {podeEditar && (
         <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center justify-between gap-3 border-t border-cda-border bg-cda-bg/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
-          <span className="text-xs text-cda-text3">{ultimoSalvoEm ? `Salvo às ${formatarHora(ultimoSalvoEm)}` : "Ainda não salvo nessa visita"}</span>
+          <span className="flex items-center gap-1.5 text-xs" style={{ color: "#64748b" }}>
+            <Clock className="h-3.5 w-3.5" />
+            {ultimoSalvoEm ? `Salvo às ${formatarHora(ultimoSalvoEm)}` : "Ainda não salvo nessa visita"}
+          </span>
           <div className="flex flex-wrap justify-end gap-2">
             <Button variant="outline" onClick={() => salvar()} loading={salvando} disabled={carregando}>
               <NotebookPen className="h-3.5 w-3.5" />
@@ -758,7 +766,7 @@ export function SemanaPlanejamento({
               onChange={(e) => setComentarioForm(e.target.value)}
               placeholder="O que precisa corrigir?"
               rows={3}
-              className="mb-2 w-full rounded-lg border border-cda-border bg-white px-3 py-2 text-sm text-cda-text outline-none transition-colors focus:border-cda-blue"
+              className="mb-2 w-full rounded-lg border-[1.5px] border-[#cbd5e1] bg-[#f8fafc] px-3 py-2 text-sm text-cda-text outline-none transition-colors placeholder:text-[#94a3b8] focus:border-[#2563eb] focus:bg-white focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)]"
             />
           )}
           <div className="flex flex-wrap justify-end gap-2">

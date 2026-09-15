@@ -12,6 +12,7 @@ import { ChevronDown } from "lucide-react";
 export function SecaoCampo({
   titulo,
   cor,
+  fundo,
   opcional,
   destaque,
   children,
@@ -19,17 +20,27 @@ export function SecaoCampo({
   titulo: string;
   /** CSS var, ex.: "var(--cda-blue)". */
   cor: string;
+  /** Fundo levemente colorido, compatível com `cor` — pedido do dono, ajuste
+   * de contraste: "fundo branco puro deixava todas as seções iguais". */
+  fundo: string;
   opcional?: boolean;
   /** ★ — pedido do dono: Momento Fundamental é o bloco principal do dia. */
   destaque?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-cda-border bg-white p-4 shadow-sm" style={{ borderLeftWidth: 6, borderLeftColor: cor }}>
-      <p className="mb-3 flex items-center gap-1 text-xs font-semibold uppercase tracking-wide" style={{ color: cor }}>
+    <div className="rounded-lg border border-cda-border p-4 shadow-sm" style={{ borderLeftWidth: 6, borderLeftColor: cor, backgroundColor: fundo }}>
+      <p
+        className="mb-3 flex items-center gap-1 font-bold uppercase"
+        style={{ color: cor, fontSize: 13, letterSpacing: "0.5px" }}
+      >
         {titulo}
         {destaque && <span aria-hidden>★</span>}
-        {opcional && <span className="font-normal normal-case text-cda-text3">(opcional)</span>}
+        {opcional && (
+          <span className="font-normal normal-case tracking-normal text-cda-text3" style={{ fontSize: 12 }}>
+            (opcional)
+          </span>
+        )}
       </p>
       <div className="flex flex-col gap-3">{children}</div>
     </div>
