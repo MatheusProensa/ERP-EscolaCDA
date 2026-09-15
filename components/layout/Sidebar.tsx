@@ -146,7 +146,38 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
-  const [submenusAbertos, setSubmenusAbertos] = useState<Set<string>>(new Set());
+
+  // Quais grupos (por label) têm um filho na rota atual — usado só pra abrir
+  // sozinho ao chegar numa página do submenu. NAV_GROUPS (não o `grupos`
+  // filtrado abaixo) porque isso é estrutural, não depende de permissão.
+  function labelsComFilhoAtivo(caminho: string): Set<string> {
+    const labels = new Set<string>();
+    for (const group of NAV_GROUPS) {
+      for (const item of group.items) {
+        if (item.children?.some((c) => caminho === c.href || caminho.startsWith(`${c.href}/`))) {
+          labels.add(item.label);
+        }
+      }
+    }
+    return labels;
+  }
+
+  const [submenusAbertos, setSubmenusAbertos] = useState<Set<string>>(() => labelsComFilhoAtivo(pathname));
+  // Achado real: com `aberto = manual || temFilhoAtivo`, o submenu nunca
+  // fechava enquanto você estivesse numa página dele — o clique de fechar
+  // "perdia" pro `temFilhoAtivo` sempre true. Agora `submenusAbertos` é a
+  // ÚNICA fonte de verdade; só ganha o "abrir sozinho" quando o caminho
+  // MUDA (troca de página), nunca sobrescrevendo um fechar manual na
+  // mesma página (padrão já usado no projeto pra ajustar estado durante o
+  // render a partir de uma comparação com o valor anterior).
+  const [pathnameAnterior, setPathnameAnterior] = useState(pathname);
+  if (pathname !== pathnameAnterior) {
+    setPathnameAnterior(pathname);
+    const novosAbertos = labelsComFilhoAtivo(pathname);
+    if (novosAbertos.size > 0) {
+      setSubmenusAbertos((atual) => new Set([...atual, ...novosAbertos]));
+    }
+  }
 
   // Item com children: filtra os filhos pela grade + roles extra; 1 filho
   // visível só (achado real: professora sem Admin/Direção só vê
@@ -249,7 +280,7 @@ export function Sidebar({
                       (melhor, href) => (!melhor || href.length > melhor.length ? href : melhor),
                       null
                     );
-                    const aberto = submenusAbertos.has(item.label) || hrefAtivo !== null;
+                    const aberto = submenusAbertos.has(item.label);
                     const Icon = item.icon;
                     return (
                       <div key={item.label}>
