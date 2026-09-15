@@ -19,7 +19,6 @@ import {
   CATEGORIAS_EVENTO,
   DIAS_SEMANA_ABREV,
   MESES,
-  corCategoria,
   gerarGradeMes,
   mesmaData,
 } from "@/lib/calendario";
@@ -38,6 +37,25 @@ const MAX_EVENTOS_VISIVEIS = 2;
 // separados) — o rótulo da célula usa o nome real, não uma distinção que o
 // dado não tem.
 const CATEGORIA_FERIADO = "Recesso/Feriado";
+
+// Paleta vibrante só desta tela (pedido do dono: as cores pastel de
+// COR_CATEGORIA em lib/calendario.ts ficam apagadas demais aqui) — local de
+// propósito, não mexe em lib/calendario.ts (usado também no PDF do
+// calendário e no widget de eventos do Dashboard). dot reaproveita a cor do
+// texto (mais saturada, boa pra um círculo pequeno).
+const CORES_EVENTO_VIBRANTE: Record<string, { bg: string; text: string }> = {
+  "Organização Interna": { bg: "#fef3c7", text: "#92400e" },
+  "Eventos e Atividades": { bg: "#dbeafe", text: "#1e40af" },
+  Marketing: { bg: "#ede9fe", text: "#5b21b6" },
+  Reuniões: { bg: "#d1fae5", text: "#065f46" },
+  "Datas Comemorativas": { bg: "#fce7f3", text: "#9d174d" },
+  "Recesso/Feriado": { bg: "#e8edf5", text: "#374151" },
+};
+
+function corCategoria(categoria: string): { bg: string; text: string; dot: string } {
+  const cor = CORES_EVENTO_VIBRANTE[categoria] ?? CORES_EVENTO_VIBRANTE[CATEGORIA_FERIADO];
+  return { ...cor, dot: cor.text };
+}
 
 export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
   const router = useRouter();
