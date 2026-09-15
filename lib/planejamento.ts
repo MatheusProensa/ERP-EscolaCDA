@@ -92,6 +92,26 @@ export const STATUS_TURMA_MES_COR: Record<StatusTurmaMes, string> = {
   PENDENTE: "var(--status-warning)",
 };
 
+/** Combina as N semanas/folhas enviadas de um mês num status só — mesma regra
+ * que já vivia solta dentro de app/(erp)/pedagogico/page.tsx (devolvido pesa
+ * mais, aprovado só quando TODAS enviaram aprovado, "enviado" quando mandou
+ * mas ainda não foi revisado, pendente/atrasado quando faltou enviar
+ * alguma). Extraída pra cá, redesign v4 do Planejamento da professora: o
+ * painel dividido também mostra status por documento (Planejamento/Roteiro/
+ * Atividade Gráfica/Tema Literário) e o Roteiro/Ativ.Gráfica/Tema Literário
+ * agora usam o MESMO enum StatusPlanejamento (Planejamento via
+ * model Planejamento, os outros 2 via FolhaMensal) — mesma regra pros 4. */
+export function statusTurmaMesDeContagem(
+  contagem: { total: number; aprovadas: number; devolvidas: number } | undefined,
+  semanasTotal: number,
+  prazoVencido: boolean
+): StatusTurmaMes {
+  if (!contagem || contagem.total < semanasTotal) return prazoVencido ? "ATRASADO" : "PENDENTE";
+  if (contagem.devolvidas > 0) return "DEVOLVIDO";
+  if (contagem.aprovadas >= semanasTotal) return "APROVADO";
+  return "ENVIADO";
+}
+
 /** Tipo padrão de cada dia útil da semana, pelo índice (0=segunda...4=sexta)
  * — alternado TEMATICA/CONTEXTO igual o padrão real observado no documento
  * (segunda/quarta/sexta = temática, terça/quinta = contexto). É só o valor

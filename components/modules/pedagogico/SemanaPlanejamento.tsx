@@ -2,13 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, NotebookPen, ScrollText, Printer, CheckCircle2, RotateCcw, ThumbsUp, Undo2, MessageSquareWarning, History, CalendarClock } from "lucide-react";
-import { Card } from "@/components/ui/Card";
+import { NotebookPen, ScrollText, Printer, CheckCircle2, RotateCcw, ThumbsUp, Undo2, MessageSquareWarning, History, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { showToast } from "@/components/ui/Toast";
 import { PlanejamentoStepper } from "@/components/modules/pedagogico/PlanejamentoStepper";
+import { SecaoCampo, Disclosure } from "@/components/modules/pedagogico/SecaoCampo";
 import { tituloDoDia, bulletsDoDia, estadoDoDia, type ConteudoDiaPlanejamento, type EstadoDia } from "@/lib/planejamento";
 
 type TipoDia = "TEMATICA" | "CONTEXTO";
@@ -16,14 +16,16 @@ export type Projeto = { id: string; nome: string; ativo: boolean };
 type DiaForm = { data: string; tipo: TipoDia; conteudo: ConteudoDiaPlanejamento; especializadas: string };
 
 const LABEL_DIA = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"];
+const LABEL_DIA_CURTO = ["Seg", "Ter", "Qua", "Qui", "Sex"];
 
 /** Pontinho de estado do dia — pedido do dono, ajuste fino, set/2026: os 3
  * estados precisam ser diferenciáveis de relance (o desenho anterior, com
  * anel fino pra parcial/vazio, ficava "tudo cinza" a essa distância).
  * Completo/parcial agora são PREENCHIDOS (verde/âmbar); só vazio fica oco.
- * Tamanho "sm" = 12px (linha da semana, pedido explícito); "xs" = 8px
- * (dentro do cabeçalho de cada dia, mais compacto). */
-function PontoEstadoDia({ estado, size = "sm" }: { estado: EstadoDia; size?: "sm" | "xs" }) {
+ * Tamanho "sm" = 12px (card de semana no painel esquerdo); "xs" = 8px (aba
+ * de dia, mais compacto). Exportado — reaproveitado pelo card de resumo de
+ * cada semana em PlanejamentoMensalClient (redesign v4, painel dividido). */
+export function PontoEstadoDia({ estado, size = "sm" }: { estado: EstadoDia; size?: "sm" | "xs" }) {
   const dimensao = size === "xs" ? "h-2 w-2" : "h-3 w-3";
   if (estado === "completo") {
     return <span className={`${dimensao} shrink-0 rounded-full`} style={{ backgroundColor: "var(--cda-green)" }} aria-hidden />;
@@ -47,6 +49,31 @@ function formatarDiaMes(iso: string): string {
 
 function formatarDataHora(iso: string): string {
   return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+function formatarHora(d: Date): string {
+  return d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+/** Interruptor simples (Tarde Cultural) — pedido do dono, redesign v4: "só
+ * mostra os campos quando a semana realmente tem Tarde Cultural". Só usado
+ * aqui, por isso local em vez de virar componente de ui/ compartilhado. */
+function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean }) {
+  return (
+    <label className={`inline-flex items-center gap-2 text-xs font-medium text-cda-text2 ${disabled ? "opacity-50" : "cursor-pointer"}`}>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+        className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${checked ? "bg-cda-blue" : "bg-cda-border"}`}
+      >
+        <span className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${checked ? "translate-x-4" : "translate-x-0.5"}`} />
+      </button>
+      {label}
+    </label>
+  );
 }
 
 type VersaoApi = {
@@ -201,15 +228,14 @@ function FolhaImprimivel({
   );
 }
 
-/** Um dia do planejamento — estrutura real do documento MODELO_PLANEJAMENTO
- * (achado real, set/2026): alterna entre "Temática do dia" (temática +
- * momento inicial/fundamental) e "Contexto organizado" (contexto + roda de
- * conversa + organização), com o "Momento final" (registro) comum aos 2.
- * Recolhido por padrão pra não virar uma tela gigante com os 5 dias abertos
- * ao mesmo tempo — abre um resumo do que já tem preenchido. Segunda-feira
- * (índice 0) abre sozinha quando a semana expande — pedido do dono: a
- * professora não precisa clicar 2x pra começar a preencher. */
-function DiaPlanejamento({
+/** Conteúdo do dia ATIVO (1 por vez, escolhido pelas abas Seg/Ter/Qua/Qui/
+ * Sex) — pedido do dono, redesign v4: era um acordeão com os 5 dias
+ * empilhados, agora é 1 dia por vez, campos em coluna única e largura
+ * total (exceção explícita do dono ao mockup, que mostrava grid de 2
+ * colunas: "os campos de texto precisam de largura total pra escrever
+ * parágrafos longos confortavelmente"). Cada seção é um SecaoCampo com a
+ * cor de identidade do bloco (mesma cor sempre, ver mockup Gemini v4). */
+function DiaConteudo({
   turmaId,
   indice,
   dia,
@@ -222,162 +248,155 @@ function DiaPlanejamento({
   atualizar: (patch: Partial<DiaForm>) => void;
   podeEditar: boolean;
 }) {
-  const [aberto, setAberto] = useState(indice === 0);
   const c = dia.conteudo;
 
   function atualizarConteudo(patch: Partial<ConteudoDiaPlanejamento>) {
     atualizar({ conteudo: { ...c, ...patch } });
   }
 
-  const resumo = dia.tipo === "TEMATICA" ? c.tematicaDia : c.contextoOrganizado;
-  const estado = estadoDoDia(dia.tipo, c);
-
   return (
-    <div className="rounded-lg border border-cda-border">
-      <button
-        type="button"
-        onClick={() => setAberto((v) => !v)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-      >
-        <div>
-          <p className="flex items-center gap-2 text-sm font-semibold text-cda-text">
-            <PontoEstadoDia estado={estado} size="xs" />
-            {LABEL_DIA[indice]} <span className="font-normal text-cda-text3">({formatarDiaMes(dia.data)})</span>
-          </p>
-          {resumo && <p className="mt-0.5 pl-3.5 text-xs text-cda-text3">{resumo}</p>}
-        </div>
-        <ChevronDown className={`h-4 w-4 shrink-0 text-cda-text3 transition-transform ${aberto ? "rotate-180" : ""}`} />
-      </button>
-
-      {aberto && (
-        <div className="flex flex-col gap-3 border-t border-cda-border p-4">
-          <Select
-            label="Formato do dia"
-            value={dia.tipo}
-            onChange={(e) => atualizar({ tipo: e.target.value as TipoDia })}
-            disabled={!podeEditar}
-          >
+    <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-cda-text">
+          {LABEL_DIA[indice]} <span className="font-normal text-cda-text3">({formatarDiaMes(dia.data)})</span>
+        </h3>
+        <div className="w-full sm:w-52">
+          <Select value={dia.tipo} onChange={(e) => atualizar({ tipo: e.target.value as TipoDia })} disabled={!podeEditar}>
             <option value="TEMATICA">Temática do dia</option>
             <option value="CONTEXTO">Contexto organizado</option>
           </Select>
-          <p className="-mt-2 text-xs text-cda-text3">
-            <span className="font-medium text-cda-text2">Temática do dia:</span> assunto novo, com momento inicial e
-            fundamental. <span className="font-medium text-cda-text2">Contexto organizado:</span> ambiente livre, com roda
-            de conversa.
-          </p>
+        </div>
+      </div>
+      <p className="-mt-2 text-xs text-cda-text3">
+        <span className="font-medium text-cda-text2">Temática do dia:</span> assunto novo, com momento inicial e
+        fundamental. <span className="font-medium text-cda-text2">Contexto organizado:</span> ambiente livre, com roda
+        de conversa.
+      </p>
 
-          {dia.tipo === "TEMATICA" ? (
-            <>
-              <Campo label="Temática do dia" value={c.tematicaDia ?? ""} onChange={(v) => atualizarConteudo({ tematicaDia: v })} disabled={!podeEditar} rows={1} />
-              <Campo label="Momento inicial" value={c.momentoInicial ?? ""} onChange={(v) => atualizarConteudo({ momentoInicial: v })} disabled={!podeEditar} />
+      {dia.tipo === "TEMATICA" ? (
+        <>
+          <SecaoCampo titulo="Temática do dia" cor="var(--cda-blue)">
+            <Campo label="Temática do dia" value={c.tematicaDia ?? ""} onChange={(v) => atualizarConteudo({ tematicaDia: v })} disabled={!podeEditar} rows={1} />
+          </SecaoCampo>
+          <SecaoCampo titulo="Momento inicial" cor="var(--cda-teal)">
+            <Campo label="Momento inicial" value={c.momentoInicial ?? ""} onChange={(v) => atualizarConteudo({ momentoInicial: v })} disabled={!podeEditar} />
+            <Disclosure label="Questionamentos possíveis">
               <Campo
                 label="Questionamentos e diálogos possíveis"
                 value={c.questionamentosInicial ?? ""}
                 onChange={(v) => atualizarConteudo({ questionamentosInicial: v })}
                 disabled={!podeEditar}
               />
-              <Campo label="Momento fundamental" value={c.momentoFundamental ?? ""} onChange={(v) => atualizarConteudo({ momentoFundamental: v })} disabled={!podeEditar} />
+            </Disclosure>
+          </SecaoCampo>
+          <SecaoCampo titulo="Momento fundamental" cor="var(--cda-indigo)" destaque>
+            <Campo label="Momento fundamental" value={c.momentoFundamental ?? ""} onChange={(v) => atualizarConteudo({ momentoFundamental: v })} disabled={!podeEditar} />
+            <Disclosure label="Questionamentos possíveis">
               <Campo
                 label="Questionamentos e diálogos possíveis"
                 value={c.questionamentosFundamental ?? ""}
                 onChange={(v) => atualizarConteudo({ questionamentosFundamental: v })}
                 disabled={!podeEditar}
               />
-            </>
-          ) : (
-            <>
-              <Campo label="Contexto organizado" value={c.contextoOrganizado ?? ""} onChange={(v) => atualizarConteudo({ contextoOrganizado: v })} disabled={!podeEditar} rows={1} />
-              <Campo label="Roda de conversa" value={c.rodaDeConversa ?? ""} onChange={(v) => atualizarConteudo({ rodaDeConversa: v })} disabled={!podeEditar} />
+            </Disclosure>
+          </SecaoCampo>
+        </>
+      ) : (
+        <>
+          <SecaoCampo titulo="Contexto organizado" cor="var(--cda-blue)">
+            <Campo label="Contexto organizado" value={c.contextoOrganizado ?? ""} onChange={(v) => atualizarConteudo({ contextoOrganizado: v })} disabled={!podeEditar} rows={1} />
+          </SecaoCampo>
+          <SecaoCampo titulo="Roda de conversa" cor="var(--cda-teal)">
+            <Campo label="Roda de conversa" value={c.rodaDeConversa ?? ""} onChange={(v) => atualizarConteudo({ rodaDeConversa: v })} disabled={!podeEditar} />
+            <Disclosure label="Questionamentos possíveis">
               <Campo
                 label="Questionamentos e diálogos possíveis"
                 value={c.questionamentosRoda ?? ""}
                 onChange={(v) => atualizarConteudo({ questionamentosRoda: v })}
                 disabled={!podeEditar}
               />
-              <Campo label="Organização do contexto" value={c.organizacaoContexto ?? ""} onChange={(v) => atualizarConteudo({ organizacaoContexto: v })} disabled={!podeEditar} />
+            </Disclosure>
+          </SecaoCampo>
+          <SecaoCampo titulo="Organização do contexto" cor="var(--cda-indigo)" destaque>
+            <Campo label="Organização do contexto" value={c.organizacaoContexto ?? ""} onChange={(v) => atualizarConteudo({ organizacaoContexto: v })} disabled={!podeEditar} />
+            <Disclosure label="Questionamentos possíveis">
               <Campo
                 label="Questionamentos e diálogos possíveis"
                 value={c.questionamentosContexto ?? ""}
                 onChange={(v) => atualizarConteudo({ questionamentosContexto: v })}
                 disabled={!podeEditar}
               />
-            </>
-          )}
+            </Disclosure>
+          </SecaoCampo>
+        </>
+      )}
 
-          <div className="flex flex-col gap-1">
-            <Campo
-              label="Momento final (opcional)"
-              value={c.momentoFinal ?? ""}
-              onChange={(v) => atualizarConteudo({ momentoFinal: v })}
-              disabled={!podeEditar}
-            />
-            <p className="text-xs text-cda-text3">Registro de fechamento do dia — deixe em branco se não se aplicar.</p>
-          </div>
+      <SecaoCampo titulo="Momento final" cor="var(--cda-purple)" opcional>
+        <Campo label="Momento final (opcional)" value={c.momentoFinal ?? ""} onChange={(v) => atualizarConteudo({ momentoFinal: v })} disabled={!podeEditar} />
+        <p className="text-xs text-cda-text3">Registro de fechamento do dia — deixe em branco se não se aplicar.</p>
+        <Disclosure label="Questionamentos possíveis">
           <Campo
             label="Questionamentos e diálogos possíveis"
             value={c.questionamentosFinal ?? ""}
             onChange={(v) => atualizarConteudo({ questionamentosFinal: v })}
             disabled={!podeEditar}
           />
-          {/* Só-leitura — pedido do dono, mockup do Gemini: puxa direto do
-              Horário fixo cadastrado da turma (a API já resolve isso, ver
-              GET /api/planejamentos), a professora não digita de novo aqui.
-              Pra mudar, é na aba Horário fixo, não campo a campo. */}
-          <div className="flex flex-col gap-1">
-            <label className="text-xs font-medium text-cda-text2">Especializada do dia</label>
-            <p className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-cda-bg px-3 py-2 text-sm text-cda-text3">
-              <CalendarClock className="h-3.5 w-3.5 shrink-0" />
-              {dia.especializadas || "Nenhuma especializada cadastrada pra esse dia"}
-            </p>
-          </div>
+        </Disclosure>
+      </SecaoCampo>
 
-          <div className="flex flex-col gap-3 border-t border-cda-border pt-3">
-            <p className="text-xs font-medium text-cda-text2">Folhas imprimíveis (opcional, só se esse dia tiver uma)</p>
-            <FolhaImprimivel
-              turmaId={turmaId}
-              data={dia.data}
-              tipo="TEMA_LITERARIO"
-              label="Tema Literário — texto da folha"
-              value={c.folhaTemaLiterario ?? ""}
-              onChange={(v) => atualizarConteudo({ folhaTemaLiterario: v })}
-              podeEditar={podeEditar}
-            />
-            <FolhaImprimivel
-              turmaId={turmaId}
-              data={dia.data}
-              tipo="ATIVIDADE_GRAFICA"
-              label="Atividade Gráfica — texto da folha"
-              value={c.folhaAtividadeGrafica ?? ""}
-              onChange={(v) => atualizarConteudo({ folhaAtividadeGrafica: v })}
-              podeEditar={podeEditar}
-            />
-          </div>
-        </div>
-      )}
+      <SecaoCampo titulo="Folhas imprimíveis" cor="var(--cda-text3)" opcional>
+        <p className="-mt-1 text-xs text-cda-text3">Só se esse dia tiver uma folha pra imprimir.</p>
+        <FolhaImprimivel
+          turmaId={turmaId}
+          data={dia.data}
+          tipo="TEMA_LITERARIO"
+          label="Tema Literário — texto da folha"
+          value={c.folhaTemaLiterario ?? ""}
+          onChange={(v) => atualizarConteudo({ folhaTemaLiterario: v })}
+          podeEditar={podeEditar}
+        />
+        <FolhaImprimivel
+          turmaId={turmaId}
+          data={dia.data}
+          tipo="ATIVIDADE_GRAFICA"
+          label="Atividade Gráfica — texto da folha"
+          value={c.folhaAtividadeGrafica ?? ""}
+          onChange={(v) => atualizarConteudo({ folhaAtividadeGrafica: v })}
+          podeEditar={podeEditar}
+        />
+      </SecaoCampo>
+
+      {/* Só-leitura — pedido do dono, mockup do Gemini: puxa direto do
+          Horário fixo cadastrado da turma (a API já resolve isso, ver
+          GET /api/planejamentos), a professora não digita de novo aqui.
+          Pra mudar, é na aba Horário fixo, não campo a campo. */}
+      <div className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-cda-bg px-3 py-2 text-sm text-cda-text3">
+        <CalendarClock className="h-3.5 w-3.5 shrink-0" />
+        {dia.especializadas ? `Especializada: ${dia.especializadas}` : "Nenhuma especializada cadastrada pra esse dia"}
+      </div>
     </div>
   );
 }
 
-/** Uma semana dentro do mês — carrega e salva sozinha (achado real, set/2026:
- * o documento é organizado em semanas dentro do mês/projeto). Recolhida por
- * padrão (abre só a semana atual, quando o mês em tela é o mês corrente),
- * mostra um resumo de "preenchida/vazia" no cabeçalho mesmo fechada. */
+/** Uma semana — carrega e salva sozinha (achado real, set/2026: o documento é
+ * organizado em semanas dentro do mês/projeto). Redesign v4 (mockup Gemini,
+ * pedido do dono): antes era um card de acordeão numa lista com as outras
+ * semanas; agora é sempre o CONTEÚDO INTEIRO do painel direito — só a semana
+ * selecionada no painel esquerdo (PlanejamentoMensalClient) é montada aqui. */
 export function SemanaPlanejamento({
   turmaId,
   projetos,
   semanaIso,
-  abertaPorPadrao,
   onSalvo,
 }: {
   turmaId: string;
   projetos: Projeto[];
   semanaIso: string;
-  abertaPorPadrao: boolean;
   /** Avisa o mês (PlanejamentoMensalClient) que essa semana salvou algo —
-   * pro strip de progresso atualizar sem remontar as semanas. */
+   * pro strip de progresso e o card dessa semana no painel esquerdo
+   * atualizarem sem precisar trocar de semana e voltar. */
   onSalvo?: () => void;
 }) {
-  const [aberta, setAberta] = useState(abertaPorPadrao);
   const [carregado, setCarregado] = useState(false);
   const [id, setId] = useState<string | null>(null);
   const [projetoId, setProjetoId] = useState<string>("");
@@ -386,6 +405,7 @@ export function SemanaPlanejamento({
   const [tardeCulturalApresentacao, setTardeCulturalApresentacao] = useState("");
   const [tardeCulturalMateriais, setTardeCulturalMateriais] = useState("");
   const [dias, setDias] = useState<DiaForm[]>([]);
+  const [diaAtivo, setDiaAtivo] = useState(0);
   const [status, setStatus] = useState<"RASCUNHO" | "ENVIADO" | "APROVADO" | "DEVOLVIDO">("RASCUNHO");
   const [comentarioCoordenadora, setComentarioCoordenadora] = useState("");
   const [comentarioAutorNome, setComentarioAutorNome] = useState("");
@@ -398,6 +418,13 @@ export function SemanaPlanejamento({
   const [comentarioForm, setComentarioForm] = useState("");
   const [revisando, setRevisando] = useState(false);
   const [mostrarDevolver, setMostrarDevolver] = useState(false);
+  // Barra de contexto compacta (Fix do mockup v4) — Materiais e Tarde
+  // Cultural nascem recolhidos, só o resumo aparece na barra; clicar abre o(s)
+  // campo(s) de verdade. Tarde Cultural também funciona como toggle: quando
+  // já tem conteúdo salvo, os campos nascem visíveis (não some o que já tem).
+  const [mostrarMateriais, setMostrarMateriais] = useState(false);
+  const [mostrarTardeCultural, setMostrarTardeCultural] = useState(false);
+  const [ultimoSalvoEm, setUltimoSalvoEm] = useState<Date | null>(null);
   // "Sujo" = tem edição não salva — liga o autosave (pedido do dono: "salvar
   // automaticamente a cada 30s, sem precisar clicar", toast discreto, sem
   // interromper a digitação). Só liga DEPOIS do carregamento inicial —
@@ -424,7 +451,9 @@ export function SemanaPlanejamento({
       setMateriais(data.materiais ?? "");
       setTardeCulturalApresentacao(data.tardeCulturalApresentacao ?? "");
       setTardeCulturalMateriais(data.tardeCulturalMateriais ?? "");
+      setMostrarTardeCultural(!!(data.tardeCulturalApresentacao || data.tardeCulturalMateriais));
       setDias(data.dias);
+      setDiaAtivo(0);
       setStatus(data.status ?? "RASCUNHO");
       setComentarioCoordenadora(data.comentarioCoordenadora ?? "");
       setComentarioAutorNome(data.comentarioAutorNome ?? "");
@@ -473,6 +502,7 @@ export function SemanaPlanejamento({
       return;
     }
     setSujo(false);
+    setUltimoSalvoEm(new Date());
     if (novoStatus) setStatus(novoStatus);
     if (novoStatus === "ENVIADO") {
       setComentarioCoordenadora("");
@@ -483,7 +513,7 @@ export function SemanaPlanejamento({
       showToast("Rascunho salvo automaticamente.");
       return;
     }
-    showToast(novoStatus === "ENVIADO" ? "Planejamento da semana finalizado." : novoStatus === "RASCUNHO" ? "Planejamento reaberto." : "Planejamento da semana salvo.");
+    showToast(novoStatus === "ENVIADO" ? "Planejamento da semana finalizado." : novoStatus === "RASCUNHO" ? "Planejamento reaberto." : "Dia salvo.");
   }
 
   // Autosave a cada 30s — só quando tem edição não salva (evita toast/POST
@@ -534,254 +564,239 @@ export function SemanaPlanejamento({
     }
   }
 
-  const preenchida = carregado && dias.some((d) => Object.keys(d.conteudo).length > 0);
-  const diasPreenchidos = dias.filter((d) => Object.keys(d.conteudo).length > 0).length;
+  if (carregando && !carregado) {
+    return <p className="text-sm text-cda-text3">Carregando semana...</p>;
+  }
+
+  const diaAtual = dias[diaAtivo];
 
   return (
-    <Card className="p-0">
-      <button
-        type="button"
-        onClick={() => setAberta((v) => !v)}
-        className="flex w-full items-center justify-between gap-3 px-5 py-4 text-left"
-      >
-        <div>
-          <span className="text-sm font-semibold text-cda-text">
+    <div className="flex flex-col gap-4">
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-cda-text">
             Semana de {formatarDiaMes(semanaIso)} a {formatarDiaMes(somarDias(semanaIso, 4))}
-          </span>
-          {carregado && (
-            <div className="mt-1 flex items-center gap-2">
-              {/* 5 pontinhos, Segunda a Sexta — pedido do dono, mockup do
-                  Gemini: dá pra ver de cara quais dias ainda faltam sem abrir
-                  a semana. */}
-              <div className="flex items-center gap-1.5">
-                {dias.map((dia) => (
-                  <PontoEstadoDia key={dia.data} estado={estadoDoDia(dia.tipo, dia.conteudo)} />
-                ))}
-              </div>
-              <span className="text-xs text-cda-text3">{diasPreenchidos} de 5 dias preenchidos</span>
-            </div>
-          )}
+          </h2>
+          <Link
+            href={`/pedagogico/planejamento/${turmaId}/roteiro?semana=${semanaIso}`}
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
+          >
+            <ScrollText className="h-3.5 w-3.5" />
+            Ver roteiro dessa semana
+          </Link>
         </div>
-        <div className="flex items-center gap-2">
-          {carregado && (
-            <Badge
-              variant={
-                status === "APROVADO" ? "success" : status === "DEVOLVIDO" ? "danger" : status === "ENVIADO" ? "info" : preenchida ? "warning" : "neutral"
-              }
-            >
-              {status === "APROVADO" ? "Aprovado" : status === "DEVOLVIDO" ? "Devolvido" : status === "ENVIADO" ? "Enviado" : preenchida ? "Rascunho" : "Vazia"}
-            </Badge>
-          )}
-          <ChevronDown className={`h-4 w-4 shrink-0 text-cda-text3 transition-transform ${aberta ? "rotate-180" : ""}`} />
-        </div>
-      </button>
-
-      {/* Trilho de etapas — pedido do dono: representa o status da semana
-          INTEIRA, não de um campo específico, então fica sempre visível
-          (fechada ou aberta), logo abaixo do título/pontinhos e acima do
-          conteúdo. Antes vivia dentro do bloco que só aparece expandido. */}
-      {carregado && (
-        <div className="border-t border-cda-border px-5 py-3">
-          <PlanejamentoStepper status={status} />
-        </div>
-      )}
-
-      {aberta && (
-        <div className="border-t border-cda-border p-5">
-          <div className="mb-4 flex justify-end">
-            <Link
-              href={`/pedagogico/planejamento/${turmaId}/roteiro?semana=${semanaIso}`}
-              className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
-            >
-              <ScrollText className="h-3.5 w-3.5" />
-              Ver roteiro dessa semana
-            </Link>
+        {carregado && (
+          <div className="mt-3 overflow-x-auto pb-1">
+            <PlanejamentoStepper status={status} />
           </div>
+        )}
+      </div>
 
-          {comentarioCoordenadora && (
-            <div className={`mb-4 rounded-lg border p-3 ${status === "DEVOLVIDO" ? "border-cda-red/30 bg-cda-red/5" : "border-cda-border bg-cda-bg"}`}>
-              <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-cda-text">
-                <MessageSquareWarning className="h-3.5 w-3.5" />
-                Comentário {comentarioAutorNome ? `de ${comentarioAutorNome}` : "da coordenadora"}
-              </div>
-              <p className="whitespace-pre-line text-sm text-cda-text2">{comentarioCoordenadora}</p>
-              {status === "DEVOLVIDO" && podeEditar && (
-                <div className="mt-2">
-                  {liComentarioEm ? (
-                    <span className="text-xs text-cda-text3">Você já confirmou que leu.</span>
-                  ) : (
-                    <Button variant="outline" size="sm" onClick={confirmarLeitura}>
-                      Li e entendi
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Select
-              label="Projeto pedagógico"
-              value={projetoId}
-              onChange={(e) => {
-                setProjetoId(e.target.value);
-                setSujo(true);
-              }}
-              disabled={!podeEditar}
-            >
-              <option value="">Sem projeto vinculado</option>
-              {projetos.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.nome} {p.ativo ? "(ativo)" : ""}
-                </option>
-              ))}
-            </Select>
+      {comentarioCoordenadora && (
+        <div className={`rounded-lg border p-3 ${status === "DEVOLVIDO" ? "border-cda-red/30 bg-cda-red/5" : "border-cda-border bg-cda-bg"}`}>
+          <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-cda-text">
+            <MessageSquareWarning className="h-3.5 w-3.5" />
+            Comentário {comentarioAutorNome ? `de ${comentarioAutorNome}` : "da coordenadora"}
           </div>
-          {projetoJustificativa && (
-            <p className="-mt-2 mb-4 rounded-lg border border-cda-border bg-cda-bg px-3 py-2 text-xs text-cda-text3">
-              <span className="font-medium text-cda-text2">Justificativa do projeto: </span>
-              {projetoJustificativa}
-            </p>
-          )}
-
-          {carregando ? (
-            <p className="text-sm text-cda-text3">Carregando...</p>
-          ) : (
-            <>
-              <div className="mb-4 flex flex-col gap-4">
-                <Campo
-                  label="Materiais da semana"
-                  value={materiais}
-                  onChange={(v) => {
-                    setMateriais(v);
-                    setSujo(true);
-                  }}
-                  disabled={!podeEditar}
-                  rows={2}
-                />
-                <div className="flex flex-col gap-3 rounded-lg border border-cda-border p-3">
-                  <p className="text-xs font-medium text-cda-text2">OBS: Em caso de Tarde Cultural (opcional, só se essa semana tiver)</p>
-                  <Campo
-                    label="Apresentação da turma — o que será feito, se for o dia da turma apresentar"
-                    value={tardeCulturalApresentacao}
-                    onChange={(v) => {
-                      setTardeCulturalApresentacao(v);
-                      setSujo(true);
-                    }}
-                    disabled={!podeEditar}
-                    rows={2}
-                  />
-                  <Campo
-                    label="Lista de materiais necessários (quantidade, item, tamanho, cor, detalhes)"
-                    value={tardeCulturalMateriais}
-                    onChange={(v) => {
-                      setTardeCulturalMateriais(v);
-                      setSujo(true);
-                    }}
-                    disabled={!podeEditar}
-                    rows={2}
-                  />
-                </div>
-              </div>
-              <div className="flex flex-col gap-3">
-                {dias.map((dia, i) => (
-                  <DiaPlanejamento key={dia.data} turmaId={turmaId} indice={i} dia={dia} atualizar={(patch) => atualizarDia(i, patch)} podeEditar={podeEditar} />
-                ))}
-              </div>
-            </>
-          )}
-
-          {erro && <p className="mt-3 text-sm text-cda-red">{erro}</p>}
-
-          {podeEditar && (
-            <div className="mt-4">
-              {(status === "RASCUNHO" || status === "DEVOLVIDO") && (
-                <p className="mb-2 text-right text-xs text-cda-text3">
-                  “Salvar” guarda o rascunho sem enviar. “{status === "DEVOLVIDO" ? "Reenviar" : "Finalizar"}” manda pra
-                  revisão da coordenadora.
-                </p>
-              )}
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button variant="outline" onClick={() => salvar()} loading={salvando} disabled={carregando}>
-                  <NotebookPen className="h-3.5 w-3.5" />
-                  Salvar planejamento
+          <p className="whitespace-pre-line text-sm text-cda-text2">{comentarioCoordenadora}</p>
+          {status === "DEVOLVIDO" && podeEditar && (
+            <div className="mt-2">
+              {liComentarioEm ? (
+                <span className="text-xs text-cda-text3">Você já confirmou que leu.</span>
+              ) : (
+                <Button variant="outline" size="sm" onClick={confirmarLeitura}>
+                  Li e entendi
                 </Button>
-                {status !== "RASCUNHO" && (
-                  <Button variant="outline" onClick={() => salvar("RASCUNHO")} loading={salvando} disabled={carregando}>
-                    <RotateCcw className="h-3.5 w-3.5" />
-                    Reabrir
-                  </Button>
-                )}
-                {status === "RASCUNHO" && (
-                  <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Finalizar
-                  </Button>
-                )}
-                {status === "DEVOLVIDO" && (
-                  <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Reenviar
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-          {!carregando && !podeEditar && !souCoordenadora && (
-            <p className="mt-3 text-xs text-cda-text3">Só a professora regente dessa turma edita o planejamento.</p>
-          )}
-
-          {souCoordenadora && status !== "RASCUNHO" && (
-            <div className="mt-4 rounded-lg border border-cda-blue/20 bg-cda-blue/5 p-4">
-              <p className="mb-1 text-xs font-semibold text-cda-text2">Revisão da coordenadora</p>
-              <p className="mb-3 text-xs text-cda-text3">Aprove se está tudo certo, ou devolva explicando o que precisa ajustar.</p>
-              {mostrarDevolver && (
-                <textarea
-                  value={comentarioForm}
-                  onChange={(e) => setComentarioForm(e.target.value)}
-                  placeholder="O que precisa corrigir?"
-                  rows={3}
-                  className="mb-2 w-full rounded-lg border border-cda-border bg-white px-3 py-2 text-sm text-cda-text outline-none transition-colors focus:border-cda-blue"
-                />
               )}
-              <div className="flex flex-wrap justify-end gap-2">
-                {mostrarDevolver ? (
-                  <>
-                    <Button variant="outline" size="sm" onClick={() => setMostrarDevolver(false)} disabled={revisando}>
-                      Cancelar
-                    </Button>
-                    <Button size="sm" onClick={() => revisar("DEVOLVIDO")} loading={revisando} disabled={!comentarioForm.trim()}>
-                      <Undo2 className="h-3.5 w-3.5" />
-                      Devolver
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setComentarioForm("");
-                        setMostrarDevolver(true);
-                      }}
-                      disabled={revisando}
-                    >
-                      <Undo2 className="h-3.5 w-3.5" />
-                      Devolver com comentário
-                    </Button>
-                    <Button size="sm" onClick={() => revisar("APROVADO")} loading={revisando}>
-                      <ThumbsUp className="h-3.5 w-3.5" />
-                      Aprovar
-                    </Button>
-                  </>
-                )}
-              </div>
             </div>
           )}
-
-          {id && status !== "RASCUNHO" && <HistoricoVersoes planejamentoId={id} />}
         </div>
       )}
-    </Card>
+
+      {/* Barra de contexto compacta — pedido do dono, redesign v4: Projeto +
+          Materiais + Tarde Cultural em 1 linha só, em vez de campos grandes
+          competindo com os 5 dias por atenção. */}
+      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-cda-border bg-white p-3">
+        <div className="min-w-[200px] flex-1">
+          <Select
+            value={projetoId}
+            onChange={(e) => {
+              setProjetoId(e.target.value);
+              setSujo(true);
+            }}
+            disabled={!podeEditar}
+          >
+            <option value="">Sem projeto vinculado</option>
+            {projetos.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.nome} {p.ativo ? "(ativo)" : ""}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <button
+          type="button"
+          onClick={() => setMostrarMateriais((v) => !v)}
+          className="max-w-[280px] truncate rounded-lg border border-cda-border bg-cda-bg px-3 py-2 text-left text-xs text-cda-text2 hover:bg-cda-border/40"
+        >
+          <span className="font-medium">Materiais: </span>
+          {materiais ? materiais : <span className="text-cda-text3">não definidos</span>}
+        </button>
+        <Toggle checked={mostrarTardeCultural} onChange={setMostrarTardeCultural} label="Tarde Cultural" disabled={!podeEditar && !mostrarTardeCultural} />
+      </div>
+      {projetoJustificativa && (
+        <p className="-mt-2 rounded-lg border border-cda-border bg-cda-bg px-3 py-2 text-xs text-cda-text3">
+          <span className="font-medium text-cda-text2">Justificativa do projeto: </span>
+          {projetoJustificativa}
+        </p>
+      )}
+      {mostrarMateriais && (
+        <Campo
+          label="Materiais da semana"
+          value={materiais}
+          onChange={(v) => {
+            setMateriais(v);
+            setSujo(true);
+          }}
+          disabled={!podeEditar}
+          rows={2}
+        />
+      )}
+      {mostrarTardeCultural && (
+        <div className="flex flex-col gap-3 rounded-lg border border-cda-border p-3">
+          <p className="text-xs font-medium text-cda-text2">OBS: Em caso de Tarde Cultural</p>
+          <Campo
+            label="Apresentação da turma — o que será feito, se for o dia da turma apresentar"
+            value={tardeCulturalApresentacao}
+            onChange={(v) => {
+              setTardeCulturalApresentacao(v);
+              setSujo(true);
+            }}
+            disabled={!podeEditar}
+            rows={2}
+          />
+          <Campo
+            label="Lista de materiais necessários (quantidade, item, tamanho, cor, detalhes)"
+            value={tardeCulturalMateriais}
+            onChange={(v) => {
+              setTardeCulturalMateriais(v);
+              setSujo(true);
+            }}
+            disabled={!podeEditar}
+            rows={2}
+          />
+        </div>
+      )}
+
+      {/* Abas por dia — pedido do dono, redesign v4: 1 dia por vez em vez de
+          acordeão com os 5 empilhados. */}
+      <div className="flex gap-1.5 overflow-x-auto pb-1">
+        {dias.map((dia, i) => {
+          const ativo = i === diaAtivo;
+          return (
+            <button
+              key={dia.data}
+              type="button"
+              onClick={() => setDiaAtivo(i)}
+              className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-colors ${
+                ativo ? "border-cda-blue bg-cda-blue/5 text-cda-blue" : "border-cda-border bg-white text-cda-text2 hover:bg-cda-bg"
+              }`}
+            >
+              <PontoEstadoDia estado={estadoDoDia(dia.tipo, dia.conteudo)} size="xs" />
+              {LABEL_DIA_CURTO[i]} {formatarDiaMes(dia.data).slice(0, 2)}
+            </button>
+          );
+        })}
+      </div>
+
+      {diaAtual && (
+        <DiaConteudo turmaId={turmaId} indice={diaAtivo} dia={diaAtual} atualizar={(patch) => atualizarDia(diaAtivo, patch)} podeEditar={podeEditar} />
+      )}
+
+      {erro && <p className="text-sm text-cda-red">{erro}</p>}
+
+      {podeEditar && (
+        <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center justify-between gap-3 border-t border-cda-border bg-cda-bg/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+          <span className="text-xs text-cda-text3">{ultimoSalvoEm ? `Salvo às ${formatarHora(ultimoSalvoEm)}` : "Ainda não salvo nessa visita"}</span>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Button variant="outline" onClick={() => salvar()} loading={salvando} disabled={carregando}>
+              <NotebookPen className="h-3.5 w-3.5" />
+              Salvar este dia agora
+            </Button>
+            {status !== "RASCUNHO" && (
+              <Button variant="outline" onClick={() => salvar("RASCUNHO")} loading={salvando} disabled={carregando}>
+                <RotateCcw className="h-3.5 w-3.5" />
+                Reabrir
+              </Button>
+            )}
+            {status === "RASCUNHO" && (
+              <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Finalizar e enviar semana
+              </Button>
+            )}
+            {status === "DEVOLVIDO" && (
+              <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Reenviar
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+      {!carregando && !podeEditar && !souCoordenadora && (
+        <p className="text-xs text-cda-text3">Só a professora regente dessa turma edita o planejamento.</p>
+      )}
+
+      {souCoordenadora && status !== "RASCUNHO" && (
+        <div className="rounded-lg border border-cda-blue/20 bg-cda-blue/5 p-4">
+          <p className="mb-1 text-xs font-semibold text-cda-text2">Revisão da coordenadora</p>
+          <p className="mb-3 text-xs text-cda-text3">Aprove se está tudo certo, ou devolva explicando o que precisa ajustar.</p>
+          {mostrarDevolver && (
+            <textarea
+              value={comentarioForm}
+              onChange={(e) => setComentarioForm(e.target.value)}
+              placeholder="O que precisa corrigir?"
+              rows={3}
+              className="mb-2 w-full rounded-lg border border-cda-border bg-white px-3 py-2 text-sm text-cda-text outline-none transition-colors focus:border-cda-blue"
+            />
+          )}
+          <div className="flex flex-wrap justify-end gap-2">
+            {mostrarDevolver ? (
+              <>
+                <Button variant="outline" size="sm" onClick={() => setMostrarDevolver(false)} disabled={revisando}>
+                  Cancelar
+                </Button>
+                <Button size="sm" onClick={() => revisar("DEVOLVIDO")} loading={revisando} disabled={!comentarioForm.trim()}>
+                  <Undo2 className="h-3.5 w-3.5" />
+                  Devolver
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setComentarioForm("");
+                    setMostrarDevolver(true);
+                  }}
+                  disabled={revisando}
+                >
+                  <Undo2 className="h-3.5 w-3.5" />
+                  Devolver com comentário
+                </Button>
+                <Button size="sm" onClick={() => revisar("APROVADO")} loading={revisando}>
+                  <ThumbsUp className="h-3.5 w-3.5" />
+                  Aprovar
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {id && status !== "RASCUNHO" && <HistoricoVersoes planejamentoId={id} />}
+    </div>
   );
 }

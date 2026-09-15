@@ -18,6 +18,10 @@
   --cda-purple: #7c3aed;
   --cda-teal: #0d9488;
   --cda-pink: #db2777;
+  /* NOVO — 5ª cor de identidade das seções do Planejamento (Momento
+     Fundamental), pedido do dono, redesign v4: nenhum token existente batia
+     com o indigo do mockup — as outras 4 (azul/teal/roxo/cinza) já existiam. */
+  --cda-indigo: #4f46e5;
   /* NOVO — anel de foco de teclado, usado no @layer base abaixo */
   --cda-focus-ring: 0 0 0 3px rgb(26 111 216 / 35%);
 
@@ -119,6 +123,7 @@
   --color-cda-purple: var(--cda-purple);
   --color-cda-teal: var(--cda-teal);
   --color-cda-pink: var(--cda-pink);
+  --color-cda-indigo: var(--cda-indigo);
 
   /* Etapa 1 do handoff — expõe os tokens semânticos como utilitário Tailwind
      (ex.: bg-surface-app, text-status-danger). */
