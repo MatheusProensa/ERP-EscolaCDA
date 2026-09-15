@@ -193,9 +193,13 @@ export default async function PedagogicoPage() {
   // 2) Status real da FolhaMensal (Atividade Gráfica/Tema Literário) esse
   //    mês — a tabela existe desde a implementação das 2 abas próprias, essa
   //    tela só ainda não consultava; mesmo combinador usado no Planejamento.
+  //    Correção (achado do dono, conferindo o redesign): faltava o mesmo
+  //    filtro de status que planejamentosMes já tem — sem ele, uma folha
+  //    RASCUNHO (reaberta, ainda não reenviada) entrava na contagem de
+  //    "total" e o combinador a lia como "Aguardando revisão" por engano.
   const folhaMensalMes = idsRegente.length
     ? await prisma.folhaMensal.findMany({
-        where: { turmaId: { in: idsRegente }, semanaInicio: { in: semanasMes } },
+        where: { turmaId: { in: idsRegente }, semanaInicio: { in: semanasMes }, status: { in: ["ENVIADO", "APROVADO", "DEVOLVIDO"] } },
         select: { turmaId: true, tipo: true, status: true },
       })
     : [];
@@ -247,6 +251,23 @@ export default async function PedagogicoPage() {
   // de frase.
   const prazoAtualValor =
     diasParaPrazo === null ? "—" : diasParaPrazo < 0 ? "Vencido" : diasParaPrazo === 0 ? "Hoje" : `${diasParaPrazo} dia${diasParaPrazo === 1 ? "" : "s"}`;
+
+  // Prazo colorido do card de Planejamento (pedido do dono: o redesign v2
+  // tinha perdido essa informação) — "Prazo: DD/MM · X dias restantes",
+  // vermelho <3 dias (vencido inclusive), âmbar <7, verde senão; cinza
+  // quando a coordenadora ainda não definiu prazo esse mês.
+  function prazoPlanejamentoInfo(): { texto: string; cor: string } {
+    if (!dataLimite || diasParaPrazo === null) return { texto: "Sem prazo definido", cor: "var(--cda-text3)" };
+    const dataFormatada = dataLimite.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+    const sufixo =
+      diasParaPrazo < 0
+        ? `vencido há ${Math.abs(diasParaPrazo)} dia${Math.abs(diasParaPrazo) === 1 ? "" : "s"}`
+        : diasParaPrazo === 0
+          ? "hoje"
+          : `${diasParaPrazo} dia${diasParaPrazo === 1 ? "" : "s"} restante${diasParaPrazo === 1 ? "" : "s"}`;
+    const cor = diasParaPrazo < 3 ? "var(--status-critical)" : diasParaPrazo < 7 ? "var(--status-warning)" : "var(--status-success)";
+    return { texto: `Prazo: ${dataFormatada} · ${sufixo}`, cor };
+  }
 
   // "X de 6 entregas" por turma-como-regente (redesign da tela inicial,
   // pedido do dono) — as 6: Planejamento, Roteiro (mesmo sinal do
@@ -503,14 +524,12 @@ export default async function PedagogicoPage() {
                   const semanasRoteiro = semanasComRoteiroPorTurma.get(turmaId) ?? 0;
                   const graficaStatus = statusFolha(turmaId, "ATIVIDADE_GRAFICA");
                   const literarioStatus = statusFolha(turmaId, "TEMA_LITERARIO");
-                  const prazoTexto = textoPrazo();
                   const roteiroHref = `/api/planejamentos/roteiro-pdf?turmaId=${turmaId}&mes=${anoMesAtual}`;
                   const entregas = entregasDaTurma(turmaId);
                   const entregasPct = Math.round((entregas.feitas / entregas.total) * 100);
                   const fotosMes = fotosMesPorTurma.get(turmaId) ?? 0;
 
                   const linhasPlanejamento = [`${semanasInfo?.total ?? 0} de ${semanasMes.length} semana${semanasMes.length === 1 ? "" : "s"} enviadas`];
-                  if (prazoTexto) linhasPlanejamento.push(prazoTexto);
 
                   return (
                     <div key={v.id} className="rounded-[10px] border border-cda-border bg-cda-surface p-4">
@@ -547,6 +566,7 @@ export default async function PedagogicoPage() {
                           statusLabel={STATUS_LABEL[statusTurma]}
                           linhas={linhasPlanejamento}
                           progresso={{ atual: semanasInfo?.total ?? 0, total: semanasMes.length }}
+                          prazo={prazoPlanejamentoInfo()}
                           href={`/pedagogico/planejamento/${turmaId}`}
                           acaoLabel="Abrir"
                         />

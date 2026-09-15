@@ -17,6 +17,7 @@ export function DocumentoPedagogicoCard({
   statusLabel,
   linhas,
   progresso,
+  prazo,
   href,
   external,
   acaoLabel,
@@ -34,6 +35,11 @@ export function DocumentoPedagogicoCard({
    * Planejamento têm "N de M semanas"; Atividade Gráfica/Tema Literário,
    * sendo pontuais por dia, não têm um "total" fixo pra barrar). */
   progresso?: { atual: number; total: number };
+  /** Linha de prazo colorida, abaixo da barra de progresso — só o
+   * Planejamento tem (é o único documento com data limite definida pela
+   * coordenadora); pedido do dono, o redesign v2 tinha perdido essa
+   * informação. */
+  prazo?: { texto: string; cor: string };
   href: string;
   /** true = PDF/link externo (abre em nova aba); false = navegação interna. */
   external?: boolean;
@@ -68,6 +74,12 @@ export function DocumentoPedagogicoCard({
         <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-cda-bg">
           <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: cor }} />
         </div>
+      )}
+
+      {prazo && (
+        <span className="mt-2 text-[11px] font-medium" style={{ color: prazo.cor }}>
+          {prazo.texto}
+        </span>
       )}
 
       {/* Visual do <Button> primário do sistema (bg-cda-blue, h-8, rounded-lg)
