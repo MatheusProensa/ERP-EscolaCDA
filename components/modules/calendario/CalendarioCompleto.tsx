@@ -44,12 +44,12 @@ const CATEGORIA_FERIADO = "Recesso/Feriado";
 // calendário e no widget de eventos do Dashboard). dot reaproveita a cor do
 // texto (mais saturada, boa pra um círculo pequeno).
 const CORES_EVENTO_VIBRANTE: Record<string, { bg: string; text: string }> = {
-  "Organização Interna": { bg: "#fef3c7", text: "#92400e" },
-  "Eventos e Atividades": { bg: "#dbeafe", text: "#1e40af" },
-  Marketing: { bg: "#ede9fe", text: "#5b21b6" },
-  Reuniões: { bg: "#d1fae5", text: "#065f46" },
-  "Datas Comemorativas": { bg: "#fce7f3", text: "#9d174d" },
-  "Recesso/Feriado": { bg: "#e8edf5", text: "#374151" },
+  "Organização Interna": { bg: "#fde68a", text: "#78350f" },
+  "Eventos e Atividades": { bg: "#93c5fd", text: "#1e3a8a" },
+  Marketing: { bg: "#c4b5fd", text: "#3b0764" },
+  Reuniões: { bg: "#6ee7b7", text: "#064e3b" },
+  "Datas Comemorativas": { bg: "#f9a8d4", text: "#831843" },
+  "Recesso/Feriado": { bg: "#bfdbfe", text: "#1e3a8a" },
 };
 
 function corCategoria(categoria: string): { bg: string; text: string; dot: string } {
