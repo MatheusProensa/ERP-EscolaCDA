@@ -236,8 +236,20 @@ export function Sidebar({
               <div className="flex flex-col gap-0.5">
                 {group.items.map((item) => {
                   if (item.children) {
-                    const filhoAtivo = item.children.some((c) => pathname === c.href || pathname.startsWith(`${c.href}/`));
-                    const aberto = submenusAbertos.has(item.label) || filhoAtivo;
+                    // "Geral" (/calendario) é prefixo de "Pedagógico"
+                    // (/calendario/pedagogico) — sem isso os 2 ficavam
+                    // "ativos" ao mesmo tempo em /calendario/pedagogico.
+                    // Só o filho com o href mais específico que bate
+                    // (mesma regra de "prefixo mais longo vence" já usada em
+                    // moduloDaRota, lib/permissoes.ts) fica marcado.
+                    const hrefsQueBatem = item.children
+                      .map((c) => c.href)
+                      .filter((href) => pathname === href || pathname.startsWith(`${href}/`));
+                    const hrefAtivo = hrefsQueBatem.reduce<string | null>(
+                      (melhor, href) => (!melhor || href.length > melhor.length ? href : melhor),
+                      null
+                    );
+                    const aberto = submenusAbertos.has(item.label) || hrefAtivo !== null;
                     const Icon = item.icon;
                     return (
                       <div key={item.label}>
@@ -261,7 +273,7 @@ export function Sidebar({
                         {aberto && (
                           <div className="ml-4 flex flex-col gap-0.5 border-l border-white/10 py-0.5 pl-3">
                             {item.children.map((child) => {
-                              const active = pathname === child.href || pathname.startsWith(`${child.href}/`);
+                              const active = child.href === hrefAtivo;
                               return (
                                 <Link
                                   key={child.href}
