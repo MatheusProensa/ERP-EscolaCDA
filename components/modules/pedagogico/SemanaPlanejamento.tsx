@@ -60,7 +60,12 @@ function formatarHora(d: Date): string {
  * aqui, por isso local em vez de virar componente de ui/ compartilhado. */
 function Toggle({ checked, onChange, label, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean }) {
   return (
-    <label className={`inline-flex items-center gap-2 text-xs font-medium text-cda-text2 ${disabled ? "opacity-50" : "cursor-pointer"}`}>
+    // py-2 dá área de toque confortável em volta do switch pequeno sem
+    // esticar o trilho visual dele (ficaria estranho um switch de 44px) —
+    // lg:py-0 mantém o desktop idêntico ao que já era.
+    <label
+      className={`inline-flex min-h-11 items-center gap-2 py-2 text-base font-medium text-cda-text2 lg:min-h-0 lg:py-0 lg:text-xs ${disabled ? "opacity-50" : "cursor-pointer"}`}
+    >
       <button
         type="button"
         role="switch"
@@ -177,7 +182,7 @@ function Campo({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs font-medium" style={{ color: "#475569" }}>
+      <label className="text-base font-medium lg:text-xs" style={{ color: "#475569" }}>
         {label}
       </label>
       <textarea
@@ -185,7 +190,11 @@ function Campo({
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         rows={rows}
-        className="w-full rounded-lg border-[1.5px] border-[#cbd5e1] bg-[#f8fafc] px-3 py-2 text-sm text-cda-text outline-none transition-colors placeholder:text-[#94a3b8] focus:border-[#2563eb] focus:bg-white focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)] disabled:bg-cda-bg disabled:text-cda-text3"
+        // min-height progressivo pro teclado virtual (tablet 100px, celular
+        // 120px) — pedido do dono, responsivo: "mais espaço pra digitar".
+        // text-base (16px) até o tablet evita o zoom automático do iOS ao
+        // focar o campo; lg: volta pro text-sm de sempre (desktop intacto).
+        className="min-h-[120px] w-full rounded-lg border-[1.5px] border-[#cbd5e1] bg-[#f8fafc] px-3 py-2 text-base text-cda-text outline-none transition-colors placeholder:text-[#94a3b8] focus:border-[#2563eb] focus:bg-white focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)] disabled:bg-cda-bg disabled:text-cda-text3 min-[600px]:min-h-[100px] lg:min-h-0 lg:text-sm"
       />
     </div>
   );
@@ -588,9 +597,19 @@ export function SemanaPlanejamento({
           </Link>
         </div>
         {carregado && (
-          <div className="mt-3 overflow-x-auto pb-1">
-            <PlanejamentoStepper status={status} />
-          </div>
+          <>
+            {/* Trilho completo — tablet e desktop. No celular ele quebra
+                (4 etapas horizontais não cabem), então vira só o badge do
+                status atual abaixo (pedido do dono, responsivo). */}
+            <div className="mt-3 hidden overflow-x-auto pb-1 min-[600px]:block">
+              <PlanejamentoStepper status={status} />
+            </div>
+            <div className="mt-3 min-[600px]:hidden">
+              <Badge variant={status === "APROVADO" ? "success" : status === "DEVOLVIDO" ? "danger" : status === "ENVIADO" ? "info" : "neutral"}>
+                {status === "APROVADO" ? "Aprovado" : status === "DEVOLVIDO" ? "Devolvido" : status === "ENVIADO" ? "Enviado" : "Preenchendo"}
+              </Badge>
+            </div>
+          </>
         )}
       </div>
 
@@ -606,7 +625,7 @@ export function SemanaPlanejamento({
               {liComentarioEm ? (
                 <span className="text-xs text-cda-text3">Você já confirmou que leu.</span>
               ) : (
-                <Button variant="outline" size="sm" onClick={confirmarLeitura}>
+                <Button variant="outline" size="sm" onClick={confirmarLeitura} className="min-h-11 lg:min-h-0">
                   Li e entendi
                 </Button>
               )}
@@ -617,9 +636,10 @@ export function SemanaPlanejamento({
 
       {/* Barra de contexto compacta — pedido do dono, redesign v4: Projeto +
           Materiais + Tarde Cultural em 1 linha só, em vez de campos grandes
-          competindo com os 5 dias por atenção. */}
-      <div className="flex flex-wrap items-center gap-3 rounded-lg border border-cda-border bg-white p-3">
-        <div className="min-w-[200px] flex-1">
+          competindo com os 5 dias por atenção. Responsivo: vira coluna até
+          o desktop (tablet/celular pedem empilhado, não linha espremida). */}
+      <div className="flex flex-col items-stretch gap-3 rounded-lg border border-cda-border bg-white p-3 lg:flex-row lg:flex-wrap lg:items-center">
+        <div className="w-full lg:min-w-[200px] lg:w-auto lg:flex-1">
           <Select
             value={projetoId}
             onChange={(e) => {
@@ -639,7 +659,7 @@ export function SemanaPlanejamento({
         <button
           type="button"
           onClick={() => setMostrarMateriais((v) => !v)}
-          className="max-w-[280px] truncate rounded-lg border border-cda-border bg-cda-bg px-3 py-2 text-left text-xs text-cda-text2 hover:bg-cda-border/40"
+          className="min-h-11 w-full truncate rounded-lg border border-cda-border bg-cda-bg px-3 py-2 text-left text-base text-cda-text2 hover:bg-cda-border/40 lg:min-h-0 lg:w-auto lg:max-w-[280px] lg:text-xs"
         >
           <span className="font-medium">Materiais: </span>
           {materiais ? materiais : <span className="text-cda-text3">não definidos</span>}
@@ -700,7 +720,7 @@ export function SemanaPlanejamento({
               key={dia.data}
               type="button"
               onClick={() => setDiaAtivo(i)}
-              className={`flex shrink-0 items-center gap-1.5 rounded-t-lg border border-b-2 px-3 py-2 text-xs transition-colors ${
+              className={`flex min-h-11 shrink-0 items-center gap-1.5 rounded-t-lg border border-b-2 px-3 py-2 text-xs transition-colors lg:min-h-0 ${
                 ativo
                   ? "border-transparent border-b-[#2563eb] font-semibold"
                   : "border-cda-border bg-white font-medium text-cda-text2 hover:bg-cda-bg"
@@ -721,30 +741,33 @@ export function SemanaPlanejamento({
       {erro && <p className="text-sm text-cda-red">{erro}</p>}
 
       {podeEditar && (
-        <div className="sticky bottom-0 -mx-4 flex flex-wrap items-center justify-between gap-3 border-t border-cda-border bg-cda-bg/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6">
+        // Empilha em coluna no celular (sempre), só quebra se precisar no
+        // tablet (flex-wrap), volta a ser 1 linha só no desktop — pedido do
+        // dono, responsivo. Botões com min-h-11 (alvo de toque) até o tablet.
+        <div className="sticky bottom-0 -mx-4 flex flex-col items-stretch gap-3 border-t border-cda-border bg-cda-bg/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 min-[600px]:flex-row min-[600px]:flex-wrap min-[600px]:items-center min-[600px]:justify-between lg:flex-nowrap">
           <span className="flex items-center gap-1.5 text-xs" style={{ color: "#64748b" }}>
             <Clock className="h-3.5 w-3.5" />
             {ultimoSalvoEm ? `Salvo às ${formatarHora(ultimoSalvoEm)}` : "Ainda não salvo nessa visita"}
           </span>
-          <div className="flex flex-wrap justify-end gap-2">
-            <Button variant="outline" onClick={() => salvar()} loading={salvando} disabled={carregando}>
+          <div className="flex flex-col gap-2 min-[600px]:flex-row min-[600px]:flex-wrap min-[600px]:justify-end">
+            <Button variant="outline" onClick={() => salvar()} loading={salvando} disabled={carregando} className="min-h-11 lg:min-h-0">
               <NotebookPen className="h-3.5 w-3.5" />
               Salvar este dia agora
             </Button>
             {status !== "RASCUNHO" && (
-              <Button variant="outline" onClick={() => salvar("RASCUNHO")} loading={salvando} disabled={carregando}>
+              <Button variant="outline" onClick={() => salvar("RASCUNHO")} loading={salvando} disabled={carregando} className="min-h-11 lg:min-h-0">
                 <RotateCcw className="h-3.5 w-3.5" />
                 Reabrir
               </Button>
             )}
             {status === "RASCUNHO" && (
-              <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
+              <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando} className="min-h-11 lg:min-h-0">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Finalizar e enviar semana
               </Button>
             )}
             {status === "DEVOLVIDO" && (
-              <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando}>
+              <Button onClick={() => salvar("ENVIADO")} loading={salvando} disabled={carregando} className="min-h-11 lg:min-h-0">
                 <CheckCircle2 className="h-3.5 w-3.5" />
                 Reenviar
               </Button>
@@ -766,16 +789,16 @@ export function SemanaPlanejamento({
               onChange={(e) => setComentarioForm(e.target.value)}
               placeholder="O que precisa corrigir?"
               rows={3}
-              className="mb-2 w-full rounded-lg border-[1.5px] border-[#cbd5e1] bg-[#f8fafc] px-3 py-2 text-sm text-cda-text outline-none transition-colors placeholder:text-[#94a3b8] focus:border-[#2563eb] focus:bg-white focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)]"
+              className="mb-2 w-full rounded-lg border-[1.5px] border-[#cbd5e1] bg-[#f8fafc] px-3 py-2 text-base text-cda-text outline-none transition-colors placeholder:text-[#94a3b8] focus:border-[#2563eb] focus:bg-white focus:shadow-[0_0_0_3px_rgba(37,99,235,0.1)] lg:text-sm"
             />
           )}
           <div className="flex flex-wrap justify-end gap-2">
             {mostrarDevolver ? (
               <>
-                <Button variant="outline" size="sm" onClick={() => setMostrarDevolver(false)} disabled={revisando}>
+                <Button variant="outline" size="sm" onClick={() => setMostrarDevolver(false)} disabled={revisando} className="min-h-11 lg:min-h-0">
                   Cancelar
                 </Button>
-                <Button size="sm" onClick={() => revisar("DEVOLVIDO")} loading={revisando} disabled={!comentarioForm.trim()}>
+                <Button size="sm" onClick={() => revisar("DEVOLVIDO")} loading={revisando} disabled={!comentarioForm.trim()} className="min-h-11 lg:min-h-0">
                   <Undo2 className="h-3.5 w-3.5" />
                   Devolver
                 </Button>
@@ -790,11 +813,12 @@ export function SemanaPlanejamento({
                     setMostrarDevolver(true);
                   }}
                   disabled={revisando}
+                  className="min-h-11 lg:min-h-0"
                 >
                   <Undo2 className="h-3.5 w-3.5" />
                   Devolver com comentário
                 </Button>
-                <Button size="sm" onClick={() => revisar("APROVADO")} loading={revisando}>
+                <Button size="sm" onClick={() => revisar("APROVADO")} loading={revisando} className="min-h-11 lg:min-h-0">
                   <ThumbsUp className="h-3.5 w-3.5" />
                   Aprovar
                 </Button>

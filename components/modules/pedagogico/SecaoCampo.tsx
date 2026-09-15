@@ -29,7 +29,10 @@ export function SecaoCampo({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-lg border border-cda-border p-4 shadow-sm" style={{ borderLeftWidth: 6, borderLeftColor: cor, backgroundColor: fundo }}>
+    <div
+      className="rounded-lg border border-cda-border p-5 shadow-sm lg:p-4"
+      style={{ borderLeftWidth: 6, borderLeftColor: cor, backgroundColor: fundo }}
+    >
       <p
         className="mb-3 flex items-center gap-1 font-bold uppercase"
         style={{ color: cor, fontSize: 13, letterSpacing: "0.5px" }}
@@ -57,7 +60,7 @@ export function Disclosure({ label, children }: { label: string; children: React
       <button
         type="button"
         onClick={() => setAberto((v) => !v)}
-        className="inline-flex items-center gap-1 text-xs font-medium text-cda-text3 hover:text-cda-text2"
+        className="flex min-h-11 items-center gap-1 text-xs font-medium text-cda-text3 hover:text-cda-text2 lg:min-h-0"
       >
         <ChevronDown className={`h-3.5 w-3.5 transition-transform ${aberto ? "rotate-180" : ""}`} />
         {label}

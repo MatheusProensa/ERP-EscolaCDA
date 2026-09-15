@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Printer, Copy, CheckCircle2, AlertCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, Printer, Copy, CheckCircle2, AlertCircle, Menu, X } from "lucide-react";
 import {
   semanasDoMes,
   isoData,
@@ -194,6 +194,16 @@ export function PlanejamentoMensalClient({
   const [duplicando, setDuplicando] = useState(false);
   const [versaoRecarga, setVersaoRecarga] = useState(0);
   const [stripVersao, setStripVersao] = useState(0);
+  // Responsivo (pedido do dono: "professoras usam tablet em sala") — 2
+  // comportamentos diferentes por tamanho, nenhum deles existe no desktop:
+  // - Celular (<600px): painel esquerdo e direito viram 2 "telas" cheias;
+  //   `mostrarListaMobile` decide qual aparece. Começa na lista.
+  // - Tablet (600-1024px): painel esquerdo vira gaveta deslizante por cima
+  //   do editor; `gavetaAberta` controla se está aberta.
+  // No desktop (lg:) nenhuma classe usa esse estado — as 2 colunas ficam
+  // sempre visíveis, como já era.
+  const [mostrarListaMobile, setMostrarListaMobile] = useState(true);
+  const [gavetaAberta, setGavetaAberta] = useState(false);
 
   // Troca de mês pode deixar a semana selecionada fora da lista nova — cai
   // pra semana atual (se o mês em tela for o corrente) ou pra 1ª semana do
@@ -223,38 +233,76 @@ export function PlanejamentoMensalClient({
     showToast(`${data.copiadas} semana(s) copiada(s) do mês anterior como ponto de partida.`);
   }
 
+  // 1 handler pros 2 comportamentos responsivos: no celular navega da lista
+  // pro editor (mostrarListaMobile=false); no tablet fecha a gaveta depois
+  // de escolher. No desktop os 2 setState não têm efeito visual nenhum (as
+  // classes que os usam só existem até 1024px).
+  function selecionarSemana(semanaIso: string) {
+    setSemanaSelecionada(semanaIso);
+    setMostrarListaMobile(false);
+    setGavetaAberta(false);
+  }
+
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+      {/* Overlay escuro atrás da gaveta — só existe (e só fecha ao clicar
+          fora) enquanto a gaveta está aberta; lg:hidden garante que nunca
+          aparece no desktop mesmo que o estado fique true por engano. */}
+      {gavetaAberta && (
+        <div className="fixed inset-0 z-40 bg-black/40 lg:hidden" onClick={() => setGavetaAberta(false)} aria-hidden />
+      )}
+
       {/* Painel esquerdo — "Semanas". Fundo claro (fix do dono, redesign v4:
-          "painel escuro ficava pesado, é navegação, não conteúdo"). */}
-      <div className="flex w-full shrink-0 flex-col gap-4 rounded-xl border border-cda-border bg-cda-bg p-4 lg:w-72">
-        <div>
-          <h2 className="mb-2 text-sm font-semibold text-cda-text">Semanas</h2>
-          <div className="flex items-center justify-between gap-2">
-            <button
-              type="button"
-              onClick={() => setAnoMes((am) => somarMes(am, -1))}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-cda-border bg-white text-cda-text2 hover:bg-cda-bg"
-              aria-label="Mês anterior"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <span className="text-sm font-medium text-cda-text">
-              {MESES_LABEL[mes - 1]} {ano}
-            </span>
-            <button
-              type="button"
-              onClick={() => setAnoMes((am) => somarMes(am, 1))}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-cda-border bg-white text-cda-text2 hover:bg-cda-bg"
-              aria-label="Próximo mês"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </button>
+          "painel escuro ficava pesado, é navegação, não conteúdo").
+          Responsivo (pedido do dono, professoras em tablet na sala):
+          - Celular (<600px): tela cheia, 1 das 2 "telas" (mostrarListaMobile).
+          - Tablet (600-1024px): gaveta fixa deslizante (translate-x), acima
+            do editor (z-50), some clicando fora (overlay) ou no X.
+          - Desktop (lg:): volta a ser a coluna estática de sempre. */}
+      <div
+        className={`${mostrarListaMobile ? "flex" : "hidden"} w-full shrink-0 flex-col gap-4 rounded-xl border border-cda-border bg-cda-bg p-4 min-[600px]:fixed min-[600px]:inset-y-0 min-[600px]:left-0 min-[600px]:z-50 min-[600px]:flex min-[600px]:w-80 min-[600px]:max-w-[85vw] min-[600px]:overflow-y-auto min-[600px]:rounded-none min-[600px]:shadow-xl min-[600px]:transition-transform min-[600px]:duration-200 ${
+          gavetaAberta ? "min-[600px]:translate-x-0" : "min-[600px]:-translate-x-full"
+        } lg:static lg:inset-auto lg:z-auto lg:w-72 lg:max-w-none lg:translate-x-0 lg:overflow-visible lg:rounded-xl lg:shadow-none`}
+      >
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <h2 className="mb-2 text-sm font-semibold text-cda-text">Semanas</h2>
+            <div className="flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setAnoMes((am) => somarMes(am, -1))}
+                className="flex h-11 w-11 items-center justify-center rounded-lg border border-cda-border bg-white text-cda-text2 hover:bg-cda-bg lg:h-8 lg:w-8"
+                aria-label="Mês anterior"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <span className="text-sm font-medium text-cda-text">
+                {MESES_LABEL[mes - 1]} {ano}
+              </span>
+              <button
+                type="button"
+                onClick={() => setAnoMes((am) => somarMes(am, 1))}
+                className="flex h-11 w-11 items-center justify-center rounded-lg border border-cda-border bg-white text-cda-text2 hover:bg-cda-bg lg:h-8 lg:w-8"
+                aria-label="Próximo mês"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+            <p className="mt-2 text-xs text-cda-text3">
+              {turmaNome}
+              {regenteNome && ` · ${regenteNome}`}
+            </p>
           </div>
-          <p className="mt-2 text-xs text-cda-text3">
-            {turmaNome}
-            {regenteNome && ` · ${regenteNome}`}
-          </p>
+          {/* X — só existe na gaveta do tablet; no celular fechar é voltar
+              (botão "← Semanas" fica no editor, não aqui). */}
+          <button
+            type="button"
+            onClick={() => setGavetaAberta(false)}
+            className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-lg text-cda-text2 hover:bg-cda-border/40 min-[600px]:flex lg:hidden"
+            aria-label="Fechar gaveta de semanas"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         <div key={versaoRecarga} className="flex flex-col gap-2">
@@ -264,14 +312,14 @@ export function PlanejamentoMensalClient({
               turmaId={turmaId}
               semanaIso={semanaIso}
               selecionada={semanaIso === semanaValida}
-              onSelecionar={() => setSemanaSelecionada(semanaIso)}
+              onSelecionar={() => selecionarSemana(semanaIso)}
             />
           ))}
         </div>
 
         <div className="flex flex-col gap-2 border-t border-cda-border pt-3">
           {podeEditar && (
-            <Button variant="outline" size="sm" onClick={duplicarMesAnterior} loading={duplicando} className="justify-start bg-white">
+            <Button variant="outline" size="sm" onClick={duplicarMesAnterior} loading={duplicando} className="min-h-11 justify-start bg-white lg:min-h-0">
               <Copy className="h-3.5 w-3.5" />
               Duplicar do mês anterior
             </Button>
@@ -280,7 +328,7 @@ export function PlanejamentoMensalClient({
             href={`/api/planejamentos/pdf?turmaId=${turmaId}&mes=${anoMes}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-medium text-cda-blue hover:underline"
+            className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-cda-blue hover:underline lg:min-h-0 lg:text-xs"
           >
             <Printer className="h-3.5 w-3.5" />
             Baixar PDF do mês inteiro
@@ -298,8 +346,29 @@ export function PlanejamentoMensalClient({
         </div>
       </div>
 
-      {/* Painel direito — a semana selecionada, por inteiro. */}
-      <div className="min-w-0 flex-1 rounded-xl border border-cda-border bg-white p-4 sm:p-6">
+      {/* Painel direito — a semana selecionada, por inteiro. Some no celular
+          enquanto a lista está em tela (mostrarListaMobile); do tablet em
+          diante sempre visível. */}
+      <div className={`${mostrarListaMobile ? "hidden" : "flex"} min-w-0 flex-1 flex-col rounded-xl border border-cda-border bg-white p-4 min-[600px]:flex sm:p-6`}>
+        {/* Navegação responsiva — nenhum dos 2 botões existe no desktop. */}
+        <div className="mb-3 flex items-center gap-2 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMostrarListaMobile(true)}
+            className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-cda-blue min-[600px]:hidden"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Semanas
+          </button>
+          <button
+            type="button"
+            onClick={() => setGavetaAberta(true)}
+            className="hidden min-h-11 items-center gap-1.5 rounded-lg border border-cda-border bg-white px-3 text-sm font-medium text-cda-text2 hover:bg-cda-bg min-[600px]:inline-flex lg:hidden"
+          >
+            <Menu className="h-4 w-4" />
+            Semanas
+          </button>
+        </div>
         <SemanaPlanejamento
           key={`${semanaValida}-${versaoRecarga}`}
           turmaId={turmaId}
