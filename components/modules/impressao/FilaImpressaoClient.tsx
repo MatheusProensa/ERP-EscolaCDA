@@ -53,6 +53,7 @@ type Filtro = "todos" | "aguardando" | "impressos" | "porTurma";
 export function FilaImpressaoClient({
   turmas,
   anoMes,
+  mesLabel,
   turmasCompletas,
   totalTurmas,
   documentosImpressos,
@@ -61,6 +62,8 @@ export function FilaImpressaoClient({
 }: {
   turmas: TurmaImpressao[];
   anoMes: string;
+  /** "Setembro 2026" — só pro texto do estado vazio geral. */
+  mesLabel: string;
   turmasCompletas: number;
   totalTurmas: number;
   documentosImpressos: number;
@@ -86,6 +89,10 @@ export function FilaImpressaoClient({
   }, [turmas, filtro, busca]);
 
   const selecionada = turmas.find((t) => t.id === selecionadaId) ?? null;
+  // Nada aprovado em NENHUMA turma ainda — em vez de repetir "Nenhum
+  // documento aprovado ainda" card por card (poluía a tela sem agregar
+  // informação, achado do dono), mostra 1 mensagem única centralizada.
+  const nadaAprovadoNoSistema = turmas.every((t) => t.itens.every((i) => !i.aprovado));
 
   async function marcar(turmaId: string, tipo: ItemImpressao["tipo"], impresso: boolean) {
     const chave = `${turmaId}|${tipo}`;
@@ -148,7 +155,17 @@ export function FilaImpressaoClient({
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1fr_320px]">
         <div className="flex flex-col gap-4">
-          {turmasFiltradas.length === 0 ? (
+          {nadaAprovadoNoSistema ? (
+            <Card className="flex flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-cda-bg">
+                <Printer className="h-8 w-8 text-cda-text3" />
+              </div>
+              <p className="text-base font-semibold text-cda-text2">Nenhum documento na fila ainda</p>
+              <p className="max-w-sm text-sm text-cda-text3">
+                Os documentos aparecem aqui assim que a coordenadora aprovar. Aguardando aprovações de {mesLabel}.
+              </p>
+            </Card>
+          ) : turmasFiltradas.length === 0 ? (
             <Card>
               <EmptyState icon={Printer} title="Nenhuma turma nesse filtro" subtitle="Tente outro filtro ou volte pra Todos." />
             </Card>
@@ -186,7 +203,10 @@ export function FilaImpressaoClient({
                   </button>
 
                   <div className="flex flex-col gap-1.5">
-                    {turma.itens.map((item) => {
+                    {totalAprovados === 0 ? (
+                      <p className="px-3 py-1.5 text-xs text-cda-text3">Aguardando aprovação da coordenadora</p>
+                    ) : (
+                    turma.itens.map((item) => {
                       const chave = `${turma.id}|${item.tipo}`;
                       const carregando = pendentes.has(chave);
                       if (!item.aprovado) {
@@ -236,7 +256,8 @@ export function FilaImpressaoClient({
                           )}
                         </div>
                       );
-                    })}
+                    })
+                    )}
                   </div>
                 </Card>
               );
@@ -246,8 +267,9 @@ export function FilaImpressaoClient({
 
         <div className="lg:sticky lg:top-4 lg:self-start">
           {!selecionada ? (
-            <Card className="p-4">
-              <EmptyState icon={Users} title="Selecione uma turma" subtitle="Clique numa turma pra ver o detalhe e imprimir tudo de uma vez." />
+            <Card className="flex flex-col items-center gap-1.5 px-4 py-6 text-center">
+              <Users className="h-4 w-4 text-cda-text3" />
+              <p className="text-xs text-cda-text3">Clique numa turma para ver os detalhes</p>
             </Card>
           ) : (
             <Card className="p-4">

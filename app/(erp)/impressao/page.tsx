@@ -165,6 +165,7 @@ export default async function ImpressaoPage({ searchParams }: { searchParams: Pr
       <FilaImpressaoClient
         turmas={turmasResumo}
         anoMes={anoMes}
+        mesLabel={`${MESES_LONGO[mes - 1]} ${ano}`}
         turmasCompletas={turmasCompletas}
         totalTurmas={turmasResumo.length}
         documentosImpressos={itensImpressos}
