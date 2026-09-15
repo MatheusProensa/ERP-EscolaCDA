@@ -57,6 +57,41 @@ export type SnapshotPlanejamento = {
   }[];
 };
 
+/** Status mensal de acompanhamento de um Planejamento pra visão da
+ * coordenadora (achado real, set/2026) — combina as N semanas do mês num
+ * status só: devolvido pesa mais que aprovado (precisa de ação da regente),
+ * aprovado só quando TODAS as semanas foram aprovadas, "enviado" quando
+ * mandou mas ainda não foi revisado, e pendente/atrasado quando nem todas as
+ * semanas foram enviadas (atrasado = já passou do prazo do mês). Compartilhado
+ * entre o hub (app/(erp)/pedagogico/page.tsx) e o painel mestre-detalhe da
+ * coordenadora (PainelCoordenadoraClient), pra badge/cor/rótulo nunca
+ * dessincronizarem entre os 2 lugares que mostram isso. */
+export type StatusTurmaMes = "APROVADO" | "DEVOLVIDO" | "ENVIADO" | "ATRASADO" | "PENDENTE";
+
+export const STATUS_TURMA_MES_LABEL: Record<StatusTurmaMes, string> = {
+  APROVADO: "Aprovado",
+  DEVOLVIDO: "Devolvido",
+  ENVIADO: "Aguardando revisão",
+  ATRASADO: "Atrasado",
+  PENDENTE: "Pendente",
+};
+
+export const STATUS_TURMA_MES_BADGE: Record<StatusTurmaMes, "success" | "danger" | "info" | "warning" | "critical"> = {
+  APROVADO: "success",
+  DEVOLVIDO: "danger",
+  ENVIADO: "info",
+  ATRASADO: "critical",
+  PENDENTE: "warning",
+};
+
+export const STATUS_TURMA_MES_COR: Record<StatusTurmaMes, string> = {
+  APROVADO: "var(--status-success)",
+  DEVOLVIDO: "var(--status-danger)",
+  ENVIADO: "var(--status-info)",
+  ATRASADO: "var(--status-critical)",
+  PENDENTE: "var(--status-warning)",
+};
+
 /** Tipo padrão de cada dia útil da semana, pelo índice (0=segunda...4=sexta)
  * — alternado TEMATICA/CONTEXTO igual o padrão real observado no documento
  * (segunda/quarta/sexta = temática, terça/quinta = contexto). É só o valor

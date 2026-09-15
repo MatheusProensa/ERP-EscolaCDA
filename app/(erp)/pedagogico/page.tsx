@@ -22,22 +22,49 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { PedagogicoTutorial } from "@/components/modules/pedagogico/PedagogicoTutorial";
 import { PrazoPedagogicoForm } from "@/components/modules/pedagogico/PrazoPedagogicoForm";
 import { DocumentoPedagogicoCard } from "@/components/modules/pedagogico/DocumentoPedagogicoCard";
-import { BarraFiltro } from "@/components/ui/BarraFiltro";
+import { PainelCoordenadoraClient } from "@/components/modules/pedagogico/PainelCoordenadoraClient";
+import { AcompanhamentoCharts } from "@/components/modules/pedagogico/AcompanhamentoCharts";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
 import { hojeBrasilia, ordenarTurmas } from "@/lib/utils";
-import { semanasDoMes } from "@/lib/planejamento";
+import {
+  semanasDoMes,
+  isoData,
+  STATUS_TURMA_MES_LABEL,
+  STATUS_TURMA_MES_COR,
+  type StatusTurmaMes,
+} from "@/lib/planejamento";
 
 const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã", TARDE: "Tarde" };
+const MESES_CURTO = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+
+/** Só as segundas-feiras cujo PRÓPRIO calendário cai dentro do mês (ano,
+ * mes0) — diferente de semanasDoMes (que empresta a semana de fronteira pro
+ * mês seguinte, pensada pra cobrança do mês atual). Usada só pela Evolução
+ * mensal/Destaques (6 meses pra trás): aqui os buckets precisam ser
+ * disjuntos, senão uma mesma semana contaria em 2 meses do gráfico. */
+function segundasDoMesPuro(ano: number, mes0: number): string[] {
+  const resultado: string[] = [];
+  const d = new Date(Date.UTC(ano, mes0, 1));
+  while (d.getUTCMonth() === mes0) {
+    if (d.getUTCDay() === 1) resultado.push(isoData(d));
+    d.setUTCDate(d.getUTCDate() + 1);
+  }
+  return resultado;
+}
+
+function streakAtual(arr: boolean[], valor: boolean): number {
+  let streak = 0;
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (arr[i] === valor) streak++;
+    else break;
+  }
+  return streak;
+}
 
 /** Hub da professora dentro da Área Pedagógica — mostra o vínculo dela
  * (turma como regente, matéria×turmas como especialista) e leva pras 3
  * entregas (planejamento, parecer, portfólio), todas já reais (task #18). */
-export default async function PedagogicoPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ busca?: string; atrasados?: string }>;
-}) {
-  const { busca, atrasados } = await searchParams;
+export default async function PedagogicoPage() {
   const session = await auth();
   const souCoordenadora = session?.user.role === "ADMIN" || !!session?.user.coordenaAreaPedagogica;
 
@@ -80,7 +107,7 @@ export default async function PedagogicoPage({
   const semanasMes = semanasDoMes(hoje);
   const planejamentosMes = await prisma.planejamento.findMany({
     where: { semanaInicio: { in: semanasMes }, status: { in: ["ENVIADO", "APROVADO", "DEVOLVIDO"] } },
-    select: { turmaId: true, status: true },
+    select: { id: true, turmaId: true, status: true, semanaInicio: true },
   });
   const statusPorTurma = new Map<string, { total: number; aprovadas: number; devolvidas: number }>();
   for (const p of planejamentosMes) {
@@ -97,35 +124,19 @@ export default async function PedagogicoPage({
   // regente), depois aprovado (só quando TODAS as semanas foram aprovadas),
   // depois "aguardando revisão" (enviou mas a coordenadora ainda não olhou).
   // Pendente vira Atrasado quando já passou do prazo do mês (pedido do dono,
-  // set/2026: "coordenadora define o prazo do mês").
-  function statusExibicao(turmaId: string): "APROVADO" | "DEVOLVIDO" | "ENVIADO" | "ATRASADO" | "PENDENTE" {
+  // set/2026: "coordenadora define o prazo do mês"). Rótulo/cor/badge dessas
+  // 5 chaves moraram pra lib/planejamento.ts (STATUS_TURMA_MES_*) — usados
+  // aqui e no painel mestre-detalhe (PainelCoordenadoraClient), pra nunca
+  // dessincronizar.
+  function statusExibicao(turmaId: string): StatusTurmaMes {
     const s = statusPorTurma.get(turmaId);
     if (!s || s.total < semanasMes.length) return prazoVencido ? "ATRASADO" : "PENDENTE";
     if (s.devolvidas > 0) return "DEVOLVIDO";
     if (s.aprovadas >= semanasMes.length) return "APROVADO";
     return "ENVIADO";
   }
-  const STATUS_LABEL: Record<string, string> = {
-    APROVADO: "Aprovado",
-    DEVOLVIDO: "Devolvido",
-    ENVIADO: "Aguardando revisão",
-    ATRASADO: "Atrasado",
-    PENDENTE: "Pendente",
-  };
-  const STATUS_BADGE: Record<string, "success" | "danger" | "info" | "warning" | "critical"> = {
-    APROVADO: "success",
-    DEVOLVIDO: "danger",
-    ENVIADO: "info",
-    ATRASADO: "critical",
-    PENDENTE: "warning",
-  };
-  const STATUS_COR: Record<string, string> = {
-    APROVADO: "var(--status-success)",
-    DEVOLVIDO: "var(--status-danger)",
-    ENVIADO: "var(--status-info)",
-    ATRASADO: "var(--status-critical)",
-    PENDENTE: "var(--status-warning)",
-  };
+  const STATUS_LABEL = STATUS_TURMA_MES_LABEL;
+  const STATUS_COR = STATUS_TURMA_MES_COR;
 
   // Quantas folhas de Atividade Gráfica / Tema Literário já foram preenchidas
   // esse mês, por turma — os 2 não são documentos mensais (são pontuais, por
@@ -164,25 +175,105 @@ export default async function PedagogicoPage({
     ? ordenarTurmas(
         await prisma.turma.findMany({
           where: { anoLetivoId: anoLetivo.id },
-          include: { vinculosPedagogico: { where: { papel: "REGENTE" }, include: { user: { select: { name: true } } } } },
+          include: {
+            vinculosPedagogico: { where: { papel: "REGENTE" }, include: { user: { select: { name: true, foto: true } } } },
+          },
         })
       )
     : [];
 
-  // Busca por turma/professora + filtro "só atrasados" (pedido do dono:
-  // "filtro só atrasados com 1 clique" + "busca rápida por nome de
-  // professora ou turma") — só filtra a LISTA, os cards de resumo acima
-  // continuam mostrando o total real do ano letivo, filtro nenhum.
-  const buscaNormalizada = (busca ?? "").trim().toLowerCase();
-  const soAtrasados = atrasados === "1";
-  const turmasFiltradas = todasTurmas.filter((t) => {
-    if (soAtrasados && statusExibicao(t.id) !== "ATRASADO") return false;
-    if (buscaNormalizada) {
-      const regenteNome = t.vinculosPedagogico[0]?.user.name ?? "";
-      const alvo = `${t.nome} ${regenteNome}`.toLowerCase();
-      if (!alvo.includes(buscaNormalizada)) return false;
+  // Pontualidade do mês — pedido do dono, inspirado num mockup que ele
+  // trouxe do Gemini: "quero todas aquelas funções". Compara o 1º envio de
+  // cada semana (PlanejamentoVersao numero=1 — a tentativa original, não um
+  // reenvio depois de devolvido) com o prazo do mês. Sem prazo definido, não
+  // dá pra dizer o que é "no prazo" — fica null (painel mostra "sem prazo").
+  const primeirasVersoesMes = dataLimite
+    ? await prisma.planejamentoVersao.findMany({
+        where: { numero: 1, planejamento: { semanaInicio: { in: semanasMes } } },
+        select: { enviadoEm: true, planejamento: { select: { turmaId: true } } },
+      })
+    : [];
+  const pontualidadePorTurma = new Map<string, { total: number; noPrazo: number }>();
+  for (const v of primeirasVersoesMes) {
+    const atual = pontualidadePorTurma.get(v.planejamento.turmaId) ?? { total: 0, noPrazo: 0 };
+    atual.total += 1;
+    if (dataLimite && v.enviadoEm <= dataLimite) atual.noPrazo += 1;
+    pontualidadePorTurma.set(v.planejamento.turmaId, atual);
+  }
+
+  // Evolução mensal + Destaques (últimos 6 meses, mês atual incluso) — outro
+  // pedaço do mesmo mockup. Métrica mais simples que a pontualidade acima
+  // ("entregou TODAS as semanas daquele mês", sem olhar prazo): meses
+  // passados não têm PrazoPedagogico gravado (o recurso é novo), não dá pra
+  // dizer se foi "no prazo" antes de existir prazo pra comparar.
+  const janelaMeses = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth() - (5 - i), 1));
+    return { ano: d.getUTCFullYear(), mes0: d.getUTCMonth(), label: MESES_CURTO[d.getUTCMonth()] };
+  });
+  const mondaysPorMes = janelaMeses.map(({ ano, mes0 }) => segundasDoMesPuro(ano, mes0));
+  const inicioJanela = new Date(Date.UTC(janelaMeses[0].ano, janelaMeses[0].mes0, 1));
+  const planejamentosJanela =
+    souCoordenadora && anoLetivo
+      ? await prisma.planejamento.findMany({
+          where: { semanaInicio: { gte: inicioJanela }, status: { in: ["ENVIADO", "APROVADO", "DEVOLVIDO"] } },
+          select: { turmaId: true, semanaInicio: true },
+        })
+      : [];
+  const entreguesPorSemana = new Set(planejamentosJanela.map((p) => `${p.turmaId}|${isoData(p.semanaInicio)}`));
+  const statusMensalPorTurma = new Map<string, boolean[]>();
+  for (const t of todasTurmas) {
+    statusMensalPorTurma.set(
+      t.id,
+      mondaysPorMes.map((mondays) => mondays.length > 0 && mondays.every((iso) => entreguesPorSemana.has(`${t.id}|${iso}`)))
+    );
+  }
+  const evolucaoMensal = janelaMeses.map(({ label }, i) => {
+    const emDia = todasTurmas.filter((t) => statusMensalPorTurma.get(t.id)?.[i]).length;
+    return { label, pct: todasTurmas.length > 0 ? Math.round((emDia / todasTurmas.length) * 100) : 0 };
+  });
+  type Destaque = { turmaNome: string; regenteNome: string | null; streak: number };
+  let destaquePontual: Destaque | null = null;
+  let destaqueAtencao: Destaque | null = null;
+  for (const t of todasTurmas) {
+    const arr = statusMensalPorTurma.get(t.id) ?? [];
+    const regenteNome = t.vinculosPedagogico[0]?.user.name ?? null;
+    const streakEmDia = streakAtual(arr, true);
+    const streakForaDia = streakAtual(arr, false);
+    if (streakEmDia >= 2 && (!destaquePontual || streakEmDia > destaquePontual.streak)) {
+      destaquePontual = { turmaNome: t.nome, regenteNome, streak: streakEmDia };
     }
-    return true;
+    if (streakForaDia >= 2 && (!destaqueAtencao || streakForaDia > destaqueAtencao.streak)) {
+      destaqueAtencao = { turmaNome: t.nome, regenteNome, streak: streakForaDia };
+    }
+  }
+
+  // Monta o resumo de cada turma pro painel mestre-detalhe da coordenadora
+  // (PainelCoordenadoraClient) — busca/filtro/seleção acontecem no cliente
+  // (o dado já está todo aqui, não precisa de ida e volta ao servidor a cada
+  // tecla), então passa a lista INTEIRA, sem filtrar no servidor.
+  const turmasResumo = todasTurmas.map((t) => {
+    const regenteUser = t.vinculosPedagogico[0]?.user;
+    const semanasInfo = statusPorTurma.get(t.id);
+    const folhas = folhasPorTurma.get(t.id) ?? { grafica: 0, literario: 0 };
+    const pontualInfo = pontualidadePorTurma.get(t.id);
+    const semanas = planejamentosMes
+      .filter((p) => p.turmaId === t.id)
+      .map((p) => ({ id: p.id, semanaInicio: isoData(p.semanaInicio), status: p.status as "ENVIADO" | "APROVADO" | "DEVOLVIDO" }))
+      .sort((a, b) => a.semanaInicio.localeCompare(b.semanaInicio));
+    return {
+      id: t.id,
+      nome: t.nome,
+      turno: t.turno,
+      regenteNome: regenteUser?.name ?? null,
+      regenteFoto: regenteUser?.foto ?? null,
+      statusTurma: statusExibicao(t.id),
+      semanasEnviadas: semanasInfo?.total ?? 0,
+      semanasTotal: semanasMes.length,
+      folhas,
+      semanas,
+      roteiroHref: `/api/planejamentos/roteiro-pdf?turmaId=${t.id}&mes=${anoMesAtual}`,
+      pontualidadePct: dataLimite && pontualInfo && pontualInfo.total > 0 ? Math.round((pontualInfo.noPrazo / pontualInfo.total) * 100) : null,
+    };
   });
 
   // Ordem pensada pra achar rápido o que se usa todo dia primeiro (pedido
@@ -226,53 +317,15 @@ export default async function PedagogicoPage({
               subtext={prazoVencido ? "Passou do prazo do mês" : "Planejamento desse mês"}
             />
           </div>
-          <BarraFiltro
-            buscaParam="busca"
-            buscaPlaceholder="Buscar turma ou professora..."
-            checkboxes={[{ paramName: "atrasados", value: "1", label: "Só atrasadas" }]}
-            total={turmasFiltradas.length}
-            totalGeral={todasTurmas.length}
-          />
-          <Card
-            title={
-              <div className="flex items-center gap-2">
-                <ClipboardCheck className="h-4 w-4 text-cda-blue" />
-                Planejamento do mês — todas as turmas
-              </div>
-            }
-          >
-            {turmasFiltradas.length === 0 && (
-              <p className="px-5 py-6 text-center text-sm text-cda-text3">Nenhuma turma encontrada com esse filtro.</p>
-            )}
-            {(["TARDE", "MANHA"] as const).map((turno) => {
-              const turmasDoTurno = turmasFiltradas.filter((t) => t.turno === turno);
-              if (turmasDoTurno.length === 0) return null;
-              return (
-                <div key={turno}>
-                  <p className="border-b border-t border-cda-border bg-cda-bg px-5 py-1.5 text-xs font-semibold uppercase tracking-wide text-cda-text3 first:border-t-0">
-                    {TURNO_LABEL[turno]}
-                  </p>
-                  <div className="flex flex-col divide-y divide-cda-border">
-                    {turmasDoTurno.map((turma) => {
-                      const regente = turma.vinculosPedagogico[0]?.user.name;
-                      const statusTurma = statusExibicao(turma.id);
-                      return (
-                        <div key={turma.id} className="flex flex-wrap items-center justify-between gap-2 px-5 py-3">
-                          <div>
-                            <Link href={`/pedagogico/planejamento/${turma.id}`} className="text-sm font-medium text-cda-text hover:text-cda-blue hover:underline">
-                              {turma.nome}
-                            </Link>
-                            <span className="ml-2 text-xs text-cda-text3">{regente ? `Regente: ${regente}` : "Sem regente vinculada"}</span>
-                          </div>
-                          <Badge variant={STATUS_BADGE[statusTurma]}>{STATUS_LABEL[statusTurma]}</Badge>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </Card>
+          <PainelCoordenadoraClient turmas={turmasResumo} prazoTexto={textoPrazo()} prazoVencido={prazoVencido} />
+          <div className="mt-5">
+            <AcompanhamentoCharts
+              turmas={turmasResumo}
+              evolucaoMensal={evolucaoMensal}
+              destaquePontual={destaquePontual}
+              destaqueAtencao={destaqueAtencao}
+            />
+          </div>
         </div>
       )}
 
