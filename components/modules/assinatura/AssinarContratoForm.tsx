@@ -55,14 +55,9 @@ export function AssinarContratoForm({
           {assinadoEm ? ` em ${formatarData(new Date(assinadoEm))}` : ""}.
         </p>
         {arquivo && (
-          <a
-            href={arquivo}
-            download={`Contrato Assinado - ${nomeAssinante ?? "Escola CDA"}.pdf`}
-            className="flex h-10 items-center gap-2 rounded-lg border border-cda-border bg-white px-4 text-sm font-medium text-cda-text hover:bg-cda-bg"
-          >
-            <Download className="h-4 w-4" />
+          <Button href={arquivo} download={`Contrato Assinado - ${nomeAssinante ?? "Escola CDA"}.pdf`} variant="outline" icon={Download}>
             Baixar PDF assinado
-          </a>
+          </Button>
         )}
       </Card>
     );

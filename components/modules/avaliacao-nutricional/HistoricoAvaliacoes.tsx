@@ -11,6 +11,7 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { showToast } from "@/components/ui/Toast";
 import { GraficoCrescimento } from "./GraficoCrescimento";
 import { ClassificacaoBadge } from "./ClassificacaoBadge";
+import { NovaAvaliacaoModal } from "./NovaAvaliacaoModal";
 import { avaliarImcPorIdade } from "@/lib/avaliacaoNutricional";
 import { formatarData } from "@/lib/utils";
 
@@ -34,11 +35,19 @@ export function HistoricoAvaliacoes({
   sexo,
   dataNascimento,
   podeEditar,
+  alunoId,
+  hojeISO,
 }: {
   avaliacoes: AvaliacaoParaExibir[];
   sexo: "M" | "F";
   dataNascimento: string; // ISO
   podeEditar: boolean;
+  /** Pro botão "Nova avaliação" do estado vazio — mesmo gatilho que já
+   * existe no topo da página, achado da auditoria: "vê 'Nenhum X' e não
+   * sabe o que fazer" (aqui até sabia, mas o botão ficava longe, lá em
+   * cima). */
+  alunoId: string;
+  hojeISO: string;
 }) {
   const router = useRouter();
   const [excluindo, setExcluindo] = useState<AvaliacaoParaExibir | null>(null);
@@ -91,7 +100,10 @@ export function HistoricoAvaliacoes({
 
       {calculadas.length === 0 ? (
         <Card>
-          <EmptyState title="Nenhuma avaliação registrada ainda." />
+          <EmptyState
+            title="Nenhuma avaliação registrada ainda."
+            action={podeEditar ? <NovaAvaliacaoModal alunoId={alunoId} hojeISO={hojeISO} /> : undefined}
+          />
         </Card>
       ) : (
         <>

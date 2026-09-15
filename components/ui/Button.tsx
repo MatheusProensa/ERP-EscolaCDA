@@ -42,6 +42,11 @@ type ButtonProps = BaseProps &
 
 type LinkButtonProps = BaseProps & {
   href: string;
+  /** Força download em vez de navegar — mesmo comportamento do atributo
+   * nativo `download` do `<a>`. Achado da auditoria: telas com link de
+   * download reimplementavam o botão à mão em vez de usar esse componente
+   * (ex.: PDF assinado em AssinarContratoForm) por falta dessa prop aqui. */
+  download?: string | boolean;
 };
 
 function baseClasses(variant: Variant, size: Size, className?: string) {
@@ -66,6 +71,10 @@ export function Button({
   href,
   ...props
 }: ButtonProps | LinkButtonProps) {
+  // download só existe em LinkButtonProps — tirado à parte porque o tipo
+  // união (Button também serve pra <button> nativo) não deixa desestruturar
+  // direto sem TS reclamar que a outra metade da união não tem essa prop.
+  const download = href ? (props as { download?: string | boolean }).download : undefined;
   const inner = (
     <>
       {loading && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -76,7 +85,7 @@ export function Button({
 
   if (href) {
     return (
-      <Link href={href} className={baseClasses(variant, size, className)}>
+      <Link href={href} download={download} className={baseClasses(variant, size, className)}>
         {inner}
       </Link>
     );

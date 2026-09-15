@@ -103,6 +103,8 @@ export default async function AvaliacaoNutricionalAlunoPage({ params }: { params
           sexo={aluno.sexo}
           dataNascimento={aluno.dataNascimento.toISOString()}
           podeEditar={podeEditar}
+          alunoId={aluno.id}
+          hojeISO={hoje.toISOString().slice(0, 10)}
         />
       )}
     </div>

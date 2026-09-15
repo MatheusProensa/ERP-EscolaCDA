@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { hojeBrasilia } from "@/lib/utils";
 import { PlanejamentoTabs } from "@/components/modules/pedagogico/PlanejamentoTabs";
@@ -161,6 +162,11 @@ export default async function RoteiroTurmaPage({
             icon={ScrollText}
             title="Essa semana ainda não tem planejamento preenchido"
             subtitle="O roteiro é gerado a partir do que a regente já salvou no Planejamento — assim que preencher, aparece aqui."
+            action={
+              <Button href={`/pedagogico/planejamento/${turma.id}`} size="sm">
+                Ir pro Planejamento
+              </Button>
+            }
           />
         </Card>
       ) : (
