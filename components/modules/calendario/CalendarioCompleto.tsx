@@ -43,18 +43,20 @@ const CATEGORIA_FERIADO = "Recesso/Feriado";
 // propósito, não mexe em lib/calendario.ts (usado também no PDF do
 // calendário e no widget de eventos do Dashboard). dot reaproveita a cor do
 // texto (mais saturada, boa pra um círculo pequeno).
-const CORES_EVENTO_VIBRANTE: Record<string, { bg: string; text: string }> = {
-  "Organização Interna": { bg: "#fde68a", text: "#78350f" },
-  "Eventos e Atividades": { bg: "#bfdbfe", text: "#1e3a8a" },
-  Marketing: { bg: "#ddd6fe", text: "#4c1d95" },
-  Reuniões: { bg: "#bbf7d0", text: "#14532d" },
-  "Datas Comemorativas": { bg: "#fbcfe8", text: "#9d174d" },
-  "Recesso/Feriado": { bg: "#e0e7ff", text: "#3730a3" },
+// Cor FORTE (sólida) + texto branco — pedido do dono: pastel tava fraco
+// demais, tanto nas pills do topo quanto nos chips de evento na grade.
+const CORES_EVENTO_VIBRANTE: Record<string, string> = {
+  "Organização Interna": "#d97706",
+  "Eventos e Atividades": "#2563eb",
+  Marketing: "#7c3aed",
+  Reuniões: "#16a34a",
+  "Datas Comemorativas": "#db2777",
+  "Recesso/Feriado": "#475569",
 };
 
 function corCategoria(categoria: string): { bg: string; text: string; dot: string } {
-  const cor = CORES_EVENTO_VIBRANTE[categoria] ?? CORES_EVENTO_VIBRANTE[CATEGORIA_FERIADO];
-  return { ...cor, dot: cor.text };
+  const bg = CORES_EVENTO_VIBRANTE[categoria] ?? CORES_EVENTO_VIBRANTE[CATEGORIA_FERIADO];
+  return { bg, text: "#ffffff", dot: bg };
 }
 
 export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
@@ -274,27 +276,28 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
           </div>
         </div>
 
-        {/* Pills de categoria — viram filtro clicável (redesign, mockup de
-            referência): fundo colorido quando ativa, contorno quando não. */}
+        {/* Pills de categoria — filtro clicável, cor forte + texto branco
+            sempre (pedido do dono: pastel/contorno cinza tava fraco demais).
+            Sem filtro nenhum marcado = todas em opacidade cheia; com algum
+            filtro ativo, as não marcadas ficam esmaecidas (continuam com a
+            MESMA cor forte, só mais apagadas, nunca viram cinza). */}
         <div className="flex flex-wrap gap-2 border-t border-cda-border pt-3">
           {CATEGORIAS_EVENTO.map((cat) => {
             const cor = corCategoria(cat);
             const ativa = categoriasFiltro.has(cat);
+            const esmaecida = categoriasFiltro.size > 0 && !ativa;
             return (
               <button
                 key={cat}
                 type="button"
                 onClick={() => alternarFiltro(cat)}
-                className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors"
-                style={
-                  ativa
-                    ? { backgroundColor: cor.bg, color: cor.text, borderColor: "transparent" }
-                    : { backgroundColor: "transparent", color: "var(--cda-text2)", borderColor: "var(--cda-border)" }
-                }
+                className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold transition-opacity ${
+                  esmaecida ? "opacity-45 hover:opacity-75" : "opacity-100"
+                } ${ativa ? "ring-2 ring-offset-1" : ""}`}
+                style={{ backgroundColor: cor.bg, color: cor.text, ["--tw-ring-color" as string]: cor.bg }}
               >
-                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: cor.dot }} />
                 {cat}
-                <span className={ativa ? "font-semibold" : "text-cda-text3"}>{contagemPorCategoria.get(cat) ?? 0}</span>
+                <span>{contagemPorCategoria.get(cat) ?? 0}</span>
               </button>
             );
           })}
