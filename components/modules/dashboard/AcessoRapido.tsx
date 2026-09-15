@@ -25,7 +25,7 @@ export function AcessoRapido() {
           <Link
             key={atalho.label}
             href={atalho.href}
-            className="flex flex-col items-center gap-1.5 rounded-lg border border-cda-border px-2 py-3 text-center transition-colors hover:bg-cda-bg"
+            className="flex flex-col items-center gap-2 rounded-lg border border-[#e2e8f0] bg-[#f1f5f9] px-3 py-4 text-center transition-colors hover:bg-[#e2e8f0]"
           >
             <atalho.icon className="h-4 w-4 text-cda-blue" />
             <span className="text-[11px] font-medium leading-tight text-cda-text2">{atalho.label}</span>

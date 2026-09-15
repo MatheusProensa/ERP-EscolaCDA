@@ -55,7 +55,7 @@ export async function ProximosEventosWidget() {
               <span className="shrink-0 text-xs font-semibold uppercase tabular-nums text-cda-text3">
                 {dia} {mes}
               </span>
-              <p className="min-w-0 flex-1 truncate text-sm text-cda-text">{evento.titulo}</p>
+              <p className="min-w-0 flex-1 text-[13px] leading-snug text-cda-text">{evento.titulo}</p>
               {/* NOVO: só a tela de Calendário tinha a legenda de cor — quem só olha o
                   Dashboard não tinha como saber o que cada cor significa. */}
               <span
