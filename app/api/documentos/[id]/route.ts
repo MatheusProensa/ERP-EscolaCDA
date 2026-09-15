@@ -5,7 +5,7 @@ import { avisarMudanca } from "@/lib/liveUpdate";
 import { validarUploadDataUri } from "@/lib/validarUpload";
 
 // Mesmo limite do POST — ver app/api/documentos/route.ts.
-const LIMITE_ARQUIVO_BYTES = 10 * 1024 * 1024;
+const LIMITE_ARQUIVO_BYTES = 20 * 1024 * 1024;
 
 export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();

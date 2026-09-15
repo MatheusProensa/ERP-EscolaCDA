@@ -4,10 +4,10 @@ import { prisma } from "@/lib/prisma";
 import { avisarMudanca } from "@/lib/liveUpdate";
 import { validarUploadDataUri } from "@/lib/validarUpload";
 
-// 10MB — pedido do dono, out/2026 ("upload direto de PDF"), maior que o
+// 20MB — pedido do dono, out/2026 ("upload direto de PDF"), maior que o
 // limite padrão de 5MB do resto do sistema (foto, documento de funcionário)
 // porque documento institucional (contrato, apólice) tende a ser mais pesado.
-const LIMITE_ARQUIVO_BYTES = 10 * 1024 * 1024;
+const LIMITE_ARQUIVO_BYTES = 20 * 1024 * 1024;
 
 export async function GET() {
   const session = await auth();

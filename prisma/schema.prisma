@@ -1137,7 +1137,7 @@ model DocumentoInstitucional {
   /// precisar de link externo".
   link        String?
   /// PDF enviado direto pro sistema — base64 (mesmo padrão já usado em
-  /// DocumentoFuncionario.arquivo e Aluno.foto), até 10MB.
+  /// DocumentoFuncionario.arquivo e Aluno.foto), até 20MB.
   arquivo     String?
   /// Nome original do arquivo enviado — só preenchido junto com `arquivo`,
   /// pro nome do PDF baixado bater com o que a pessoa mandou.

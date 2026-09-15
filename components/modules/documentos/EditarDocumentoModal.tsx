@@ -110,7 +110,7 @@ export function EditarDocumentoModal({
                 </button>
               </div>
             ) : (
-              <FileUpload onSelect={(dataUri, nome) => setArquivoNovo({ dataUri, nome })} accept=".pdf" maxSizeMB={10} label="Enviar PDF (até 10MB)" />
+              <FileUpload onSelect={(dataUri, nome) => setArquivoNovo({ dataUri, nome })} accept=".pdf" maxSizeMB={20} label="Enviar PDF (até 20MB)" />
             )}
           </div>
 
