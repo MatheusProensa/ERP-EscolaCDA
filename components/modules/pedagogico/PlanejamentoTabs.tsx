@@ -14,11 +14,14 @@ export function PlanejamentoTabs({
   completos,
 }: {
   turmaId: string;
-  active: "planejamento" | "roteiro" | "projeto" | "rotina" | "horario";
+  active: "planejamento" | "roteiro" | "atividade-grafica" | "tema-literario" | "projeto" | "rotina" | "horario";
   /** ✓ verde na aba — pedido do dono, mockup do Gemini: "documento completo
-   * esse mês". Só Planejamento/Roteiro têm essa ideia (os outros 3 são
-   * configuração da turma, não entrega mensal). */
-  completos?: { planejamento?: boolean; roteiro?: boolean };
+   * esse mês". Planejamento/Roteiro compartilham o mesmo sinal (Roteiro é
+   * gerado do Planejamento). Atividade Gráfica/Tema Literário têm status
+   * PRÓPRIO agora (fluxo de aprovação de verdade, pedido do dono) — cada um
+   * com seu sinal. Projeto/Rotina/Horário são configuração da turma, sem
+   * ideia de "completo esse mês". */
+  completos?: { planejamento?: boolean; roteiro?: boolean; atividadeGrafica?: boolean; temaLiterario?: boolean };
 }) {
   const base = `/pedagogico/planejamento/${turmaId}`;
   const rotulo = (texto: string, completo?: boolean) => (
@@ -34,6 +37,8 @@ export function PlanejamentoTabs({
         options={[
           { value: "planejamento", label: rotulo("Planejamento", completos?.planejamento), href: base },
           { value: "roteiro", label: rotulo("Roteiro", completos?.roteiro), href: `${base}/roteiro` },
+          { value: "atividade-grafica", label: rotulo("Atividade Gráfica", completos?.atividadeGrafica), href: `${base}/atividade-grafica` },
+          { value: "tema-literario", label: rotulo("Tema Literário", completos?.temaLiterario), href: `${base}/tema-literario` },
           { value: "projeto", label: "Projeto pedagógico", href: `${base}/projeto` },
           { value: "rotina", label: "Rotina do dia a dia", href: `${base}/rotina` },
           { value: "horario", label: "Horário fixo", href: `${base}/horario` },

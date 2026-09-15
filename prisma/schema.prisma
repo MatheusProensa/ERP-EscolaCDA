@@ -54,6 +54,8 @@ model User {
   pareceres                    Parecer[]
   portfolioItens               PortfolioItem[]
   tutoriaisVistos              TutorialVisto[]
+  folhasMensais                FolhaMensal[]        @relation("FolhasMensaisAutor")
+  folhasMensaisRevisadas       FolhaMensal[]        @relation("ComentariosFolhaMensal")
 }
 
 /// Permissão granular por pessoa/setor — sobrepõe o pacote padrão do Role
@@ -157,6 +159,7 @@ model Turma {
   modelosParecer        ModeloParecer[]
   pareceres             Parecer[]
   portfolioItens        PortfolioItem[]
+  folhasMensais         FolhaMensal[]
   createdAt             DateTime               @default(now())
 
   @@unique([nome, anoLetivoId])
@@ -368,6 +371,40 @@ model HorarioEspecializada {
   texto     String
 
   @@unique([turmaId, diaSemana])
+}
+
+enum TipoFolhaMensal {
+  ATIVIDADE_GRAFICA
+  TEMA_LITERARIO
+}
+
+/// Status de aprovação da Atividade Gráfica / Tema Literário do mês —
+/// pedido do dono, set/2026: mesmo fluxo real do Planejamento (Finalizar →
+/// Enviado → Aprovado/Devolvido pela coordenadora), 1 registro por SEMANA e
+/// por tipo (os 2 documentos evoluem separados entre si e do Planejamento).
+/// O TEXTO de cada dia continua morando em PlanejamentoDia.conteudo
+/// (folhaAtividadeGrafica/folhaTemaLiterario) — este model é só o "envelope"
+/// de status por cima, pra não duplicar dado que já existe.
+model FolhaMensal {
+  id                     String             @id @default(cuid())
+  turma                  Turma              @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  turmaId                String
+  tipo                   TipoFolhaMensal
+  /// Segunda-feira da semana (mesma convenção de Planejamento.semanaInicio).
+  semanaInicio           DateTime
+  status                 StatusPlanejamento @default(RASCUNHO)
+  comentarioCoordenadora String?
+  comentarioAutor        User?              @relation("ComentariosFolhaMensal", fields: [comentarioAutorId], references: [id])
+  comentarioAutorId      String?
+  comentarioEm           DateTime?
+  liComentarioEm         DateTime?
+  autor                  User               @relation("FolhasMensaisAutor", fields: [autorId], references: [id])
+  autorId                String
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  @@unique([turmaId, tipo, semanaInicio])
+  @@index([turmaId])
 }
 
 /// Planejamento do Cotidiano — descrição da rotina diária da turma (achado
