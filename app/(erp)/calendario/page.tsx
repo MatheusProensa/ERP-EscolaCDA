@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { CalendarioCompleto } from "@/components/modules/calendario/CalendarioCompleto";
-import { ExportarCalendarioPdfModal } from "@/components/modules/calendario/ExportarCalendarioPdfModal";
 import { podeEditarModulo } from "@/lib/permissoes";
 import { EscutaAoVivo } from "@/components/ui/EscutaAoVivo";
 
@@ -22,7 +21,6 @@ export default async function CalendarioPage() {
       <PageHeader
         title="Calendário"
         subtitle="Agenda organizacional da escola — eventos, reuniões, datas comemorativas, recessos e feriados"
-        action={<ExportarCalendarioPdfModal />}
       />
       <CalendarioCompleto podeEditar={podeEditar} />
     </div>

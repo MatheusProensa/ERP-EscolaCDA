@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Plus, CalendarClock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, CalendarClock, CalendarDays } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Select } from "@/components/ui/Select";
 import { Input } from "@/components/ui/Input";
@@ -12,6 +12,9 @@ import { Avatar } from "@/components/ui/Avatar";
 import { IconButton } from "@/components/ui/IconButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { showToast } from "@/components/ui/Toast";
+import { ExportarCalendarioPdfModal } from "@/components/modules/calendario/ExportarCalendarioPdfModal";
+import { EventoPopover } from "@/components/modules/calendario/EventoPopover";
+import { MiniCalendario } from "@/components/modules/calendario/MiniCalendario";
 import {
   CATEGORIAS_EVENTO,
   DIAS_SEMANA_ABREV,
@@ -30,6 +33,12 @@ type Evento = {
   responsavel?: string | null;
 };
 
+const MAX_EVENTOS_VISIVEIS = 2;
+// Só existe essa categoria no banco (não tem "Feriado" e "Recesso"
+// separados) — o rótulo da célula usa o nome real, não uma distinção que o
+// dado não tem.
+const CATEGORIA_FERIADO = "Recesso/Feriado";
+
 export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
   const router = useRouter();
   // "Hoje" no fuso de quem tá vendo a tela (não UTC) — reconstruído como data
@@ -46,6 +55,11 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
   const [salvando, setSalvando] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const [erro, setErro] = useState("");
+  // Redesign (pedido do dono, mockup de referência): pills de categoria
+  // viram filtro — vazio = mostra tudo, senão só as categorias marcadas.
+  const [categoriasFiltro, setCategoriasFiltro] = useState<Set<string>>(new Set());
+  const [diasExpandidos, setDiasExpandidos] = useState<Set<string>>(new Set());
+  const [popover, setPopover] = useState<{ evento: Evento; x: number; y: number } | null>(null);
 
   const grade = useMemo(() => gerarGradeMes(ano, mes), [ano, mes]);
 
@@ -90,16 +104,43 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
     };
   }, []);
 
+  const eventosFiltrados = useMemo(
+    () => (categoriasFiltro.size === 0 ? eventos : eventos.filter((e) => categoriasFiltro.has(e.categoria))),
+    [eventos, categoriasFiltro]
+  );
+  const proximosFiltrados = useMemo(
+    () => (categoriasFiltro.size === 0 ? proximosEventos : proximosEventos.filter((e) => categoriasFiltro.has(e.categoria))),
+    [proximosEventos, categoriasFiltro]
+  );
+
   const eventosPorDia = useMemo(() => {
     const mapa = new Map<string, Evento[]>();
-    for (const e of eventos) {
+    for (const e of eventosFiltrados) {
       const chave = e.data.slice(0, 10);
       const lista = mapa.get(chave) ?? [];
       lista.push(e);
       mapa.set(chave, lista);
     }
     return mapa;
+  }, [eventosFiltrados]);
+
+  // Contagem por categoria do mês exibido (pra badge nas pills) — sempre a
+  // partir de TODOS os eventos do mês, não dos já filtrados (senão a
+  // contagem de uma categoria desmarcada sumiria).
+  const contagemPorCategoria = useMemo(() => {
+    const mapa = new Map<string, number>();
+    for (const e of eventos) mapa.set(e.categoria, (mapa.get(e.categoria) ?? 0) + 1);
+    return mapa;
   }, [eventos]);
+
+  function alternarFiltro(categoria: string) {
+    setCategoriasFiltro((atual) => {
+      const novo = new Set(atual);
+      if (novo.has(categoria)) novo.delete(categoria);
+      else novo.add(categoria);
+      return novo;
+    });
+  }
 
   // Pula o grid pro mês do evento clicado no painel "Próximos eventos".
   function irParaEvento(e: Evento) {
@@ -185,8 +226,6 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* NOVO: filtros e legenda em duas linhas separadas por um divisor —
-          antes disputavam espaço na mesma linha com o botão "Novo evento" */}
       <Card className="flex flex-col gap-3.5 p-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -204,35 +243,49 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
             <IconButton icon={ChevronRight} label="Próximo mês" bordered onClick={() => mudarMes(1)} />
           </div>
 
-          {podeEditar && (
-            <Button size="sm" onClick={() => abrirNovo()}>
-              <Plus className="h-4 w-4" /> Novo evento
-            </Button>
-          )}
+          {/* NOVO: Exportar PDF junto do Novo evento, os 2 botões de ação da
+              tela no mesmo lugar (mockup de referência) — antes Exportar
+              vivia solto no header da página. */}
+          <div className="flex items-center gap-2">
+            <ExportarCalendarioPdfModal />
+            {podeEditar && (
+              <Button size="sm" onClick={() => abrirNovo()}>
+                <Plus className="h-4 w-4" /> Novo evento
+              </Button>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-x-4 gap-y-1.5 border-t border-cda-border pt-3">
+        {/* Pills de categoria — viram filtro clicável (redesign, mockup de
+            referência): fundo colorido quando ativa, contorno quando não. */}
+        <div className="flex flex-wrap gap-2 border-t border-cda-border pt-3">
           {CATEGORIAS_EVENTO.map((cat) => {
             const cor = corCategoria(cat);
+            const ativa = categoriasFiltro.has(cat);
             return (
-              <div key={cat} className="flex items-center gap-1.5 text-xs text-cda-text2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cor.dot }} />
+              <button
+                key={cat}
+                type="button"
+                onClick={() => alternarFiltro(cat)}
+                className="flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition-colors"
+                style={
+                  ativa
+                    ? { backgroundColor: cor.bg, color: cor.text, borderColor: "transparent" }
+                    : { backgroundColor: "transparent", color: "var(--cda-text2)", borderColor: "var(--cda-border)" }
+                }
+              >
+                <span className="h-2 w-2 rounded-full" style={{ backgroundColor: cor.dot }} />
                 {cat}
-              </div>
+                <span className={ativa ? "font-semibold" : "text-cda-text3"}>{contagemPorCategoria.get(cat) ?? 0}</span>
+              </button>
             );
           })}
         </div>
       </Card>
 
-      {/* NOVO: grade + painel "Próximos eventos" lado a lado */}
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_1fr]">
-        {/* Achado da auditoria de responsividade (set/2026): 7 colunas fixas
-            espremidas no celular deixavam o título do evento ilegível (poucos
-            caracteres antes de truncar). Mesma solução que o resto do sistema
-            já usa pra grade larga em tela estreita (Table, CardapioPublicoCard,
-            PontoMesForm): rola na horizontal com uma largura mínima, em vez de
-            comprimir a coluna até ficar inútil — overflow-x-auto no lugar do
-            overflow-hidden. */}
+      {/* Split 70/30 (mockup de referência) — grade à esquerda, sidebar
+          (Próximos eventos + Mini calendário) à direita. */}
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[7fr_3fr]">
         <Card className="overflow-x-auto p-0">
           {carregando ? (
             <div className="p-10 text-center text-sm text-cda-text3">Carregando...</div>
@@ -247,10 +300,21 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
                 const chave = data.toISOString().slice(0, 10);
                 const eventosDoDia = eventosPorDia.get(chave) ?? [];
                 const ehHoje = mesmaData(data, hoje);
+                const ehFeriado = eventosDoDia.some((e) => e.categoria === CATEGORIA_FERIADO);
+                const ehFimDeSemana = data.getUTCDay() === 0 || data.getUTCDay() === 6;
+                // 3 fundos por célula (pedido do dono, "CRÍTICO"): feriado/
+                // recesso > fim de semana > dia normal — só pros dias do mês
+                // exibido (fora do mês mantém o cinza claro de sempre).
+                const fundo = !doMesAtual ? undefined : ehFeriado ? "#e8edf5" : ehFimDeSemana ? "#f1f5f9" : "#ffffff";
+                const expandido = diasExpandidos.has(chave);
+                const visiveis = expandido ? eventosDoDia : eventosDoDia.slice(0, MAX_EVENTOS_VISIVEIS);
+                const restantes = eventosDoDia.length - visiveis.length;
+
                 return (
                   <div
                     key={i}
-                    className={`group min-h-[108px] bg-white p-1.5 ${!doMesAtual ? "bg-cda-bg/50" : ""}`}
+                    className={`group min-h-[108px] p-1.5 ${!doMesAtual ? "bg-cda-bg/50" : ""}`}
+                    style={fundo ? { backgroundColor: fundo } : undefined}
                   >
                     <div className="mb-1 flex items-center justify-between">
                       <span
@@ -271,22 +335,39 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
                         </button>
                       )}
                     </div>
+                    {ehFeriado && doMesAtual && (
+                      <p className="mb-1 flex items-center gap-1 truncate text-[10px] font-semibold text-[#4a5b7d]">
+                        📅 {CATEGORIA_FERIADO}
+                      </p>
+                    )}
                     <div className="flex flex-col gap-0.5">
-                      {eventosDoDia.map((e) => {
+                      {visiveis.map((e) => {
                         const cor = corCategoria(e.categoria);
                         return (
                           <button
                             key={e.id}
-                            onClick={() => podeEditar && abrirEditar(e)}
-                            title={e.titulo}
-                            // NOVO: hover com leve sombra/deslocamento no chip do evento
-                            className="truncate rounded px-1.5 py-1 text-left text-[10.5px] font-medium leading-tight transition-shadow hover:shadow-sm"
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              setPopover({ evento: e, x: ev.clientX, y: ev.clientY });
+                            }}
+                            // NOVO: sem truncate — o texto quebra linha em vez
+                            // de cortar (pedido do dono: "eventos sem corte").
+                            className="rounded px-1.5 py-1 text-left text-[10.5px] font-medium leading-tight transition-shadow hover:shadow-sm"
                             style={{ backgroundColor: cor.bg, color: cor.text }}
                           >
                             {e.titulo}
                           </button>
                         );
                       })}
+                      {restantes > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setDiasExpandidos((atual) => new Set(atual).add(chave))}
+                          className="px-1.5 text-left text-[10px] font-medium text-cda-text3 hover:text-cda-text2"
+                        >
+                          ver mais {restantes}
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -295,39 +376,81 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
           )}
         </Card>
 
-        {/* NOVO: painel lateral com os próximos eventos do mês */}
-        <Card
-          title={
-            <span className="flex items-center gap-2">
-              <CalendarClock className="h-[15px] w-[15px] text-cda-blue" />
-              Próximos eventos
-            </span>
-          }
-        >
-          <div className="flex flex-col">
-            {proximosEventos.length === 0 && (
-              <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhum evento nos próximos dias.</p>
-            )}
-            {proximosEventos.map((e, i) => (
-              <button
-                key={e.id}
-                onClick={() => irParaEvento(e)}
-                className={`flex w-full items-center gap-2.5 px-4 py-3 text-left hover:bg-cda-bg ${i > 0 ? "border-t border-cda-border" : ""}`}
-              >
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: corCategoria(e.categoria).dot }} />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm text-cda-text">{e.titulo}</p>
-                  <p className="text-xs text-cda-text3">
-                    {new Date(e.data).toLocaleDateString("pt-BR", { timeZone: "UTC", day: "2-digit", month: "short" })}
-                    {e.responsavel ? ` · ${e.responsavel}` : ""}
-                  </p>
-                </div>
-                {e.responsavel && <Avatar nome={e.responsavel} size="sm" />}
-              </button>
-            ))}
-          </div>
-        </Card>
+        <div className="flex flex-col gap-5">
+          <Card
+            title={
+              <span className="flex items-center gap-2">
+                <CalendarClock className="h-[15px] w-[15px] text-cda-blue" />
+                Próximos eventos
+              </span>
+            }
+          >
+            <div className="flex flex-col">
+              {proximosFiltrados.length === 0 && (
+                <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhum evento nos próximos dias.</p>
+              )}
+              {proximosFiltrados.map((e, i) => (
+                <button
+                  key={e.id}
+                  onClick={() => irParaEvento(e)}
+                  className={`flex w-full items-start gap-2.5 px-4 py-3 text-left hover:bg-cda-bg ${i > 0 ? "border-t border-cda-border" : ""}`}
+                >
+                  <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: corCategoria(e.categoria).dot }} />
+                  <div className="min-w-0 flex-1">
+                    {/* NOVO: sem truncate — título completo (pedido do dono) */}
+                    <p className="text-sm text-cda-text">{e.titulo}</p>
+                    <p className="mt-0.5 text-xs text-cda-text3">
+                      {new Date(e.data).toLocaleDateString("pt-BR", { timeZone: "UTC", day: "2-digit", month: "short" })}
+                      {e.responsavel ? ` · ${e.responsavel}` : ""}
+                    </p>
+                    <span
+                      className="mt-1 inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium"
+                      style={{ backgroundColor: corCategoria(e.categoria).bg, color: corCategoria(e.categoria).text }}
+                    >
+                      {e.categoria}
+                    </span>
+                  </div>
+                  {e.responsavel && <Avatar nome={e.responsavel} size="sm" />}
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          {/* NOVO: mini calendário compacto (mockup de referência) — mesmo
+              mês/ano do calendário principal, hoje em destaque. */}
+          <Card
+            title={
+              <span className="flex items-center gap-2">
+                <CalendarDays className="h-[15px] w-[15px] text-cda-blue" />
+                Mini calendário
+              </span>
+            }
+          >
+            <MiniCalendario ano={ano} mes={mes} hoje={hoje} />
+          </Card>
+        </div>
       </div>
+
+      {popover && (
+        <EventoPopover
+          evento={popover.evento}
+          x={popover.x}
+          y={popover.y}
+          podeEditar={podeEditar}
+          onFechar={() => setPopover(null)}
+          onEditar={() => {
+            const evento = popover.evento;
+            setPopover(null);
+            abrirEditar(evento);
+          }}
+          onExcluir={() => {
+            const evento = popover.evento;
+            setPopover(null);
+            setModal({ aberto: false, evento });
+            setConfirmandoExclusao(true);
+          }}
+        />
+      )}
 
       <Modal
         open={modal.aberto}
