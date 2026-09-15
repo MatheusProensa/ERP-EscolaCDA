@@ -45,11 +45,11 @@ const CATEGORIA_FERIADO = "Recesso/Feriado";
 // texto (mais saturada, boa pra um círculo pequeno).
 const CORES_EVENTO_VIBRANTE: Record<string, { bg: string; text: string }> = {
   "Organização Interna": { bg: "#fde68a", text: "#78350f" },
-  "Eventos e Atividades": { bg: "#93c5fd", text: "#1e3a8a" },
-  Marketing: { bg: "#c4b5fd", text: "#3b0764" },
-  Reuniões: { bg: "#6ee7b7", text: "#064e3b" },
-  "Datas Comemorativas": { bg: "#f9a8d4", text: "#831843" },
-  "Recesso/Feriado": { bg: "#bfdbfe", text: "#1e3a8a" },
+  "Eventos e Atividades": { bg: "#bfdbfe", text: "#1e3a8a" },
+  Marketing: { bg: "#ddd6fe", text: "#4c1d95" },
+  Reuniões: { bg: "#bbf7d0", text: "#14532d" },
+  "Datas Comemorativas": { bg: "#fbcfe8", text: "#9d174d" },
+  "Recesso/Feriado": { bg: "#e0e7ff", text: "#3730a3" },
 };
 
 function corCategoria(categoria: string): { bg: string; text: string; dot: string } {
