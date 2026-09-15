@@ -553,8 +553,6 @@ export default async function PedagogicoPage() {
                         <div className="flex items-center gap-3">
                           <span className="text-right text-xs font-medium text-cda-text3">
                             {entregas.feitas} de {entregas.total} entregas
-                            <br />
-                            {entregasPct}%
                           </span>
                           <ProgressoCircular pct={entregasPct} />
                         </div>
