@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ExternalLink, Trash2, Pencil, FileText, TriangleAlert } from "lucide-react";
+import { ExternalLink, Download, Trash2, Pencil, FileText, Link as LinkIcon, TriangleAlert } from "lucide-react";
 import type { DocumentoInstitucional } from "@prisma/client";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -15,12 +15,14 @@ import { EditarDocumentoModal } from "./EditarDocumentoModal";
 // Chrome bloqueia a visualização de PDF ao navegar direto pra uma URL "data:" em
 // nova aba (mostra a página em branco, mesmo o arquivo estando correto) — só
 // funciona a partir de uma origem normal, então converte pra Blob antes de abrir.
-function abrirDocumento(link: string) {
-  if (!link.startsWith("data:")) {
-    window.open(link, "_blank", "noopener,noreferrer");
+// Pedido do dono, out/2026: PDF enviado direto ("arquivo") abre/baixa sem sair
+// do sistema; link (Google Drive) continua abrindo normal em nova aba.
+function abrirDocumento(doc: DocumentoInstitucional) {
+  if (!doc.arquivo) {
+    if (doc.link) window.open(doc.link, "_blank", "noopener,noreferrer");
     return;
   }
-  const [header, base64] = link.split(",");
+  const [header, base64] = doc.arquivo.split(",");
   const mime = header.match(/data:(.*);base64/)?.[1] || "application/pdf";
   const binario = atob(base64);
   const bytes = new Uint8Array(binario.length);
@@ -80,7 +82,7 @@ export function DocumentosLista({
                 <div key={doc.id} className="flex items-center justify-between gap-3 px-5 py-3">
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cda-blue/10">
-                      <FileText className="h-4 w-4 text-cda-blue" />
+                      {doc.arquivo ? <FileText className="h-4 w-4 text-cda-blue" /> : <LinkIcon className="h-4 w-4 text-cda-blue" />}
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-cda-text">{doc.titulo}</p>
@@ -97,7 +99,12 @@ export function DocumentosLista({
                         {status.label}
                       </Badge>
                     )}
-                    <IconButton icon={ExternalLink} label="Abrir documento" size="sm" onClick={() => abrirDocumento(doc.link)} />
+                    <IconButton
+                      icon={doc.arquivo ? Download : ExternalLink}
+                      label={doc.arquivo ? "Baixar/visualizar PDF" : "Abrir documento"}
+                      size="sm"
+                      onClick={() => abrirDocumento(doc)}
+                    />
                     {podeEditar && (
                       <>
                         <IconButton icon={Pencil} label="Editar documento" size="sm" onClick={() => setEditando(doc)} />
@@ -126,7 +133,13 @@ export function DocumentosLista({
         onClose={() => setConfirmandoId(null)}
         onConfirm={() => confirmandoId && handleRemover(confirmandoId)}
         title="Remover este documento da lista?"
-        consequence="O arquivo continua no Drive — só sai da lista aqui do sistema."
+        consequence={
+          // PDF enviado direto SOME de verdade (não tem cópia em lugar
+          // nenhum, diferente do link, que só some da listagem aqui).
+          grupos.flatMap((g) => g.itens).find((d) => d.id === confirmandoId)?.arquivo
+            ? "O arquivo enviado é apagado do sistema — não tem como recuperar depois."
+            : "O arquivo continua no Drive — só sai da lista aqui do sistema."
+        }
         confirmLabel="Remover"
         loading={removendoId !== null}
       />

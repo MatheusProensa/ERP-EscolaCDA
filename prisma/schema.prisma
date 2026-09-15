@@ -1128,11 +1128,21 @@ enum TipoEscalaBloco {
 }
 
 model DocumentoInstitucional {
-  id         String    @id @default(cuid())
-  titulo     String
-  categoria  String
-  link       String
-  validade   DateTime?
-  observacao String?
-  createdAt  DateTime  @default(now())
+  id          String    @id @default(cuid())
+  titulo      String
+  categoria   String
+  /// Link externo (Google Drive etc.) — opcional agora: o documento tem um
+  /// link OU um arquivo enviado direto (arquivo/nomeArquivo abaixo), pedido
+  /// do dono, out/2026: "quero poder fazer upload direto de PDF, sem
+  /// precisar de link externo".
+  link        String?
+  /// PDF enviado direto pro sistema — base64 (mesmo padrão já usado em
+  /// DocumentoFuncionario.arquivo e Aluno.foto), até 10MB.
+  arquivo     String?
+  /// Nome original do arquivo enviado — só preenchido junto com `arquivo`,
+  /// pro nome do PDF baixado bater com o que a pessoa mandou.
+  nomeArquivo String?
+  validade    DateTime?
+  observacao  String?
+  createdAt   DateTime  @default(now())
 }

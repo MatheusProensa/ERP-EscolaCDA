@@ -24,8 +24,11 @@ function assinaturaBate(mime: string, buffer: Buffer): boolean {
 
 /** Confere se uma data URI recebida do client é de fato um arquivo permitido
  * (mesmo tipo/tamanho já checados no browser, mas isso é fácil de burlar
- * chamando a API direto — a validação que importa é sempre a do servidor). */
-export function validarUploadDataUri(dataUri: unknown): { ok: true } | { ok: false; erro: string } {
+ * chamando a API direto — a validação que importa é sempre a do servidor).
+ * `limiteBytes` é opcional (default 5MB, o de sempre) — Documentos
+ * institucionais pede 10MB (pedido do dono, out/2026), sem mudar o limite
+ * dos outros usos (foto de aluno/usuário, chat, documento de funcionário). */
+export function validarUploadDataUri(dataUri: unknown, limiteBytes: number = TAMANHO_MAX_BYTES): { ok: true } | { ok: false; erro: string } {
   if (typeof dataUri !== "string") return { ok: false, erro: "Arquivo inválido" };
 
   const match = dataUri.match(/^data:([^;]+);base64,(.+)$/);
@@ -38,8 +41,8 @@ export function validarUploadDataUri(dataUri: unknown): { ok: true } | { ok: fal
 
   // Tamanho real do binário a partir do base64 (cada 4 chars ≈ 3 bytes).
   const tamanhoBytes = Math.floor((base64.length * 3) / 4);
-  if (tamanhoBytes > TAMANHO_MAX_BYTES) {
-    return { ok: false, erro: "Arquivo maior que 5MB" };
+  if (tamanhoBytes > limiteBytes) {
+    return { ok: false, erro: `Arquivo maior que ${Math.round(limiteBytes / (1024 * 1024))}MB` };
   }
 
   const buffer = Buffer.from(base64.slice(0, 32), "base64");
