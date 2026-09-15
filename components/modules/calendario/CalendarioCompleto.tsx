@@ -59,7 +59,17 @@ function corCategoria(categoria: string): { bg: string; text: string; dot: strin
   return { bg, text: "#ffffff", dot: bg };
 }
 
-export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
+export function CalendarioCompleto({
+  podeEditar,
+  ocultarCategoria,
+}: {
+  podeEditar: boolean;
+  /** Categoria pra esconder inteiramente — pill do topo E eventos (pedido
+   * do dono: Calendário Pedagógico, /calendario/pedagogico, esconde
+   * "Marketing"). Sem essa prop, comportamento idêntico ao Calendário
+   * Geral de sempre. */
+  ocultarCategoria?: string;
+}) {
   const router = useRouter();
   // "Hoje" no fuso de quem tá vendo a tela (não UTC) — reconstruído como data
   // pura (meia-noite UTC) pra comparar certo com o resto da grade, que já usa
@@ -124,13 +134,29 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
     };
   }, []);
 
+  // Categoria escondida (Calendário Pedagógico) some daqui pra baixo inteira
+  // — pill do topo (via categoriasVisiveis) e eventos (via eventosVisiveis),
+  // antes de qualquer outro filtro entrar em jogo.
+  const eventosVisiveis = useMemo(
+    () => (ocultarCategoria ? eventos.filter((e) => e.categoria !== ocultarCategoria) : eventos),
+    [eventos, ocultarCategoria]
+  );
+  const proximosVisiveis = useMemo(
+    () => (ocultarCategoria ? proximosEventos.filter((e) => e.categoria !== ocultarCategoria) : proximosEventos),
+    [proximosEventos, ocultarCategoria]
+  );
+  const categoriasVisiveis = useMemo(
+    () => (ocultarCategoria ? CATEGORIAS_EVENTO.filter((c) => c !== ocultarCategoria) : CATEGORIAS_EVENTO),
+    [ocultarCategoria]
+  );
+
   const eventosFiltrados = useMemo(
-    () => (categoriasFiltro.size === 0 ? eventos : eventos.filter((e) => categoriasFiltro.has(e.categoria))),
-    [eventos, categoriasFiltro]
+    () => (categoriasFiltro.size === 0 ? eventosVisiveis : eventosVisiveis.filter((e) => categoriasFiltro.has(e.categoria))),
+    [eventosVisiveis, categoriasFiltro]
   );
   const proximosFiltrados = useMemo(
-    () => (categoriasFiltro.size === 0 ? proximosEventos : proximosEventos.filter((e) => categoriasFiltro.has(e.categoria))),
-    [proximosEventos, categoriasFiltro]
+    () => (categoriasFiltro.size === 0 ? proximosVisiveis : proximosVisiveis.filter((e) => categoriasFiltro.has(e.categoria))),
+    [proximosVisiveis, categoriasFiltro]
   );
 
   const eventosPorDia = useMemo(() => {
@@ -145,13 +171,13 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
   }, [eventosFiltrados]);
 
   // Contagem por categoria do mês exibido (pra badge nas pills) — sempre a
-  // partir de TODOS os eventos do mês, não dos já filtrados (senão a
-  // contagem de uma categoria desmarcada sumiria).
+  // partir de TODOS os eventos visíveis do mês, não dos já filtrados (senão
+  // a contagem de uma categoria desmarcada sumiria).
   const contagemPorCategoria = useMemo(() => {
     const mapa = new Map<string, number>();
-    for (const e of eventos) mapa.set(e.categoria, (mapa.get(e.categoria) ?? 0) + 1);
+    for (const e of eventosVisiveis) mapa.set(e.categoria, (mapa.get(e.categoria) ?? 0) + 1);
     return mapa;
-  }, [eventos]);
+  }, [eventosVisiveis]);
 
   function alternarFiltro(categoria: string) {
     setCategoriasFiltro((atual) => {
@@ -282,7 +308,7 @@ export function CalendarioCompleto({ podeEditar }: { podeEditar: boolean }) {
             filtro ativo, as não marcadas ficam esmaecidas (continuam com a
             MESMA cor forte, só mais apagadas, nunca viram cinza). */}
         <div className="flex flex-wrap gap-2 border-t border-cda-border pt-3">
-          {CATEGORIAS_EVENTO.map((cat) => {
+          {categoriasVisiveis.map((cat) => {
             const cor = corCategoria(cat);
             const ativa = categoriasFiltro.has(cat);
             const esmaecida = categoriasFiltro.size > 0 && !ativa;

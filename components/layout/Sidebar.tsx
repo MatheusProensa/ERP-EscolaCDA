@@ -25,6 +25,7 @@ import {
   History,
   Ruler,
   Printer,
+  ChevronDown,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -33,7 +34,18 @@ import { podeVerModulo, type PermissoesPorModulo } from "@/lib/permissoes";
 import { canalInbox } from "@/lib/chatCanais";
 import { getSupabaseRealtimeClient } from "@/lib/supabaseRealtimeClient";
 
-type NavItem = { label: string; href: string; icon: LucideIcon };
+type NavItem = {
+  label: string;
+  href: string;
+  icon: LucideIcon;
+  /** Restrição extra de Role, por CIMA da grade de permissões (achado real,
+   * out/2026: "Geral" do Calendário só devia aparecer pra Admin/Direção,
+   * mas todo mundo com Calendário na grade continua vendo "Pedagógico"). */
+  roles?: string[];
+  /** Vira item expansível com submenu — 1 filho visível some direto (achata
+   * pro item único, sem grupo de 1 opção só). */
+  children?: NavItem[];
+};
 type NavGroup = { label: string; items: NavItem[] };
 
 // De 7 grupos pra 4 — "Escola" e "Direção" só tinham 1 item cada, só
@@ -62,7 +74,17 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Principal",
     items: [
       { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-      { label: "Calendário", href: "/calendario", icon: CalendarDays },
+      {
+        label: "Calendário",
+        href: "/calendario",
+        icon: CalendarDays,
+        // "Geral" (pedido do dono, out/2026): só Admin/Direção — o resto de
+        // quem enxerga Calendário na grade continua vendo só "Pedagógico".
+        children: [
+          { label: "Geral", href: "/calendario", icon: CalendarDays, roles: ["ADMIN", "DIRECAO"] },
+          { label: "Pedagógico", href: "/calendario/pedagogico", icon: CalendarDays },
+        ],
+      },
       { label: "Chat", href: "/chat", icon: MessageCircle },
       { label: "Mural", href: "/mural", icon: Megaphone },
     ],
@@ -124,9 +146,26 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const [mensagensNaoLidas, setMensagensNaoLidas] = useState(0);
+  const [submenusAbertos, setSubmenusAbertos] = useState<Set<string>>(new Set());
+
+  // Item com children: filtra os filhos pela grade + roles extra; 1 filho
+  // visível só (achado real: professora sem Admin/Direção só vê
+  // "Pedagógico") vira link direto, sem grupo de 1 opção só.
+  function filtrarItem(item: NavItem): NavItem | null {
+    if (item.children) {
+      const filhosVisiveis = item.children
+        .filter((c) => podeVerModulo(c.href, role, permissoes))
+        .filter((c) => !c.roles || c.roles.includes(role));
+      if (filhosVisiveis.length === 0) return null;
+      if (filhosVisiveis.length === 1) return filhosVisiveis[0];
+      return { ...item, children: filhosVisiveis };
+    }
+    return podeVerModulo(item.href, role, permissoes) ? item : null;
+  }
+
   const grupos = NAV_GROUPS.map((group) => ({
     ...group,
-    items: group.items.filter((item) => podeVerModulo(item.href, role, permissoes)),
+    items: group.items.map(filtrarItem).filter((item): item is NavItem => item !== null),
   })).filter((group) => group.items.length > 0);
 
   useEffect(() => {
@@ -196,6 +235,54 @@ export function Sidebar({
               </div>
               <div className="flex flex-col gap-0.5">
                 {group.items.map((item) => {
+                  if (item.children) {
+                    const filhoAtivo = item.children.some((c) => pathname === c.href || pathname.startsWith(`${c.href}/`));
+                    const aberto = submenusAbertos.has(item.label) || filhoAtivo;
+                    const Icon = item.icon;
+                    return (
+                      <div key={item.label}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSubmenusAbertos((atual) => {
+                              const novo = new Set(atual);
+                              if (novo.has(item.label)) novo.delete(item.label);
+                              else novo.add(item.label);
+                              return novo;
+                            })
+                          }
+                          aria-expanded={aberto}
+                          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-white/65 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/50"
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span className="flex-1 text-left">{item.label}</span>
+                          <ChevronDown className={cn("h-3.5 w-3.5 shrink-0 transition-transform", aberto && "rotate-180")} />
+                        </button>
+                        {aberto && (
+                          <div className="ml-4 flex flex-col gap-0.5 border-l border-white/10 py-0.5 pl-3">
+                            {item.children.map((child) => {
+                              const active = pathname === child.href || pathname.startsWith(`${child.href}/`);
+                              return (
+                                <Link
+                                  key={child.href}
+                                  href={child.href}
+                                  onClick={onClose}
+                                  aria-current={active ? "page" : undefined}
+                                  className={cn(
+                                    "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/50",
+                                    active ? "bg-cda-blue text-white" : "text-white/60 hover:bg-white/10 hover:text-white"
+                                  )}
+                                >
+                                  {child.label}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
                   const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
                   const Icon = item.icon;
                   const naoLidas = item.href === "/chat" ? mensagensNaoLidas : 0;
