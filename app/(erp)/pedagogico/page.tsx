@@ -503,15 +503,12 @@ export default async function PedagogicoPage() {
         )
       ) : (
         <div className="flex flex-col gap-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <h2 className="text-base font-semibold text-cda-text">Suas turmas</h2>
-            {!souCoordenadora && dataLimite && (
-              <span className={`text-xs font-medium ${prazoVencido ? "text-cda-red" : "text-cda-text3"}`}>
-                Prazo do planejamento esse mês: {dataLimite.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" })}
-                {prazoVencido && " — vencido"}
-              </span>
-            )}
-          </div>
+          {!souCoordenadora && dataLimite && (
+            <span className={`text-xs font-medium ${prazoVencido ? "text-cda-red" : "text-cda-text3"}`}>
+              Prazo do planejamento esse mês: {dataLimite.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" })}
+              {prazoVencido && " — vencido"}
+            </span>
+          )}
           {comoRegente.length > 0 && (
             <div className="border-t border-cda-border pt-4">
               <h3 className="mb-2 text-sm font-semibold text-cda-text2">Como regente</h3>
