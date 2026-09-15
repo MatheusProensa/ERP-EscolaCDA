@@ -125,6 +125,7 @@ export function ChatApp({
   const [carregandoConversas, setCarregandoConversas] = useState(!conversasIniciais);
   const [erroConversas, setErroConversas] = useState(false);
   const [buscaConversa, setBuscaConversa] = useState("");
+  const [filtro, setFiltro] = useState<"todos" | "online" | "nao-lidas">("todos");
   const [selecionado, setSelecionado] = useState<string | null>(selecionadoInicial ?? null);
   const [mensagens, setMensagens] = useState<Mensagem[]>([]);
   const [temMaisAntigas, setTemMaisAntigas] = useState(false);
@@ -479,9 +480,14 @@ export function ChatApp({
   const conversaAtual = conversas.find((c) => c.id === selecionado);
   const conversasFiltradas = useMemo(() => {
     const termo = buscaConversa.trim().toLowerCase();
-    if (!termo) return conversas;
-    return conversas.filter((c) => c.name.toLowerCase().includes(termo));
-  }, [conversas, buscaConversa]);
+    return conversas
+      .filter((c) => (termo ? c.name.toLowerCase().includes(termo) : true))
+      .filter((c) => {
+        if (filtro === "online") return c.online;
+        if (filtro === "nao-lidas") return c.naoLidas > 0;
+        return true;
+      });
+  }, [conversas, buscaConversa, filtro]);
   const itensConversa = useMemo(() => montarItens(mensagens), [mensagens]);
   const trocandoConversa = selecionado !== mensagensDeId;
 
@@ -500,6 +506,26 @@ export function ChatApp({
               className="h-8 w-full rounded-lg border border-cda-border bg-cda-bg pl-8 pr-2.5 text-sm text-cda-text placeholder:text-cda-text3 outline-none transition-colors focus:border-cda-blue focus:bg-white"
             />
           </div>
+          <div className="mt-2 flex gap-1.5">
+            {(
+              [
+                { chave: "todos", label: "Todos" },
+                { chave: "online", label: "Online" },
+                { chave: "nao-lidas", label: "Não lidos" },
+              ] as const
+            ).map((f) => (
+              <button
+                key={f.chave}
+                type="button"
+                onClick={() => setFiltro(f.chave)}
+                className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                  filtro === f.chave ? "bg-cda-blue text-white" : "bg-cda-bg text-cda-text2 hover:bg-cda-border/60"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex-1 overflow-y-auto">
           {!carregandoConversas && erroConversas && conversas.length === 0 && (
@@ -511,7 +537,13 @@ export function ChatApp({
             <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhum outro perfil cadastrado.</p>
           )}
           {!carregandoConversas && conversas.length > 0 && conversasFiltradas.length === 0 && (
-            <p className="px-4 py-6 text-center text-sm text-cda-text3">Nenhuma conversa com esse nome.</p>
+            <p className="px-4 py-6 text-center text-sm text-cda-text3">
+              {filtro === "online"
+                ? "Ninguém online agora."
+                : filtro === "nao-lidas"
+                  ? "Nenhuma conversa não lida."
+                  : "Nenhuma conversa com esse nome."}
+            </p>
           )}
           {conversasFiltradas.map((c) => (
             <button
@@ -544,12 +576,13 @@ export function ChatApp({
                     <span className="shrink-0 text-[11px] text-cda-text3">{formatarDataHora(c.ultimaEm).split(" ").pop()}</span>
                   )}
                 </div>
+                <p className="truncate text-[11px] text-cda-text3">{ROLE_LABEL[c.role] ?? c.role}</p>
                 <div className="flex items-center justify-between gap-2">
                   <p className={`truncate text-xs ${c.naoLidas > 0 ? "font-medium text-cda-text2" : "text-cda-text3"}`}>
-                    {c.ultimaMensagem || (ROLE_LABEL[c.role] ?? c.role)}
+                    {c.ultimaMensagem || "Nenhuma mensagem ainda"}
                   </p>
                   {c.naoLidas > 0 && (
-                    <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-cda-red px-1 text-[11px] font-bold text-white">
+                    <span className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-cda-blue px-1 text-[11px] font-bold text-white">
                       {c.naoLidas}
                     </span>
                   )}
@@ -591,7 +624,7 @@ export function ChatApp({
                     <p className="text-sm font-semibold text-cda-text">{conversaAtual.name}</p>
                     <p className={`flex items-center gap-1 text-xs ${conversaAtual.online ? "text-cda-green" : "text-cda-text3"}`}>
                       {conversaAtual.online && <span className="h-1.5 w-1.5 rounded-full bg-cda-green" />}
-                      {conversaAtual.online ? "Online" : ROLE_LABEL[conversaAtual.role] ?? conversaAtual.role}
+                      {ROLE_LABEL[conversaAtual.role] ?? conversaAtual.role} · {conversaAtual.online ? "Online agora" : "Offline"}
                     </p>
                   </div>
                 </>
