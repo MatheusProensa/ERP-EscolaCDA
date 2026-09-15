@@ -1,19 +1,24 @@
-import { Users, GraduationCap, UserCog, FileSignature } from "lucide-react";
-import { MetricCard } from "@/components/ui/MetricCard";
+import { Users, GraduationCap, UserCog, FileSignature, BookOpen } from "lucide-react";
+import { DashboardMetricCard } from "@/components/modules/dashboard/DashboardMetricCard";
 
 export function MetricasGerais({
   totalAlunos,
   turmasAtivas,
   totalFuncionarios,
   contratosPendentes,
+  pedagogicoEntregues,
+  pedagogicoTotal,
   podeAlunos = true,
   podeAcademico = true,
   podeFuncionarios = true,
+  podePedagogico = true,
 }: {
   totalAlunos: number;
   turmasAtivas: number;
   totalFuncionarios: number;
   contratosPendentes: number;
+  pedagogicoEntregues: number;
+  pedagogicoTotal: number;
   // Default true: ADMIN (único que renderiza sem passar essas props hoje)
   // sempre vê tudo — a checagem de verdade é feita por quem chama esse
   // componente (DashboardAdmin), pra Role que a grade de permissões possa
@@ -22,18 +27,19 @@ export function MetricasGerais({
   podeAlunos?: boolean;
   podeAcademico?: boolean;
   podeFuncionarios?: boolean;
+  podePedagogico?: boolean;
 }) {
   return (
-    // NOVO: 4 cards em vez de 2 — sobrava espaço vazio do lado com só Total de
-    // alunos/Turmas ativas. Funcionários e Contratos pendentes de
-    // assinatura são contagens baratas que já existiam em outros módulos.
-    // Os 3 primeiros usam cor categórica (não é estado, é só personalidade de
-    // volta) — só o de Contratos pendentes usa cor de status de verdade.
-    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+    // 5 cards — redesign do Dashboard (pedido do dono, mockup de referência):
+    // borda superior colorida em vez do círculo de ícone (ver
+    // DashboardMetricCard). Pedagógico é novo: soma de Planejamento/Roteiro/
+    // Atividade Gráfica/Tema Literário aprovados esse mês, em TODAS as
+    // turmas — mesma regra já usada na Fila de Impressão.
+    <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
       {podeAlunos && (
-        <MetricCard
+        <DashboardMetricCard
           icon={Users}
-          tone="cat1"
+          cor="var(--cda-blue)"
           value={totalAlunos}
           label="Total de alunos"
           subtext="Matrículas ativas"
@@ -41,9 +47,9 @@ export function MetricasGerais({
         />
       )}
       {podeAcademico && (
-        <MetricCard
+        <DashboardMetricCard
           icon={GraduationCap}
-          tone="cat3"
+          cor="var(--cda-green)"
           value={turmasAtivas}
           label="Turmas ativas"
           subtext="Ano letivo atual"
@@ -51,22 +57,32 @@ export function MetricasGerais({
         />
       )}
       {podeFuncionarios && (
-        <MetricCard
+        <DashboardMetricCard
           icon={UserCog}
-          tone="cat5"
+          cor="var(--cda-amber)"
           value={totalFuncionarios}
           label="Funcionários"
           subtext="Quadro atual"
           href="/funcionarios"
         />
       )}
+      {podePedagogico && (
+        <DashboardMetricCard
+          icon={BookOpen}
+          cor="var(--cat-5-dot)"
+          value={`${pedagogicoEntregues}/${pedagogicoTotal}`}
+          label="Pedagógico"
+          subtext="Docs entregues (mês)"
+          href="/pedagogico"
+        />
+      )}
       {podeAlunos && (
-        <MetricCard
+        <DashboardMetricCard
           icon={FileSignature}
-          tone={contratosPendentes > 0 ? "danger" : "success"}
+          cor={contratosPendentes > 0 ? "var(--status-danger)" : "var(--cda-green)"}
           value={contratosPendentes}
           label="Contratos pendentes"
-          subtext="Aguardando assinatura"
+          subtext="Em dia"
           href={contratosPendentes > 0 ? "/alunos?contrato=pendente" : undefined}
         />
       )}

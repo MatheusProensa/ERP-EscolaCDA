@@ -51,7 +51,7 @@ export async function MuralWidget() {
       <div className="flex flex-col divide-y divide-cda-border">
         {avisos.length === 0 && <EmptyState title="Nenhum aviso publicado ainda." />}
         {avisos.map((aviso) => (
-          <div key={aviso.id} className="flex items-start gap-3 p-4">
+          <div key={aviso.id} className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-cda-bg/60">
             <Avatar nome={aviso.autor} size="lg" />
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-1.5">

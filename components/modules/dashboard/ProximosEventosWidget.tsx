@@ -59,7 +59,7 @@ export async function ProximosEventosWidget() {
               {/* NOVO: só a tela de Calendário tinha a legenda de cor — quem só olha o
                   Dashboard não tinha como saber o que cada cor significa. */}
               <span
-                className="shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium leading-tight"
+                className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium leading-tight"
                 style={{ backgroundColor: cor.bg, color: cor.text }}
               >
                 {evento.categoria}

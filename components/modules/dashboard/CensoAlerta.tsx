@@ -1,4 +1,4 @@
-import { ClipboardList } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 
@@ -15,12 +15,12 @@ export function CensoAlerta({ quantidade }: { quantidade: number }) {
   if (quantidade === 0) return null;
   return (
     <Alert
-      tone="critical"
-      icon={ClipboardList}
+      tone="warning"
+      icon={AlertTriangle}
       title={`${quantidade} aluno(s) com dados incompletos para o censo`}
       action={
-        <Button href="/alunos?censo=incompleto" variant="secondary" className="w-full shrink-0 sm:w-auto">
-          Resolver pendências
+        <Button href="/alunos?censo=incompleto" variant="outline" className="w-full shrink-0 sm:w-auto">
+          Resolver pendências →
         </Button>
       }
     >
