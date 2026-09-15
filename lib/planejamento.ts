@@ -154,6 +154,23 @@ export function tituloDoDia(tipo: TipoDiaPlanejamento, conteudo: ConteudoDiaPlan
   return (tipo === "TEMATICA" ? conteudo.tematicaDia : conteudo.contextoOrganizado) ?? "";
 }
 
+/** Vazio/parcial/completo de 1 dia — pedido do dono, mockup do Gemini (5
+ * pontinhos por semana: verde/meio/vazio). "Completo" olha só os blocos
+ * OBRIGATÓRIOS de cada tipo (Momento final é opcional por idade da turma —
+ * ver MODELO_PLANEJAMENTO_CDA — nunca conta contra o dia); questionamentos
+ * também não contam (são apoio, não obrigatórios no documento real). */
+export type EstadoDia = "vazio" | "parcial" | "completo";
+export function estadoDoDia(tipo: TipoDiaPlanejamento, conteudo: ConteudoDiaPlanejamento): EstadoDia {
+  const obrigatorios =
+    tipo === "TEMATICA"
+      ? [conteudo.tematicaDia, conteudo.momentoInicial, conteudo.momentoFundamental]
+      : [conteudo.contextoOrganizado, conteudo.rodaDeConversa, conteudo.organizacaoContexto];
+  const preenchidos = obrigatorios.filter((v) => !!v?.trim()).length;
+  if (preenchidos === 0) return "vazio";
+  if (preenchidos === obrigatorios.length) return "completo";
+  return "parcial";
+}
+
 /** Roteiro é a versão resumida do planejamento (achado real, set/2026:
  * documento MODELO_ROTEIRO_CDA — mesma semana, só que em bullets curtos em
  * vez dos parágrafos completos) — GERADO a partir do planejamento em vez de

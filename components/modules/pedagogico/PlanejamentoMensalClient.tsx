@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Printer, Copy } from "lucide-react";
-import { semanasDoMes, isoData, segundaFeiraDe } from "@/lib/planejamento";
+import { semanasDoMes, isoData, segundaFeiraDe, STATUS_TURMA_MES_LABEL, STATUS_TURMA_MES_COR } from "@/lib/planejamento";
 import { hojeBrasilia } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { showToast } from "@/components/ui/Toast";
@@ -20,6 +20,97 @@ function anoMesDeData(d: Date): string {
 function somarMes(anoMes: string, delta: number): string {
   const [ano, mes] = anoMes.split("-").map(Number);
   return anoMesDeData(new Date(Date.UTC(ano, mes - 1 + delta, 1)));
+}
+
+type ResumoMes = {
+  semanasPreenchidas: number;
+  semanasTotal: number;
+  diasCompletos: number;
+  diasTotal: number;
+  status: "APROVADO" | "DEVOLVIDO" | "ENVIADO" | "EM_PREENCHIMENTO" | "ATRASADO" | "PENDENTE";
+  diasParaPrazo: number | null;
+};
+
+const STATUS_LABEL_EXTRA: Record<string, string> = { ...STATUS_TURMA_MES_LABEL, EM_PREENCHIMENTO: "Em preenchimento" };
+const STATUS_COR_EXTRA: Record<string, string> = { ...STATUS_TURMA_MES_COR, EM_PREENCHIMENTO: "var(--status-warning)" };
+
+function textoPrazoStrip(dias: number | null): string {
+  if (dias === null) return "Sem prazo definido";
+  if (dias < 0) return `Vencido há ${Math.abs(dias)} dia${Math.abs(dias) === 1 ? "" : "s"}`;
+  if (dias === 0) return "Vence hoje";
+  return `${dias} dia${dias === 1 ? "" : "s"} restantes`;
+}
+
+/** Strip de 4 números acima das semanas — pedido do dono, mockup do Gemini
+ * ("Semanas preenchidas: X de Y" / "Dias completos: X de Y" / "Status" /
+ * "Prazo"). Carrega junto com o mês em tela (recarrega ao navegar ou depois
+ * de duplicar/salvar). */
+function StripProgresso({ turmaId, anoMes, versao }: { turmaId: string; anoMes: string; versao: string }) {
+  const [resumo, setResumo] = useState<ResumoMes | null>(null);
+
+  useEffect(() => {
+    let cancelado = false;
+    // Não zera o resumo antes de buscar o novo — deixa o número anterior na
+    // tela até o próximo chegar, sem piscar pra vazio a cada troca de mês.
+    fetch(`/api/planejamentos/resumo-mes?turmaId=${turmaId}&mes=${anoMes}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelado && data) setResumo(data);
+      })
+      .catch(() => {});
+    return () => {
+      cancelado = true;
+    };
+  }, [turmaId, anoMes, versao]);
+
+  if (!resumo) return null;
+  const pctSemanas = resumo.semanasTotal > 0 ? (resumo.semanasPreenchidas / resumo.semanasTotal) * 100 : 0;
+  const pctDias = resumo.diasTotal > 0 ? (resumo.diasCompletos / resumo.diasTotal) * 100 : 0;
+  const prazoUrgente = resumo.diasParaPrazo !== null && resumo.diasParaPrazo <= 3;
+
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-4">
+      <div className="rounded-lg border border-cda-border bg-white p-3">
+        <p className="text-xs text-cda-text3">Semanas preenchidas</p>
+        <p className="mb-1.5 text-sm font-semibold text-cda-text">
+          {resumo.semanasPreenchidas} de {resumo.semanasTotal}
+        </p>
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-cda-bg">
+          <div className="h-full rounded-full bg-cda-blue" style={{ width: `${pctSemanas}%` }} />
+        </div>
+      </div>
+      <div className="rounded-lg border border-cda-border bg-white p-3">
+        <p className="text-xs text-cda-text3">Dias completos</p>
+        <p className="mb-1.5 text-sm font-semibold text-cda-text">
+          {resumo.diasCompletos} de {resumo.diasTotal}
+        </p>
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-cda-bg">
+          <div className="h-full rounded-full" style={{ width: `${pctDias}%`, backgroundColor: "var(--cda-amber)" }} />
+        </div>
+      </div>
+      <div className="flex flex-col justify-center rounded-lg border border-cda-border bg-white p-3">
+        <p className="mb-1 text-xs text-cda-text3">Status</p>
+        <span
+          className="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+          style={{ backgroundColor: `color-mix(in srgb, ${STATUS_COR_EXTRA[resumo.status]} 15%, transparent)`, color: STATUS_COR_EXTRA[resumo.status] }}
+        >
+          {STATUS_LABEL_EXTRA[resumo.status]}
+        </span>
+      </div>
+      <div className="flex flex-col justify-center rounded-lg border border-cda-border bg-white p-3">
+        <p className="mb-1 text-xs text-cda-text3">Prazo</p>
+        <span
+          className="inline-flex w-fit items-center rounded-full px-2.5 py-1 text-xs font-semibold"
+          style={{
+            backgroundColor: `color-mix(in srgb, ${prazoUrgente ? "var(--status-danger)" : "var(--status-success)"} 15%, transparent)`,
+            color: prazoUrgente ? "var(--status-danger)" : "var(--status-success)",
+          }}
+        >
+          {textoPrazoStrip(resumo.diasParaPrazo)}
+        </span>
+      </div>
+    </div>
+  );
 }
 
 /** Planejamento organizado MÊS A MÊS (pedido do dono por áudio, set/2026:
@@ -47,6 +138,10 @@ export function PlanejamentoMensalClient({
   const semanaAtualIso = isoData(segundaFeiraDe(hojeBrasilia()));
   const [duplicando, setDuplicando] = useState(false);
   const [versaoRecarga, setVersaoRecarga] = useState(0);
+  // Contador à parte pro strip de progresso reagir a um salvamento de
+  // qualquer semana sem remontar as semanas (remontar faria a que acabou de
+  // salvar fechar sozinha de novo — ruim logo depois de clicar "Finalizar").
+  const [stripVersao, setStripVersao] = useState(0);
 
   async function duplicarMesAnterior() {
     setDuplicando(true);
@@ -93,6 +188,8 @@ export function PlanejamentoMensalClient({
         </button>
       </div>
 
+      <StripProgresso turmaId={turmaId} anoMes={anoMes} versao={`${versaoRecarga}-${stripVersao}`} />
+
       <div className="flex flex-wrap items-center justify-end gap-x-4 gap-y-1.5">
         {podeEditar && (
           <Button variant="outline" size="sm" onClick={duplicarMesAnterior} loading={duplicando}>
@@ -119,6 +216,7 @@ export function PlanejamentoMensalClient({
             projetos={projetos}
             semanaIso={semanaIso}
             abertaPorPadrao={semanaIso === semanaAtualIso}
+            onSalvo={() => setStripVersao((v) => v + 1)}
           />
         ))}
       </div>

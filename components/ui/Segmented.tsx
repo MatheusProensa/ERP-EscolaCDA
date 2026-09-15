@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
-type Opt<T extends string> = { value: T; label: string; count?: number; href?: string };
+type Opt<T extends string> = { value: T; label: React.ReactNode; count?: number; href?: string };
 
 /** Pílula sobre fundo cinza. Use quando as abas são ROTAS IRMÃS do mesmo
  * módulo (handoff de design, etapa 4.7 — ganhou suporte a `href` pra

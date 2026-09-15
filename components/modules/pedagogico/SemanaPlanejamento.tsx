@@ -1,21 +1,41 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ChevronDown, NotebookPen, ScrollText, Printer, CheckCircle2, RotateCcw, ThumbsUp, Undo2, MessageSquareWarning, History } from "lucide-react";
+import { ChevronDown, NotebookPen, ScrollText, Printer, CheckCircle2, RotateCcw, ThumbsUp, Undo2, MessageSquareWarning, History, CalendarClock } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
 import { showToast } from "@/components/ui/Toast";
 import { PlanejamentoStepper } from "@/components/modules/pedagogico/PlanejamentoStepper";
-import { tituloDoDia, bulletsDoDia, type ConteudoDiaPlanejamento } from "@/lib/planejamento";
+import { tituloDoDia, bulletsDoDia, estadoDoDia, type ConteudoDiaPlanejamento, type EstadoDia } from "@/lib/planejamento";
 
 type TipoDia = "TEMATICA" | "CONTEXTO";
 export type Projeto = { id: string; nome: string; ativo: boolean };
 type DiaForm = { data: string; tipo: TipoDia; conteudo: ConteudoDiaPlanejamento; especializadas: string };
 
 const LABEL_DIA = ["Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira"];
+
+/** Pontinho de estado do dia — pedido do dono, mockup do Gemini (verde
+ * cheio/meio/vazio por dia). "Parcial" vira um anel colorido em vez de meia
+ * lua (mais simples de garantir legível em qualquer tamanho). */
+function PontoEstadoDia({ estado, size = "sm" }: { estado: EstadoDia; size?: "sm" | "xs" }) {
+  const dimensao = size === "xs" ? "h-1.5 w-1.5" : "h-2 w-2";
+  if (estado === "completo") {
+    return <span className={`${dimensao} shrink-0 rounded-full`} style={{ backgroundColor: "var(--status-success)" }} aria-hidden />;
+  }
+  if (estado === "parcial") {
+    return (
+      <span
+        className={`${dimensao} shrink-0 rounded-full border-2 bg-white`}
+        style={{ borderColor: "var(--status-warning)" }}
+        aria-hidden
+      />
+    );
+  }
+  return <span className={`${dimensao} shrink-0 rounded-full border-2 bg-white`} style={{ borderColor: "var(--cda-border)" }} aria-hidden />;
+}
 
 function somarDias(iso: string, dias: number): string {
   const data = new Date(`${iso}T00:00:00.000Z`);
@@ -211,7 +231,7 @@ function DiaPlanejamento({
   }
 
   const resumo = dia.tipo === "TEMATICA" ? c.tematicaDia : c.contextoOrganizado;
-  const temConteudo = Object.keys(c).length > 0;
+  const estado = estadoDoDia(dia.tipo, c);
 
   return (
     <div className="rounded-lg border border-cda-border">
@@ -222,11 +242,7 @@ function DiaPlanejamento({
       >
         <div>
           <p className="flex items-center gap-2 text-sm font-semibold text-cda-text">
-            <span
-              className="h-1.5 w-1.5 shrink-0 rounded-full"
-              style={{ backgroundColor: temConteudo ? "var(--status-info)" : "var(--cda-border)" }}
-              aria-hidden
-            />
+            <PontoEstadoDia estado={estado} size="xs" />
             {LABEL_DIA[indice]} <span className="font-normal text-cda-text3">({formatarDiaMes(dia.data)})</span>
           </p>
           {resumo && <p className="mt-0.5 pl-3.5 text-xs text-cda-text3">{resumo}</p>}
@@ -304,7 +320,17 @@ function DiaPlanejamento({
             onChange={(v) => atualizarConteudo({ questionamentosFinal: v })}
             disabled={!podeEditar}
           />
-          <Campo label="Aulas especializadas nesse dia" value={dia.especializadas} onChange={(v) => atualizar({ especializadas: v })} disabled={!podeEditar} rows={1} />
+          {/* Só-leitura — pedido do dono, mockup do Gemini: puxa direto do
+              Horário fixo cadastrado da turma (a API já resolve isso, ver
+              GET /api/planejamentos), a professora não digita de novo aqui.
+              Pra mudar, é na aba Horário fixo, não campo a campo. */}
+          <div className="flex flex-col gap-1">
+            <label className="text-xs font-medium text-cda-text2">Especializada do dia</label>
+            <p className="flex items-center gap-1.5 rounded-lg border border-cda-border bg-cda-bg px-3 py-2 text-sm text-cda-text3">
+              <CalendarClock className="h-3.5 w-3.5 shrink-0" />
+              {dia.especializadas || "Nenhuma especializada cadastrada pra esse dia"}
+            </p>
+          </div>
 
           <div className="flex flex-col gap-3 border-t border-cda-border pt-3">
             <p className="text-xs font-medium text-cda-text2">Folhas imprimíveis (opcional, só se esse dia tiver uma)</p>
@@ -342,11 +368,15 @@ export function SemanaPlanejamento({
   projetos,
   semanaIso,
   abertaPorPadrao,
+  onSalvo,
 }: {
   turmaId: string;
   projetos: Projeto[];
   semanaIso: string;
   abertaPorPadrao: boolean;
+  /** Avisa o mês (PlanejamentoMensalClient) que essa semana salvou algo —
+   * pro strip de progresso atualizar sem remontar as semanas. */
+  onSalvo?: () => void;
 }) {
   const [aberta, setAberta] = useState(abertaPorPadrao);
   const [carregado, setCarregado] = useState(false);
@@ -369,6 +399,11 @@ export function SemanaPlanejamento({
   const [comentarioForm, setComentarioForm] = useState("");
   const [revisando, setRevisando] = useState(false);
   const [mostrarDevolver, setMostrarDevolver] = useState(false);
+  // "Sujo" = tem edição não salva — liga o autosave (pedido do dono: "salvar
+  // automaticamente a cada 30s, sem precisar clicar", toast discreto, sem
+  // interromper a digitação). Só liga DEPOIS do carregamento inicial —
+  // preencher os campos com o que veio da API não conta como "edição".
+  const [sujo, setSujo] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -397,6 +432,7 @@ export function SemanaPlanejamento({
       setLiComentarioEm(data.liComentarioEm ?? null);
       setSouCoordenadora(!!data.souCoordenadora);
       setPodeEditar(data.podeEditar);
+      setSujo(false);
       setCarregando(false);
       setCarregado(true);
     }
@@ -408,9 +444,10 @@ export function SemanaPlanejamento({
 
   function atualizarDia(index: number, patch: Partial<DiaForm>) {
     setDias((atual) => atual.map((d, i) => (i === index ? { ...d, ...patch } : d)));
+    setSujo(true);
   }
 
-  async function salvar(novoStatus?: "ENVIADO" | "RASCUNHO") {
+  async function salvar(novoStatus?: "ENVIADO" | "RASCUNHO", opts?: { silencioso?: boolean }) {
     setSalvando(true);
     setErro("");
     const res = await fetch("/api/planejamentos", {
@@ -429,17 +466,42 @@ export function SemanaPlanejamento({
     });
     setSalvando(false);
     if (!res.ok) {
+      // Autosave falhar não interrompe a professora com erro em vermelho na
+      // tela — só não avisa nada e tenta de novo no próximo ciclo de 30s.
+      if (opts?.silencioso) return;
       const data = await res.json().catch(() => ({}));
       setErro(data.error ?? "Não foi possível salvar o planejamento.");
       return;
     }
+    setSujo(false);
     if (novoStatus) setStatus(novoStatus);
     if (novoStatus === "ENVIADO") {
       setComentarioCoordenadora("");
       setLiComentarioEm(null);
     }
+    onSalvo?.();
+    if (opts?.silencioso) {
+      showToast("Rascunho salvo automaticamente.");
+      return;
+    }
     showToast(novoStatus === "ENVIADO" ? "Planejamento da semana finalizado." : novoStatus === "RASCUNHO" ? "Planejamento reaberto." : "Planejamento da semana salvo.");
   }
+
+  // Autosave a cada 30s — só quando tem edição não salva (evita toast/POST
+  // repetido sem necessidade). Intervalo fixo criado 1x (não reinicia a cada
+  // tecla); lê sempre o estado mais atual via ref, pro closure nunca ficar
+  // desatualizado.
+  const maisRecenteRef = useRef({ sujo, podeEditar, salvando, salvar });
+  useEffect(() => {
+    maisRecenteRef.current = { sujo, podeEditar, salvando, salvar };
+  });
+  useEffect(() => {
+    const id = setInterval(() => {
+      const atual = maisRecenteRef.current;
+      if (atual.sujo && atual.podeEditar && !atual.salvando) atual.salvar(undefined, { silencioso: true });
+    }, 30000);
+    return () => clearInterval(id);
+  }, []);
 
   async function revisar(novoStatus: "APROVADO" | "DEVOLVIDO") {
     if (!id) return;
@@ -487,7 +549,19 @@ export function SemanaPlanejamento({
           <span className="text-sm font-semibold text-cda-text">
             Semana de {formatarDiaMes(semanaIso)} a {formatarDiaMes(somarDias(semanaIso, 4))}
           </span>
-          {carregado && <p className="mt-0.5 text-xs text-cda-text3">{diasPreenchidos} de 5 dias preenchidos</p>}
+          {carregado && (
+            <div className="mt-1 flex items-center gap-2">
+              {/* 5 pontinhos, Segunda a Sexta — pedido do dono, mockup do
+                  Gemini: dá pra ver de cara quais dias ainda faltam sem abrir
+                  a semana. */}
+              <div className="flex items-center gap-1">
+                {dias.map((dia) => (
+                  <PontoEstadoDia key={dia.data} estado={estadoDoDia(dia.tipo, dia.conteudo)} />
+                ))}
+              </div>
+              <span className="text-xs text-cda-text3">{diasPreenchidos} de 5 dias preenchidos</span>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {carregado && (
@@ -541,7 +615,15 @@ export function SemanaPlanejamento({
           )}
 
           <div className="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <Select label="Projeto pedagógico" value={projetoId} onChange={(e) => setProjetoId(e.target.value)} disabled={!podeEditar}>
+            <Select
+              label="Projeto pedagógico"
+              value={projetoId}
+              onChange={(e) => {
+                setProjetoId(e.target.value);
+                setSujo(true);
+              }}
+              disabled={!podeEditar}
+            >
               <option value="">Sem projeto vinculado</option>
               {projetos.map((p) => (
                 <option key={p.id} value={p.id}>
@@ -562,20 +644,35 @@ export function SemanaPlanejamento({
           ) : (
             <>
               <div className="mb-4 flex flex-col gap-4">
-                <Campo label="Materiais da semana" value={materiais} onChange={setMateriais} disabled={!podeEditar} rows={2} />
+                <Campo
+                  label="Materiais da semana"
+                  value={materiais}
+                  onChange={(v) => {
+                    setMateriais(v);
+                    setSujo(true);
+                  }}
+                  disabled={!podeEditar}
+                  rows={2}
+                />
                 <div className="flex flex-col gap-3 rounded-lg border border-cda-border p-3">
                   <p className="text-xs font-medium text-cda-text2">OBS: Em caso de Tarde Cultural (opcional, só se essa semana tiver)</p>
                   <Campo
                     label="Apresentação da turma — o que será feito, se for o dia da turma apresentar"
                     value={tardeCulturalApresentacao}
-                    onChange={setTardeCulturalApresentacao}
+                    onChange={(v) => {
+                      setTardeCulturalApresentacao(v);
+                      setSujo(true);
+                    }}
                     disabled={!podeEditar}
                     rows={2}
                   />
                   <Campo
                     label="Lista de materiais necessários (quantidade, item, tamanho, cor, detalhes)"
                     value={tardeCulturalMateriais}
-                    onChange={setTardeCulturalMateriais}
+                    onChange={(v) => {
+                      setTardeCulturalMateriais(v);
+                      setSujo(true);
+                    }}
                     disabled={!podeEditar}
                     rows={2}
                   />

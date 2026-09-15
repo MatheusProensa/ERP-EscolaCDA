@@ -15,6 +15,7 @@ import {
   tipoPadraoDoDia,
   tituloDoDia,
   bulletsDoDia,
+  semanasDoMes,
   type ConteudoDiaPlanejamento,
 } from "@/lib/planejamento";
 
@@ -53,14 +54,21 @@ export default async function RoteiroTurmaPage({
   const semanaInicio = segundaFeiraDe(Number.isNaN(semanaBase.getTime()) ? hojeBrasilia() : semanaBase);
   const semanaIso = isoData(semanaInicio);
   const anoMes = `${semanaInicio.getUTCFullYear()}-${String(semanaInicio.getUTCMonth() + 1).padStart(2, "0")}`;
+  const semanasMesAtual = semanasDoMes(hojeBrasilia());
 
-  const [planejamento, horarios] = await Promise.all([
+  const [planejamento, horarios, semanasEnviadas] = await Promise.all([
     prisma.planejamento.findUnique({
       where: { turmaId_semanaInicio: { turmaId, semanaInicio } },
       include: { dias: true, projeto: true },
     }),
     prisma.horarioEspecializada.findMany({ where: { turmaId } }),
+    // Só pro ✓ verde da aba (mockup do Gemini) — mesmo sinal usado na página
+    // do Planejamento, Roteiro é gerado dele, compartilham a completude.
+    prisma.planejamento.count({
+      where: { turmaId, semanaInicio: { in: semanasMesAtual }, status: { in: ["ENVIADO", "APROVADO", "DEVOLVIDO"] } },
+    }),
   ]);
+  const mesCompleto = semanasEnviadas >= semanasMesAtual.length;
 
   const diasPorData = new Map((planejamento?.dias ?? []).map((d) => [isoData(d.data), d]));
   const horarioPorDiaSemana = new Map(horarios.map((h) => [h.diaSemana, h.texto]));
@@ -90,7 +98,7 @@ export default async function RoteiroTurmaPage({
           { label: "Roteiro" },
         ]}
       />
-      <PlanejamentoTabs turmaId={turma.id} active="roteiro" />
+      <PlanejamentoTabs turmaId={turma.id} active="roteiro" completos={{ planejamento: mesCompleto, roteiro: mesCompleto }} />
 
       <div className="mb-2 flex items-center justify-between gap-3">
         <Link
