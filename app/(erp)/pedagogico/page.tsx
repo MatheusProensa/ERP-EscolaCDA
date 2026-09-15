@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   GraduationCap,
   Sparkles,
@@ -23,6 +22,8 @@ import { MetricCard } from "@/components/ui/MetricCard";
 import { PedagogicoTutorial } from "@/components/modules/pedagogico/PedagogicoTutorial";
 import { PrazoPedagogicoForm } from "@/components/modules/pedagogico/PrazoPedagogicoForm";
 import { DocumentoPedagogicoCard } from "@/components/modules/pedagogico/DocumentoPedagogicoCard";
+import { ProgressoCircular } from "@/components/modules/pedagogico/ProgressoCircular";
+import { DicaBanner } from "@/components/modules/pedagogico/DicaBanner";
 import { PainelCoordenadoraClient } from "@/components/modules/pedagogico/PainelCoordenadoraClient";
 import { AcompanhamentoCharts } from "@/components/modules/pedagogico/AcompanhamentoCharts";
 import { getAnoLetivoAtivo } from "@/lib/anoLetivo";
@@ -30,12 +31,20 @@ import { hojeBrasilia, ordenarTurmas } from "@/lib/utils";
 import {
   semanasDoMes,
   isoData,
+  tituloDoDia,
+  bulletsDoDia,
+  statusTurmaMesDeContagem,
   STATUS_TURMA_MES_LABEL,
   STATUS_TURMA_MES_COR,
   type StatusTurmaMes,
+  type ConteudoDiaPlanejamento,
 } from "@/lib/planejamento";
 
 const TURNO_LABEL: Record<string, string> = { MANHA: "Manhã", TARDE: "Tarde" };
+const MESES_LONGO = [
+  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
 const MESES_CURTO = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 /** Só as segundas-feiras cujo PRÓPRIO calendário cai dentro do mês (ano,
@@ -159,6 +168,71 @@ export default async function PedagogicoPage() {
     folhasPorTurma.set(dia.planejamento.turmaId, atual);
   }
 
+  // Redesign da tela inicial (pedido do dono, mockup de referência) — 4 dados
+  // novos que a tela ainda não buscava, todos reais (nada inventado):
+  //
+  // 1) Quantas semanas do mês já têm Roteiro disponível — MESMO critério da
+  //    página do Roteiro (tituloDoDia/bulletsDoDia preenchidos em algum dia
+  //    da semana), não um proxy simplificado.
+  const idsRegente = comoRegente.map((v) => v.turma.id);
+  const planejamentosComDias = idsRegente.length
+    ? await prisma.planejamento.findMany({
+        where: { turmaId: { in: idsRegente }, semanaInicio: { in: semanasMes } },
+        select: { turmaId: true, dias: { select: { tipo: true, conteudo: true } } },
+      })
+    : [];
+  const semanasComRoteiroPorTurma = new Map<string, number>();
+  for (const p of planejamentosComDias) {
+    const temConteudo = p.dias.some((d) => {
+      const conteudo = d.conteudo as ConteudoDiaPlanejamento;
+      return !!(tituloDoDia(d.tipo, conteudo) || bulletsDoDia(d.tipo, conteudo).length > 0);
+    });
+    if (temConteudo) semanasComRoteiroPorTurma.set(p.turmaId, (semanasComRoteiroPorTurma.get(p.turmaId) ?? 0) + 1);
+  }
+
+  // 2) Status real da FolhaMensal (Atividade Gráfica/Tema Literário) esse
+  //    mês — a tabela existe desde a implementação das 2 abas próprias, essa
+  //    tela só ainda não consultava; mesmo combinador usado no Planejamento.
+  const folhaMensalMes = idsRegente.length
+    ? await prisma.folhaMensal.findMany({
+        where: { turmaId: { in: idsRegente }, semanaInicio: { in: semanasMes } },
+        select: { turmaId: true, tipo: true, status: true },
+      })
+    : [];
+  const folhaContagemPorChave = new Map<string, { total: number; aprovadas: number; devolvidas: number }>();
+  for (const f of folhaMensalMes) {
+    const chave = `${f.turmaId}|${f.tipo}`;
+    const atual = folhaContagemPorChave.get(chave) ?? { total: 0, aprovadas: 0, devolvidas: 0 };
+    atual.total += 1;
+    if (f.status === "APROVADO") atual.aprovadas += 1;
+    if (f.status === "DEVOLVIDO") atual.devolvidas += 1;
+    folhaContagemPorChave.set(chave, atual);
+  }
+  function statusFolha(turmaId: string, tipo: "ATIVIDADE_GRAFICA" | "TEMA_LITERARIO"): StatusTurmaMes {
+    return statusTurmaMesDeContagem(folhaContagemPorChave.get(`${turmaId}|${tipo}`), semanasMes.length, prazoVencido);
+  }
+  function folhaEntregueMes(turmaId: string, tipo: "ATIVIDADE_GRAFICA" | "TEMA_LITERARIO"): boolean {
+    const c = folhaContagemPorChave.get(`${turmaId}|${tipo}`);
+    return !!c && c.total >= semanasMes.length;
+  }
+
+  // 3) Parecer/Portfólio não têm prazo nem status próprio no schema — sem
+  //    inventar um "vence dia X" que não existe, usa sinal 100% real:
+  //    Parecer = já existe algum criado pra essa turma (não é por mês, é
+  //    trimestral — não faz sentido medir "esse mês"); Portfólio = teve foto
+  //    adicionada ESSE mês (aí sim é mensal de verdade, pedido do dono
+  //    confirmado ao revisar essa tela).
+  const inicioMesAtual = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), 1));
+  const [pareceresRegente, portfolioMesRegente] = idsRegente.length
+    ? await Promise.all([
+        prisma.parecer.findMany({ where: { turmaId: { in: idsRegente } }, select: { turmaId: true }, distinct: ["turmaId"] }),
+        prisma.portfolioItem.findMany({ where: { turmaId: { in: idsRegente }, createdAt: { gte: inicioMesAtual } }, select: { turmaId: true } }),
+      ])
+    : [[], []];
+  const turmasComParecer = new Set(pareceresRegente.map((p) => p.turmaId));
+  const fotosMesPorTurma = new Map<string, number>();
+  for (const item of portfolioMesRegente) fotosMesPorTurma.set(item.turmaId, (fotosMesPorTurma.get(item.turmaId) ?? 0) + 1);
+
   // Texto do prazo pra mostrar no card da turma (pedido do dono: "visão hoje",
   // "faltam N documentos" viraram "quantos dias faltam/passaram do prazo").
   const diasParaPrazo = dataLimite ? Math.round((dataLimite.getTime() - hoje.getTime()) / 86400000) : null;
@@ -173,6 +247,31 @@ export default async function PedagogicoPage() {
   // de frase.
   const prazoAtualValor =
     diasParaPrazo === null ? "—" : diasParaPrazo < 0 ? "Vencido" : diasParaPrazo === 0 ? "Hoje" : `${diasParaPrazo} dia${diasParaPrazo === 1 ? "" : "s"}`;
+
+  // "X de 6 entregas" por turma-como-regente (redesign da tela inicial,
+  // pedido do dono) — as 6: Planejamento, Roteiro (mesmo sinal do
+  // Planejamento — é gerado a partir dele), Atividade Gráfica, Tema
+  // Literário (as 2 via FolhaMensal), Parecer (existe algum já criado) e
+  // Portfólio (teve foto esse mês). Usado no pill do topo (soma de todas as
+  // turmas) e no cabeçalho de cada card de turma.
+  function entregasDaTurma(turmaId: string) {
+    const feitas = [
+      entreguesMesAtual.has(turmaId), // Planejamento
+      entreguesMesAtual.has(turmaId), // Roteiro — mesmo sinal, já estabelecido
+      folhaEntregueMes(turmaId, "ATIVIDADE_GRAFICA"),
+      folhaEntregueMes(turmaId, "TEMA_LITERARIO"),
+      turmasComParecer.has(turmaId),
+      (fotosMesPorTurma.get(turmaId) ?? 0) > 0,
+    ].filter(Boolean).length;
+    return { feitas, total: 6 };
+  }
+  const entregasRegenteTotal = comoRegente.reduce(
+    (acc, v) => {
+      const e = entregasDaTurma(v.turma.id);
+      return { feitas: acc.feitas + e.feitas, total: acc.total + e.total };
+    },
+    { feitas: 0, total: 0 }
+  );
 
   // Coordenadora vê TODAS as turmas do ano letivo ativo, com a regente e o
   // status do mês — é o "dashboard bem bom pra acompanhar as professoras"
@@ -293,7 +392,22 @@ export default async function PedagogicoPage() {
   return (
     <div>
       <PedagogicoTutorial />
-      <PageHeader title="Área Pedagógica" subtitle="Suas turmas — planejamento, parecer e portfólio" />
+      <PageHeader
+        title="Área Pedagógica"
+        subtitle="Suas turmas — planejamento, parecer e portfólio"
+        action={
+          comoRegente.length > 0 ? (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold"
+              style={{ backgroundColor: "color-mix(in srgb, var(--cda-amber) 15%, transparent)", color: "var(--cda-amber)" }}
+            >
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: "var(--cda-amber)" }} aria-hidden />
+              {MESES_LONGO[hoje.getUTCMonth()]} {hoje.getUTCFullYear()} · {entregasRegenteTotal.feitas} de {entregasRegenteTotal.total} entregas
+              concluídas
+            </span>
+          ) : undefined
+        }
+      />
 
       {souCoordenadora && todasTurmas.length > 0 && (
         <div className="mb-6">
@@ -382,27 +496,48 @@ export default async function PedagogicoPage() {
               <h3 className="mb-2 text-sm font-semibold text-cda-text2">Como regente</h3>
               <div className="flex flex-col gap-4">
                 {comoRegente.map((v) => {
-                  const statusTurma = statusExibicao(v.turma.id);
-                  const semanasInfo = statusPorTurma.get(v.turma.id);
-                  const folhas = folhasPorTurma.get(v.turma.id) ?? { grafica: 0, literario: 0 };
+                  const turmaId = v.turma.id;
+                  const statusTurma = statusExibicao(turmaId);
+                  const semanasInfo = statusPorTurma.get(turmaId);
+                  const folhas = folhasPorTurma.get(turmaId) ?? { grafica: 0, literario: 0 };
+                  const semanasRoteiro = semanasComRoteiroPorTurma.get(turmaId) ?? 0;
+                  const graficaStatus = statusFolha(turmaId, "ATIVIDADE_GRAFICA");
+                  const literarioStatus = statusFolha(turmaId, "TEMA_LITERARIO");
                   const prazoTexto = textoPrazo();
-                  const roteiroHref = `/api/planejamentos/roteiro-pdf?turmaId=${v.turma.id}&mes=${anoMesAtual}`;
+                  const roteiroHref = `/api/planejamentos/roteiro-pdf?turmaId=${turmaId}&mes=${anoMesAtual}`;
+                  const entregas = entregasDaTurma(turmaId);
+                  const entregasPct = Math.round((entregas.feitas / entregas.total) * 100);
+                  const fotosMes = fotosMesPorTurma.get(turmaId) ?? 0;
+
+                  const linhasPlanejamento = [`${semanasInfo?.total ?? 0} de ${semanasMes.length} semana${semanasMes.length === 1 ? "" : "s"} enviadas`];
+                  if (prazoTexto) linhasPlanejamento.push(prazoTexto);
+
                   return (
                     <div key={v.id} className="rounded-[10px] border border-cda-border bg-cda-surface p-4">
-                      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <GraduationCap className="h-4 w-4 text-cda-blue" />
-                          <span className="text-sm font-semibold text-cda-text">{v.turma.nome}</span>
-                          <span className="text-xs text-cda-text3">({TURNO_LABEL[v.turma.turno] ?? v.turma.turno})</span>
+                      {/* Cabeçalho — turma + regente à esquerda, resumo "X de 6
+                          entregas" + anel de progresso à direita (redesign,
+                          pedido do dono, mockup de referência). */}
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cda-blue/10">
+                            <GraduationCap className="h-5 w-5 text-cda-blue" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-cda-text">
+                              {v.turma.nome} <span className="font-normal text-cda-text3">({TURNO_LABEL[v.turma.turno] ?? v.turma.turno})</span>
+                            </p>
+                            {session?.user.name && <p className="text-xs text-cda-text3">{session.user.name}</p>}
+                          </div>
                         </div>
-                        {prazoTexto && (
-                          <span className={`text-xs font-medium ${prazoVencido ? "text-cda-red" : "text-cda-text3"}`}>{prazoTexto}</span>
-                        )}
+                        <div className="flex items-center gap-3">
+                          <span className="text-right text-xs font-medium text-cda-text2">
+                            {entregas.feitas} de {entregas.total} entregas
+                            <br />
+                            <span className="text-cda-text3">{entregasPct}%</span>
+                          </span>
+                          <ProgressoCircular pct={entregasPct} />
+                        </div>
                       </div>
-                      <p className="mb-3 text-xs text-cda-text3">
-                        {semanasInfo?.total ?? 0} de {semanasMes.length} semana{semanasMes.length === 1 ? "" : "s"} do Planejamento enviadas
-                        esse mês
-                      </p>
 
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                         <DocumentoPedagogicoCard
@@ -410,58 +545,73 @@ export default async function PedagogicoPage() {
                           cor={STATUS_COR[statusTurma]}
                           titulo="Planejamento"
                           statusLabel={STATUS_LABEL[statusTurma]}
-                          subtitulo={`${semanasInfo?.total ?? 0} de ${semanasMes.length} semana${semanasMes.length === 1 ? "" : "s"} enviadas`}
-                          href={`/pedagogico/planejamento/${v.turma.id}`}
+                          linhas={linhasPlanejamento}
+                          progresso={{ atual: semanasInfo?.total ?? 0, total: semanasMes.length }}
+                          href={`/pedagogico/planejamento/${turmaId}`}
                           acaoLabel="Abrir"
                         />
                         <DocumentoPedagogicoCard
                           icon={ScrollText}
                           cor="var(--cat-2-dot)"
                           titulo="Roteiro"
-                          subtitulo="Gerado automaticamente do Planejamento"
+                          statusLabel={semanasRoteiro > 0 ? "Disponível" : "Nenhuma semana ainda"}
+                          linhas={[
+                            "Gerado do Planejamento",
+                            semanasRoteiro > 0 ? `${semanasRoteiro} de ${semanasMes.length} semanas` : "Preencha o Planejamento primeiro",
+                          ]}
+                          progresso={semanasRoteiro > 0 ? { atual: semanasRoteiro, total: semanasMes.length } : undefined}
                           href={roteiroHref}
                           external
                           acaoLabel="Baixar PDF"
                         />
                         <DocumentoPedagogicoCard
                           icon={ImageIcon}
-                          cor="var(--cat-4-dot)"
+                          cor={STATUS_COR[graficaStatus]}
                           titulo="Atividade Gráfica"
-                          subtitulo={`${folhas.grafica} preenchida${folhas.grafica === 1 ? "" : "s"} esse mês`}
-                          href={`/pedagogico/planejamento/${v.turma.id}`}
+                          statusLabel={STATUS_LABEL[graficaStatus]}
+                          linhas={[`${folhas.grafica} preenchida${folhas.grafica === 1 ? "" : "s"} esse mês`, "Gera folha por aluno"]}
+                          href={`/pedagogico/planejamento/${turmaId}/atividade-grafica`}
                           acaoLabel="Preencher"
                         />
                         <DocumentoPedagogicoCard
                           icon={BookOpen}
-                          cor="var(--cat-3-dot)"
+                          cor={STATUS_COR[literarioStatus]}
                           titulo="Tema Literário"
-                          subtitulo={`${folhas.literario} preenchido${folhas.literario === 1 ? "" : "s"} esse mês`}
-                          href={`/pedagogico/planejamento/${v.turma.id}`}
+                          statusLabel={STATUS_LABEL[literarioStatus]}
+                          linhas={[`${folhas.literario} preenchido${folhas.literario === 1 ? "" : "s"} esse mês`, "Gera folha por aluno"]}
+                          href={`/pedagogico/planejamento/${turmaId}/tema-literario`}
                           acaoLabel="Preencher"
                         />
                       </div>
 
-                      <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-cda-border pt-3">
-                        <span className="text-xs text-cda-text3">Outras entregas:</span>
-                        <Link
-                          href={`/pedagogico/parecer/${v.turma.id}`}
-                          className="inline-flex items-center gap-1 rounded-full bg-cda-blue/10 px-2.5 py-0.5 text-xs font-medium text-cda-blue hover:bg-cda-blue/20"
-                        >
-                          <FileText className="h-3 w-3" />
-                          Parecer
-                        </Link>
-                        <Link
-                          href={`/pedagogico/portfolio/${v.turma.id}`}
-                          className="inline-flex items-center gap-1 rounded-full bg-cda-blue/10 px-2.5 py-0.5 text-xs font-medium text-cda-blue hover:bg-cda-blue/20"
-                        >
-                          <ImageIcon className="h-3 w-3" />
-                          Portfólio
-                        </Link>
+                      <div className="mt-3 border-t border-cda-border pt-3">
+                        <p className="mb-2 text-xs font-medium text-cda-text3">Outras entregas do mês</p>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <DocumentoPedagogicoCard
+                            icon={FileText}
+                            cor="var(--cat-5-dot)"
+                            titulo="Parecer"
+                            statusLabel={turmasComParecer.has(turmaId) ? "Iniciado" : "Nenhum ainda"}
+                            linhas={["Trimestral"]}
+                            href={`/pedagogico/parecer/${turmaId}`}
+                            acaoLabel="Abrir"
+                          />
+                          <DocumentoPedagogicoCard
+                            icon={ImageIcon}
+                            cor="var(--cat-1-dot)"
+                            titulo="Portfólio"
+                            statusLabel={fotosMes > 0 ? "Em dia" : "Sem fotos esse mês"}
+                            linhas={["Mensal", fotosMes > 0 ? `${fotosMes} foto${fotosMes === 1 ? "" : "s"} esse mês` : "Adicione fotos do dia a dia"]}
+                            href={`/pedagogico/portfolio/${turmaId}`}
+                            acaoLabel="Abrir"
+                          />
+                        </div>
                       </div>
                     </div>
                   );
                 })}
               </div>
+              <DicaBanner texto="Preencha o Planejamento primeiro — o Roteiro é gerado automaticamente a partir dele." />
             </div>
           )}
 
