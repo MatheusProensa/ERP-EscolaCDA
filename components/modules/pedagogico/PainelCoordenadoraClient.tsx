@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -12,6 +12,8 @@ import {
   Image as ImageIcon,
   BookOpen,
   ExternalLink,
+  History,
+  Send,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/Avatar";
 import { Badge } from "@/components/ui/Badge";
@@ -178,20 +180,23 @@ export function PainelCoordenadoraClient({
                       <p className="truncate text-xs text-cda-text3">
                         {t.nome} · {TURNO_LABEL[t.turno] ?? t.turno}
                       </p>
+                      {/* 4 badges, 1 por documento — pedido do dono (mockup do Gemini,
+                          "imagem 3"). Planejamento tem status de verdade (fluxo de
+                          aprovação); os outros 3 não têm aprovação própria no sistema
+                          real, então o "status" deles é honesto: preenchido ou não. */}
                       <div className="mt-1.5 flex flex-wrap gap-1">
                         <Badge variant={STATUS_TURMA_MES_BADGE[t.statusTurma]} className="text-[10px]">
-                          {STATUS_TURMA_MES_LABEL[t.statusTurma]}
+                          Planejamento: {STATUS_TURMA_MES_LABEL[t.statusTurma]}
                         </Badge>
-                        {t.folhas.grafica > 0 && (
-                          <Badge variant="cat4" className="text-[10px]">
-                            Ativ. Gráfica {t.folhas.grafica}
-                          </Badge>
-                        )}
-                        {t.folhas.literario > 0 && (
-                          <Badge variant="cat3" className="text-[10px]">
-                            Tema Lit. {t.folhas.literario}
-                          </Badge>
-                        )}
+                        <Badge variant="cat2" className="text-[10px]">
+                          Roteiro: gerado
+                        </Badge>
+                        <Badge variant={t.folhas.grafica > 0 ? "cat4" : "neutral"} className="text-[10px]">
+                          Ativ. Gráfica: {t.folhas.grafica > 0 ? `${t.folhas.grafica} preenchida${t.folhas.grafica === 1 ? "" : "s"}` : "pendente"}
+                        </Badge>
+                        <Badge variant={t.folhas.literario > 0 ? "cat3" : "neutral"} className="text-[10px]">
+                          Tema Lit.: {t.folhas.literario > 0 ? `${t.folhas.literario} preenchido${t.folhas.literario === 1 ? "" : "s"}` : "pendente"}
+                        </Badge>
                       </div>
                     </div>
                   </button>
@@ -365,6 +370,8 @@ function PainelDetalheTurma({
         </div>
       </div>
 
+      <HistoricoTurma turmaId={turma.id} />
+
       <div className="flex justify-end p-4">
         <Link
           href={`/pedagogico/planejamento/${turma.id}`}
@@ -374,6 +381,83 @@ function PainelDetalheTurma({
           <ExternalLink className="h-3 w-3" />
         </Link>
       </div>
+    </div>
+  );
+}
+
+type EventoHistorico = {
+  tipo: "ENVIADO" | "APROVADO" | "DEVOLVIDO";
+  quando: string;
+  quem: string;
+  comentario: string | null;
+  semanaInicio: string;
+};
+
+function formatarDataHora(iso: string): string {
+  return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+const VERBO_EVENTO: Record<EventoHistorico["tipo"], string> = {
+  ENVIADO: "enviou",
+  APROVADO: "aprovou",
+  DEVOLVIDO: "devolveu",
+};
+
+/** Histórico de ações — pedido do dono (mockup do Gemini: "Você aprovou o
+ * Roteiro · 28/09..."). Sintetizado a partir do versionamento do
+ * Planejamento (único documento com fluxo de aprovação de verdade), não
+ * inventa histórico pros outros 3 documentos. Carrega sozinho quando a
+ * turma é selecionada (o componente pai remonta por turma via `key`, então
+ * um efeito sem dependências já basta — 1 fetch por seleção). */
+function HistoricoTurma({ turmaId }: { turmaId: string }) {
+  const [eventos, setEventos] = useState<EventoHistorico[] | null>(null);
+
+  useEffect(() => {
+    let cancelado = false;
+    fetch(`/api/planejamentos/historico?turmaId=${turmaId}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelado && data) setEventos(data.eventos);
+      })
+      .catch(() => {
+        if (!cancelado) setEventos([]);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [turmaId]);
+
+  return (
+    <div className="border-t border-cda-border p-4">
+      <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-cda-text2">
+        <History className="h-3.5 w-3.5" />
+        Histórico
+      </p>
+      {eventos === null ? (
+        <p className="text-xs text-cda-text3">Carregando...</p>
+      ) : eventos.length === 0 ? (
+        <p className="text-xs text-cda-text3">Nenhuma ação registrada ainda.</p>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          {eventos.map((e) => (
+            <div key={`${e.tipo}-${e.quando}`} className="flex items-start gap-2 text-xs">
+              {e.tipo === "ENVIADO" && <Send className="mt-0.5 h-3.5 w-3.5 shrink-0 text-cda-blue" />}
+              {e.tipo === "APROVADO" && <ThumbsUp className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: "var(--status-success)" }} />}
+              {e.tipo === "DEVOLVIDO" && <Undo2 className="mt-0.5 h-3.5 w-3.5 shrink-0" style={{ color: "var(--status-danger)" }} />}
+              <div>
+                <p className="text-cda-text2">
+                  <span className="font-medium text-cda-text">{e.quem}</span> {VERBO_EVENTO[e.tipo]} o Planejamento da semana de{" "}
+                  {formatarDiaMes(e.semanaInicio)}
+                </p>
+                <p className="text-cda-text3">
+                  {formatarDataHora(e.quando)}
+                  {e.comentario && `: "${e.comentario}"`}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

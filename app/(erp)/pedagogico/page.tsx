@@ -11,6 +11,7 @@ import {
   Clock,
   ScrollText,
   BookOpen,
+  CalendarClock,
 } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -160,13 +161,18 @@ export default async function PedagogicoPage() {
 
   // Texto do prazo pra mostrar no card da turma (pedido do dono: "visão hoje",
   // "faltam N documentos" viraram "quantos dias faltam/passaram do prazo").
+  const diasParaPrazo = dataLimite ? Math.round((dataLimite.getTime() - hoje.getTime()) / 86400000) : null;
   function textoPrazo(): string | null {
-    if (!dataLimite) return null;
-    const diffDias = Math.round((dataLimite.getTime() - hoje.getTime()) / 86400000);
-    if (diffDias < 0) return `Prazo vencido há ${Math.abs(diffDias)} dia${Math.abs(diffDias) === 1 ? "" : "s"}`;
-    if (diffDias === 0) return "Prazo é hoje";
-    return `${diffDias} dia${diffDias === 1 ? "" : "s"} até o prazo`;
+    if (!dataLimite || diasParaPrazo === null) return null;
+    if (diasParaPrazo < 0) return `Prazo vencido há ${Math.abs(diasParaPrazo)} dia${Math.abs(diasParaPrazo) === 1 ? "" : "s"}`;
+    if (diasParaPrazo === 0) return "Prazo é hoje";
+    return `${diasParaPrazo} dia${diasParaPrazo === 1 ? "" : "s"} até o prazo`;
   }
+  // Valor curto pro card de métrica "Prazo atual" (pedido do dono, mockup do
+  // Gemini) — mesma conta de textoPrazo(), só que como tile de resumo em vez
+  // de frase.
+  const prazoAtualValor =
+    diasParaPrazo === null ? "—" : diasParaPrazo < 0 ? "Vencido" : diasParaPrazo === 0 ? "Hoje" : `${diasParaPrazo} dia${diasParaPrazo === 1 ? "" : "s"}`;
 
   // Coordenadora vê TODAS as turmas do ano letivo ativo, com a regente e o
   // status do mês — é o "dashboard bem bom pra acompanhar as professoras"
@@ -181,6 +187,7 @@ export default async function PedagogicoPage() {
         })
       )
     : [];
+  const turmasAtrasadasCount = todasTurmas.filter((t) => statusExibicao(t.id) === "ATRASADO").length;
 
   // Pontualidade do mês — pedido do dono, inspirado num mockup que ele
   // trouxe do Gemini: "quero todas aquelas funções". Compara o 1º envio de
@@ -293,14 +300,17 @@ export default async function PedagogicoPage() {
           <div className="mb-3">
             <PrazoPedagogicoForm anoMes={anoMesAtual} dataLimiteInicial={dataLimite ? dataLimite.toISOString().slice(0, 10) : null} />
           </div>
-          <div className="mb-3 grid grid-cols-1 gap-4 sm:grid-cols-4">
-            <MetricCard icon={Users} tone="cat1" value={todasTurmas.length} label="Turmas" subtext="Ano letivo atual" />
+          {/* 5 tiles — pedido do dono (mockup do Gemini): "Atrasadas" sempre
+              visível como métrica própria (antes só aparecia trocando de lugar
+              com "Ainda pendentes" depois do prazo vencer) + um tile novo de
+              "Prazo atual". */}
+          <div className="mb-3 grid grid-cols-2 gap-4 lg:grid-cols-5">
             <MetricCard
-              icon={CheckCircle2}
-              tone="success"
-              value={entreguesMesAtual.size}
-              label="Entregaram esse mês"
-              subtext="Planejamento em dia"
+              icon={Users}
+              tone="cat1"
+              value={`${entreguesMesAtual.size}/${todasTurmas.length}`}
+              label="Turmas em dia"
+              subtext="Planejamento entregue esse mês"
             />
             <MetricCard
               icon={ClipboardCheck}
@@ -310,11 +320,25 @@ export default async function PedagogicoPage() {
               subtext="Enviado, ainda não revisado"
             />
             <MetricCard
+              icon={CheckCircle2}
+              tone="success"
+              value={todasTurmas.filter((t) => statusExibicao(t.id) === "APROVADO").length}
+              label="Aprovadas"
+              subtext="Todas as semanas aprovadas"
+            />
+            <MetricCard
               icon={Clock}
+              tone={turmasAtrasadasCount > 0 ? "critical" : "neutral"}
+              value={turmasAtrasadasCount}
+              label="Atrasadas"
+              subtext="Passou do prazo do mês"
+            />
+            <MetricCard
+              icon={CalendarClock}
               tone={prazoVencido ? "critical" : "warning"}
-              value={Math.max(0, todasTurmas.length - entreguesMesAtual.size)}
-              label={prazoVencido ? "Atrasadas" : "Ainda pendentes"}
-              subtext={prazoVencido ? "Passou do prazo do mês" : "Planejamento desse mês"}
+              value={prazoAtualValor}
+              label="Prazo atual"
+              subtext={dataLimite ? dataLimite.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", timeZone: "UTC" }) : "Não definido"}
             />
           </div>
           <PainelCoordenadoraClient turmas={turmasResumo} prazoTexto={textoPrazo()} prazoVencido={prazoVencido} />
